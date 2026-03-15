@@ -75,7 +75,6 @@ export default function DocumentsPage() {
   const total = docs.data?.total ?? 0;
   const totalPages = docs.data?.totalPages ?? 1;
 
-  console.log(docs.data)
   // Delete mutation
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteDocument(id),

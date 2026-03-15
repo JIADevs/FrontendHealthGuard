@@ -225,6 +225,29 @@ export const ClassificationSuggestionSchema = z.object({
     ),
 });
 
+// --- Backpacks ---
+export const BackpackSchema = z.object({
+    id: z.string().uuid(),
+    userId: z.string().uuid(),
+    name: z.string(),
+    description: z.string().nullable().optional(),
+    type: z.enum(["CUSTOM", "TEMPORARY_SHARE"]),
+    documentCount: z.number().default(0),
+    createdAt: z.string(),
+});
+
+export const BackpackWithDocsSchema = BackpackSchema.extend({
+    documents: z.array(DocumentSchema),
+});
+
+export const BackpackPageSchema = createPageSchema(BackpackSchema);
+
+export const BackpackCreateSchema = z.object({
+    name: z.string().min(1, "El nombre es obligatorio"),
+    description: z.string().optional(),
+    type: z.enum(["CUSTOM", "TEMPORARY_SHARE"]).default("CUSTOM"),
+});
+
 // --- Inferred types ---
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 export type SignupRequest = z.infer<typeof SignupRequestSchema>;
@@ -245,3 +268,8 @@ export type MedicationCreate = z.infer<typeof MedicationCreateSchema>;
 export type Notification = z.infer<typeof NotificationSchema>;
 export type NotificationPage = z.infer<typeof NotificationPageSchema>;
 export type ClassificationSuggestion = z.infer<typeof ClassificationSuggestionSchema>;
+export type Backpack = z.infer<typeof BackpackSchema>;
+export type BackpackWithDocs = z.infer<typeof BackpackWithDocsSchema>;
+export type BackpackPage = z.infer<typeof BackpackPageSchema>;
+export type BackpackCreate = z.infer<typeof BackpackCreateSchema>;
+

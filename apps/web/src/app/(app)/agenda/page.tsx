@@ -1,12 +1,530 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  CalendarDays,
+  Pill,
+  Plus,
+  Clock,
+  MapPin,
+  User,
+  Trash2,
+  Edit3,
+  Check,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import {
+  getAppointments,
+  createAppointment,
+  updateAppointment,
+  updateAppointmentStatus,
+  deleteAppointment,
+  getMedications,
+  createMedication,
+  updateMedication,
+  deleteMedication,
+  confirmIntake,
+  isApiError,
+  type Appointment,
+  type AppointmentCreate,
+  type Medication,
+  type MedicationCreate,
+} from "@healthguard/api";
+
+import "./agenda.css";
+
+// ── Helpers ──
+function formatDate(d: string) {
+  return new Date(d + "T00:00:00").toLocaleDateString("es-CO", {
+    weekday: "short", day: "2-digit", month: "short",
+  });
+}
+
+function statusLabel(s: string) {
+  const map: Record<string, string> = { PENDING: "Pendiente", COMPLETED: "Realizada", CANCELLED: "Cancelada", RESCHEDULED: "Re-agendada" };
+  return map[s] ?? s;
+}
+
+function statusCls(s: string) {
+  return s.toLowerCase();
+}
+
+// ══════════════════════════════════════════════════════
+//  MAIN PAGE
+// ══════════════════════════════════════════════════════
 export default function AgendaPage() {
+  const [tab, setTab] = useState<"appointments" | "medications">("appointments");
+
   return (
     <>
-      <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>
-        Agenda Médica
-      </h1>
-      <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-        Fase 2 — Próximamente: citas, medicamentos y calendario.
-      </p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800 }}>Agenda Médica</h1>
+      </div>
+
+      <div className="agenda-tabs">
+        <button className={`agenda-tab${tab === "appointments" ? " active" : ""}`} onClick={() => setTab("appointments")}>
+          <CalendarDays size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
+          Citas
+        </button>
+        <button className={`agenda-tab${tab === "medications" ? " active" : ""}`} onClick={() => setTab("medications")}>
+          <Pill size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
+          Medicamentos
+        </button>
+      </div>
+
+      {tab === "appointments" ? <AppointmentsTab /> : <MedicationsTab />}
     </>
+  );
+}
+
+// ══════════════════════════════════════════════════════
+//  APPOINTMENTS TAB
+// ══════════════════════════════════════════════════════
+function AppointmentsTab() {
+  const qc = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [showForm, setShowForm] = useState(false);
+  const [editTarget, setEditTarget] = useState<Appointment | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
+
+  const appts = useQuery({
+    queryKey: ["appointments", page],
+    queryFn: () => getAppointments({ page, limit: 10 }),
+  });
+
+  const statusMut = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => updateAppointmentStatus(id, status),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["appointments"] }),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteAppointment(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["appointments"] }); setDeleteTarget(null); },
+  });
+
+  const totalPages = appts.data?.totalPages ?? 1;
+
+  return (
+    <>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+        <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => { setEditTarget(null); setShowForm(true); }}>
+          <Plus size={16} /> Nueva Cita
+        </button>
+      </div>
+
+      {appts.isLoading ? (
+        <div className="empty-state">
+          <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto", width: 32, height: 32 }} />
+        </div>
+      ) : (appts.data?.items.length ?? 0) === 0 ? (
+        <div className="empty-state">
+          <CalendarDays />
+          <p>No tienes citas registradas.</p>
+        </div>
+      ) : (
+        <div className="agenda-list">
+          {appts.data!.items.map((a) => (
+            <div key={a.id} className="agenda-item">
+              <div className="agenda-item-icon blue"><CalendarDays size={20} /></div>
+              <div className="agenda-item-info">
+                <div className="agenda-item-title">{a.specialty}</div>
+                <div className="agenda-item-sub">
+                  <User size={12} style={{ verticalAlign: -1, marginRight: 4 }} />{a.doctor}
+                  <span style={{ margin: "0 8px" }}>·</span>
+                  <MapPin size={12} style={{ verticalAlign: -1, marginRight: 4 }} />{a.location}
+                </div>
+              </div>
+              <div className="agenda-item-right">
+                <div className="agenda-item-time">
+                  <Clock size={14} />
+                  {formatDate(a.date)} {a.time?.slice(0, 5)}
+                </div>
+                <select
+                  className="status-select"
+                  value={a.status}
+                  onChange={(e) => statusMut.mutate({ id: a.id, status: e.target.value })}
+                >
+                  <option value="PENDING">Pendiente</option>
+                  <option value="COMPLETED">Realizada</option>
+                  <option value="CANCELLED">Cancelada</option>
+                  <option value="RESCHEDULED">Re-agendada</option>
+                </select>
+                <button className="icon-btn" title="Editar" onClick={() => { setEditTarget(a); setShowForm(true); }}><Edit3 size={15} /></button>
+                <button className="icon-btn" title="Eliminar" onClick={() => setDeleteTarget(a)}><Trash2 size={15} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft size={16} /></button>
+          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+            const p = i + Math.max(1, page - 2);
+            if (p > totalPages) return null;
+            return <button key={p} className={p === page ? "active" : ""} onClick={() => setPage(p)}>{p}</button>;
+          })}
+          <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}><ChevronRight size={16} /></button>
+        </div>
+      )}
+
+      {showForm && (
+        <AppointmentFormModal
+          initial={editTarget}
+          onClose={() => { setShowForm(false); setEditTarget(null); }}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="Eliminar Cita"
+          message={`¿Eliminar la cita de ${deleteTarget.specialty} el ${formatDate(deleteTarget.date)}?`}
+          confirmLabel="Eliminar"
+          loading={deleteMut.isPending}
+          onConfirm={() => deleteMut.mutate(deleteTarget.id)}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+    </>
+  );
+}
+
+// ══════════════════════════════════════════════════════
+//  APPOINTMENT FORM MODAL
+// ══════════════════════════════════════════════════════
+function AppointmentFormModal({ initial, onClose }: { initial: Appointment | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const isEdit = !!initial;
+
+  const [specialty, setSpecialty] = useState(initial?.specialty ?? "");
+  const [doctor, setDoctor] = useState(initial?.doctor ?? "");
+  const [location, setLocation] = useState(initial?.location ?? "");
+  const [date, setDate] = useState(initial?.date ?? new Date().toISOString().split("T")[0]!);
+  const [time, setTime] = useState(initial?.time?.slice(0, 5) ?? "09:00");
+  const [type, setType] = useState<"APPOINTMENT" | "EXAM">(initial?.type ?? "APPOINTMENT");
+  const [examType, setExamType] = useState(initial?.examType ?? "");
+  const [error, setError] = useState<string | null>(null);
+
+  const createMut = useMutation({
+    mutationFn: (data: AppointmentCreate) => createAppointment(data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["appointments"] }); onClose(); },
+    onError: (err) => setError(isApiError(err) ? err.message : "Error guardando cita"),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: (data: AppointmentCreate) => updateAppointment(initial!.id, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["appointments"] }); onClose(); },
+    onError: (err) => setError(isApiError(err) ? err.message : "Error actualizando cita"),
+  });
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const payload: AppointmentCreate = {
+      specialty, doctor, location, date, time, type,
+      status: initial?.status ?? "PENDING",
+      examType: type === "EXAM" ? examType : undefined,
+      tags: [], reminderOffsets: [],
+    };
+    isEdit ? updateMut.mutate(payload) : createMut.mutate(payload);
+  }
+
+  const loading = createMut.isPending || updateMut.isPending;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 className="modal-title">{isEdit ? "Editar Cita" : "Nueva Cita"}</h3>
+          <button className="modal-close" onClick={onClose}><X size={16} /></button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            <div className="form-group">
+              <label>Tipo de evento</label>
+              <select className="form-input" value={type} onChange={(e) => setType(e.target.value as "APPOINTMENT" | "EXAM")}>
+                <option value="APPOINTMENT">Cita Médica</option>
+                <option value="EXAM">Examen / Procedimiento</option>
+              </select>
+            </div>
+
+            {type === "EXAM" && (
+              <div className="form-group">
+                <label>Tipo de examen</label>
+                <input className="form-input" value={examType} onChange={(e) => setExamType(e.target.value)} placeholder="Ej: Resonancia, Hemograma..." />
+              </div>
+            )}
+
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Especialidad *</label>
+                <input className="form-input" required value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="Ej: Neurología" />
+              </div>
+              <div className="form-group">
+                <label>Médico *</label>
+                <input className="form-input" required value={doctor} onChange={(e) => setDoctor(e.target.value)} placeholder="Dr. nombre" />
+              </div>
+              <div className="form-group">
+                <label>Fecha *</label>
+                <input className="form-input" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Hora *</label>
+                <input className="form-input" type="time" required value={time} onChange={(e) => setTime(e.target.value)} />
+              </div>
+              <div className="form-group full">
+                <label>Lugar *</label>
+                <input className="form-input" required value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Hospital / Clínica" />
+              </div>
+            </div>
+
+            {error && <p className="form-error">{error}</p>}
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={loading}>
+              {loading && <span className="spinner" />}
+              {isEdit ? "Guardar Cambios" : "Agendar Cita"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════
+//  MEDICATIONS TAB
+// ══════════════════════════════════════════════════════
+function MedicationsTab() {
+  const qc = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [showForm, setShowForm] = useState(false);
+  const [editTarget, setEditTarget] = useState<Medication | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Medication | null>(null);
+
+  const meds = useQuery({
+    queryKey: ["medications", page],
+    queryFn: () => getMedications({ page, limit: 10 }),
+  });
+
+  const intakeMut = useMutation({
+    mutationFn: (id: string) => confirmIntake(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["medications"] }),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => deleteMedication(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medications"] }); setDeleteTarget(null); },
+  });
+
+  const totalPages = meds.data?.totalPages ?? 1;
+
+  return (
+    <>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+        <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => { setEditTarget(null); setShowForm(true); }}>
+          <Plus size={16} /> Nuevo Medicamento
+        </button>
+      </div>
+
+      {meds.isLoading ? (
+        <div className="empty-state">
+          <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto", width: 32, height: 32 }} />
+        </div>
+      ) : (meds.data?.items.length ?? 0) === 0 ? (
+        <div className="empty-state">
+          <Pill />
+          <p>No tienes medicamentos registrados.</p>
+        </div>
+      ) : (
+        <div className="agenda-list">
+          {meds.data!.items.map((m) => (
+            <div key={m.id} className="agenda-item">
+              <div className="agenda-item-icon amber"><Pill size={20} /></div>
+              <div className="agenda-item-info">
+                <div className="agenda-item-title">{m.name}</div>
+                <div className="agenda-item-sub">
+                  {m.dosage} — cada {m.frequency}h
+                  {m.indications && <span style={{ margin: "0 8px" }}>· {m.indications}</span>}
+                </div>
+              </div>
+              <div className="agenda-item-right">
+                {m.nextIntakeTime && (
+                  <div className="agenda-item-time">
+                    <Clock size={14} />
+                    {new Date(m.nextIntakeTime).toLocaleString("es-CO", {
+                      month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit",
+                    })}
+                  </div>
+                )}
+                <button
+                  className="btn-intake"
+                  onClick={() => intakeMut.mutate(m.id)}
+                  disabled={intakeMut.isPending}
+                  title="Confirmar toma"
+                >
+                  <Check size={13} style={{ verticalAlign: -2, marginRight: 4 }} />
+                  Tomado
+                </button>
+                <button className="icon-btn" title="Editar" onClick={() => { setEditTarget(m); setShowForm(true); }}><Edit3 size={15} /></button>
+                <button className="icon-btn" title="Eliminar" onClick={() => setDeleteTarget(m)}><Trash2 size={15} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft size={16} /></button>
+          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+            const p = i + Math.max(1, page - 2);
+            if (p > totalPages) return null;
+            return <button key={p} className={p === page ? "active" : ""} onClick={() => setPage(p)}>{p}</button>;
+          })}
+          <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}><ChevronRight size={16} /></button>
+        </div>
+      )}
+
+      {showForm && (
+        <MedicationFormModal
+          initial={editTarget}
+          onClose={() => { setShowForm(false); setEditTarget(null); }}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="Eliminar Medicamento"
+          message={`¿Eliminar "${deleteTarget.name}"? Los recordatorios también se eliminarán.`}
+          confirmLabel="Eliminar"
+          loading={deleteMut.isPending}
+          onConfirm={() => deleteMut.mutate(deleteTarget.id)}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+    </>
+  );
+}
+
+// ══════════════════════════════════════════════════════
+//  MEDICATION FORM MODAL
+// ══════════════════════════════════════════════════════
+function MedicationFormModal({ initial, onClose }: { initial: Medication | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const isEdit = !!initial;
+
+  const [name, setName] = useState(initial?.name ?? "");
+  const [dosage, setDosage] = useState(initial?.dosage ?? "");
+  const [frequency, setFrequency] = useState(initial?.frequency?.toString() ?? "8");
+  const [startDate, setStartDate] = useState(initial?.startDate ?? new Date().toISOString().split("T")[0]!);
+  const [firstIntakeTime, setFirstIntakeTime] = useState(initial?.firstIntakeTime?.slice(0, 5) ?? "08:00");
+  const [indications, setIndications] = useState(initial?.indications ?? "");
+  const [error, setError] = useState<string | null>(null);
+
+  const createMut = useMutation({
+    mutationFn: (data: MedicationCreate) => createMedication(data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medications"] }); onClose(); },
+    onError: (err) => setError(isApiError(err) ? err.message : "Error guardando medicamento"),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: (data: MedicationCreate) => updateMedication(initial!.id, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medications"] }); onClose(); },
+    onError: (err) => setError(isApiError(err) ? err.message : "Error actualizando"),
+  });
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const payload: MedicationCreate = {
+      name, dosage,
+      frequency: parseInt(frequency, 10),
+      startDate,
+      firstIntakeTime,
+      indications: indications || undefined,
+      reminderOffsets: [60, 30, 15, 5],
+    };
+    isEdit ? updateMut.mutate(payload) : createMut.mutate(payload);
+  }
+
+  const loading = createMut.isPending || updateMut.isPending;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 className="modal-title">{isEdit ? "Editar Medicamento" : "Nuevo Medicamento"}</h3>
+          <button className="modal-close" onClick={onClose}><X size={16} /></button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            <div className="form-grid">
+              <div className="form-group full">
+                <label>Nombre del medicamento *</label>
+                <input className="form-input" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Ibuprofeno 400mg" />
+              </div>
+              <div className="form-group">
+                <label>Dosis *</label>
+                <input className="form-input" required value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="Ej: 1 tableta" />
+              </div>
+              <div className="form-group">
+                <label>Frecuencia (horas) *</label>
+                <input className="form-input" type="number" required min={1} max={72} value={frequency} onChange={(e) => setFrequency(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Fecha de inicio *</label>
+                <input className="form-input" type="date" required value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Hora de primera toma *</label>
+                <input className="form-input" type="time" required value={firstIntakeTime} onChange={(e) => setFirstIntakeTime(e.target.value)} />
+              </div>
+              <div className="form-group full">
+                <label>Indicaciones (opcional)</label>
+                <input className="form-input" value={indications} onChange={(e) => setIndications(e.target.value)} placeholder="Ej: Tomar con alimentos" />
+              </div>
+            </div>
+
+            {error && <p className="form-error">{error}</p>}
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={loading}>
+              {loading && <span className="spinner" />}
+              {isEdit ? "Guardar Cambios" : "Registrar Medicamento"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════
+//  CONFIRM MODAL (same as documents — shared util)
+// ══════════════════════════════════════════════════════
+function ConfirmModal({
+  title, message, confirmLabel, loading, onConfirm, onCancel,
+}: { title: string; message: string; confirmLabel: string; loading: boolean; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-body" style={{ paddingTop: 32 }}>
+          <p className="confirm-title">{title}</p>
+          <p className="confirm-message">{message}</p>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button className="btn btn-secondary" onClick={onCancel} disabled={loading}>Cancelar</button>
+            <button className="btn btn-danger" onClick={onConfirm} disabled={loading}>
+              {loading && <span className="spinner" />}
+              {confirmLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

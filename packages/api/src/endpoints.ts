@@ -112,7 +112,7 @@ export async function uploadFile(file: File) {
 
 export async function getSignedUrl(path: string) {
     const encoded = encodeURIComponent(path);
-    const { data } = await apiClient.get(`/files/${encoded}/signed-url`);
+    const { data } = await apiClient.get(`/files/url?path=${encoded}`);
     return data as { url: string; expiresAt: string };
 }
 

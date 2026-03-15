@@ -6,12 +6,14 @@ import {
     AppointmentPageSchema,
     MedicationPageSchema,
     NotificationPageSchema,
+    BackpackPageSchema,
     type LoginRequest,
     type SignupRequest,
     type UserUpdate,
     type DocumentCreate,
     type AppointmentCreate,
     type MedicationCreate,
+    type BackpackCreate,
 } from "./schemas";
 
 // ─── Auth ──────────────────────────────────────────────
@@ -83,18 +85,18 @@ export async function deleteDocument(id: string) {
 }
 
 export async function getDocumentTypes() {
-    const { data } = await apiClient.get("/documents/types");
+    const { data } = await apiClient.get("/documents/catalog/types");
     return data;
 }
 
 export async function getTagCategories() {
-    const { data } = await apiClient.get("/documents/tags");
+    const { data } = await apiClient.get("/documents/tags/categories");
     return data;
 }
 
 export async function shareDocument(id: string) {
     const { data } = await apiClient.post(`/documents/${id}/share`);
-    return data as { token: string; url: string; expiresAt: string };
+    return data as { shareUrl: string; qrCodeUrl: string; expiresAt: string };
 }
 
 // ─── Files ─────────────────────────────────────────────
@@ -227,3 +229,44 @@ export async function classifyDocument(file: File) {
     });
     return data;
 }
+
+// ─── Backpacks ─────────────────────────────────────────
+
+export async function getBackpacks(params: { page?: number; limit?: number }) {
+    const { data } = await apiClient.get("/backpacks/", { params });
+    return BackpackPageSchema.parse(data);
+}
+
+export async function getBackpackById(id: string) {
+    const { data } = await apiClient.get(`/backpacks/${id}`);
+    return data;
+}
+
+export async function createBackpack(bp: BackpackCreate) {
+    const { data } = await apiClient.post("/backpacks/", bp);
+    return data;
+}
+
+export async function updateBackpack(id: string, bp: BackpackCreate) {
+    const { data } = await apiClient.put(`/backpacks/${id}`, bp);
+    return data;
+}
+
+export async function deleteBackpack(id: string) {
+    await apiClient.delete(`/backpacks/${id}`);
+}
+
+export async function addDocToBackpack(backpackId: string, documentId: string) {
+    const { data } = await apiClient.post(`/backpacks/${backpackId}/documents`, { documentId });
+    return data;
+}
+
+export async function removeDocFromBackpack(backpackId: string, documentId: string) {
+    await apiClient.delete(`/backpacks/${backpackId}/documents/${documentId}`);
+}
+
+export async function shareBackpack(id: string) {
+    const { data } = await apiClient.post(`/backpacks/${id}/share`);
+    return data as { shareUrl: string; qrCodeUrl: string; expiresAt: string };
+}
+

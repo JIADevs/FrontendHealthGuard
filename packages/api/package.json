@@ -1,0 +1,15 @@
+{
+    "name": "@healthguard/api",
+    "version": "0.0.1",
+    "private": true,
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "dependencies": {
+        "axios": "^1.7.0",
+        "zod": "^3.23.0"
+    },
+    "devDependencies": {
+        "@healthguard/config": "workspace:*",
+        "typescript": "^5.7.0"
+    }
+}

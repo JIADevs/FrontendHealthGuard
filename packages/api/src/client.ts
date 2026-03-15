@@ -2,6 +2,23 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { env } from "@healthguard/config";
 import { parseApiError } from "./errors";
 
+function camelize(str: string): string {
+    return str.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
+}
+
+function camelizeKeys(obj: unknown): unknown {
+    if (Array.isArray(obj)) return obj.map(camelizeKeys);
+    if (obj !== null && typeof obj === "object") {
+        return Object.fromEntries(
+            Object.entries(obj as Record<string, unknown>).map(([k, v]) => [
+                camelize(k),
+                camelizeKeys(v),
+            ])
+        );
+    }
+    return obj;
+}
+
 export const apiClient = axios.create({
     baseURL: env.API_URL + "/api/v1",
     timeout: 15_000,
@@ -46,7 +63,10 @@ const processQueue = (error: unknown, token: string | null = null) => {
 };
 
 apiClient.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        response.data = camelizeKeys(response.data);
+        return response;
+    },
     async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & {
             _retry?: boolean;

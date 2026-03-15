@@ -1,0 +1,42 @@
+{
+  "name": "@healthguard/mobile",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~55.0.6",
+    "@healthguard/api": "workspace:*",
+    "@healthguard/config": "workspace:*",
+    "@healthguard/stores": "workspace:*",
+    "@react-navigation/bottom-tabs": "^7.0.0",
+    "@react-navigation/native": "^7.0.0",
+    "@tanstack/react-query": "^5.66.0",
+    "expo": "~55.0.6",
+    "expo-camera": "^55.0.9",
+    "expo-constants": "^55.0.7",
+    "expo-device": "^55.0.9",
+    "expo-notifications": "^55.0.12",
+    "expo-status-bar": "~55.0.4",
+    "lucide-react-native": "^0.475.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native": "0.83.2",
+    "react-native-safe-area-context": "5.6.2",
+    "react-native-screens": "~4.23.0",
+    "react-native-svg": "15.15.3",
+    "react-native-web": "^0.21.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
+    "@babel/preset-env": "^7.29.0",
+    "@types/react": "~19.2.2",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}

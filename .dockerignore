@@ -1,0 +1,11 @@
+node_modules
+.next
+dist
+.turbo
+.git
+*.md
+apps/web/.next
+apps/web/node_modules
+apps/mobile/node_modules
+apps/mobile/.expo
+packages/*/node_modules

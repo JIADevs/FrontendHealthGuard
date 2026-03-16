@@ -22,6 +22,9 @@ config.resolver.disableHierarchicalLookup = true;
 config.resolver.extraNodeModules = {
   "react-native": path.resolve(workspaceRoot, "node_modules/react-native"),
   "expo-asset": path.resolve(projectRoot, "node_modules/expo-asset"),
+  "@healthguard/stores": path.resolve(workspaceRoot, "packages/stores"),
+  "@healthguard/api": path.resolve(workspaceRoot, "packages/api"),
+  "@healthguard/config": path.resolve(workspaceRoot, "packages/config"),
 };
 
 module.exports = config;

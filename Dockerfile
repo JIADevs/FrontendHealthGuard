@@ -29,7 +29,6 @@ COPY turbo.json turbo.json
 RUN turbo run build --filter=@healthguard/web
 
 # Next.js standalone optimization
-# Copy static files to the standalone directory so they can be served by the custom server
 RUN cp -r apps/web/public apps/web/.next/standalone/apps/web/public
 RUN cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
 
@@ -41,18 +40,17 @@ EXPOSE 3000
 ENV PORT 3000
 ENV NODE_ENV=production
 
-# The server.js is located within the standalone folder
+# Paths are relative to /app
 CMD ["node", "apps/web/.next/standalone/apps/web/server.js"]
 
 # Step 4: Build & Run - MOBILE (Dev/Preview mode)
 FROM base AS mobile-runner
-WORKDIR /app/apps/mobile
+WORKDIR /app
 COPY --from=pruner /app/out/full/ .
 COPY --from=installer /app/ .
 
 # Install ngrok globally to avoid interactive prompts if tunnel is used
 RUN npm install -g @expo/ngrok
-
 
 # Expo development server ports
 EXPOSE 8081
@@ -60,5 +58,8 @@ EXPOSE 19000
 EXPOSE 19001
 EXPOSE 19002
 
-# Default command for mobile (dev server)
-CMD ["npx", "expo", "start", "--web", "--port", "8081"]
+# Switch to the app directory for runtime
+WORKDIR /app/apps/mobile
+
+# Default command for mobile
+CMD ["npx", "expo", "start", "--port", "8081"]

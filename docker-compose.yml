@@ -13,7 +13,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=http://${HOST_IP:-localhost}:8000
     networks:
       - healthguard_network
 
@@ -38,8 +38,9 @@ services:
     environment:
       - NODE_ENV=development
       - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
-      # He detectado que tu IP local es 192.168.80.20
-      - REACT_NATIVE_PACKAGER_HOSTNAME=192.168.80.20 
+      # Se usa la variable de entorno HOST_IP detectada por el script de arranque
+      - REACT_NATIVE_PACKAGER_HOSTNAME=${HOST_IP:-localhost}
+      - EXPO_PUBLIC_API_URL=http://${HOST_IP:-localhost}:8000
     volumes:
       - .:/app
       - /app/apps/mobile/node_modules

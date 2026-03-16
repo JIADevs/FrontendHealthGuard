@@ -7,6 +7,15 @@ import { useAuthStore } from "@healthguard/stores";
 import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
+import { setApiAuthProviders } from "@healthguard/api";
+
+setApiAuthProviders({
+  getToken: () => useAuthStore.getState().token,
+  getRefreshToken: () => useAuthStore.getState().refreshToken,
+  getPatientContext: () => useAuthStore.getState().activePatientId,
+  setAuth: (token, refreshToken) => useAuthStore.getState().setAuth(token, refreshToken),
+  clearAuth: () => useAuthStore.getState().logout(),
+});
 
 const queryClient = new QueryClient();
 

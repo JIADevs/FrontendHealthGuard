@@ -40,8 +40,18 @@ export const usePushNotifications = (): PushNotificationState => {
         return;
       }
 
-      const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-      
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ??
+        Constants?.easConfig?.projectId;
+
+      if (!projectId) {
+        console.warn(
+          "No hay projectId configurado para notificaciones push (expo notifications). " +
+            "Esto es normal en Expo Go. Para usar push en Android/iOS, crea un desarrollo build y configura un projectId."
+        );
+        return;
+      }
+
       try {
         token = await Notifications.getExpoPushTokenAsync({ projectId });
         // Enviar token al backend de HealthGuard

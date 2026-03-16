@@ -28,7 +28,8 @@ export default function LoginPage() {
       if (isApiError(err)) {
         setError(err.message);
       } else {
-        setError("Error de conexión. Intenta de nuevo.");
+        // Some errors (e.g. localStorage blocked, mixed-content) are not ApiError
+        setError(String(err) || "Error de conexión. Intenta de nuevo.");
       }
     } finally {
       setLoading(false);

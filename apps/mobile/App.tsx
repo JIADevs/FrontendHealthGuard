@@ -9,11 +9,20 @@ import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
 import { setApiAuthProviders } from "@healthguard/api";
 
+console.log("[App.tsx] Module executing...");
+
 setApiAuthProviders({
-  getToken: () => useAuthStore.getState().token,
+  getToken: () => {
+    const token = useAuthStore.getState().token;
+    console.log(`[App] API Client requested token. Current: ${token ? 'FOUND ('+token.substring(0,5)+'...)' : 'NULL'}`);
+    return token;
+  },
   getRefreshToken: () => useAuthStore.getState().refreshToken,
   getPatientContext: () => useAuthStore.getState().activePatientId,
-  setAuth: (token, refreshToken) => useAuthStore.getState().setAuth(token, refreshToken),
+  setAuth: (token, refreshToken) => {
+    console.log("[App] API Client requested setAuth. Updating store...");
+    useAuthStore.getState().setAuth(token, refreshToken);
+  },
   clearAuth: () => useAuthStore.getState().logout(),
 });
 
@@ -24,8 +33,11 @@ export default function App() {
   usePushNotifications(); // Registers token internally on mount
 
   useEffect(() => {
-    // Manually hydrate since our storage is falling back to memory in RN
-    useAuthStore.setState({ isHydrated: true });
+    // Si la hidratación automática falla o tarda mucho, forzamos el estado 
+    // para que el usuario pueda ver al menos la pantalla de login.
+    if (!useAuthStore.getState().isHydrated) {
+      useAuthStore.getState().setHydrated();
+    }
   }, []);
 
   if (!isHydrated) {

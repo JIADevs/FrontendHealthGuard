@@ -22,6 +22,25 @@ type AuthState = {
     setHydrated: () => void;
 };
 
+const memoryStorage = new Map<string, string>();
+let _customStorage: any = null;
+
+let instanceCount = 0;
+const instanceId = ++instanceCount;
+console.log(`[AuthStore] Module initialized. Instance ID: ${instanceId}`);
+
+export const setStoreStorage = (storage: any) => {
+    _customStorage = storage;
+};
+
+// Global accessor for debugging/interop in RN
+if (typeof global !== "undefined") {
+    (global as any)._HG_AUTH_STORE = {
+        getState: () => useAuthStore.getState(),
+    };
+}
+
+
 export const useAuthStore = create<AuthState>()(
     persist(
         (set) => ({
@@ -32,7 +51,10 @@ export const useAuthStore = create<AuthState>()(
             activePatientId: null,
             isManaging: false,
 
-            setAuth: (token, refreshToken) => set({ token, refreshToken }),
+            setAuth: (token, refreshToken) => {
+                console.log(`[AuthStore] Saving token: ${token?.substring(0, 10)}...`);
+                set({ token, refreshToken });
+            },
             setUser: (user) => set({ user }),
             setPatientContext: (patientId) =>
                 set({ activePatientId: patientId, isManaging: !!patientId }),
@@ -49,44 +71,26 @@ export const useAuthStore = create<AuthState>()(
         {
             name: "auth-store",
             storage: createJSONStorage(() => {
-                if (typeof window === "undefined") {
+                if (_customStorage) return _customStorage;
+                
+                // Fallback para entornos sin window o sin localStorage (React Native)
+                const isBrowser = typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+                
+                if (!isBrowser) {
                     return {
-                        getItem: () => null,
-                        setItem: () => {},
-                        removeItem: () => {},
+                        getItem: (key) => memoryStorage.get(key) || null,
+                        setItem: (key, value) => { memoryStorage.set(key, value); },
+                        removeItem: (key) => { memoryStorage.delete(key); },
                     };
                 }
 
-                const safeStorage = {
-                    getItem: (key: string) => {
-                        try {
-                            return localStorage.getItem(key);
-                        } catch {
-                            return null;
-                        }
-                    },
-                    setItem: (key: string, value: string) => {
-                        try {
-                            localStorage.setItem(key, value);
-                        } catch {
-                            // ignore storage errors (e.g. private mode)
-                        }
-                    },
-                    removeItem: (key: string) => {
-                        try {
-                            localStorage.removeItem(key);
-                        } catch {
-                            // ignore storage errors
-                        }
-                    },
-                };
-
-                return safeStorage;
+                return window.localStorage;
             }),
             partialize: (s) => ({
                 token: s.token,
                 refreshToken: s.refreshToken,
                 user: s.user,
+                activePatientId: s.activePatientId,
             }),
             onRehydrateStorage: () => (state) => state?.setHydrated(),
         }

@@ -42,7 +42,16 @@ fs.writeFileSync(path.join(__dirname, '.env'), envContent);
 console.log(`\x1b[34m[Auto-IP] Archivo .env actualizado con HOST_IP=${hostIP}\x1b[0m`);
 
 const args = process.argv.slice(2);
-const dockerArgs = ['up', '--build', ...args];
+const hasClear = args.includes('--clear');
+const filteredArgs = args.filter(a => a !== '--clear');
+
+const dockerArgs = ['up', '--build', ...filteredArgs];
+
+// Si se pasó --clear, forzamos la recreación de contenedores
+if (hasClear) {
+    console.log(`\x1b[33m[Auto-IP] Limpieza de caché solicitada. Forzando recreación...\x1b[0m`);
+    dockerArgs.push('--force-recreate');
+}
 
 console.log(`\x1b[33m[Auto-IP] Ejecutando: docker-compose ${dockerArgs.join(' ')}\x1b[0m`);
 

@@ -2,6 +2,55 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { env } from "@healthguard/config";
 import { parseApiError } from "./errors";
 
+// --- Dependency Injection for Auth ---
+let _tokenProvider: (() => string | null) | null = null;
+let _refreshTokenProvider: (() => string | null) | null = null;
+let _patientProvider: (() => string | null) | null = null;
+let _setAuth: ((token: string, refreshToken: string) => void) | null = null;
+let _clearAuth: (() => void) | null = null;
+
+export const setApiAuthProviders = (providers: {
+    getToken: () => string | null;
+    getRefreshToken: () => string | null;
+    getPatientContext: () => string | null;
+    setAuth: (token: string, refreshToken: string) => void;
+    clearAuth: () => void;
+}) => {
+    _tokenProvider = providers.getToken;
+    _refreshTokenProvider = providers.getRefreshToken;
+    _patientProvider = providers.getPatientContext;
+    _setAuth = providers.setAuth;
+    _clearAuth = providers.clearAuth;
+};
+
+// Fallback logic for web apps that haven't injected providers
+function getWebToken() {
+    if (typeof window === "undefined") return null;
+    try {
+        const item = localStorage.getItem("auth-store");
+        if (!item) return null;
+        return JSON.parse(item)?.state?.token || null;
+    } catch { return null; }
+}
+
+function getWebPatient() {
+    if (typeof window === "undefined") return null;
+    try {
+        const item = localStorage.getItem("auth-store");
+        if (!item) return null;
+        return JSON.parse(item)?.state?.activePatientId || null;
+    } catch { return null; }
+}
+
+function getWebRefreshToken() {
+    if (typeof window === "undefined") return null;
+    try {
+        const item = localStorage.getItem("auth-store");
+        if (!item) return null;
+        return JSON.parse(item)?.state?.refreshToken || null;
+    } catch { return null; }
+}
+
 function camelize(str: string): string {
     return str.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
 }
@@ -27,25 +76,14 @@ export const apiClient = axios.create({
 
 // --- Request interceptor ---
 apiClient.interceptors.request.use((config) => {
-    // Import dynamically to avoid circular dependency
-    // Auth store will be set up by the app at runtime
-    if (typeof window !== "undefined") {
-        const authData = localStorage.getItem("auth-store");
-        if (authData) {
-            try {
-                const parsed = JSON.parse(authData);
-                const token = parsed?.state?.token;
-                const activePatientId = parsed?.state?.activePatientId;
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
-                }
-                if (activePatientId) {
-                    config.headers["X-Patient-Context"] = activePatientId;
-                }
-            } catch {
-                // ignore parse errors
-            }
-        }
+    const token = _tokenProvider ? _tokenProvider() : getWebToken();
+    const patientContext = _patientProvider ? _patientProvider() : getWebPatient();
+    
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (patientContext) {
+        config.headers["X-Patient-Context"] = patientContext;
     }
     return config;
 });
@@ -73,7 +111,6 @@ apiClient.interceptors.response.use(
         };
 
         if (error.response?.status === 401 && !originalRequest._retry) {
-            // Try to refresh the token
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
@@ -87,10 +124,7 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const authData = localStorage.getItem("auth-store");
-                const refreshToken = authData
-                    ? JSON.parse(authData)?.state?.refreshToken
-                    : null;
+                const refreshToken = _refreshTokenProvider ? _refreshTokenProvider() : getWebRefreshToken();
                 if (!refreshToken) throw new Error("No refresh token");
 
                 const { data } = await axios.post(
@@ -99,26 +133,36 @@ apiClient.interceptors.response.use(
                 );
 
                 const newToken = data.access_token as string;
-
-                // Update localStorage directly (store will sync on next read)
-                const current = JSON.parse(localStorage.getItem("auth-store") ?? "{}");
-                current.state = {
-                    ...current.state,
-                    token: newToken,
-                    refreshToken: data.refresh_token,
-                };
-                localStorage.setItem("auth-store", JSON.stringify(current));
+                
+                if (_setAuth) {
+                    _setAuth(newToken, data.refresh_token);
+                } else if (typeof window !== "undefined") {
+                    try {
+                        const current = JSON.parse(localStorage.getItem("auth-store") ?? "{}");
+                        current.state = {
+                            ...current.state,
+                            token: newToken,
+                            refreshToken: data.refresh_token,
+                        };
+                        localStorage.setItem("auth-store", JSON.stringify(current));
+                    } catch { /* ignore */ }
+                }
 
                 processQueue(null, newToken);
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
                 return apiClient(originalRequest);
             } catch (refreshError) {
                 processQueue(refreshError, null);
-                // Clear auth state
-                localStorage.removeItem("auth-store");
-                if (typeof window !== "undefined") {
-                    window.location.href = "/login";
+                
+                if (_clearAuth) {
+                    _clearAuth();
+                } else if (typeof window !== "undefined") {
+                    try {
+                        localStorage.removeItem("auth-store");
+                        window.location.href = "/login";
+                    } catch { /* ignore */ }
                 }
+                
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
@@ -128,3 +172,4 @@ apiClient.interceptors.response.use(
         return Promise.reject(parseApiError(error));
     }
 );
+

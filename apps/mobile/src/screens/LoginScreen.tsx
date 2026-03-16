@@ -19,7 +19,11 @@ export function LoginScreen() {
       const data = await login({ email, password });
       setAuth(data.access_token, data.refresh_token);
     } catch (err) {
-      setError(isApiError(err) ? err.message : "Error al iniciar sesión");
+      setError(
+        isApiError(err)
+          ? err.message
+          : String(err) || "Error al iniciar sesión"
+      );
     } finally {
       setLoading(false);
     }

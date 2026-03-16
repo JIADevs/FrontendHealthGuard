@@ -23,11 +23,24 @@ export const SignupRequestSchema = z.object({
     referralCode: z.string().optional(),
 });
 
-export const TokenResponseSchema = z.object({
-    access_token: z.string(),
-    refresh_token: z.string(),
-    token_type: z.literal("bearer"),
-});
+export const TokenResponseSchema = z
+    .union([
+        z.object({
+            access_token: z.string(),
+            refresh_token: z.string(),
+            token_type: z.literal("bearer"),
+        }),
+        z.object({
+            accessToken: z.string(),
+            refreshToken: z.string(),
+            tokenType: z.literal("bearer"),
+        }),
+    ])
+    .transform((value) => ({
+        access_token: (value as any).access_token || (value as any).accessToken,
+        refresh_token: (value as any).refresh_token || (value as any).refreshToken,
+        token_type: (value as any).token_type || (value as any).tokenType,
+    }));
 
 // --- User ---
 export const UserProfileSchema = z.object({

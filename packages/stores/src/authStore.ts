@@ -48,13 +48,41 @@ export const useAuthStore = create<AuthState>()(
         }),
         {
             name: "auth-store",
-            storage: createJSONStorage(() =>
-                typeof window !== "undefined" ? localStorage : {
-                    getItem: () => null,
-                    setItem: () => { },
-                    removeItem: () => { },
+            storage: createJSONStorage(() => {
+                if (typeof window === "undefined") {
+                    return {
+                        getItem: () => null,
+                        setItem: () => {},
+                        removeItem: () => {},
+                    };
                 }
-            ),
+
+                const safeStorage = {
+                    getItem: (key: string) => {
+                        try {
+                            return localStorage.getItem(key);
+                        } catch {
+                            return null;
+                        }
+                    },
+                    setItem: (key: string, value: string) => {
+                        try {
+                            localStorage.setItem(key, value);
+                        } catch {
+                            // ignore storage errors (e.g. private mode)
+                        }
+                    },
+                    removeItem: (key: string) => {
+                        try {
+                            localStorage.removeItem(key);
+                        } catch {
+                            // ignore storage errors
+                        }
+                    },
+                };
+
+                return safeStorage;
+            }),
             partialize: (s) => ({
                 token: s.token,
                 refreshToken: s.refreshToken,

@@ -3,17 +3,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: web-runner
+      target: web-dev
       args:
         - APP_NAME=@healthguard/web
     container_name: healthguard_frontend_web
     tty: true
     stdin_open: true
+    working_dir: /app/apps/web
+    command: pnpm dev
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://${HOST_IP:-localhost}:8000
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    volumes:
+      - .:/app
+      - /app/apps/web/node_modules
+      - /app/apps/web/.next
+      - /app/node_modules
     networks:
       - healthguard_network
 

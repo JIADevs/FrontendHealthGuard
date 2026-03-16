@@ -1,7 +1,7 @@
 FROM node:20-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 RUN npm install -g turbo
 
 # Step 1: Prune the monorepo
@@ -18,7 +18,7 @@ COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 RUN pnpm install
 
-# Step 3: Build & Run - WEB
+# Step 3: WEB (Production-ready stage)
 FROM base AS web-runner
 WORKDIR /app
 COPY --from=pruner /app/out/full/ .
@@ -43,7 +43,19 @@ ENV NODE_ENV=production
 # Paths are relative to /app
 CMD ["node", "apps/web/.next/standalone/apps/web/server.js"]
 
-# Step 4: Build & Run - MOBILE (Dev/Preview mode)
+# Step 4: WEB (Development stage with hot-reloading)
+FROM base AS web-dev
+WORKDIR /app
+COPY --from=pruner /app/out/full/ .
+COPY --from=installer /app/ .
+
+EXPOSE 3000
+ENV PORT 3000
+ENV NODE_ENV=development
+
+CMD ["pnpm", "dev:web"]
+
+# Step 5: Build & Run - MOBILE (Dev/Preview mode)
 FROM base AS mobile-runner
 WORKDIR /app
 COPY --from=pruner /app/out/full/ .

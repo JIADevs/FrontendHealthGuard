@@ -21,14 +21,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      console.log("[LoginPage] Attempting login for:", email);
       const tokens = await login({ email, password });
+      console.log("[LoginPage] Login success, tokens received:", { access: !!tokens.access_token });
       setAuth(tokens.access_token, tokens.refresh_token);
+      console.log("[LoginPage] Auth set in store, redirecting...");
       router.push("/dashboard");
     } catch (err) {
+      console.error("[LoginPage] Login failed:", err);
       if (isApiError(err)) {
         setError(err.message);
       } else {
-        // Some errors (e.g. localStorage blocked, mixed-content) are not ApiError
         setError(String(err) || "Error de conexión. Intenta de nuevo.");
       }
     } finally {

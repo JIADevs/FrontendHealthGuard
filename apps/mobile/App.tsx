@@ -9,20 +9,11 @@ import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
 import { setApiAuthProviders } from "@healthguard/api";
 
-console.log("[App.tsx] Module executing...");
-
 setApiAuthProviders({
-  getToken: () => {
-    const token = useAuthStore.getState().token;
-    console.log(`[App] API Client requested token. Current: ${token ? 'FOUND ('+token.substring(0,5)+'...)' : 'NULL'}`);
-    return token;
-  },
+  getToken: () => useAuthStore.getState().token,
   getRefreshToken: () => useAuthStore.getState().refreshToken,
   getPatientContext: () => useAuthStore.getState().activePatientId,
-  setAuth: (token, refreshToken) => {
-    console.log("[App] API Client requested setAuth. Updating store...");
-    useAuthStore.getState().setAuth(token, refreshToken);
-  },
+  setAuth: (token, refreshToken) => useAuthStore.getState().setAuth(token, refreshToken),
   clearAuth: () => useAuthStore.getState().logout(),
 });
 

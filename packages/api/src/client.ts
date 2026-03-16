@@ -2,8 +2,6 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { env } from "@healthguard/config";
 import { parseApiError } from "./errors";
 
-console.log("[API Client] Module executing...");
-
 // --- Dependency Injection for Auth ---
 let _tokenProvider: (() => string | null) | null = null;
 let _refreshTokenProvider: (() => string | null) | null = null;
@@ -18,7 +16,6 @@ export const setApiAuthProviders = (providers: {
     setAuth: (token: string, refreshToken: string) => void;
     clearAuth: () => void;
 }) => {
-    console.log("[API Client] Auth Providers INJECTED.");
     _tokenProvider = providers.getToken;
     _refreshTokenProvider = providers.getRefreshToken;
     _patientProvider = providers.getPatientContext;
@@ -33,10 +30,7 @@ function getWebToken() {
         const item = window.localStorage.getItem("auth-store");
         if (!item) return null;
         return JSON.parse(item)?.state?.token || null;
-    } catch (e) { 
-        console.error("[API Client] Error reading token from localStorage:", e);
-        return null; 
-    }
+    } catch { return null; }
 }
 
 function getWebPatient() {
@@ -87,9 +81,6 @@ apiClient.interceptors.request.use((config) => {
     
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log(`[API Client] Request: ${config.method?.toUpperCase()} ${config.url} | Token: ${token.substring(0, 10)}...`);
-    } else {
-        console.log(`[API Client] Request: ${config.method?.toUpperCase()} ${config.url} | NO TOKEN`);
     }
     
     if (patientContext) {

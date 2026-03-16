@@ -244,7 +244,7 @@ export const BackpackSchema = z.object({
     userId: z.string().uuid(),
     name: z.string(),
     description: z.string().nullable().optional(),
-    type: z.enum(["CUSTOM", "TEMPORARY_SHARE"]),
+    type: z.enum(["CUSTOM", "TEMPORARY_SHARE"]).default("CUSTOM"),
     documentCount: z.number().default(0),
     createdAt: z.string(),
 });

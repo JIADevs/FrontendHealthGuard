@@ -42,18 +42,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // Auth guard
   useEffect(() => {
+    console.log("[AppLayout] state:", { isHydrated, token: !!token, pathname });
     if (isHydrated && !token) {
+      console.log("[AppLayout] No token found, redirecting to login...");
       router.replace("/login");
     }
-  }, [isHydrated, token, router]);
+  }, [isHydrated, token, router, pathname]);
 
-  if (!isHydrated) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", width: 32, height: 32 }} />
-      </div>
-    );
-  }
+  if (!isHydrated) return null; // Render nothing until hydrated
 
   if (!token) return null;
 

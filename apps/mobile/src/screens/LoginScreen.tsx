@@ -17,8 +17,6 @@ export function LoginScreen() {
     setError(null);
     try {
       const data = await login({ email, password });
-      console.log("[Login] Success! Access Token received:", data.access_token.substring(0, 10), "...");
-      console.log("[Login] Refresh Token received:", data.refresh_token.substring(0, 10), "...");
       setAuth(data.access_token, data.refresh_token);
     } catch (err) {
       setError(

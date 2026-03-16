@@ -25,21 +25,9 @@ type AuthState = {
 const memoryStorage = new Map<string, string>();
 let _customStorage: any = null;
 
-let instanceCount = 0;
-const instanceId = ++instanceCount;
-console.log(`[AuthStore] Module initialized. Instance ID: ${instanceId}`);
-
 export const setStoreStorage = (storage: any) => {
     _customStorage = storage;
 };
-
-// Global accessor for debugging/interop in RN
-if (typeof global !== "undefined") {
-    (global as any)._HG_AUTH_STORE = {
-        getState: () => useAuthStore.getState(),
-    };
-}
-
 
 export const useAuthStore = create<AuthState>()(
     persist(
@@ -51,10 +39,7 @@ export const useAuthStore = create<AuthState>()(
             activePatientId: null,
             isManaging: false,
 
-            setAuth: (token, refreshToken) => {
-                console.log(`[AuthStore] Saving token: ${token?.substring(0, 10)}...`);
-                set({ token, refreshToken });
-            },
+            setAuth: (token, refreshToken) => set({ token, refreshToken }),
             setUser: (user) => set({ user }),
             setPatientContext: (patientId) =>
                 set({ activePatientId: patientId, isManaging: !!patientId }),
@@ -77,6 +62,7 @@ export const useAuthStore = create<AuthState>()(
                 const isBrowser = typeof window !== "undefined" && typeof window.localStorage !== "undefined";
                 
                 if (!isBrowser) {
+                    console.log("[AuthStore] Storage: Using memory fallback");
                     return {
                         getItem: (key) => memoryStorage.get(key) || null,
                         setItem: (key, value) => { memoryStorage.set(key, value); },
@@ -84,6 +70,7 @@ export const useAuthStore = create<AuthState>()(
                     };
                 }
 
+                console.log("[AuthStore] Storage: Using window.localStorage");
                 return window.localStorage;
             }),
             partialize: (s) => ({

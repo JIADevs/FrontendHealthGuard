@@ -3,12 +3,14 @@ import { useAuthStore } from "@healthguard/stores";
 import { TabNavigator } from "./TabNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
 import { ScannerScreen } from "../screens/ScannerScreen";
+import { DocumentUploadScreen } from "../screens/DocumentUploadScreen";
 import { DocumentDetailScreen } from "../screens/DocumentDetailScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
   MainTabs: undefined;
   Scanner: undefined;
+  DocumentUpload: undefined;
   DocumentDetail: { id: string; title?: string } | undefined;
 };
 
@@ -25,6 +27,11 @@ export function RootNavigator() {
           <Stack.Screen
             name="Scanner"
             component={ScannerScreen}
+            options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
+          />
+          <Stack.Screen
+            name="DocumentUpload"
+            component={DocumentUploadScreen}
             options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
           />
           <Stack.Screen

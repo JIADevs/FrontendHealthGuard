@@ -1,16 +1,46 @@
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share, RefreshControl } from "react-native";
+import { useState, useCallback } from "react";
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { getDocuments, shareDocument } from "@healthguard/api";
-import { FileText, Camera, Share2 } from "lucide-react-native";
+import { FileText, Camera, Share2, Plus, FileUp, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 
 export function DocumentsScreen() {
   const navigation = useNavigation<any>();
+  const [fabOpen, setFabOpen] = useState(false);
+  const [animation] = useState(() => new Animated.Value(0));
+
   const docs = useQuery({
     queryKey: ["documents"],
     queryFn: () => getDocuments({ page: 1, limit: 20 }),
   });
+
+  const toggleFab = useCallback(() => {
+    const toValue = fabOpen ? 0 : 1;
+    Animated.spring(animation, {
+      toValue,
+      friction: 6,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+    setFabOpen(!fabOpen);
+  }, [fabOpen, animation]);
+
+  const closeFab = useCallback(() => {
+    Animated.spring(animation, {
+      toValue: 0,
+      friction: 6,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+    setFabOpen(false);
+  }, [animation]);
+
+  function handleNavigate(screen: string) {
+    closeFab();
+    navigation.navigate(screen);
+  }
 
   async function handleShare(docId: string, title: string) {
     try {
@@ -24,6 +54,36 @@ export function DocumentsScreen() {
       console.warn("Error compartiendo documento", err);
     }
   }
+
+  const rotation = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "45deg"],
+  });
+
+  const backdropOpacity = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  const option1TranslateY = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -80],
+  });
+
+  const option2TranslateY = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -150],
+  });
+
+  const optionScale = animation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 0, 1],
+  });
+
+  const optionOpacity = animation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 0, 1],
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,11 +129,60 @@ export function DocumentsScreen() {
         />
       )}
 
-      <TouchableOpacity 
-        style={styles.fab} 
-        onPress={() => navigation.navigate("Scanner")}
+      {/* FAB Backdrop */}
+      {fabOpen && (
+        <Pressable style={StyleSheet.absoluteFill} onPress={closeFab}>
+          <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
+        </Pressable>
+      )}
+
+      {/* Upload from device option */}
+      <Animated.View
+        style={[
+          styles.fabOption,
+          {
+            transform: [{ translateY: option2TranslateY }, { scale: optionScale }],
+            opacity: optionOpacity,
+          },
+        ]}
+        pointerEvents={fabOpen ? "auto" : "none"}
       >
-        <Camera color="#fff" size={24} />
+        <TouchableOpacity style={styles.fabOptionRow} onPress={() => handleNavigate("DocumentUpload")}>
+          <View style={styles.fabOptionLabel}>
+            <Text style={styles.fabOptionText}>Subir archivo</Text>
+          </View>
+          <View style={[styles.fabSmall, { backgroundColor: "#8b5cf6" }]}>
+            <FileUp color="#fff" size={22} />
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Scan with camera option */}
+      <Animated.View
+        style={[
+          styles.fabOption,
+          {
+            transform: [{ translateY: option1TranslateY }, { scale: optionScale }],
+            opacity: optionOpacity,
+          },
+        ]}
+        pointerEvents={fabOpen ? "auto" : "none"}
+      >
+        <TouchableOpacity style={styles.fabOptionRow} onPress={() => handleNavigate("Scanner")}>
+          <View style={styles.fabOptionLabel}>
+            <Text style={styles.fabOptionText}>Escanear</Text>
+          </View>
+          <View style={[styles.fabSmall, { backgroundColor: "#0ea5e9" }]}>
+            <Camera color="#fff" size={22} />
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Main FAB */}
+      <TouchableOpacity style={styles.fab} onPress={toggleFab} activeOpacity={0.85}>
+        <Animated.View style={{ transform: [{ rotate: rotation }] }}>
+          <Plus color="#fff" size={28} />
+        </Animated.View>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -89,7 +198,71 @@ const styles = StyleSheet.create({
   info: { flex: 1 },
   docTitle: { fontSize: 15, fontWeight: "600", color: "#0f172a", marginBottom: 2 },
   docSub: { fontSize: 13, color: "#64748b" },
+  shareBtn: { padding: 8 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   empty: { color: "#64748b", fontSize: 15 },
-  fab: { position: "absolute", bottom: 24, right: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: "#0ea5e9", alignItems: "center", justifyContent: "center", shadowColor: "#0ea5e9", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 }
+
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+  },
+
+  fab: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#0ea5e9",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#0ea5e9",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 20,
+  },
+
+  fabOption: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    alignItems: "flex-end",
+    zIndex: 15,
+  },
+  fabOptionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  fabOptionLabel: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  fabOptionText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  fabSmall: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 6,
+  },
 });

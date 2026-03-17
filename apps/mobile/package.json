@@ -24,6 +24,7 @@
     "expo-camera": "^17.0.10",
     "expo-constants": "^18.0.13",
     "expo-device": "^8.0.10",
+    "expo-document-picker": "^55.0.8",
     "expo-notifications": "^0.32.16",
     "expo-status-bar": "~3.0.9",
     "lucide-react-native": "^0.475.0",

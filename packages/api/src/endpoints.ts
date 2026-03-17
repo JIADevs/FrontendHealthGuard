@@ -7,6 +7,7 @@ import {
     MedicationPageSchema,
     NotificationPageSchema,
     BackpackPageSchema,
+    ClassificationSuggestionSchema,
     type LoginRequest,
     type SignupRequest,
     type UserUpdate,
@@ -95,9 +96,22 @@ export async function getTagCategories() {
     return data;
 }
 
+/** Add a value to an existing tag category. Returns the created tag value (use .id for tagValueIds). */
 export async function createCustomTag(tag: CustomTagCreate) {
-    const { data } = await apiClient.post("/documents/tags/custom", tag);
+    const { data } = await apiClient.post(`/documents/tags/categories/${tag.categoryId}/values`, { value: tag.value });
+    return data as { id: string; categoryId?: string; value: string };
+}
+
+/** Create a new tag category (e.g. "Médico", "Institución"). */
+export async function createTagCategory(body: { name: string; color?: string }) {
+    const { data } = await apiClient.post("/documents/tags/categories", body);
     return data;
+}
+
+/** Add a value to a tag category. Returns the created tag value. */
+export async function addTagValue(categoryId: string, value: string) {
+    const { data } = await apiClient.post(`/documents/tags/categories/${categoryId}/values`, { value });
+    return data as { id: string; categoryId?: string; value: string };
 }
 
 export async function shareDocument(id: string) {
@@ -262,8 +276,9 @@ export async function classifyDocumentFromUri(uri: string, name: string, mimeTyp
     });
     const { data } = await apiClient.post("/documents/classify", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: 120_000,
     });
-    return data;
+    return ClassificationSuggestionSchema.parse(data);
 }
 
 // ─── Backpacks ─────────────────────────────────────────

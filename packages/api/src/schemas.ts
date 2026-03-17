@@ -224,23 +224,24 @@ export const ClassificationSuggestionSchema = z.object({
         .object({ id: z.string().uuid(), name: z.string() })
         .nullable()
         .optional(),
-    subtypes: z.array(z.object({ id: z.string().uuid(), name: z.string() })),
-    specialties: z.array(z.object({ id: z.string().uuid(), name: z.string() })),
-    custom_tags: z.array(
+    subtypes: z.array(z.object({ id: z.string().uuid(), name: z.string() })).nullable().default([]),
+    specialties: z.array(z.object({ id: z.string().uuid(), name: z.string() })).nullable().default([]),
+    customTags: z.array(
         z.object({
-            category_id: z.string().uuid(),
-            category_name: z.string().nullable().optional(),
-            tag_value_id: z.string().uuid(),
-            tag_value_name: z.string().nullable().optional(),
+            categoryId: z.string().uuid(),
+            categoryName: z.string().nullable().optional(),
+            tagValueId: z.string().uuid(),
+            tagValueName: z.string().nullable().optional(),
         })
-    ),
-    new_tags: z.array(
+    ).nullable().default([]),
+    newTags: z.array(
         z.object({
-            category_id: z.string().uuid(),
-            category_name: z.string().nullable().optional(),
+            categoryId: z.string().uuid(),
+            categoryName: z.string().nullable().optional(),
             value: z.string(),
         })
-    ),
+    ).nullable().default([]),
+    title: z.string().nullable().optional(),
 });
 
 // --- Backpacks ---

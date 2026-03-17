@@ -257,13 +257,14 @@ export async function getCalendarEvents(startDate: string, endDate: string) {
 
 // ─── AI Classification ────────────────────────────────
 
-export async function classifyDocument(file: any) {
+export async function classifyDocument(file: File | Blob) {
     const formData = new FormData();
     formData.append("file", file);
     const { data } = await apiClient.post("/documents/classify", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: 120_000,
     });
-    return data;
+    return ClassificationSuggestionSchema.parse(data);
 }
 
 export async function classifyDocumentFromUri(uri: string, name: string, mimeType: string) {

@@ -11,6 +11,7 @@ import {
   createCustomTag,
   createTagCategory,
   addTagValue,
+  isApiError,
   type DocumentTypeOut,
   type TagCategoryOut,
   type ClassificationSuggestion,
@@ -108,7 +109,7 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
     setNewTagValues((prev) => ({ ...prev, [categoryId]: text }));
   }, []);
 
-  async function applyClassificationTags(result: ClassificationSuggestion) {
+  const applyClassificationTags = useCallback(async (result: ClassificationSuggestion) => {
     const customTags = result.customTags ?? [];
     const newTags = result.newTags ?? [];
     const tagIds: string[] = customTags.map((ct) => ct.tagValueId);
@@ -130,7 +131,7 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
 
     const tags = await getTagCategories();
     setCatalogs((prev) => ({ ...prev, tags }));
-  }
+  }, []);
 
   const handleAIClassify = useCallback(async (file: FileSource) => {
     if (classifying) return;
@@ -147,7 +148,9 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
           break;
         } catch (err) {
           lastErr = err;
-          if (attempt < MAX_RETRIES) await delay(RETRY_BASE_MS * attempt);
+          const isRetryable = isApiError(err) ? err.isNetworkError : !(err instanceof SyntaxError || err instanceof TypeError);
+          if (!isRetryable || attempt >= MAX_RETRIES) break;
+          await delay(RETRY_BASE_MS * attempt);
         }
       }
 
@@ -165,7 +168,7 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
     } finally {
       setClassifying(false);
     }
-  }, [classifying]);
+  }, [classifying, applyClassificationTags]);
 
   const handleUpload = useCallback(async (file: FileSource) => {
     if (uploading) return;

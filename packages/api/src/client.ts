@@ -68,6 +68,23 @@ function camelizeKeys(obj: unknown): unknown {
     return obj;
 }
 
+function snakelize(str: string): string {
+    return str.replace(/([A-Z])/g, (c) => `_${c.toLowerCase()}`);
+}
+
+function snakelizeKeys(obj: unknown): unknown {
+    if (Array.isArray(obj)) return obj.map(snakelizeKeys);
+    if (obj !== null && typeof obj === "object") {
+        return Object.fromEntries(
+            Object.entries(obj as Record<string, unknown>).map(([k, v]) => [
+                snakelize(k),
+                snakelizeKeys(v),
+            ])
+        );
+    }
+    return obj;
+}
+
 export const apiClient = axios.create({
     baseURL: env.API_URL + "/api/v1",
     timeout: 15_000,
@@ -85,6 +102,10 @@ apiClient.interceptors.request.use((config) => {
     
     if (patientContext) {
         config.headers["X-Patient-Context"] = patientContext;
+    }
+
+    if (config.data && typeof config.data === "object" && !(config.data instanceof FormData)) {
+        config.data = snakelizeKeys(config.data);
     }
 
     return config;

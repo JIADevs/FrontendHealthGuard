@@ -124,13 +124,18 @@ export const DocumentCreateSchema = z.object({
     description: z.string().optional(),
     fileUrl: z.string(),
     format: z.string(),
-    fileSizeBytes: z.number().optional(),
+    file_size_bytes: z.number().optional(),
     documentDate: z.string().optional(),
     treatmentId: z.string().uuid().optional(),
     typeId: z.string().uuid().optional(),
     subtypeIds: z.array(z.string().uuid()).optional(),
     specialtyIds: z.array(z.string().uuid()).optional(),
     tagValueIds: z.array(z.string().uuid()).optional(),
+});
+
+export const CustomTagCreateSchema = z.object({
+    categoryId: z.string().uuid(),
+    value: z.string().min(1),
 });
 
 // --- Appointments ---
@@ -285,4 +290,5 @@ export type Backpack = z.infer<typeof BackpackSchema>;
 export type BackpackWithDocs = z.infer<typeof BackpackWithDocsSchema>;
 export type BackpackPage = z.infer<typeof BackpackPageSchema>;
 export type BackpackCreate = z.infer<typeof BackpackCreateSchema>;
+export type CustomTagCreate = z.infer<typeof CustomTagCreateSchema>;
 

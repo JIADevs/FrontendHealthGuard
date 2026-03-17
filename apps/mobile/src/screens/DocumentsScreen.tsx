@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share } from "react-native";
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { getDocuments, shareDocument } from "@healthguard/api";
@@ -31,15 +31,26 @@ export function DocumentsScreen() {
         <Text style={styles.title}>Documentos</Text>
       </View>
 
-      {docs.isLoading ? (
+      {docs.isLoading && !docs.isRefetching ? (
         <View style={styles.center}><ActivityIndicator size="large" color="#0ea5e9" /></View>
       ) : (
         <FlatList
           data={docs.data?.items ?? []}
           keyExtractor={(d) => d.id}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl 
+              refreshing={docs.isRefetching} 
+              onRefresh={() => docs.refetch()} 
+              colors={["#0ea5e9"]}
+              tintColor="#0ea5e9"
+            />
+          }
           renderItem={({ item }) => (
-            <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => navigation.navigate("DocumentDetail", { id: item.id, title: item.title })}
+            >
               <View style={styles.iconBg}><FileText size={24} color="#0ea5e9" /></View>
               <View style={styles.info}>
                 <Text style={styles.docTitle}>{item.title}</Text>
@@ -48,7 +59,7 @@ export function DocumentsScreen() {
               <TouchableOpacity style={styles.shareBtn} onPress={() => handleShare(item.id, item.title)}>
                 <Share2 size={20} color="#64748b" />
               </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.center}>

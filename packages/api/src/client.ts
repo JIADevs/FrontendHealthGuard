@@ -86,6 +86,7 @@ apiClient.interceptors.request.use((config) => {
     if (patientContext) {
         config.headers["X-Patient-Context"] = patientContext;
     }
+
     return config;
 });
 

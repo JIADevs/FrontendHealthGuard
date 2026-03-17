@@ -14,6 +14,7 @@ import {
     type AppointmentCreate,
     type MedicationCreate,
     type BackpackCreate,
+    type CustomTagCreate,
 } from "./schemas";
 
 // ─── Auth ──────────────────────────────────────────────
@@ -94,6 +95,11 @@ export async function getTagCategories() {
     return data;
 }
 
+export async function createCustomTag(tag: CustomTagCreate) {
+    const { data } = await apiClient.post("/documents/tags/custom", tag);
+    return data;
+}
+
 export async function shareDocument(id: string) {
     const { data } = await apiClient.post(`/documents/${id}/share`);
     return data as { shareUrl: string; qrCodeUrl: string; expiresAt: string };
@@ -107,7 +113,23 @@ export async function uploadFile(file: File) {
     const { data } = await apiClient.post("/files/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });
-    return data as { fileUrl: string };
+    return data as { storagePath: string };
+}
+
+// React Native / mobile helper: upload from URI (expo-camera, image picker, etc.)
+export async function uploadFileFromUri(uri: string, name: string, mimeType: string) {
+    const formData = new FormData();
+    // In React Native, the "file" can be an object with uri/name/type
+    formData.append("file", {
+        // @ts-expect-error: React Native FormData file shape
+        uri,
+        name,
+        type: mimeType,
+    });
+    const { data } = await apiClient.post("/files/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data as { storagePath: string };
 }
 
 export async function getSignedUrl(path: string) {
@@ -221,9 +243,23 @@ export async function getCalendarEvents(startDate: string, endDate: string) {
 
 // ─── AI Classification ────────────────────────────────
 
-export async function classifyDocument(file: File) {
+export async function classifyDocument(file: any) {
     const formData = new FormData();
     formData.append("file", file);
+    const { data } = await apiClient.post("/documents/classify", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+}
+
+export async function classifyDocumentFromUri(uri: string, name: string, mimeType: string) {
+    const formData = new FormData();
+    formData.append("file", {
+        // @ts-expect-error: React Native FormData file shape
+        uri,
+        name,
+        type: mimeType,
+    });
     const { data } = await apiClient.post("/documents/classify", formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });

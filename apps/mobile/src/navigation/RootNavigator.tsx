@@ -3,11 +3,13 @@ import { useAuthStore } from "@healthguard/stores";
 import { TabNavigator } from "./TabNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
 import { ScannerScreen } from "../screens/ScannerScreen";
+import { DocumentDetailScreen } from "../screens/DocumentDetailScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
   MainTabs: undefined;
   Scanner: undefined;
+  DocumentDetail: { id: string; title?: string } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -20,10 +22,15 @@ export function RootNavigator() {
       {token ? (
         <>
           <Stack.Screen name="MainTabs" component={TabNavigator} />
-          <Stack.Screen 
-            name="Scanner" 
-            component={ScannerScreen} 
-            options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} 
+          <Stack.Screen
+            name="Scanner"
+            component={ScannerScreen}
+            options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
+          />
+          <Stack.Screen
+            name="DocumentDetail"
+            component={DocumentDetailScreen}
+            options={{ headerShown: true, title: "Documento" }}
           />
         </>
       ) : (

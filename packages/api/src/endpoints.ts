@@ -229,9 +229,7 @@ export async function getNotifications(params: {
 }
 
 export async function markNotificationAsRead(id: string) {
-    const { data } = await apiClient.patch(`/notifications/${id}`, {
-        isRead: true,
-    });
+    const { data } = await apiClient.patch(`/notifications/${id}/read`);
     return data;
 }
 
@@ -239,7 +237,7 @@ export async function registerDeviceToken(
     token: string,
     deviceType: string
 ) {
-    const { data } = await apiClient.post("/notifications/device-token", {
+    const { data } = await apiClient.post("/notifications/devices", {
         token,
         deviceType,
     });

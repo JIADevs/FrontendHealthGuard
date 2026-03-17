@@ -3,11 +3,12 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NavigationContainer } from "@react-navigation/native";
 import { RootNavigator } from "./src/navigation/RootNavigator";
-import { useAuthStore } from "@healthguard/stores";
+import { navigationRef } from "./src/navigation/navigationRef";
+import { useAuthStore, useNotifStore } from "@healthguard/stores";
 import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
-import { setApiAuthProviders } from "@healthguard/api";
+import { setApiAuthProviders, getNotifications } from "@healthguard/api";
 
 setApiAuthProviders({
   getToken: () => useAuthStore.getState().token,
@@ -21,15 +22,28 @@ const queryClient = new QueryClient();
 
 export default function App() {
   const isHydrated = useAuthStore((s) => s.isHydrated);
-  usePushNotifications(); // Registers token internally on mount
+  const token = useAuthStore((s) => s.token);
+  const setUnreadCount = useNotifStore((s) => s.setUnreadCount);
+
+  // Pasa el JWT para que el registro FCM ocurra solo después del login
+  usePushNotifications(token);
 
   useEffect(() => {
-    // Si la hidratación automática falla o tarda mucho, forzamos el estado 
-    // para que el usuario pueda ver al menos la pantalla de login.
     if (!useAuthStore.getState().isHydrated) {
       useAuthStore.getState().setHydrated();
     }
   }, []);
+
+  // Carga el contador de no leídas cuando el usuario se autentica
+  useEffect(() => {
+    if (!token) return;
+    getNotifications({ page: 1, limit: 50 })
+      .then((res) => {
+        const unread = res.items.filter((n) => !n.isRead).length;
+        setUnreadCount(unread);
+      })
+      .catch(() => {});
+  }, [token, setUnreadCount]);
 
   if (!isHydrated) {
     return (
@@ -42,7 +56,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
           <RootNavigator />
         </NavigationContainer>
         <StatusBar style="auto" />

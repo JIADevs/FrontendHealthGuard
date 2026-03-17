@@ -1,102 +1,116 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Platform } from "react-native";
+
+declare const __DEV__: boolean;
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import Constants from "expo-constants";
 import { registerDeviceToken } from "@healthguard/api";
+import { navigateTo } from "../navigation/navigationRef";
 
 export interface PushNotificationState {
-  expoPushToken?: Notifications.ExpoPushToken;
   notification?: Notifications.Notification;
 }
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
   }),
 });
 
-export const usePushNotifications = (): PushNotificationState => {
-  const [expoPushToken, setExpoPushToken] = useState<Notifications.ExpoPushToken>();
-  const [notification, setNotification] = useState<Notifications.Notification>();
-
+export const usePushNotifications = (authToken?: string | null): PushNotificationState => {
+  const notificationRef = useRef<Notifications.Notification>();
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
+  // Evita re-registrar en cada refresh de token — solo registra una vez por sesión
+  const hasRegistered = useRef(false);
 
-  async function registerForPushNotificationsAsync() {
-    let token;
-    if (Device.isDevice) {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
+  const registerForPushNotificationsAsync = useCallback(async () => {
+    if (!Device.isDevice) {
+      if (__DEV__) console.warn("Se requiere un dispositivo físico para notificaciones push");
+      return;
+    }
 
-      if (existingStatus !== "granted") {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-      if (finalStatus !== "granted") {
-        console.warn("Permiso denegado para recibir notificaciones push");
-        return;
-      }
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
 
-      const projectId =
-        Constants?.expoConfig?.extra?.eas?.projectId ??
-        Constants?.easConfig?.projectId;
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
 
-      if (!projectId) {
-        console.warn(
-          "No hay projectId configurado para notificaciones push (expo notifications). " +
-            "Esto es normal en Expo Go. Para usar push en Android/iOS, crea un desarrollo build y configura un projectId."
-        );
-        return;
-      }
-
-      try {
-        token = await Notifications.getExpoPushTokenAsync({ projectId });
-        // Enviar token al backend de HealthGuard
-        await registerDeviceToken({ token: token.data });
-      } catch (err) {
-        console.warn("Fallo obteniendo el push token", err);
-      }
-    } else {
-      console.warn("Debes usar un dispositivo físico para notificaciones Push");
+    if (finalStatus !== "granted") {
+      if (__DEV__) console.warn("Permiso denegado para recibir notificaciones push");
+      return;
     }
 
     if (Platform.OS === "android") {
-      Notifications.setNotificationChannelAsync("default", {
-        name: "default",
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "HealthGuard",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#0ea5e9",
+        sound: "default",
       });
     }
 
-    return token;
-  }
+    try {
+      const tokenData = await Notifications.getDevicePushTokenAsync();
+      const deviceType = Platform.OS === "ios" ? "ios" : "android";
+      await registerDeviceToken(tokenData.data, deviceType);
+      hasRegistered.current = true;
+    } catch (err) {
+      if (__DEV__) console.warn("Error obteniendo o registrando el token FCM", err);
+    }
+  }, []);
 
+  // Se registra solo una vez por sesión: cuando el usuario se autentica por primera vez
   useEffect(() => {
-    registerForPushNotificationsAsync().then((token) => {
-      setExpoPushToken(token);
-    });
+    if (!authToken || hasRegistered.current) return;
+    registerForPushNotificationsAsync();
+  }, [authToken, registerForPushNotificationsAsync]);
 
-    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
-      setNotification(notification);
-    });
+  // Resetea el flag al cerrar sesión para que el próximo login registre de nuevo
+  useEffect(() => {
+    if (!authToken) {
+      hasRegistered.current = false;
+    }
+  }, [authToken]);
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
-      console.log(response);
-    });
+  // Listeners montados una sola vez, independientemente del auth
+  useEffect(() => {
+    notificationListener.current = Notifications.addNotificationReceivedListener(
+      (notification: Notifications.Notification) => {
+        notificationRef.current = notification;
+      }
+    );
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(
+      (response: Notifications.NotificationResponse) => {
+        const data = response.notification.request.content.data as Record<string, string>;
+        handleNotificationTap(data);
+      }
+    );
 
     return () => {
-      if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
-      }
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
-      }
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
     };
   }, []);
 
-  return { expoPushToken, notification };
+  return { notification: notificationRef.current };
 };
+
+function handleNotificationTap(data: Record<string, string>) {
+  switch (data?.type) {
+    case "APPOINTMENT":
+    case "MEDICATION":
+    case "CHECKIN":
+    case "SYSTEM":
+    case "INFO":
+    default:
+      navigateTo("Notifications");
+      break;
+  }
+}

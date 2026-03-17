@@ -5,6 +5,7 @@ import { LoginScreen } from "../screens/LoginScreen";
 import { ScannerScreen } from "../screens/ScannerScreen";
 import { DocumentUploadScreen } from "../screens/DocumentUploadScreen";
 import { DocumentDetailScreen } from "../screens/DocumentDetailScreen";
+import { NotificationsScreen } from "../screens/NotificationsScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -12,6 +13,7 @@ export type RootStackParamList = {
   Scanner: undefined;
   DocumentUpload: undefined;
   DocumentDetail: { id: string; title?: string } | undefined;
+  Notifications: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -38,6 +40,11 @@ export function RootNavigator() {
             name="DocumentDetail"
             component={DocumentDetailScreen}
             options={{ headerShown: true, title: "Documento" }}
+          />
+          <Stack.Screen
+            name="Notifications"
+            component={NotificationsScreen}
+            options={{ headerShown: true, title: "Notificaciones", animation: "slide_from_right" }}
           />
         </>
       ) : (

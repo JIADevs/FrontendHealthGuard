@@ -1,8 +1,8 @@
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, Alert, ScrollView, Image } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useQuery } from "@tanstack/react-query";
-import { getDocumentById, getSignedUrl, type Document } from "@healthguard/api";
+import { getDocumentById, getSignedUrl, getTagCategories, type Document, type TagCategoryOut } from "@healthguard/api";
 
 type RouteParams = {
   id: string;
@@ -36,6 +36,18 @@ export function DocumentDetailScreen() {
   const url = signedUrl.data?.url;
   const isPdf = d?.format?.toLowerCase().includes("pdf");
   const isImage = d?.format?.toLowerCase().match(/image|jpg|jpeg|png/);
+
+  const tagCategoriesQuery = useQuery({
+    queryKey: ["tag-categories"],
+    queryFn: getTagCategories,
+  });
+
+  const categoryMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    const cats = (tagCategoriesQuery.data as TagCategoryOut[] | undefined) ?? [];
+    for (const c of cats) map[c.id] = c.name;
+    return map;
+  }, [tagCategoriesQuery.data]);
 
   async function handleOpen() {
     if (!url) return;
@@ -81,6 +93,12 @@ export function DocumentDetailScreen() {
       <Text style={styles.title}>{d.title}</Text>
 
       <View style={styles.meta}>
+        {d.documentType?.name ? (
+          <Text style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Tipo de documento: </Text>
+            {d.documentType.name}
+          </Text>
+        ) : null}
         <Text style={styles.metaItem}>
           <Text style={styles.metaLabel}>Fecha del documento: </Text>
           {d.documentDate ? new Date(d.documentDate).toLocaleDateString() : "—"}
@@ -101,25 +119,35 @@ export function DocumentDetailScreen() {
         ) : null}
       </View>
 
-      {(d.subtypes.length > 0 || d.customTags.length > 0 || d.specialties.length > 0) && (
+      {(d.documentType || d.subtypes.length > 0 || d.customTags.length > 0 || d.specialties.length > 0) && (
         <View style={styles.tagsSection}>
           <Text style={styles.sectionTitle}>Etiquetas</Text>
           <View style={styles.tagsContainer}>
+            {d.documentType && (
+              <Text style={[styles.tag, styles.tagBlue]}>
+                Tipo de documento: {d.documentType.name}
+              </Text>
+            )}
             {d.subtypes.map((s) => (
               <Text key={s.id} style={[styles.tag, styles.tagBlue]}>
-                {s.name}
+                Subtipo: {s.name}
               </Text>
             ))}
             {d.specialties.map((s) => (
               <Text key={s.id} style={[styles.tag, styles.tagAmber]}>
-                {s.name}
+                Especialidad: {s.name}
               </Text>
             ))}
-            {d.customTags.map((t) => (
-              <Text key={t.id} style={[styles.tag, styles.tagGreen]}>
-                {t.value}
-              </Text>
-            ))}
+            {d.customTags.map((t) => {
+              const catId = t.categoryId ?? (t as { category_id?: string }).category_id;
+              const categoryName = catId ? categoryMap[catId] : null;
+              const label = categoryName ? `${categoryName}: ${t.value}` : t.value;
+              return (
+                <Text key={t.id} style={[styles.tag, styles.tagGreen]}>
+                  {label}
+                </Text>
+              );
+            })}
           </View>
         </View>
       )}
@@ -141,6 +169,16 @@ export function DocumentDetailScreen() {
           ) : (
             <Text style={styles.buttonText}>Ver documento</Text>
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.buttonSecondary}
+          onPress={() => navigation.navigate("DocumentEdit", { id: d.id })}
+          accessibilityRole="button"
+          accessibilityLabel="Editar documento"
+          disabled={doc.isLoading}
+        >
+          <Text style={styles.buttonSecondaryText}>Editar</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -220,6 +258,8 @@ const styles = StyleSheet.create({
   },
   actions: {
     marginTop: 8,
+    flexDirection: "row",
+    gap: 12,
   },
   preview: {
     marginBottom: 16,
@@ -239,12 +279,28 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
+    flex: 1,
+  },
+  buttonSecondary: {
+    backgroundColor: "#fff",
+    borderRadius: 999,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#0ea5e9",
   },
   buttonDisabled: {
     backgroundColor: "#94a3b8",
   },
   buttonText: {
     color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  buttonSecondaryText: {
+    color: "#0ea5e9",
     fontSize: 15,
     fontWeight: "700",
   },

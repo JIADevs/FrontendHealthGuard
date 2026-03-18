@@ -1,19 +1,48 @@
-import { useState, useCallback } from "react";
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { View, Text, TextInput, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { getDocuments, shareDocument } from "@healthguard/api";
-import { FileText, Camera, Share2, Plus, FileUp, X } from "lucide-react-native";
+import { FileText, Camera, Share2, Plus, FileUp, X, Search } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/RootNavigator";
 
 export function DocumentsScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [fabOpen, setFabOpen] = useState(false);
   const [animation] = useState(() => new Animated.Value(0));
 
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const trimmed = search.trim();
+    if (!trimmed) {
+      setDebouncedSearch("");
+      return;
+    }
+
+    debounceRef.current = setTimeout(() => setDebouncedSearch(trimmed), 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [search]);
+
   const docs = useQuery({
-    queryKey: ["documents"],
-    queryFn: () => getDocuments({ page: 1, limit: 20 }),
+    queryKey: ["documents", 1, debouncedSearch],
+    queryFn: () =>
+      getDocuments({
+        page: 1,
+        limit: 20,
+        searchQuery: debouncedSearch || undefined,
+      }),
+    staleTime: 5_000,
+    keepPreviousData: true,
   });
 
   const toggleFab = useCallback(() => {
@@ -89,6 +118,30 @@ export function DocumentsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Documentos</Text>
+        <View style={styles.searchBar}>
+          <Search size={18} color="#64748b" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por nombre o etiqueta..."
+            placeholderTextColor="#94a3b8"
+            value={search}
+            onChangeText={setSearch}
+            autoCorrect={false}
+            autoCapitalize="none"
+            returnKeyType="search"
+            accessibilityLabel="Buscar documentos"
+          />
+          {search.trim().length > 0 && (
+            <TouchableOpacity
+              style={styles.clearBtn}
+              onPress={() => setSearch("")}
+              accessibilityRole="button"
+              accessibilityLabel="Limpiar búsqueda"
+            >
+              <X size={18} color="#64748b" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {docs.isLoading && !docs.isRefetching ? (
@@ -123,7 +176,11 @@ export function DocumentsScreen() {
           )}
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={styles.empty}>No tienes documentos aún.</Text>
+              <Text style={styles.empty}>
+                {debouncedSearch.trim()
+                  ? "Sin resultados para esta búsqueda."
+                  : "No tienes documentos aún."}
+              </Text>
             </View>
           }
         />
@@ -193,6 +250,30 @@ const styles = StyleSheet.create({
   header: { padding: 24, paddingBottom: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e2e8f0" },
   title: { fontSize: 24, fontWeight: "800", color: "#0f172a" },
   list: { padding: 16, gap: 12 },
+  searchBar: {
+    marginTop: 14,
+    backgroundColor: "#f1f5f9",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#0f172a",
+    paddingVertical: 0,
+  },
+  clearBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#e2e8f0",
+  },
   card: { flexDirection: "row", alignItems: "center", gap: 16, backgroundColor: "#fff", padding: 16, borderRadius: 16, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
   iconBg: { width: 48, height: 48, borderRadius: 12, backgroundColor: "#e0f2fe", alignItems: "center", justifyContent: "center" },
   info: { flex: 1 },

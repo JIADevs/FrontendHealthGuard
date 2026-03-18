@@ -5,6 +5,7 @@ import { LoginScreen } from "../screens/LoginScreen";
 import { ScannerScreen } from "../screens/ScannerScreen";
 import { DocumentUploadScreen } from "../screens/DocumentUploadScreen";
 import { DocumentDetailScreen } from "../screens/DocumentDetailScreen";
+import { DocumentEditScreen } from "../screens/DocumentEditScreen";
 import { NotificationsScreen } from "../screens/NotificationsScreen";
 
 export type RootStackParamList = {
@@ -13,6 +14,7 @@ export type RootStackParamList = {
   Scanner: undefined;
   DocumentUpload: undefined;
   DocumentDetail: { id: string; title?: string } | undefined;
+  DocumentEdit: { id: string } | undefined;
   Notifications: undefined;
 };
 
@@ -40,6 +42,11 @@ export function RootNavigator() {
             name="DocumentDetail"
             component={DocumentDetailScreen}
             options={{ headerShown: true, title: "Documento" }}
+          />
+          <Stack.Screen
+            name="DocumentEdit"
+            component={DocumentEditScreen}
+            options={{ headerShown: true, title: "Editar documento" }}
           />
           <Stack.Screen
             name="Notifications"

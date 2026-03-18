@@ -54,6 +54,7 @@ export interface DocumentFormActions {
   setSelectedType: (id: string | undefined) => void;
   setSelectedSpecialty: (id: string | undefined) => void;
   toggleTag: (tagId: string) => void;
+  setSelectedTags: (tagIds: string[]) => void;
   setTitle: (title: string) => void;
   setNewTagValue: (categoryId: string, text: string) => void;
   setNewCategoryName: (name: string) => void;
@@ -200,7 +201,8 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
           tagValueIds: selectedTags,
         });
 
-        queryClient.invalidateQueries({ queryKey: ["documents"] });
+        // Invalidate también las queries que incluyen el término de búsqueda (queryKey: ["documents", 1, search])
+        queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
         navigation.goBack();
         return;
       } catch (err: any) {
@@ -283,6 +285,7 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
     setSelectedType,
     setSelectedSpecialty,
     toggleTag,
+    setSelectedTags,
     setTitle,
     setNewTagValue: setNewTagValueForCategory,
     setNewCategoryName,

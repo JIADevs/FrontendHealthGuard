@@ -3,6 +3,7 @@ import {
     TokenResponseSchema,
     UserProfileSchema,
     DocumentPageSchema,
+    DocumentSchema,
     AppointmentPageSchema,
     MedicationPageSchema,
     NotificationPageSchema,
@@ -82,6 +83,11 @@ export async function createDocument(doc: DocumentCreate) {
     return data;
 }
 
+export async function updateDocument(id: string, doc: DocumentCreate) {
+    const { data } = await apiClient.put(`/documents/${id}`, doc);
+    return DocumentSchema.parse(data);
+}
+
 export async function deleteDocument(id: string) {
     await apiClient.delete(`/documents/${id}`);
 }
@@ -134,12 +140,7 @@ export async function uploadFile(file: File) {
 export async function uploadFileFromUri(uri: string, name: string, mimeType: string) {
     const formData = new FormData();
     // In React Native, the "file" can be an object with uri/name/type
-    formData.append("file", {
-        // @ts-expect-error: React Native FormData file shape
-        uri,
-        name,
-        type: mimeType,
-    });
+    formData.append("file", { uri, name, type: mimeType } as any);
     const { data } = await apiClient.post("/files/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });
@@ -267,12 +268,7 @@ export async function classifyDocument(file: File | Blob) {
 
 export async function classifyDocumentFromUri(uri: string, name: string, mimeType: string) {
     const formData = new FormData();
-    formData.append("file", {
-        // @ts-expect-error: React Native FormData file shape
-        uri,
-        name,
-        type: mimeType,
-    });
+    formData.append("file", { uri, name, type: mimeType } as any);
     const { data } = await apiClient.post("/documents/classify", formData, {
         headers: { "Content-Type": "multipart/form-data" },
         timeout: 120_000,

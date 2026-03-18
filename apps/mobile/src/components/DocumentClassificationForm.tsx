@@ -12,7 +12,7 @@ import type { DocumentFormState, DocumentFormActions, FileSource } from "../hook
 
 type Props = DocumentFormState &
   DocumentFormActions & {
-    file: FileSource;
+    file?: FileSource;
   };
 
 export function DocumentClassificationForm({
@@ -41,6 +41,7 @@ export function DocumentClassificationForm({
   handleAddCategoryAndTag,
 }: Props) {
   const currentType = catalogs.types.find((t) => t.id === selectedType);
+  const canRunAI = !!file;
 
   return (
     <View style={styles.form}>
@@ -48,9 +49,12 @@ export function DocumentClassificationForm({
 
       {/* AI Button */}
       <TouchableOpacity
-        style={[styles.aiBtn, classifying && styles.aiBtnDisabled]}
-        onPress={() => handleAIClassify(file)}
-        disabled={classifying}
+        style={[styles.aiBtn, (!canRunAI || classifying) && styles.aiBtnDisabled]}
+        onPress={() => {
+          if (!file) return;
+          handleAIClassify(file);
+        }}
+        disabled={!canRunAI || classifying}
       >
         <Sparkles color="#fff" size={20} />
         <Text style={styles.aiBtnText}>

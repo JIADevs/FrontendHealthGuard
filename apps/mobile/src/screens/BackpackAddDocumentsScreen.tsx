@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
-import { getBackpackById, getBackpackDocuments, getDocuments, addDocToBackpack, isApiError, type Document } from "@healthguard/api";
+import { getBackpackById, getBackpackDocuments, getDocuments, addDocToBackpack, isApiError, type Document, type DocumentPage } from "@healthguard/api";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
 import { Search, Plus, Check, X } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -52,14 +52,29 @@ export function BackpackAddDocumentsScreen() {
   });
 
   const existingDocsQuery = useQuery({
-    queryKey: ["backpack-docs", id, 1, ""],
-    queryFn: () => getBackpackDocuments({ backpackId: id, page: 1, limit: 200 }),
+    queryKey: ["backpack-doc-ids", id],
+    queryFn: async () => {
+      const ids = new Set<string>();
+      let page = 1;
+      let totalPages = 1;
+      do {
+        const res: DocumentPage = await getBackpackDocuments({
+          backpackId: id,
+          page,
+          limit: 100,
+        });
+        res.items.forEach((doc) => ids.add(doc.id));
+        totalPages = res.totalPages;
+        page += 1;
+      } while (page <= totalPages);
+      return ids;
+    },
     enabled: !!id,
     staleTime: 5_000,
   });
 
   const existingIds = useMemo(
-    () => new Set((existingDocsQuery.data?.items ?? []).map((d) => d.id)),
+    () => existingDocsQuery.data ?? new Set<string>(),
     [existingDocsQuery.data]
   );
 
@@ -178,9 +193,7 @@ export function BackpackAddDocumentsScreen() {
               <Text style={styles.empty}>
                 {debouncedSearch.trim()
                   ? "Sin resultados."
-                  : existingIds.size > 0 && (docsQuery.data?.items.length ?? 0) === existingIds.size
-                  ? "Todos tus documentos ya están en esta mochila."
-                  : "No hay documentos disponibles."}
+                  : "No hay documentos disponibles para agregar."}
               </Text>
             </View>
           )

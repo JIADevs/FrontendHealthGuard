@@ -75,18 +75,7 @@ export function BackpackDetailScreen() {
   const removeMut = useMutation({
     mutationFn: ({ documentId }: { documentId: string; title: string }) =>
       removeDocFromBackpack(id, documentId),
-    onMutate: async ({ documentId, title }) => {
-      await queryClient.cancelQueries({ queryKey: ["backpack-docs", id] });
-      const previousDocs = queryClient.getQueryData(["backpack-docs", id, 1, debouncedSearch]);
-      queryClient.setQueryData(
-        ["backpack-docs", id, 1, debouncedSearch],
-        (old: DocumentPage | undefined) =>
-          old ? { ...old, items: old.items.filter((d) => d.id !== documentId) } : old
-      );
-      return { previousDocs, title };
-    },
-    onError: (err, _, ctx) => {
-      queryClient.setQueryData(["backpack-docs", id, 1, debouncedSearch], ctx?.previousDocs);
+    onError: (err) => {
       const message = isApiError(err) ? err.message : "No se pudo eliminar el documento.";
       Toast.show({ type: "error", text1: "Error al eliminar", text2: message });
     },
@@ -118,19 +107,14 @@ export function BackpackDetailScreen() {
 
   const [shareOpen, setShareOpen] = useState(false);
   const [shareData, setShareData] = useState<null | { shareUrl: string; qrCodeUrl: string }>(null);
+  const [deleteDocTarget, setDeleteDocTarget] = useState<Document | null>(null);
+  const [removingDocId, setRemovingDocId] = useState<string | null>(null);
 
   const handleRemove = useCallback(
     (doc: Document) => {
-      Alert.alert("Eliminar del backpack", `¿Querés eliminar "${doc.title}" de esta mochila?`, [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: () => removeMut.mutate({ documentId: doc.id, title: doc.title }),
-        },
-      ]);
+      setDeleteDocTarget(doc);
     },
-    [removeMut]
+    []
   );
 
   const handleDeleteBackpack = useCallback(() => {
@@ -316,9 +300,14 @@ export function BackpackDetailScreen() {
               <TouchableOpacity
                 onPress={() => handleRemove(item)}
                 style={styles.removeBtn}
+                disabled={removingDocId === item.id}
                 accessibilityLabel={`Eliminar ${item.title} del backpack`}
               >
-                <Trash2 size={18} color="#64748b" />
+                {removingDocId === item.id ? (
+                  <ActivityIndicator size="small" color="#64748b" />
+                ) : (
+                  <Trash2 size={18} color="#64748b" />
+                )}
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -444,6 +433,47 @@ export function BackpackDetailScreen() {
           </View>
         </View>
       )}
+
+      {deleteDocTarget && (
+        <View style={styles.modalOverlay} pointerEvents="auto">
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>Eliminar documento</Text>
+            <Text style={styles.modalSub}>
+              ¿Querés eliminar "{deleteDocTarget.title}" de esta mochila?
+            </Text>
+
+            <View style={styles.confirmActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.secondaryBtn]}
+                onPress={() => setDeleteDocTarget(null)}
+                accessibilityLabel="Cancelar eliminación"
+              >
+                <Text style={styles.secondaryBtnText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.dangerBtn]}
+                onPress={() => {
+                  const target = deleteDocTarget;
+                  setDeleteDocTarget(null);
+                  setRemovingDocId(target.id);
+                  removeMut.mutate(
+                    { documentId: target.id, title: target.title },
+                    {
+                      onSettled: () => {
+                        setRemovingDocId(null);
+                      },
+                    }
+                  );
+                }}
+                accessibilityLabel="Confirmar eliminación"
+              >
+                <Text style={styles.dangerBtnText}>Eliminar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -481,6 +511,8 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: "#fff", fontWeight: "800", fontSize: 14 },
   secondaryBtn: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#0ea5e9" },
   secondaryBtnText: { color: "#0ea5e9", fontWeight: "800", fontSize: 14 },
+  dangerBtn: { backgroundColor: "#ef4444" },
+  dangerBtnText: { color: "#fff", fontWeight: "800", fontSize: 14 },
   ghostBtn: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e2e8f0" },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.3)" },
   fab: {
@@ -544,9 +576,10 @@ const styles = StyleSheet.create({
   modal: { width: "90%", backgroundColor: "#fff", borderRadius: 18, padding: 18, gap: 10, elevation: 10, shadowColor: "#000", shadowOpacity: 0.25 },
   modalTitle: { fontSize: 18, fontWeight: "900", color: "#0f172a", marginTop: 2 },
   modalSub: { fontSize: 13, color: "#64748b", marginTop: -2 },
+  confirmActions: { flexDirection: "row", gap: 10, marginTop: 8 },
   linkText: { fontSize: 13, color: "#0f172a", paddingVertical: 4 },
   qrWrap: { alignItems: "center", justifyContent: "center", marginVertical: 8, padding: 10, backgroundColor: "#f8fafc", borderRadius: 16, borderWidth: 1, borderColor: "#e2e8f0" },
   qrImg: { width: 170, height: 170 },
-  modalBtn: { borderRadius: 14, paddingVertical: 12, alignItems: "center", justifyContent: "center" },
+  modalBtn: { flex: 1, minHeight: 48, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, alignItems: "center", justifyContent: "center" },
 });
 

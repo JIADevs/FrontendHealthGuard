@@ -190,56 +190,59 @@ export function useDocumentForm(options?: UseDocumentFormOptions): DocumentFormS
     }
 
     setUploading(true);
+    try {
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          const { storagePath } = await uploadFileFromUri(file.uri, file.name, file.mimeType);
 
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const { storagePath } = await uploadFileFromUri(file.uri, file.name, file.mimeType);
+          const today = new Date();
+          const docTitle = title || `Documento ${today.toLocaleDateString()}`;
+          const createdDoc = await createDocument({
+            title: docTitle,
+            fileUrl: storagePath,
+            format: file.mimeType,
+            file_size_bytes: file.size ?? 0,
+            documentDate: today.toISOString(),
+            typeId: selectedType,
+            subtypeIds: [],
+            specialtyIds: selectedSpecialty ? [selectedSpecialty] : [],
+            tagValueIds: selectedTags,
+          });
 
-        const today = new Date();
-        const docTitle = title || `Documento ${today.toLocaleDateString()}`;
-        const createdDoc = await createDocument({
-          title: docTitle,
-          fileUrl: storagePath,
-          format: file.mimeType,
-          file_size_bytes: file.size ?? 0,
-          documentDate: today.toISOString(),
-          typeId: selectedType,
-          subtypeIds: [],
-          specialtyIds: selectedSpecialty ? [selectedSpecialty] : [],
-          tagValueIds: selectedTags,
-        });
+          if (options?.backpackId) {
+            await addDocToBackpack(options.backpackId, createdDoc.id);
+            queryClient.invalidateQueries({ queryKey: ["backpack-docs", options.backpackId], exact: false });
+            queryClient.invalidateQueries({ queryKey: ["backpack", options.backpackId], exact: false });
+          }
 
-        if (options?.backpackId) {
-          await addDocToBackpack(options.backpackId, createdDoc.id);
-          queryClient.invalidateQueries({ queryKey: ["backpack-docs", options.backpackId], exact: false });
-          queryClient.invalidateQueries({ queryKey: ["backpack", options.backpackId], exact: false });
-        }
-
-        // Invalidate también las queries que incluyen el término de búsqueda (queryKey: ["documents", 1, search])
-        queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
-        Toast.show({
-          type: "success",
-          text1: options?.backpackId ? "Documento subido y agregado a la mochila" : "Documento creado",
-          text2: options?.backpackName ?? docTitle,
-        });
-        navigation.goBack();
-        return;
-      } catch (err: any) {
-        console.warn(`Upload attempt ${attempt}/${MAX_RETRIES} failed:`, err);
-
-        if (attempt >= MAX_RETRIES) {
-          const detail = err.fieldErrors
-            ? Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join("\n")
-            : err.message || "Ha ocurrido un error inesperado";
-          Toast.show({ type: "error", text1: "No se pudo subir el documento", text2: detail });
-          Alert.alert("Error de subida", detail);
-        } else {
-          await delay(RETRY_BASE_MS * Math.pow(2, attempt - 1));
+          queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
+          Toast.show({
+            type: "success",
+            text1: options?.backpackId ? "Documento subido y agregado a la mochila" : "Documento creado",
+            text2: options?.backpackName ?? docTitle,
+          });
+          navigation.goBack();
+          return;
+        } catch (err) {
+          if (attempt >= MAX_RETRIES) {
+            let detail = "Ha ocurrido un error inesperado";
+            if (isApiError(err)) {
+              detail = err.fieldErrors
+                ? Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join("\n")
+                : err.message;
+            } else if (err instanceof Error) {
+              detail = err.message;
+            }
+            Toast.show({ type: "error", text1: "No se pudo subir el documento", text2: detail });
+            Alert.alert("Error de subida", detail);
+          } else {
+            await delay(RETRY_BASE_MS * Math.pow(2, attempt - 1));
+          }
         }
       }
+    } finally {
+      setUploading(false);
     }
-
-    setUploading(false);
   }, [uploading, title, selectedType, selectedSpecialty, selectedTags, queryClient, navigation, options?.backpackId, options?.backpackName]);
 
   const handleAddCustomTag = useCallback(async (categoryId: string) => {

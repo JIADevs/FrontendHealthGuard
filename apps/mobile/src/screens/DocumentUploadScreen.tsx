@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,17 +12,13 @@ import {
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import { useNavigation } from "@react-navigation/native";
-import {
-  X,
-  Check,
-  FileUp,
-  FileText as FileTextIcon,
-  ImageIcon,
-} from "lucide-react-native";
+import { X, Check, FileUp, FileText as FileTextIcon, ImageIcon } from "lucide-react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
 
 const ACCEPTED_TYPES = [
   "application/pdf",
@@ -44,6 +40,9 @@ function friendlySize(bytes: number) {
 }
 
 export function DocumentUploadScreen() {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const form = useDocumentForm();
 
@@ -78,17 +77,16 @@ export function DocumentUploadScreen() {
     pickDocument();
   }, []);
 
-  // ── No file selected: show picker prompt ──
   if (!pickerAsset) {
     return (
       <View style={styles.pickerScreen}>
         <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
-          <X color="#64748b" size={24} />
+          <X color={t.text.secondary} size={24} />
         </TouchableOpacity>
 
         <View style={styles.pickerContent}>
           <View style={styles.pickerIconBg}>
-            <FileUp color="#0ea5e9" size={48} />
+            <FileUp color={colors.sky[500]} size={48} />
           </View>
           <Text style={styles.pickerTitle}>Subir Documento</Text>
           <Text style={styles.pickerSubtitle}>
@@ -102,7 +100,6 @@ export function DocumentUploadScreen() {
     );
   }
 
-  // ── File selected: preview + classification form ──
   const isImage = isImageMime(pickerAsset.mimeType || "");
   const fileSource: FileSource = {
     uri: pickerAsset.uri,
@@ -114,20 +111,13 @@ export function DocumentUploadScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={{ flex: 1 }}>
-        {/* Preview */}
         <View style={styles.previewContainer}>
           {isImage ? (
-            <Image
-              source={{ uri: pickerAsset.uri }}
-              style={styles.previewImage}
-              resizeMode="contain"
-            />
+            <Image source={{ uri: pickerAsset.uri }} style={styles.previewImage} resizeMode="contain" />
           ) : (
             <View style={styles.pdfPreview}>
-              <FileTextIcon color="#0ea5e9" size={64} />
-              <Text style={styles.pdfName} numberOfLines={2}>
-                {pickerAsset.name}
-              </Text>
+              <FileTextIcon color={colors.sky[500]} size={64} />
+              <Text style={styles.pdfName} numberOfLines={2}>{pickerAsset.name}</Text>
               {pickerAsset.size != null && (
                 <Text style={styles.pdfSize}>{friendlySize(pickerAsset.size)}</Text>
               )}
@@ -135,16 +125,13 @@ export function DocumentUploadScreen() {
           )}
         </View>
 
-        {/* File info bar */}
         <View style={styles.fileInfoBar}>
           {isImage ? (
-            <ImageIcon color="#64748b" size={16} />
+            <ImageIcon color={t.text.secondary} size={16} />
           ) : (
-            <FileTextIcon color="#64748b" size={16} />
+            <FileTextIcon color={t.text.secondary} size={16} />
           )}
-          <Text style={styles.fileInfoText} numberOfLines={1}>
-            {pickerAsset.name}
-          </Text>
+          <Text style={styles.fileInfoText} numberOfLines={1}>{pickerAsset.name}</Text>
           <TouchableOpacity onPress={pickDocument}>
             <Text style={styles.changeFileLink}>Cambiar</Text>
           </TouchableOpacity>
@@ -153,128 +140,53 @@ export function DocumentUploadScreen() {
         <DocumentClassificationForm file={fileSource} {...form} />
       </ScrollView>
 
-      {/* Bottom action bar */}
       <View style={styles.previewControls}>
-        <TouchableOpacity
-          style={styles.circleBtnRed}
-          onPress={() => navigation.goBack()}
-          disabled={form.uploading}
-        >
-          <X color="#fff" size={24} />
+        <TouchableOpacity style={styles.circleBtnRed} onPress={() => navigation.goBack()} disabled={form.uploading}>
+          <X color={colors.white} size={24} />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.circleBtnGreen}
-          onPress={() => form.handleUpload(fileSource)}
-          disabled={form.uploading}
-        >
-          {form.uploading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Check color="#fff" size={32} />
-          )}
+        <TouchableOpacity style={styles.circleBtnGreen} onPress={() => form.handleUpload(fileSource)} disabled={form.uploading}>
+          {form.uploading ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={32} />}
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  pickerScreen: { flex: 1, backgroundColor: "#fff" },
-  closeBtn: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 56 : 24,
-    left: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#f1f5f9",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-  },
-  pickerContent: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-  },
-  pickerIconBg: {
-    width: 96,
-    height: 96,
-    borderRadius: 24,
-    backgroundColor: "#e0f2fe",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
-  pickerTitle: { fontSize: 24, fontWeight: "800", color: "#0f172a", marginBottom: 8 },
-  pickerSubtitle: {
-    fontSize: 15,
-    color: "#64748b",
-    textAlign: "center",
-    marginBottom: 32,
-    lineHeight: 22,
-  },
-  pickerBtn: {
-    backgroundColor: "#0ea5e9",
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  pickerBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    pickerScreen: { flex: 1, backgroundColor: t.surface.bgCard },
+    closeBtn: {
+      position: "absolute",
+      top: Platform.OS === "ios" ? 56 : 24,
+      left: 20,
+      width: 44,
+      height: 44,
+      borderRadius: radii.full,
+      backgroundColor: t.border.light,
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10,
+    },
+    pickerContent:  { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 32 },
+    pickerIconBg:   { width: 96, height: 96, borderRadius: 24, backgroundColor: colors.sky[100], alignItems: "center", justifyContent: "center", marginBottom: spacing[6] },
+    pickerTitle:    { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[2] },
+    pickerSubtitle: { fontSize: fontSize.base, color: t.text.secondary, textAlign: "center", marginBottom: 32, lineHeight: 22 },
+    pickerBtn:      { backgroundColor: colors.sky[500], paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14 },
+    pickerBtnText:  { color: colors.white, fontWeight: fontWeight.bold, fontSize: fontSize.md },
 
-  container: { flex: 1, backgroundColor: "#000" },
+    container:        { flex: 1, backgroundColor: colors.black },
+    previewContainer: { height: 350, backgroundColor: t.surface.bg, justifyContent: "center", alignItems: "center" },
+    previewImage:     { width: "100%", height: "100%" },
+    pdfPreview:       { alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
+    pdfName:          { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: t.text.primary, textAlign: "center", maxWidth: 260 },
+    pdfSize:          { fontSize: fontSize.sm, color: t.text.secondary },
 
-  previewContainer: {
-    height: 350,
-    backgroundColor: "#f8fafc",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  previewImage: { width: "100%", height: "100%" },
-  pdfPreview: { alignItems: "center", justifyContent: "center", gap: 12, padding: 24 },
-  pdfName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#0f172a",
-    textAlign: "center",
-    maxWidth: 260,
-  },
-  pdfSize: { fontSize: 13, color: "#64748b" },
+    fileInfoBar:    { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: t.surface.bgCard, paddingHorizontal: spacing[5], paddingVertical: spacing[3] },
+    fileInfoText:   { flex: 1, fontSize: fontSize.sm, color: t.text.primary, fontWeight: fontWeight.medium },
+    changeFileLink: { fontSize: fontSize.sm, color: colors.sky[500], fontWeight: fontWeight.semibold },
 
-  fileInfoBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#fff",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  fileInfoText: { flex: 1, fontSize: 13, color: "#334155", fontWeight: "500" },
-  changeFileLink: { fontSize: 13, color: "#0ea5e9", fontWeight: "600" },
-
-  previewControls: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 32,
-    paddingBottom: 48,
-    backgroundColor: "#fff",
-    paddingTop: 12,
-  },
-  circleBtnRed: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#ef4444",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  circleBtnGreen: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#22c55e",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+    previewControls: { flexDirection: "row", justifyContent: "center", gap: 32, paddingBottom: 48, backgroundColor: t.surface.bgCard, paddingTop: spacing[3] },
+    circleBtnRed:    { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.error[500], alignItems: "center", justifyContent: "center" },
+    circleBtnGreen:  { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.success[500], alignItems: "center", justifyContent: "center" },
+  });
+}

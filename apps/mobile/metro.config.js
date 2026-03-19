@@ -15,16 +15,18 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, "node_modules"),
 ];
 
-// 3. Force Metro to resolve (sub)dependencies only from the `nodeModulesPaths`
-config.resolver.disableHierarchicalLookup = true;
-
-// 4. Force Metro to strictly use the workspace's version of React Native
+// 3. Force Metro to strictly use the workspace's version of React Native
 config.resolver.extraNodeModules = {
-  "react-native": path.resolve(workspaceRoot, "node_modules/react-native"),
-  "expo-asset": path.resolve(projectRoot, "node_modules/expo-asset"),
+  // Workspace packages
   "@healthguard/stores": path.resolve(workspaceRoot, "packages/stores"),
-  "@healthguard/api": path.resolve(workspaceRoot, "packages/api"),
+  "@healthguard/api":    path.resolve(workspaceRoot, "packages/api"),
   "@healthguard/config": path.resolve(workspaceRoot, "packages/config"),
+  "@healthguard/ui":     path.resolve(workspaceRoot, "packages/ui"),
+
+  // Pinned native packages
+  "react-native":              path.resolve(workspaceRoot, "node_modules/react-native"),
+  "expo-asset":                path.resolve(projectRoot,   "node_modules/expo-asset"),
+  "react-native-toast-message": path.resolve(workspaceRoot, "node_modules/react-native-toast-message"),
 };
 
 module.exports = config;

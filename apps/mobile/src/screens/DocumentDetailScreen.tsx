@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, A
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useQuery } from "@tanstack/react-query";
 import { getDocumentById, getSignedUrl, getTagCategories, type Document, type TagCategoryOut } from "@healthguard/api";
+import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = {
   id: string;
@@ -10,6 +12,9 @@ type RouteParams = {
 };
 
 export function DocumentDetailScreen() {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+
   const route = useRoute();
   const navigation = useNavigation();
   const { id, title } = (route.params ?? {}) as RouteParams;
@@ -34,7 +39,6 @@ export function DocumentDetailScreen() {
 
   const d = doc.data as Document | undefined;
   const url = signedUrl.data?.url;
-  const isPdf = d?.format?.toLowerCase().includes("pdf");
   const isImage = d?.format?.toLowerCase().match(/image|jpg|jpeg|png/);
 
   const tagCategoriesQuery = useQuery({
@@ -75,7 +79,7 @@ export function DocumentDetailScreen() {
   if (doc.isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
+        <ActivityIndicator size="large" color={colors.sky[500]} />
       </View>
     );
   }
@@ -165,7 +169,7 @@ export function DocumentDetailScreen() {
           disabled={!url || signedUrl.isLoading}
         >
           {signedUrl.isLoading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.white} />
           ) : (
             <Text style={styles.buttonText}>Ver documento</Text>
           )}
@@ -185,128 +189,39 @@ export function DocumentDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8fafc",
-  },
-  content: {
-    padding: 20,
-  },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#0f172a",
-    marginBottom: 16,
-  },
-  meta: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  metaItem: {
-    fontSize: 14,
-    color: "#475569",
-    marginBottom: 4,
-  },
-  metaLabel: {
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-  tagsSection: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0f172a",
-    marginBottom: 8,
-  },
-  tagsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  tag: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-  tagBlue: {
-    backgroundColor: "#e0f2fe",
-  },
-  tagAmber: {
-    backgroundColor: "#fef3c7",
-  },
-  tagGreen: {
-    backgroundColor: "#dcfce7",
-  },
-  actions: {
-    marginTop: 8,
-    flexDirection: "row",
-    gap: 12,
-  },
-  preview: {
-    marginBottom: 16,
-    backgroundColor: "#000",
-    borderRadius: 16,
-    overflow: "hidden",
-    height: 400,
-  },
-  image: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
-  },
-  button: {
-    backgroundColor: "#0ea5e9",
-    borderRadius: 999,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-  },
-  buttonSecondary: {
-    backgroundColor: "#fff",
-    borderRadius: 999,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#0ea5e9",
-  },
-  buttonDisabled: {
-    backgroundColor: "#94a3b8",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  buttonSecondaryText: {
-    color: "#0ea5e9",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  error: {
-    fontSize: 15,
-    color: "#ef4444",
-  },
-});
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: t.surface.bg },
+    content:   { padding: spacing[5] },
+    center:    { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing[6] },
+    title:     { fontSize: fontSize["2xl"], fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[4] },
 
+    meta: {
+      backgroundColor: t.surface.bgCard,
+      borderRadius: radii.lg,
+      padding: spacing[4],
+      marginBottom: spacing[5],
+      ...shadows.md,
+    },
+    metaItem:  { fontSize: 14, color: t.text.secondary, marginBottom: 4 },
+    metaLabel: { fontWeight: fontWeight.semibold, color: t.text.primary },
+
+    tagsSection:   { marginBottom: spacing[6] },
+    sectionTitle:  { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: t.text.primary, marginBottom: spacing[2] },
+    tagsContainer: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
+    tag:           { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.full, fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.primary },
+    tagBlue:       { backgroundColor: colors.sky[100] },
+    tagAmber:      { backgroundColor: colors.warning[50] },
+    tagGreen:      { backgroundColor: colors.success[50] },
+
+    actions:         { marginTop: spacing[2], flexDirection: "row", gap: spacing[3] },
+    preview:         { marginBottom: spacing[4], backgroundColor: colors.black, borderRadius: radii.lg, overflow: "hidden", height: 400 },
+    image:           { flex: 1, width: "100%", height: "100%" },
+    button:          { backgroundColor: colors.sky[500], borderRadius: radii.full, paddingVertical: 14, alignItems: "center", justifyContent: "center", flex: 1 },
+    buttonSecondary: { backgroundColor: t.surface.bgCard, borderRadius: radii.full, paddingVertical: 14, alignItems: "center", justifyContent: "center", flex: 1, borderWidth: 1, borderColor: colors.sky[500] },
+    buttonDisabled:      { backgroundColor: t.border.medium },
+    buttonText:          { color: colors.white, fontSize: fontSize.base, fontWeight: fontWeight.bold },
+    buttonSecondaryText: { color: colors.sky[500], fontSize: fontSize.base, fontWeight: fontWeight.bold },
+    error:               { fontSize: fontSize.base, color: colors.error[500] },
+  });
+}

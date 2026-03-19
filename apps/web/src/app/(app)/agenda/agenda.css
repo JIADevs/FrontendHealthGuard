@@ -109,9 +109,9 @@
   white-space: nowrap;
 }
 
-.status-badge.pending { background: var(--warning-50); color: #92400e; }
-.status-badge.completed { background: var(--success-50); color: #15803d; }
-.status-badge.cancelled { background: var(--error-50); color: #991b1b; }
+.status-badge.pending { background: var(--warning-50); color: var(--amber-800); }
+.status-badge.completed { background: var(--success-50); color: var(--green-700); }
+.status-badge.cancelled { background: var(--error-50); color: var(--error-800); }
 .status-badge.rescheduled { background: var(--primary-50); color: var(--primary-700); }
 
 /* ---------- Status selector ---------- */
@@ -124,7 +124,7 @@
   font-weight: 500;
   cursor: pointer;
   outline: none;
-  background: white;
+  background: var(--bg-card);
   transition: border-color var(--transition);
 }
 
@@ -160,7 +160,7 @@
 
 .btn-intake:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+  box-shadow: 0 2px 8px var(--success-ring);
 }
 
 /* ---------- Notification dropdown ---------- */
@@ -169,7 +169,7 @@
   top: calc(100% + 8px);
   right: 0;
   width: 360px;
-  background: white;
+  background: var(--bg-card);
   border-radius: var(--radius);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-lg);
@@ -214,7 +214,7 @@
 }
 
 .notif-item.unread:hover {
-  background: #dbeafe;
+  background: var(--primary-100);
 }
 
 .notif-dot {

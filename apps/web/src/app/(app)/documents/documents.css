@@ -15,14 +15,14 @@
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-family: inherit;
-  background: white;
+  background: var(--bg-card);
   outline: none;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
 .search-input:focus {
   border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  box-shadow: 0 0 0 3px var(--primary-ring-sm);
 }
 
 .search-wrapper {
@@ -83,9 +83,9 @@
   font-weight: 700;
 }
 
-.doc-card-icon.pdf { background: #fef2f2; color: #dc2626; }
-.doc-card-icon.img { background: #f0fdf4; color: #16a34a; }
-.doc-card-icon.dcm { background: #eff6ff; color: #2563eb; }
+.doc-card-icon.pdf { background: var(--error-50);   color: var(--error-600); }
+.doc-card-icon.img { background: var(--success-50); color: var(--success-600); }
+.doc-card-icon.dcm { background: var(--primary-50); color: var(--primary-600); }
 .doc-card-icon.other { background: var(--gray-100); color: var(--gray-600); }
 
 .doc-card-title {
@@ -123,8 +123,8 @@
   white-space: nowrap;
 }
 
-.tag-chip.green { background: var(--success-50); color: #15803d; }
-.tag-chip.amber { background: var(--warning-50); color: #92400e; }
+.tag-chip.green { background: var(--success-50); color: var(--green-700); }
+.tag-chip.amber { background: var(--warning-50); color: var(--amber-800); }
 
 .doc-card-actions {
   display: flex;
@@ -139,7 +139,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-dark);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -149,29 +149,19 @@
   animation: fadeIn 200ms ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 .modal {
-  background: white;
+  background: var(--bg-card);
   border-radius: 16px;
   width: 100%;
   max-width: 600px;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 50px -12px var(--overlay-shadow);
   animation: slideUp 250ms ease;
 }
 
 .modal.wide {
   max-width: 800px;
-}
-
-@keyframes slideUp {
-  from { transform: translateY(16px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
 }
 
 .modal-header {
@@ -264,7 +254,7 @@
   cursor: pointer;
   text-align: center;
   transition: all var(--transition);
-  background: white;
+  background: var(--bg-card);
 }
 
 .template-card:hover {
@@ -275,7 +265,7 @@
 .template-card.selected {
   border-color: var(--primary-500);
   background: var(--primary-50);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-ring-md);
 }
 
 .template-card-icon {
@@ -376,7 +366,7 @@
 .pagination button {
   padding: 8px 14px;
   border: 1px solid var(--border);
-  background: white;
+  background: var(--bg-card);
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 500;
@@ -430,7 +420,7 @@
 }
 
 .btn-secondary {
-  background: white;
+  background: var(--bg-card);
   color: var(--gray-700);
   border: 1px solid var(--border);
 }

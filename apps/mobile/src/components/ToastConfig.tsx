@@ -2,13 +2,14 @@ import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react-native";
 import type { ToastConfig } from "react-native-toast-message";
+import { colors, toastBg, radii, spacing, fontSize, fontWeight } from "@healthguard/ui";
 
-// ─── Colores por tipo ────────────────────────────────────────────────────────
+// ─── Colores por tipo (dark toasts) ──────────────────────────────────────────
 const VARIANTS = {
-  success: { icon: CheckCircle2, color: "#22c55e", bg: "#052e16", border: "#16a34a" },
-  error:   { icon: XCircle,      color: "#f87171", bg: "#2d0a0a", border: "#dc2626" },
-  warning: { icon: AlertTriangle, color: "#fbbf24", bg: "#1c1100", border: "#d97706" },
-  info:    { icon: Info,          color: "#38bdf8", bg: "#0c1a2e", border: "#0284c7" },
+  success: { icon: CheckCircle2,  color: colors.success[500], bg: toastBg.success, border: colors.success[600] },
+  error:   { icon: XCircle,       color: colors.error[400],   bg: toastBg.error,   border: colors.error[600] },
+  warning: { icon: AlertTriangle, color: colors.warning[500], bg: toastBg.warning, border: colors.amber[600] },
+  info:    { icon: Info,           color: colors.sky[400],     bg: toastBg.info,    border: colors.sky[600] },
 } as const;
 
 type VariantKey = keyof typeof VARIANTS;
@@ -29,23 +30,9 @@ function ToastItem({ text1, text2, type }: ToastItemProps) {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(translateY, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 80,
-        friction: 9,
-      }),
-      Animated.spring(scale, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 80,
-        friction: 9,
-      }),
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 180,
-        useNativeDriver: true,
-      }),
+      Animated.spring(translateY, { toValue: 0, useNativeDriver: true, tension: 80, friction: 9 }),
+      Animated.spring(scale,      { toValue: 1, useNativeDriver: true, tension: 80, friction: 9 }),
+      Animated.timing(opacity,    { toValue: 1, duration: 180, useNativeDriver: true }),
     ]).start();
   }, []);
 
@@ -61,28 +48,18 @@ function ToastItem({ text1, text2, type }: ToastItemProps) {
         },
       ]}
     >
-      {/* Línea de color izquierda ya viene del borderLeftColor, más el ícono */}
       <View style={[styles.iconWrap, { backgroundColor: variant.border + "22" }]}>
         <Icon color={variant.color} size={20} strokeWidth={2.5} />
       </View>
 
       <View style={styles.textWrap}>
-        {text1 ? (
-          <Text style={styles.title} numberOfLines={1}>
-            {text1}
-          </Text>
-        ) : null}
-        {text2 ? (
-          <Text style={styles.subtitle} numberOfLines={2}>
-            {text2}
-          </Text>
-        ) : null}
+        {text1 ? <Text style={styles.title} numberOfLines={1}>{text1}</Text> : null}
+        {text2 ? <Text style={styles.subtitle} numberOfLines={2}>{text2}</Text> : null}
       </View>
     </Animated.View>
   );
 }
 
-// ─── Config exportable ───────────────────────────────────────────────────────
 export const toastConfig: ToastConfig = {
   success: (props) => <ToastItem type="success" text1={props.text1} text2={props.text2} />,
   error:   (props) => <ToastItem type="error"   text1={props.text1} text2={props.text2} />,
@@ -90,19 +67,17 @@ export const toastConfig: ToastConfig = {
   info:    (props) => <ToastItem type="info"    text1={props.text1} text2={props.text2} />,
 };
 
-// ─── Estilos ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     width: "92%",
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: spacing[3],
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing[4],
     borderRadius: 14,
     borderLeftWidth: 4,
-    // Sombra
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
@@ -111,24 +86,12 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: radii.sm,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
-  textWrap: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    color: "#f1f5f9",
-    fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 0.1,
-  },
-  subtitle: {
-    color: "#94a3b8",
-    fontSize: 12,
-    lineHeight: 17,
-  },
+  textWrap: { flex: 1, gap: 2 },
+  title:    { color: colors.slate[100], fontSize: 14, fontWeight: fontWeight.bold, letterSpacing: 0.1 },
+  subtitle: { color: colors.slate[400], fontSize: fontSize.xs, lineHeight: 17 },
 });

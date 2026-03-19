@@ -1,10 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@healthguard/stores";
 import { login, isApiError } from "@healthguard/api";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
 
 export function LoginScreen() {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,6 +50,7 @@ export function LoginScreen() {
           <TextInput
             style={styles.input}
             placeholder="nombre@ejemplo.com"
+            placeholderTextColor={t.text.muted}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -55,6 +61,7 @@ export function LoginScreen() {
           <TextInput
             style={styles.input}
             placeholder="••••••••"
+            placeholderTextColor={t.text.muted}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -65,7 +72,7 @@ export function LoginScreen() {
             disabled={loading || !email || !password}
             onPress={handleLogin}
           >
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Entrar</Text>}
+            {loading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
           </TouchableOpacity>
         </View>
       </View>
@@ -73,19 +80,21 @@ export function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  content: { flex: 1, padding: 24, justifyContent: "center" },
-  header: { alignItems: "center", marginBottom: 40 },
-  logo: { width: 60, height: 60, borderRadius: 16, backgroundColor: "#0ea5e9", alignItems: "center", justifyContent: "center", marginBottom: 16 },
-  logoText: { color: "#fff", fontSize: 28, fontWeight: "800" },
-  title: { fontSize: 24, fontWeight: "800", color: "#0f172a", marginBottom: 8 },
-  subtitle: { fontSize: 16, color: "#64748b" },
-  form: { gap: 16 },
-  label: { fontSize: 14, fontWeight: "600", color: "#334155", marginBottom: -8 },
-  input: { borderWidth: 1, borderColor: "#cbd5e1", borderRadius: 12, padding: 14, fontSize: 16, backgroundColor: "#f8fafc" },
-  button: { backgroundColor: "#0ea5e9", padding: 16, borderRadius: 12, alignItems: "center", marginTop: 8 },
-  buttonDisabled: { opacity: 0.7 },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  error: { color: "#dc2626", backgroundColor: "#fef2f2", padding: 12, borderRadius: 8, overflow: "hidden", marginBottom: 16, textAlign: "center" },
-});
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    container:      { flex: 1, backgroundColor: t.surface.bgCard },
+    content:        { flex: 1, padding: spacing[6], justifyContent: "center" },
+    header:         { alignItems: "center", marginBottom: 40 },
+    logo:           { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
+    logoText:       { color: colors.white, fontSize: 28, fontWeight: fontWeight.extrabold },
+    title:          { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[2] },
+    subtitle:       { fontSize: fontSize.md, color: t.text.secondary },
+    form:           { gap: spacing[4] },
+    label:          { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: -8 },
+    input:          { borderWidth: 1, borderColor: t.border.medium, borderRadius: radii.md, padding: 14, fontSize: fontSize.md, backgroundColor: t.surface.bg, color: t.text.primary },
+    button:         { backgroundColor: colors.sky[500], padding: spacing[4], borderRadius: radii.md, alignItems: "center", marginTop: spacing[2] },
+    buttonDisabled: { opacity: 0.7 },
+    buttonText:     { color: colors.white, fontSize: fontSize.md, fontWeight: fontWeight.semibold },
+    error:          { color: colors.error[600], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, overflow: "hidden", marginBottom: spacing[4], textAlign: "center" },
+  });
+}

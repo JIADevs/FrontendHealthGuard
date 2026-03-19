@@ -5,6 +5,7 @@ declare const __DEV__: boolean;
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { registerDeviceToken } from "@healthguard/api";
+import { colors } from "@healthguard/ui";
 import { navigateTo } from "../navigation/navigationRef";
 
 export interface PushNotificationState {
@@ -50,7 +51,7 @@ export const usePushNotifications = (authToken?: string | null): PushNotificatio
         name: "HealthGuard",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#0ea5e9",
+        lightColor: colors.sky[500],
         sound: "default",
       });
     }

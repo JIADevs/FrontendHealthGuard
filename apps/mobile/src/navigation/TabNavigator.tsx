@@ -6,6 +6,7 @@ import { AgendaScreen } from "../screens/AgendaScreen";
 import { NotificationsScreen } from "../screens/NotificationsScreen";
 import { LayoutDashboard, FileText, CalendarDays, Bell } from "lucide-react-native";
 import { useUnreadCount } from "@healthguard/stores";
+import { colors, radii, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
 
 export type TabParamList = {
   Dashboard: undefined;
@@ -31,14 +32,17 @@ function NotificationsBadge({ color, size }: { color: string; size: number }) {
 }
 
 export function TabNavigator() {
+  const t = useAppTheme();
+
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: "#0ea5e9",
-        tabBarInactiveTintColor: "#64748b",
+        tabBarActiveTintColor: colors.sky[500],
+        tabBarInactiveTintColor: t.text.secondary,
         headerShown: false,
         tabBarStyle: {
-          borderTopColor: "#e2e8f0",
+          backgroundColor: t.surface.bgCard,
+          borderTopColor: t.border.medium,
           elevation: 0,
           shadowOpacity: 0,
         },
@@ -49,9 +53,7 @@ export function TabNavigator() {
         component={DashboardScreen}
         options={{
           title: "Inicio",
-          tabBarIcon: ({ color, size }) => (
-            <LayoutDashboard color={color} size={size} />
-          ),
+          tabBarIcon: ({ color, size }) => <LayoutDashboard color={color} size={size} />,
         }}
       />
       <Tab.Screen
@@ -59,9 +61,7 @@ export function TabNavigator() {
         component={DocumentsScreen}
         options={{
           title: "Documentos",
-          tabBarIcon: ({ color, size }) => (
-            <FileText color={color} size={size} />
-          ),
+          tabBarIcon: ({ color, size }) => <FileText color={color} size={size} />,
         }}
       />
       <Tab.Screen
@@ -69,9 +69,7 @@ export function TabNavigator() {
         component={AgendaScreen}
         options={{
           title: "Agenda",
-          tabBarIcon: ({ color, size }) => (
-            <CalendarDays color={color} size={size} />
-          ),
+          tabBarIcon: ({ color, size }) => <CalendarDays color={color} size={size} />,
         }}
       />
       <Tab.Screen
@@ -79,9 +77,7 @@ export function TabNavigator() {
         component={NotificationsScreen}
         options={{
           title: "Alertas",
-          tabBarIcon: ({ color, size }) => (
-            <NotificationsBadge color={color} size={size} />
-          ),
+          tabBarIcon: ({ color, size }) => <NotificationsBadge color={color} size={size} />,
         }}
       />
     </Tab.Navigator>
@@ -95,16 +91,16 @@ const styles = StyleSheet.create({
     right: -6,
     minWidth: 16,
     height: 16,
-    borderRadius: 8,
-    backgroundColor: "#ef4444",
+    borderRadius: radii.full,
+    backgroundColor: colors.error[500],
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 3,
   },
   badgeText: {
-    color: "#fff",
-    fontSize: 9,
-    fontWeight: "800",
+    color: colors.white,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.extrabold,
     lineHeight: 11,
   },
 });

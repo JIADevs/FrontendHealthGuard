@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
 import { setApiAuthProviders, getNotifications } from "@healthguard/api";
+import { ThemeProvider, colors } from "@healthguard/ui";
 
 setApiAuthProviders({
   getToken: () => useAuthStore.getState().token,
@@ -50,20 +51,22 @@ export default function App() {
   if (!isHydrated) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
+        <ActivityIndicator size="large" color={colors.sky[500]} />
       </View>
     );
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
-        <NavigationContainer ref={navigationRef}>
-          <RootNavigator />
-        </NavigationContainer>
-        <Toast config={toastConfig} position="bottom" bottomOffset={90} visibilityTime={3500} />
-        <StatusBar style="auto" />
-      </SafeAreaProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <NavigationContainer ref={navigationRef}>
+            <RootNavigator />
+          </NavigationContainer>
+          <Toast config={toastConfig} position="bottom" bottomOffset={90} visibilityTime={3500} />
+          <StatusBar style="auto" />
+        </SafeAreaProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

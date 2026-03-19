@@ -10,6 +10,7 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
+import Toast from "react-native-toast-message";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
@@ -178,6 +179,11 @@ export function DocumentEditScreen() {
       // Refresh list + avoid stale results even if the user has search active.
       queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["document", id] });
+      Toast.show({
+        type: "success",
+        text1: "Cambios guardados",
+        text2: trimmedTitle,
+      });
       navigation.goBack();
     } catch (err) {
       console.warn("Error saving document", err);
@@ -188,6 +194,7 @@ export function DocumentEditScreen() {
               .join("\n")
           : err.message
         : "No se pudo guardar el documento.";
+      Toast.show({ type: "error", text1: "No se pudieron guardar los cambios", text2: message });
       Alert.alert("Error", message);
     } finally {
       setSaving(false);

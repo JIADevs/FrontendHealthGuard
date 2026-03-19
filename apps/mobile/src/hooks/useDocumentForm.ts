@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Alert } from "react-native";
+import Toast from "react-native-toast-message";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -189,8 +190,9 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
         const { storagePath } = await uploadFileFromUri(file.uri, file.name, file.mimeType);
 
         const today = new Date();
+        const docTitle = title || `Documento ${today.toLocaleDateString()}`;
         await createDocument({
-          title: title || `Documento ${today.toLocaleDateString()}`,
+          title: docTitle,
           fileUrl: storagePath,
           format: file.mimeType,
           file_size_bytes: file.size ?? 0,
@@ -203,6 +205,11 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
 
         // Invalidate también las queries que incluyen el término de búsqueda (queryKey: ["documents", 1, search])
         queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
+        Toast.show({
+          type: "success",
+          text1: "Documento creado",
+          text2: docTitle,
+        });
         navigation.goBack();
         return;
       } catch (err: any) {
@@ -212,6 +219,7 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
           const detail = err.fieldErrors
             ? Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join("\n")
             : err.message || "Ha ocurrido un error inesperado";
+          Toast.show({ type: "error", text1: "No se pudo subir el documento", text2: detail });
           Alert.alert("Error de subida", detail);
         } else {
           await delay(RETRY_BASE_MS * Math.pow(2, attempt - 1));

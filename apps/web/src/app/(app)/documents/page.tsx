@@ -34,6 +34,7 @@ import {
   type DocumentTypeOut,
   type DocumentCreate,
 } from "@healthguard/api";
+import { sileo } from "sileo";
 
 import "./documents.css";
 
@@ -81,6 +82,13 @@ export default function DocumentsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documents"] });
       setDeleteTarget(null);
+      sileo.success({ title: "Documento eliminado" });
+    },
+    onError: (err) => {
+      sileo.error({
+        title: "Error al eliminar",
+        description: isApiError(err) ? err.message : "No se pudo eliminar el documento.",
+      });
     },
   });
 
@@ -240,9 +248,12 @@ function UploadModal({ onClose }: { onClose: () => void }) {
       };
       await createDocument(docPayload);
       qc.invalidateQueries({ queryKey: ["documents"] });
+      sileo.success({ title: "Documento creado" });
       onClose();
     } catch (err) {
-      setError(isApiError(err) ? err.message : "Error subiendo documento");
+      const message = isApiError(err) ? err.message : "Error subiendo documento";
+      setError(message);
+      sileo.error({ title: "Error al subir", description: message });
     } finally {
       setUploading(false);
     }

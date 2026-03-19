@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore, useNotifStore, useUnreadCount } from "@healthguard/stores";
 import { getNotifications, markNotificationAsRead } from "@healthguard/api";
 import Link from "next/link";
+import { Toaster } from "sileo";
 import {
   LayoutDashboard,
   FileText,
@@ -101,6 +102,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
         <main className="page-content">{children}</main>
       </div>
+      <Toaster position="top-right" />
     </div>
   );
 }

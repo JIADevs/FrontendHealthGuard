@@ -103,7 +103,7 @@ export default function DashboardPage() {
         <div className="card-body">
           {appts.isLoading ? (
             <div className="empty-state">
-              <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto" }} />
+              <div className="spinner spinner--page" style={{ margin: "0 auto" }} />
             </div>
           ) : (appts.data?.items.length ?? 0) === 0 ? (
             <div className="empty-state">
@@ -165,7 +165,7 @@ export default function DashboardPage() {
         <div className="card-body">
           {meds.isLoading ? (
             <div className="empty-state">
-              <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto" }} />
+              <div className="spinner spinner--page" style={{ margin: "0 auto" }} />
             </div>
           ) : (meds.data?.items.length ?? 0) === 0 ? (
             <div className="empty-state">

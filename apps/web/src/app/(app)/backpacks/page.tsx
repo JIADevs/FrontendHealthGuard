@@ -85,7 +85,7 @@ export default function BackpacksPage() {
 
       {bps.isLoading ? (
         <div className="empty-state">
-          <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto", width: 32, height: 32 }} />
+          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
         </div>
       ) : (bps.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
@@ -236,7 +236,7 @@ function BackpackDetail({ id, onBack }: { id: string; onBack: () => void }) {
 
       {bp.isLoading ? (
         <div className="empty-state">
-          <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto", width: 32, height: 32 }} />
+          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
         </div>
       ) : bp.data ? (
         <>
@@ -365,7 +365,7 @@ function AddDocsModal({ backpackId, existingIds, onClose }: { backpackId: string
         <div className="modal-body">
           {docs.isLoading ? (
             <div className="empty-state">
-              <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto", width: 32, height: 32 }} />
+              <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
             </div>
           ) : available.length === 0 ? (
             <div className="empty-state"><p>Todos tus documentos ya están en esta mochila.</p></div>

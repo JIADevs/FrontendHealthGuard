@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   View,
   Text,
@@ -9,7 +10,8 @@ import {
 } from "react-native";
 import { Sparkles } from "lucide-react-native";
 import type { DocumentFormState, DocumentFormActions, FileSource } from "../hooks/useDocumentForm";
-import { colors, surface, border, radii, spacing, fontSize, fontWeight } from "@healthguard/ui";
+import { useAppTheme, colors, radii, spacing, fontSize, fontWeight } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
 
 type Props = DocumentFormState &
   DocumentFormActions & {
@@ -41,7 +43,9 @@ export function DocumentClassificationForm({
   handleAddCustomTag,
   handleAddCategoryAndTag,
 }: Props) {
-  const currentType = catalogs.types.find((t) => t.id === selectedType);
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const currentType = catalogs.types.find((tp) => tp.id === selectedType);
   const canRunAI = !!file;
 
   return (
@@ -67,6 +71,7 @@ export function DocumentClassificationForm({
           result={classificationResult}
           catalogs={catalogs}
           selectedTags={selectedTags}
+          t={t}
         />
       )}
 
@@ -77,24 +82,24 @@ export function DocumentClassificationForm({
           value={title}
           onChangeText={setTitle}
           placeholder="Ej. Resultados Laboratorio"
-          placeholderTextColor={colors.slate[400]}
+          placeholderTextColor={t.text.muted}
         />
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>Tipo de Documento</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-          {catalogs.types.map((t) => (
+          {catalogs.types.map((tp) => (
             <TouchableOpacity
-              key={t.id}
-              style={[styles.chip, selectedType === t.id && styles.chipActive]}
+              key={tp.id}
+              style={[styles.chip, selectedType === tp.id && styles.chipActive]}
               onPress={() => {
-                setSelectedType(t.id);
+                setSelectedType(tp.id);
                 setSelectedSpecialty(undefined);
               }}
             >
-              <Text style={[styles.chipText, selectedType === t.id && styles.chipTextActive]}>
-                {t.name}
+              <Text style={[styles.chipText, selectedType === tp.id && styles.chipTextActive]}>
+                {tp.name}
               </Text>
             </TouchableOpacity>
           ))}
@@ -140,7 +145,7 @@ export function DocumentClassificationForm({
               <TextInput
                 style={styles.addTagInput}
                 placeholder="Nueva..."
-                placeholderTextColor={colors.slate[400]}
+                placeholderTextColor={t.text.muted}
                 value={newTagValues[category.id] || ""}
                 onChangeText={(text) => setNewTagValue(category.id, text)}
                 onSubmitEditing={() => handleAddCustomTag(category.id)}
@@ -169,14 +174,14 @@ export function DocumentClassificationForm({
             value={newCategoryName}
             onChangeText={setNewCategoryName}
             placeholder="Ej. Médico, Institución"
-            placeholderTextColor={colors.slate[400]}
+            placeholderTextColor={t.text.muted}
           />
           <TextInput
             style={[styles.input, styles.newTagInput]}
             value={newTagValue}
             onChangeText={setNewTagValueField}
             placeholder="Valor"
-            placeholderTextColor={colors.slate[400]}
+            placeholderTextColor={t.text.muted}
           />
           <TouchableOpacity
             style={styles.newTagSubmitBtn}
@@ -199,11 +204,14 @@ function ClassificationResultCard({
   result,
   catalogs,
   selectedTags,
-}: {
+  t,
+}: Readonly<{
   result: NonNullable<DocumentFormState["classificationResult"]>;
   catalogs: DocumentFormState["catalogs"];
-  selectedTags: string[];
-}) {
+  selectedTags: readonly string[];
+  t: ThemeContextValue;
+}>) {
+  const styles = useMemo(() => makeStyles(t), [t]);
   const appliedNames = catalogs.tags.flatMap((c) =>
     c.values.filter((v) => selectedTags.includes(v.id)).map((v) => `${c.name}: ${v.value}`)
   );
@@ -231,44 +239,46 @@ function ClassificationResultCard({
   );
 }
 
-const styles = StyleSheet.create({
-  form:      { padding: spacing[5], backgroundColor: surface.bgCard, flex: 1 },
-  formTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: colors.slate[900], marginBottom: spacing[4] },
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    form:      { padding: spacing[5], backgroundColor: t.surface.bgCard, flex: 1 },
+    formTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[4] },
 
-  aiBtn:         { backgroundColor: colors.violet[500], flexDirection: "row", alignItems: "center", justifyContent: "center", padding: spacing[3], borderRadius: radii.md, marginBottom: spacing[6], gap: spacing[2] },
-  aiBtnDisabled: { opacity: 0.7 },
-  aiBtnText:     { color: colors.white, fontWeight: fontWeight.bold, fontSize: 14 },
+    aiBtn:         { backgroundColor: colors.violet[500], flexDirection: "row", alignItems: "center", justifyContent: "center", padding: spacing[3], borderRadius: radii.md, marginBottom: spacing[6], gap: spacing[2] },
+    aiBtnDisabled: { opacity: 0.7 },
+    aiBtnText:     { color: colors.white, fontWeight: fontWeight.bold, fontSize: 14 },
 
-  classificationResult:      { backgroundColor: colors.sky[50], padding: 14, borderRadius: radii.md, marginBottom: spacing[5], borderWidth: 1, borderColor: colors.sky[200] },
-  classificationResultTitle: { fontSize: 14, fontWeight: fontWeight.bold, color: colors.sky[700], marginBottom: spacing[2] },
-  resultLine:                { fontSize: fontSize.sm, color: colors.sky[900], marginBottom: 4 },
-  resultLabel:               { fontWeight: fontWeight.semibold },
+    classificationResult:      { backgroundColor: colors.sky[50], padding: 14, borderRadius: radii.md, marginBottom: spacing[5], borderWidth: 1, borderColor: colors.sky[200] },
+    classificationResultTitle: { fontSize: 14, fontWeight: fontWeight.bold, color: colors.sky[700], marginBottom: spacing[2] },
+    resultLine:                { fontSize: fontSize.sm, color: colors.sky[900], marginBottom: 4 },
+    resultLabel:               { fontWeight: fontWeight.semibold },
 
-  field: { marginBottom: spacing[5] },
-  label: { fontSize: 14, fontWeight: fontWeight.semibold, color: colors.slate[500], marginBottom: spacing[2] },
-  input: {
-    backgroundColor: colors.slate[100],
-    padding: spacing[3],
-    borderRadius: radii.md,
-    fontSize: fontSize.md,
-    color: colors.slate[900],
-    borderWidth: 1,
-    borderColor: border.medium,
-  },
+    field: { marginBottom: spacing[5] },
+    label: { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.secondary, marginBottom: spacing[2] },
+    input: {
+      backgroundColor: t.border.light,
+      padding: spacing[3],
+      borderRadius: radii.md,
+      fontSize: fontSize.md,
+      color: t.text.primary,
+      borderWidth: 1,
+      borderColor: t.border.medium,
+    },
 
-  chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20 },
-  chip:        { paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.full, backgroundColor: colors.slate[100], marginRight: spacing[2], borderWidth: 1, borderColor: border.medium },
-  chipActive:  { backgroundColor: colors.sky[500], borderColor: colors.sky[500] },
-  chipText:    { fontSize: fontSize.sm, color: colors.slate[600], fontWeight: fontWeight.semibold },
-  chipTextActive: { color: colors.white },
+    chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20 },
+    chip:        { paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.full, backgroundColor: t.border.light, marginRight: spacing[2], borderWidth: 1, borderColor: t.border.medium },
+    chipActive:  { backgroundColor: colors.sky[500], borderColor: colors.sky[500] },
+    chipText:    { fontSize: fontSize.sm, color: t.text.secondary, fontWeight: fontWeight.semibold },
+    chipTextActive: { color: colors.white },
 
-  addTagContainer: { flexDirection: "row", alignItems: "center", backgroundColor: surface.bg, borderRadius: radii.full, paddingLeft: spacing[3], paddingRight: 4, borderWidth: 1, borderColor: border.medium, height: 36, marginLeft: 4 },
-  addTagInput:     { fontSize: fontSize.sm, color: colors.slate[900], width: 80, padding: 0 },
-  addTagBtn:       { width: 28, height: 28, borderRadius: 14, backgroundColor: surface.bgCard, alignItems: "center", justifyContent: "center", marginLeft: 4 },
-  addTagBtnText:   { color: colors.sky[500], fontSize: 18, fontWeight: fontWeight.bold },
+    addTagContainer: { flexDirection: "row", alignItems: "center", backgroundColor: t.surface.bg, borderRadius: radii.full, paddingLeft: spacing[3], paddingRight: 4, borderWidth: 1, borderColor: t.border.medium, height: 36, marginLeft: 4 },
+    addTagInput:     { fontSize: fontSize.sm, color: t.text.primary, width: 80, padding: 0 },
+    addTagBtn:       { width: 28, height: 28, borderRadius: 14, backgroundColor: t.surface.bgCard, alignItems: "center", justifyContent: "center", marginLeft: 4 },
+    addTagBtnText:   { color: colors.sky[500], fontSize: 18, fontWeight: fontWeight.bold },
 
-  newTagRow:       { flexDirection: "row", alignItems: "center", gap: spacing[2], flexWrap: "wrap" },
-  newTagInput:     { flex: 1, minWidth: 100 },
-  newTagSubmitBtn: { backgroundColor: colors.sky[500], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radii.md, justifyContent: "center" },
-  newTagSubmitText: { color: colors.white, fontWeight: fontWeight.semibold, fontSize: 14 },
-});
+    newTagRow:       { flexDirection: "row", alignItems: "center", gap: spacing[2], flexWrap: "wrap" },
+    newTagInput:     { flex: 1, minWidth: 100 },
+    newTagSubmitBtn: { backgroundColor: colors.sky[500], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radii.md, justifyContent: "center" },
+    newTagSubmitText: { color: colors.white, fontWeight: fontWeight.semibold, fontSize: 14 },
+  });
+}

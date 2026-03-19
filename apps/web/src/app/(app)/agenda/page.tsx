@@ -117,7 +117,7 @@ function AppointmentsTab() {
 
       {appts.isLoading ? (
         <div className="empty-state">
-          <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto", width: 32, height: 32 }} />
+          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
         </div>
       ) : (appts.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
@@ -333,7 +333,7 @@ function MedicationsTab() {
 
       {meds.isLoading ? (
         <div className="empty-state">
-          <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto", width: 32, height: 32 }} />
+          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
         </div>
       ) : (meds.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">

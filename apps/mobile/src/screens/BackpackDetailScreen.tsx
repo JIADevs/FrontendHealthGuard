@@ -23,12 +23,17 @@ import { getBackpackById, getBackpackDocuments, removeDocFromBackpack, deleteBac
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
 import { Camera, FileText, FileUp, Plus, Search, Share2, Trash2, Edit2, X } from "lucide-react-native";
+import { useAppTheme, colors } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
+
 type RouteParams = { id: string };
 
 export function BackpackDetailScreen() {
   const route = useRoute();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
   const { id } = (route.params ?? {}) as RouteParams;
 
   const [search, setSearch] = useState("");
@@ -67,7 +72,6 @@ export function BackpackDetailScreen() {
       }),
     enabled: !!id,
     staleTime: 5_000,
-    keepPreviousData: true,
   });
 
   const docs = useMemo(() => (docsQuery.data?.items ?? []) as DocumentPage["items"], [docsQuery.data]);
@@ -110,12 +114,9 @@ export function BackpackDetailScreen() {
   const [deleteDocTarget, setDeleteDocTarget] = useState<Document | null>(null);
   const [removingDocId, setRemovingDocId] = useState<string | null>(null);
 
-  const handleRemove = useCallback(
-    (doc: Document) => {
-      setDeleteDocTarget(doc);
-    },
-    []
-  );
+  const handleRemove = useCallback((doc: Document) => {
+    setDeleteDocTarget(doc);
+  }, []);
 
   const handleDeleteBackpack = useCallback(() => {
     Alert.alert("Eliminar mochila", "¿Querés eliminar esta mochila y sus enlaces?", [
@@ -184,39 +185,18 @@ export function BackpackDetailScreen() {
   );
 
   const shareLink = useMemo(() => shareData?.shareUrl ?? "", [shareData]);
-  const rotation = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "45deg"],
-  });
-  const backdropOpacity = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-  const option1TranslateY = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -80],
-  });
-  const option2TranslateY = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -150],
-  });
-  const option3TranslateY = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -220],
-  });
-  const optionScale = animation.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, 0, 1],
-  });
-  const optionOpacity = animation.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, 0, 1],
-  });
+  const rotation = animation.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "45deg"] });
+  const backdropOpacity = animation.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  const option1TranslateY = animation.interpolate({ inputRange: [0, 1], outputRange: [0, -80] });
+  const option2TranslateY = animation.interpolate({ inputRange: [0, 1], outputRange: [0, -150] });
+  const option3TranslateY = animation.interpolate({ inputRange: [0, 1], outputRange: [0, -220] });
+  const optionScale = animation.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0, 1] });
+  const optionOpacity = animation.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0, 1] });
 
   if (backpackQuery.isLoading && !backpackQuery.isRefetching) {
     return (
       <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
+        <ActivityIndicator size="large" color={colors.sky[500]} />
       </SafeAreaView>
     );
   }
@@ -236,16 +216,16 @@ export function BackpackDetailScreen() {
         </View>
 
         <TouchableOpacity style={styles.iconBtn} onPress={handleDeleteBackpack} accessibilityLabel="Eliminar mochila">
-          <Trash2 size={18} color="#ef4444" />
+          <Trash2 size={18} color={colors.error[500]} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.searchBar}>
-        <Search size={18} color="#64748b" />
+        <Search size={18} color={t.text.secondary} />
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar documentos..."
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={t.text.muted}
           value={search}
           onChangeText={setSearch}
           accessibilityLabel="Buscar dentro de la mochila"
@@ -254,7 +234,7 @@ export function BackpackDetailScreen() {
         />
         {search.trim().length > 0 && (
           <TouchableOpacity style={styles.clearBtn} onPress={() => setSearch("")} accessibilityLabel="Limpiar búsqueda">
-            <X size={18} color="#64748b" />
+            <X size={18} color={t.text.secondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -267,14 +247,14 @@ export function BackpackDetailScreen() {
           <RefreshControl
             refreshing={docsQuery.isRefetching}
             onRefresh={() => docsQuery.refetch()}
-            colors={["#0ea5e9"]}
-            tintColor="#0ea5e9"
+            colors={[colors.sky[500]]}
+            tintColor={colors.sky[500]}
           />
         }
         ListEmptyComponent={
           docsQuery.isLoading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color="#0ea5e9" />
+              <ActivityIndicator size="large" color={colors.sky[500]} />
             </View>
           ) : (
             <View style={styles.center}>
@@ -304,9 +284,9 @@ export function BackpackDetailScreen() {
                 accessibilityLabel={`Eliminar ${item.title} del backpack`}
               >
                 {removingDocId === item.id ? (
-                  <ActivityIndicator size="small" color="#64748b" />
+                  <ActivityIndicator size="small" color={t.text.secondary} />
                 ) : (
-                  <Trash2 size={18} color="#64748b" />
+                  <Trash2 size={18} color={t.text.secondary} />
                 )}
               </TouchableOpacity>
             </View>
@@ -320,7 +300,7 @@ export function BackpackDetailScreen() {
           onPress={openShare}
           accessibilityLabel="Compartir mochila"
         >
-          <Share2 size={18} color="#fff" />
+          <Share2 size={18} color={colors.white} />
           <Text style={styles.primaryBtnText}>Compartir</Text>
         </TouchableOpacity>
 
@@ -329,7 +309,7 @@ export function BackpackDetailScreen() {
           onPress={() => navigation.navigate("BackpackEdit", { id })}
           accessibilityLabel="Editar mochila"
         >
-          <Edit2 size={18} color="#0ea5e9" />
+          <Edit2 size={18} color={colors.sky[500]} />
         </TouchableOpacity>
       </View>
 
@@ -340,68 +320,50 @@ export function BackpackDetailScreen() {
       )}
 
       <Animated.View
-        style={[
-          styles.fabOption,
-          {
-            transform: [{ translateY: option3TranslateY }, { scale: optionScale }],
-            opacity: optionOpacity,
-          },
-        ]}
+        style={[styles.fabOption, { transform: [{ translateY: option3TranslateY }, { scale: optionScale }], opacity: optionOpacity }]}
         pointerEvents={fabOpen ? "auto" : "none"}
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={openAddFromDocs}>
           <View style={styles.fabOptionLabel}>
             <Text style={styles.fabOptionText}>Desde mis documentos</Text>
           </View>
-          <View style={[styles.fabSmall, { backgroundColor: "#0ea5e9" }]}>
-            <FileText color="#fff" size={20} />
+          <View style={[styles.fabSmall, { backgroundColor: colors.sky[500] }]}>
+            <FileText color={colors.white} size={20} />
           </View>
         </TouchableOpacity>
       </Animated.View>
 
       <Animated.View
-        style={[
-          styles.fabOption,
-          {
-            transform: [{ translateY: option2TranslateY }, { scale: optionScale }],
-            opacity: optionOpacity,
-          },
-        ]}
+        style={[styles.fabOption, { transform: [{ translateY: option2TranslateY }, { scale: optionScale }], opacity: optionOpacity }]}
         pointerEvents={fabOpen ? "auto" : "none"}
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={openUploadNew}>
           <View style={styles.fabOptionLabel}>
             <Text style={styles.fabOptionText}>Nuevo documento</Text>
           </View>
-          <View style={[styles.fabSmall, { backgroundColor: "#8b5cf6" }]}>
-            <FileUp color="#fff" size={20} />
+          <View style={[styles.fabSmall, { backgroundColor: colors.violet[500] }]}>
+            <FileUp color={colors.white} size={20} />
           </View>
         </TouchableOpacity>
       </Animated.View>
 
       <Animated.View
-        style={[
-          styles.fabOption,
-          {
-            transform: [{ translateY: option1TranslateY }, { scale: optionScale }],
-            opacity: optionOpacity,
-          },
-        ]}
+        style={[styles.fabOption, { transform: [{ translateY: option1TranslateY }, { scale: optionScale }], opacity: optionOpacity }]}
         pointerEvents={fabOpen ? "auto" : "none"}
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={openScanner}>
           <View style={styles.fabOptionLabel}>
             <Text style={styles.fabOptionText}>Escanear</Text>
           </View>
-          <View style={[styles.fabSmall, { backgroundColor: "#14b8a6" }]}>
-            <Camera color="#fff" size={20} />
+          <View style={[styles.fabSmall, { backgroundColor: colors.emerald[500] }]}>
+            <Camera color={colors.white} size={20} />
           </View>
         </TouchableOpacity>
       </Animated.View>
 
       <TouchableOpacity style={styles.fab} onPress={toggleFab} activeOpacity={0.85} accessibilityLabel="Agregar documento a la mochila">
         <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-          <Plus color="#fff" size={28} />
+          <Plus color={colors.white} size={28} />
         </Animated.View>
       </TouchableOpacity>
 
@@ -459,11 +421,7 @@ export function BackpackDetailScreen() {
                   setRemovingDocId(target.id);
                   removeMut.mutate(
                     { documentId: target.id, title: target.title },
-                    {
-                      onSettled: () => {
-                        setRemovingDocId(null);
-                      },
-                    }
+                    { onSettled: () => setRemovingDocId(null) }
                   );
                 }}
                 accessibilityLabel="Confirmar eliminación"
@@ -478,108 +436,95 @@ export function BackpackDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  header: { padding: 20, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e2e8f0", flexDirection: "row", gap: 12, alignItems: "center" },
-  title: { fontSize: 22, fontWeight: "800", color: "#0f172a", marginBottom: 2 },
-  subtitle: { fontSize: 13, color: "#64748b" },
-  iconBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: "#fff" },
-  searchBar: { margin: 16, marginTop: 10, backgroundColor: "#fff", borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: "#e2e8f0" },
-  searchInput: { flex: 1, fontSize: 14, color: "#0f172a", paddingVertical: 0 },
-  clearBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: "#e2e8f0" },
-  list: { padding: 16, gap: 12, paddingBottom: 96 },
-  empty: { color: "#64748b", fontSize: 15, textAlign: "center" },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  cardInfo: { flex: 1 },
-  cardTitle: { fontSize: 14, fontWeight: "800", color: "#0f172a", marginBottom: 2 },
-  cardSub: { fontSize: 13, color: "#64748b" },
-  actionsRight: { flexDirection: "row" },
-  removeBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: "#f8fafc", borderWidth: 1, borderColor: "#e2e8f0" },
-  bottomActions: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 14, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#e2e8f0", flexDirection: "row", gap: 10, alignItems: "center", paddingRight: 92 },
-  bottomBtn: { flex: 1, borderRadius: 16, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" },
-  primaryBtn: { backgroundColor: "#0ea5e9" },
-  primaryBtnText: { color: "#fff", fontWeight: "800", fontSize: 14 },
-  secondaryBtn: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#0ea5e9" },
-  secondaryBtnText: { color: "#0ea5e9", fontWeight: "800", fontSize: 14 },
-  dangerBtn: { backgroundColor: "#ef4444" },
-  dangerBtnText: { color: "#fff", fontWeight: "800", fontSize: 14 },
-  ghostBtn: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e2e8f0" },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.3)" },
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#0ea5e9",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#0ea5e9",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-    zIndex: 20,
-  },
-  fabOption: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    alignItems: "flex-end",
-    zIndex: 15,
-  },
-  fabOptionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  fabOptionLabel: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  fabOptionText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-  fabSmall: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)", alignItems: "center", justifyContent: "center" },
-  modal: { width: "90%", backgroundColor: "#fff", borderRadius: 18, padding: 18, gap: 10, elevation: 10, shadowColor: "#000", shadowOpacity: 0.25 },
-  modalTitle: { fontSize: 18, fontWeight: "900", color: "#0f172a", marginTop: 2 },
-  modalSub: { fontSize: 13, color: "#64748b", marginTop: -2 },
-  confirmActions: { flexDirection: "row", gap: 10, marginTop: 8 },
-  linkText: { fontSize: 13, color: "#0f172a", paddingVertical: 4 },
-  qrWrap: { alignItems: "center", justifyContent: "center", marginVertical: 8, padding: 10, backgroundColor: "#f8fafc", borderRadius: 16, borderWidth: 1, borderColor: "#e2e8f0" },
-  qrImg: { width: 170, height: 170 },
-  modalBtn: { flex: 1, minHeight: 48, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, alignItems: "center", justifyContent: "center" },
-});
-
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: t.surface.bg },
+    center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+    header: { padding: 20, backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium, flexDirection: "row", gap: 12, alignItems: "center" },
+    title: { fontSize: 22, fontWeight: "800", color: t.text.primary, marginBottom: 2 },
+    subtitle: { fontSize: 13, color: t.text.secondary },
+    iconBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bgCard },
+    searchBar: { margin: 16, marginTop: 10, backgroundColor: t.surface.bgCard, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: t.border.medium },
+    searchInput: { flex: 1, fontSize: 14, color: t.text.primary, paddingVertical: 0 },
+    clearBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: t.border.medium },
+    list: { padding: 16, gap: 12, paddingBottom: 96 },
+    empty: { color: t.text.secondary, fontSize: 15, textAlign: "center" },
+    card: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      padding: 14,
+      backgroundColor: t.surface.bgCard,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: t.border.medium,
+    },
+    cardInfo: { flex: 1 },
+    cardTitle: { fontSize: 14, fontWeight: "800", color: t.text.primary, marginBottom: 2 },
+    cardSub: { fontSize: 13, color: t.text.secondary },
+    actionsRight: { flexDirection: "row" },
+    removeBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bg, borderWidth: 1, borderColor: t.border.medium },
+    bottomActions: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 14, backgroundColor: t.surface.bgCard, borderTopWidth: 1, borderTopColor: t.border.medium, flexDirection: "row", gap: 10, alignItems: "center", paddingRight: 92 },
+    bottomBtn: { flex: 1, borderRadius: 16, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" },
+    primaryBtn: { backgroundColor: colors.sky[500] },
+    primaryBtnText: { color: colors.white, fontWeight: "800", fontSize: 14 },
+    secondaryBtn: { backgroundColor: t.surface.bgCard, borderWidth: 1, borderColor: colors.sky[500] },
+    secondaryBtnText: { color: colors.sky[500], fontWeight: "800", fontSize: 14 },
+    dangerBtn: { backgroundColor: colors.error[500] },
+    dangerBtnText: { color: colors.white, fontWeight: "800", fontSize: 14 },
+    ghostBtn: { backgroundColor: t.surface.bgCard, borderWidth: 1, borderColor: t.border.medium },
+    backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.3)" },
+    fab: {
+      position: "absolute",
+      bottom: 24,
+      right: 24,
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: colors.sky[500],
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: colors.sky[500],
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 8,
+      zIndex: 20,
+    },
+    fabOption: { position: "absolute", bottom: 24, right: 24, alignItems: "flex-end", zIndex: 15 },
+    fabOptionRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    fabOptionLabel: {
+      backgroundColor: t.surface.bgCard,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 10,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    fabOptionText: { fontSize: 14, fontWeight: "600", color: t.text.primary },
+    fabSmall: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 6,
+      elevation: 6,
+    },
+    modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)", alignItems: "center", justifyContent: "center" },
+    modal: { width: "90%", backgroundColor: t.surface.bgCard, borderRadius: 18, padding: 18, gap: 10, elevation: 10, shadowColor: "#000", shadowOpacity: 0.25 },
+    modalTitle: { fontSize: 18, fontWeight: "900", color: t.text.primary, marginTop: 2 },
+    modalSub: { fontSize: 13, color: t.text.secondary, marginTop: -2 },
+    confirmActions: { flexDirection: "row", gap: 10, marginTop: 8 },
+    linkText: { fontSize: 13, color: t.text.primary, paddingVertical: 4 },
+    qrWrap: { alignItems: "center", justifyContent: "center", marginVertical: 8, padding: 10, backgroundColor: t.surface.bg, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium },
+    qrImg: { width: 170, height: 170 },
+    modalBtn: { flex: 1, minHeight: 48, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, alignItems: "center", justifyContent: "center" },
+  });
+}

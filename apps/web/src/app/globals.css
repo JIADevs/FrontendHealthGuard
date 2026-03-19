@@ -534,6 +534,12 @@ a {
   animation: spin 0.6s linear infinite;
 }
 
+/* Page-level spinner: uses theme-aware border so it works in dark mode */
+.spinner--page {
+  border-color: var(--border);
+  border-top-color: var(--primary-500);
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

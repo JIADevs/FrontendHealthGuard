@@ -3,10 +3,11 @@ import { View, Text, TextInput, StyleSheet, FlatList, ActivityIndicator, Touchab
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { getDocuments, shareDocument } from "@healthguard/api";
-import { FileText, Camera, Share2, Plus, FileUp, X, Search } from "lucide-react-native";
+import { Camera, Share2, Plus, FileUp, X, Search } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
+import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
 
 export function DocumentsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -164,10 +165,13 @@ export function DocumentsScreen() {
               style={styles.card}
               onPress={() => navigation.navigate("DocumentDetail", { id: item.id, title: item.title })}
             >
-              <View style={styles.iconBg}><FileText size={24} color="#0ea5e9" /></View>
+              <DocumentTypeIcon format={item.format} documentTypeName={item.documentType?.name} />
               <View style={styles.info}>
                 <Text style={styles.docTitle}>{item.title}</Text>
-                <Text style={styles.docSub}>{new Date(item.uploadedAt).toLocaleDateString()} • {item.format}</Text>
+                <Text style={styles.docSub}>
+                  {new Date(item.uploadedAt).toLocaleDateString()}
+                  {item.documentType?.name ? ` • ${item.documentType.name}` : ""}
+                </Text>
               </View>
               <TouchableOpacity style={styles.shareBtn} onPress={() => handleShare(item.id, item.title)}>
                 <Share2 size={20} color="#64748b" />
@@ -275,7 +279,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#e2e8f0",
   },
   card: { flexDirection: "row", alignItems: "center", gap: 16, backgroundColor: "#fff", padding: 16, borderRadius: 16, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  iconBg: { width: 48, height: 48, borderRadius: 12, backgroundColor: "#e0f2fe", alignItems: "center", justifyContent: "center" },
   info: { flex: 1 },
   docTitle: { fontSize: 15, fontWeight: "600", color: "#0f172a", marginBottom: 2 },
   docSub: { fontSize: 13, color: "#64748b" },

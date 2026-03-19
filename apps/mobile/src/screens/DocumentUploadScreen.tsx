@@ -11,7 +11,7 @@ import {
   Platform,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import {
   X,
   Check,
@@ -45,7 +45,12 @@ function friendlySize(bytes: number) {
 
 export function DocumentUploadScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const form = useDocumentForm();
+  const route = useRoute();
+  const params = (route.params ?? {}) as RootStackParamList["DocumentUpload"];
+  const form = useDocumentForm({
+    backpackId: params?.backpackId,
+    backpackName: params?.backpackName,
+  });
 
   const [pickerAsset, setPickerAsset] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
 

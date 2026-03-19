@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { X, Check, RefreshCw } from "lucide-react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -20,10 +20,15 @@ import { DocumentClassificationForm } from "../components/DocumentClassification
 
 export function ScannerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute();
+  const params = (route.params ?? {}) as RootStackParamList["Scanner"];
   const [permission, requestPermission] = useCameraPermissions();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const cameraRef = useRef<CameraView>(null);
-  const form = useDocumentForm();
+  const form = useDocumentForm({
+    backpackId: params?.backpackId,
+    backpackName: params?.backpackName,
+  });
 
   useEffect(() => {
     if (photoUri && !form.title) {

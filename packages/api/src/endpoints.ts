@@ -8,6 +8,7 @@ import {
     MedicationPageSchema,
     NotificationPageSchema,
     BackpackPageSchema,
+    BackpackSchema,
     ClassificationSuggestionSchema,
     type LoginRequest,
     type SignupRequest,
@@ -80,7 +81,7 @@ export async function getDocumentById(id: string) {
 
 export async function createDocument(doc: DocumentCreate) {
     const { data } = await apiClient.post("/documents/", doc);
-    return data;
+    return DocumentSchema.parse(data);
 }
 
 export async function updateDocument(id: string, doc: DocumentCreate) {
@@ -277,15 +278,14 @@ export async function classifyDocumentFromUri(uri: string, name: string, mimeTyp
 }
 
 // ─── Backpacks ─────────────────────────────────────────
-
-export async function getBackpacks(params: { page?: number; limit?: number }) {
+export async function getBackpacks(params: { page?: number; limit?: number; searchQuery?: string }) {
     const { data } = await apiClient.get("/backpacks/", { params });
     return BackpackPageSchema.parse(data);
 }
 
 export async function getBackpackById(id: string) {
     const { data } = await apiClient.get(`/backpacks/${id}`);
-    return data;
+    return BackpackSchema.parse(data);
 }
 
 export async function createBackpack(bp: BackpackCreate) {
@@ -314,5 +314,16 @@ export async function removeDocFromBackpack(backpackId: string, documentId: stri
 export async function shareBackpack(id: string) {
     const { data } = await apiClient.post(`/backpacks/${id}/share`);
     return data as { shareUrl: string; qrCodeUrl: string; expiresAt: string };
+}
+
+export async function getBackpackDocuments(params: {
+    backpackId: string;
+    page?: number;
+    limit?: number;
+    searchQuery?: string;
+}) {
+    const { backpackId, ...rest } = params;
+    const { data } = await apiClient.get(`/backpacks/${backpackId}/documents`, { params: rest });
+    return DocumentPageSchema.parse(data);
 }
 

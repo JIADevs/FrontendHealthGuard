@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import {
   uploadFileFromUri,
   createDocument,
+  addDocToBackpack,
   getDocumentTypes,
   getTagCategories,
   classifyDocumentFromUri,
@@ -66,7 +67,12 @@ export interface DocumentFormActions {
   handleAddCategoryAndTag: () => Promise<void>;
 }
 
-export function useDocumentForm(): DocumentFormState & DocumentFormActions {
+type UseDocumentFormOptions = {
+  backpackId?: string;
+  backpackName?: string;
+};
+
+export function useDocumentForm(options?: UseDocumentFormOptions): DocumentFormState & DocumentFormActions {
   const queryClient = useQueryClient();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -191,7 +197,7 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
 
         const today = new Date();
         const docTitle = title || `Documento ${today.toLocaleDateString()}`;
-        await createDocument({
+        const createdDoc = await createDocument({
           title: docTitle,
           fileUrl: storagePath,
           format: file.mimeType,
@@ -203,12 +209,18 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
           tagValueIds: selectedTags,
         });
 
+        if (options?.backpackId) {
+          await addDocToBackpack(options.backpackId, createdDoc.id);
+          queryClient.invalidateQueries({ queryKey: ["backpack-docs", options.backpackId], exact: false });
+          queryClient.invalidateQueries({ queryKey: ["backpack", options.backpackId], exact: false });
+        }
+
         // Invalidate también las queries que incluyen el término de búsqueda (queryKey: ["documents", 1, search])
         queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
         Toast.show({
           type: "success",
-          text1: "Documento creado",
-          text2: docTitle,
+          text1: options?.backpackId ? "Documento subido y agregado a la mochila" : "Documento creado",
+          text2: options?.backpackName ?? docTitle,
         });
         navigation.goBack();
         return;
@@ -228,7 +240,7 @@ export function useDocumentForm(): DocumentFormState & DocumentFormActions {
     }
 
     setUploading(false);
-  }, [uploading, title, selectedType, selectedSpecialty, selectedTags, queryClient, navigation]);
+  }, [uploading, title, selectedType, selectedSpecialty, selectedTags, queryClient, navigation, options?.backpackId, options?.backpackName]);
 
   const handleAddCustomTag = useCallback(async (categoryId: string) => {
     const value = newTagValues[categoryId];

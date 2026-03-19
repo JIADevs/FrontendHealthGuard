@@ -4,12 +4,14 @@ import { DashboardScreen } from "../screens/DashboardScreen";
 import { DocumentsScreen } from "../screens/DocumentsScreen";
 import { AgendaScreen } from "../screens/AgendaScreen";
 import { NotificationsScreen } from "../screens/NotificationsScreen";
-import { LayoutDashboard, FileText, CalendarDays, Bell } from "lucide-react-native";
+import { LayoutDashboard, FileText, CalendarDays, Bell, Folder } from "lucide-react-native";
+import { BackpacksScreen } from "../screens/BackpacksScreen";
 import { useUnreadCount } from "@healthguard/stores";
 
 export type TabParamList = {
   Dashboard: undefined;
   Documents: undefined;
+  Backpacks: undefined;
   Agenda: undefined;
   Notifications: undefined;
 };
@@ -62,6 +64,14 @@ export function TabNavigator() {
           tabBarIcon: ({ color, size }) => (
             <FileText color={color} size={size} />
           ),
+        }}
+      />
+      <Tab.Screen
+        name="Backpacks"
+        component={BackpacksScreen}
+        options={{
+          title: "Mochilas",
+          tabBarIcon: ({ color, size }) => <Folder color={color} size={size} />,
         }}
       />
       <Tab.Screen

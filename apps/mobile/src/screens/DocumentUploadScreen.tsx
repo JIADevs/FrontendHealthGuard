@@ -11,8 +11,16 @@ import {
   Platform,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import { useNavigation } from "@react-navigation/native";
-import { X, Check, FileUp, FileText as FileTextIcon, ImageIcon } from "lucide-react-native";
+
+import { useNavigation, useRoute } from "@react-navigation/native";
+import {
+  X,
+  Check,
+  FileUp,
+  FileText as FileTextIcon,
+  ImageIcon,
+} from "lucide-react-native";
+
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
@@ -44,7 +52,12 @@ export function DocumentUploadScreen() {
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const form = useDocumentForm();
+  const route = useRoute();
+  const params = (route.params ?? {}) as RootStackParamList["DocumentUpload"];
+  const form = useDocumentForm({
+    backpackId: params?.backpackId,
+    backpackName: params?.backpackName,
+  });
 
   const [pickerAsset, setPickerAsset] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
 

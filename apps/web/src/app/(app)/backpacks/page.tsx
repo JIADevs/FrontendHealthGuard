@@ -28,6 +28,7 @@ import {
   type BackpackCreate,
   type Document,
 } from "@healthguard/api";
+import { sileo } from "sileo";
 
 import "./backpacks.css";
 
@@ -48,7 +49,20 @@ export default function BackpacksPage() {
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteBackpack(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["backpacks"] }); setDeleteTarget(null); },
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["backpacks"] });
+      const previous = qc.getQueryData(["backpacks"]);
+      qc.setQueryData(["backpacks"], (old: any) =>
+        old ? { ...old, items: old.items.filter((bp: BackpackType) => bp.id !== id) } : old
+      );
+      return { previous };
+    },
+    onError: (_, __, ctx) => {
+      qc.setQueryData(["backpacks"], ctx?.previous);
+      sileo.error({ title: "No se pudo eliminar la mochila" });
+    },
+    onSuccess: () => { setDeleteTarget(null); },
+    onSettled: () => { qc.invalidateQueries({ queryKey: ["backpacks"] }); },
   });
 
   if (detailId) {
@@ -125,7 +139,11 @@ function BackpackFormModal({ onClose }: { onClose: () => void }) {
 
   const mut = useMutation({
     mutationFn: (data: BackpackCreate) => createBackpack(data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["backpacks"] }); onClose(); },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["backpacks"] });
+      sileo.success({ title: "Mochila creada", description: vars.name });
+      onClose();
+    },
     onError: (err) => setError(isApiError(err) ? err.message : "Error creando mochila"),
   });
 
@@ -179,7 +197,19 @@ function BackpackDetail({ id, onBack }: { id: string; onBack: () => void }) {
 
   const removeMut = useMutation({
     mutationFn: (docId: string) => removeDocFromBackpack(id, docId),
-    onSuccess: () => {
+    onMutate: async (docId) => {
+      await qc.cancelQueries({ queryKey: ["backpack", id] });
+      const previous = qc.getQueryData(["backpack", id]);
+      qc.setQueryData(["backpack", id], (old: BackpackWithDocs | undefined) =>
+        old ? { ...old, documents: old.documents.filter((d) => d.id !== docId) } : old
+      );
+      return { previous };
+    },
+    onError: (_, __, ctx) => {
+      qc.setQueryData(["backpack", id], ctx?.previous);
+      sileo.error({ title: "No se pudo quitar el documento" });
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["backpack", id] });
       qc.invalidateQueries({ queryKey: ["backpacks"] });
     },
@@ -294,14 +324,30 @@ function AddDocsModal({ backpackId, existingIds, onClose }: { backpackId: string
 
   const addMut = useMutation({
     mutationFn: async () => {
-      for (const docId of selected) {
-        await addDocToBackpack(backpackId, docId);
-      }
+      await Promise.all(selected.map((docId) => addDocToBackpack(backpackId, docId)));
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      const selectedDocs = (docs.data?.items ?? []).filter((d) => selected.includes(d.id));
+      const count = selectedDocs.length;
+      await qc.cancelQueries({ queryKey: ["backpack", backpackId] });
+      const previous = qc.getQueryData(["backpack", backpackId]);
+      qc.setQueryData(["backpack", backpackId], (old: BackpackWithDocs | undefined) =>
+        old ? { ...old, documents: [...(old.documents ?? []), ...selectedDocs] } : old
+      );
+      onClose();
+      return { previous, count };
+    },
+    onError: (_, __, ctx) => {
+      qc.setQueryData(["backpack", backpackId], ctx?.previous);
+      sileo.error({ title: "No se pudieron agregar los documentos" });
+    },
+    onSuccess: (_, __, ctx) => {
+      const count = ctx?.count ?? 0;
+      sileo.success({ title: count === 1 ? "Documento agregado" : `${count} documentos agregados` });
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["backpack", backpackId] });
       qc.invalidateQueries({ queryKey: ["backpacks"] });
-      onClose();
     },
   });
 

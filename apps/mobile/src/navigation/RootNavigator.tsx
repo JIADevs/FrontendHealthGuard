@@ -7,15 +7,21 @@ import { DocumentUploadScreen } from "../screens/DocumentUploadScreen";
 import { DocumentDetailScreen } from "../screens/DocumentDetailScreen";
 import { DocumentEditScreen } from "../screens/DocumentEditScreen";
 import { NotificationsScreen } from "../screens/NotificationsScreen";
+import { BackpackDetailScreen } from "../screens/BackpackDetailScreen";
+import { BackpackEditScreen } from "../screens/BackpackEditScreen";
+import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
   MainTabs: undefined;
-  Scanner: undefined;
-  DocumentUpload: undefined;
+  Scanner: { backpackId?: string; backpackName?: string } | undefined;
+  DocumentUpload: { backpackId?: string; backpackName?: string } | undefined;
   DocumentDetail: { id: string; title?: string } | undefined;
   DocumentEdit: { id: string } | undefined;
   Notifications: undefined;
+  BackpackDetail: { id: string };
+  BackpackEdit: { id?: string } | undefined;
+  BackpackAddDocuments: { id: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -52,6 +58,21 @@ export function RootNavigator() {
             name="Notifications"
             component={NotificationsScreen}
             options={{ headerShown: true, title: "Notificaciones", animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="BackpackDetail"
+            component={BackpackDetailScreen}
+            options={{ headerShown: true, title: "Mochila" }}
+          />
+          <Stack.Screen
+            name="BackpackEdit"
+            component={BackpackEditScreen}
+            options={{ headerShown: true, title: "Mochila" }}
+          />
+          <Stack.Screen
+            name="BackpackAddDocuments"
+            component={BackpackAddDocumentsScreen}
+            options={{ headerShown: true, title: "Agregar documentos" }}
           />
         </>
       ) : (

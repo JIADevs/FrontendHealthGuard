@@ -13,9 +13,11 @@ import {
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
-import { getBackpackById, createBackpack, updateBackpack, deleteBackpack, isApiError, type BackpackCreate, type Backpack } from "@healthguard/api";
+import { getBackpackById, createBackpack, updateBackpack, deleteBackpack, isApiError, type BackpackCreate } from "@healthguard/api";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
+import { useAppTheme, colors } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id?: string };
 
@@ -23,6 +25,8 @@ export function BackpackEditScreen() {
   const route = useRoute();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
   const { id } = (route.params ?? {}) as RouteParams;
   const isEdit = !!id;
 
@@ -45,6 +49,7 @@ export function BackpackEditScreen() {
   const payload: BackpackCreate = useMemo(
     () => ({
       name: name.trim(),
+      type: "CUSTOM" as const,
       description: description.trim() ? description.trim() : undefined,
     }),
     [name, description]
@@ -117,7 +122,7 @@ export function BackpackEditScreen() {
   if (isEdit && isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
+        <ActivityIndicator size="large" color={colors.sky[500]} />
       </View>
     );
   }
@@ -135,6 +140,7 @@ export function BackpackEditScreen() {
           placeholder="Ej: Mochila de Radiología"
           autoCapitalize="words"
           accessibilityLabel="Nombre de la mochila"
+          placeholderTextColor={t.text.muted}
         />
 
         <Text style={[styles.label, { marginTop: 14 }]}>Descripción (opcional)</Text>
@@ -146,6 +152,7 @@ export function BackpackEditScreen() {
           multiline
           numberOfLines={4}
           accessibilityLabel="Descripción de la mochila"
+          placeholderTextColor={t.text.muted}
         />
 
         {isEdit && (
@@ -156,7 +163,7 @@ export function BackpackEditScreen() {
             accessibilityRole="button"
             accessibilityLabel="Eliminar mochila"
           >
-            <Text style={[styles.secondaryBtnText, { color: "#ef4444" }]}>Eliminar</Text>
+            <Text style={[styles.secondaryBtnText, { color: colors.error[500] }]}>Eliminar</Text>
           </TouchableOpacity>
         )}
 
@@ -167,7 +174,7 @@ export function BackpackEditScreen() {
           accessibilityRole="button"
           accessibilityLabel="Guardar mochila"
         >
-          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>{isEdit ? "Guardar" : "Crear"}</Text>}
+          {saving ? <ActivityIndicator color={colors.white} /> : <Text style={styles.primaryBtnText}>{isEdit ? "Guardar" : "Crear"}</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondaryBtn} onPress={() => navigation.goBack()} accessibilityLabel="Cancelar">
@@ -178,27 +185,29 @@ export function BackpackEditScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  content: { padding: 20 },
-  title: { fontSize: 22, fontWeight: "800", color: "#0f172a", marginBottom: 18 },
-  label: { fontSize: 14, fontWeight: "700", color: "#0f172a", marginBottom: 8 },
-  input: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    fontSize: 14,
-  },
-  multiline: { height: 120, textAlignVertical: "top" },
-  primaryBtn: { backgroundColor: "#0ea5e9", borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 18 },
-  primaryBtnDisabled: { opacity: 0.7 },
-  primaryBtnText: { color: "#fff", fontSize: 15, fontWeight: "800" },
-  secondaryBtn: { backgroundColor: "#fff", borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 12, borderWidth: 1, borderColor: "#0ea5e9" },
-  secondaryBtnText: { color: "#0ea5e9", fontSize: 15, fontWeight: "800" },
-  dangerBtn: { borderColor: "#ef4444", backgroundColor: "#fff" },
-});
-
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: t.surface.bg },
+    center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+    content: { padding: 20 },
+    title: { fontSize: 22, fontWeight: "800", color: t.text.primary, marginBottom: 18 },
+    label: { fontSize: 14, fontWeight: "700", color: t.text.primary, marginBottom: 8 },
+    input: {
+      backgroundColor: t.surface.bgCard,
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderWidth: 1,
+      borderColor: t.border.medium,
+      fontSize: 14,
+      color: t.text.primary,
+    },
+    multiline: { height: 120, textAlignVertical: "top" },
+    primaryBtn: { backgroundColor: colors.sky[500], borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 18 },
+    primaryBtnDisabled: { opacity: 0.7 },
+    primaryBtnText: { color: colors.white, fontSize: 15, fontWeight: "800" },
+    secondaryBtn: { backgroundColor: t.surface.bgCard, borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 12, borderWidth: 1, borderColor: colors.sky[500] },
+    secondaryBtnText: { color: colors.sky[500], fontSize: 15, fontWeight: "800" },
+    dangerBtn: { borderColor: colors.error[500], backgroundColor: t.surface.bgCard },
+  });
+}

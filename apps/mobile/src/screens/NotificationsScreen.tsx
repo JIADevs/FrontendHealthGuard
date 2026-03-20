@@ -7,24 +7,24 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { memo, useCallback, useEffect } from "react";
+import { memo, useCallback, useEffect, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getNotifications, markNotificationAsRead, type Notification } from "@healthguard/api";
 import { useNotifStore } from "@healthguard/stores";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
 import { Bell, Calendar, Pill, Activity, Info, CheckCircle } from "lucide-react-native";
 
 const LIMIT = 20;
 
 const TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
-  APPOINTMENT: { icon: Calendar, color: "#0ea5e9", bg: "#e0f2fe" },
-  MEDICATION:  { icon: Pill,     color: "#f59e0b", bg: "#fef3c7" },
-  CHECKIN:     { icon: Activity, color: "#10b981", bg: "#d1fae5" },
-  SYSTEM:      { icon: Bell,     color: "#8b5cf6", bg: "#ede9fe" },
-  INFO:        { icon: Info,     color: "#64748b", bg: "#f1f5f9" },
+  APPOINTMENT: { icon: Calendar, color: colors.sky[500],     bg: colors.sky[100] },
+  MEDICATION:  { icon: Pill,     color: colors.warning[500], bg: colors.warning[50] },
+  CHECKIN:     { icon: Activity, color: colors.emerald[500],  bg: colors.emerald[100] },
+  SYSTEM:      { icon: Bell,     color: colors.violet[500],  bg: colors.violet[100] },
+  INFO:        { icon: Info,     color: colors.slate[500],   bg: colors.slate[100] },
 };
-
-const Separator = () => <View style={styles.separator} />;
 
 const NotificationItem = memo(function NotificationItem({
   item,
@@ -33,6 +33,9 @@ const NotificationItem = memo(function NotificationItem({
   item: Notification;
   onPress: (id: string) => void;
 }) {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeItemStyles(t), [t]);
+
   const cfg = TYPE_CONFIG[item.type] ?? TYPE_CONFIG.INFO;
   const IconComp = cfg.icon;
 
@@ -70,14 +73,22 @@ const NotificationItem = memo(function NotificationItem({
       </View>
 
       {item.isRead
-        ? <CheckCircle size={16} color="#cbd5e1" style={styles.readIcon} />
+        ? <CheckCircle size={16} color={t.border.medium} style={styles.readIcon} />
         : <View style={styles.unreadDot} />
       }
     </TouchableOpacity>
   );
 });
 
+const Separator = () => {
+  const t = useAppTheme();
+  return <View style={{ height: 1, backgroundColor: t.border.light, marginLeft: 68 }} />;
+};
+
 export function NotificationsScreen() {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+
   const queryClient = useQueryClient();
   const { decrementUnread, markAllRead, setUnreadCount } = useNotifStore();
 
@@ -100,7 +111,6 @@ export function NotificationsScreen() {
     },
   });
 
-  // Sincroniza el badge del store con los datos reales de la query
   useEffect(() => {
     if (!data) return;
     const unread = data.pages.flatMap((p) => p.items).filter((n) => !n.isRead).length;
@@ -175,11 +185,11 @@ export function NotificationsScreen() {
 
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#0ea5e9" />
+          <ActivityIndicator size="large" color={colors.sky[500]} />
         </View>
       ) : notifications.length === 0 ? (
         <View style={styles.center}>
-          <Bell size={48} color="#cbd5e1" />
+          <Bell size={48} color={t.border.medium} />
           <Text style={styles.emptyTitle}>Sin notificaciones</Text>
           <Text style={styles.emptyText}>
             Aquí aparecerán tus recordatorios de citas, medicamentos y más.
@@ -194,14 +204,14 @@ export function NotificationsScreen() {
             <RefreshControl
               refreshing={isRefetching && !isFetchingNextPage}
               onRefresh={refetch}
-              tintColor="#0ea5e9"
+              tintColor={colors.sky[500]}
             />
           }
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.3}
           ListFooterComponent={
             isFetchingNextPage ? (
-              <ActivityIndicator style={styles.loadingFooter} color="#0ea5e9" />
+              <ActivityIndicator style={styles.loadingFooter} color={colors.sky[500]} />
             ) : null
           }
           contentContainerStyle={styles.list}
@@ -212,61 +222,62 @@ export function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 24,
-    paddingBottom: 16,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e2e8f0",
-  },
-  title: { fontSize: 24, fontWeight: "800", color: "#0f172a" },
-  subtitle: { fontSize: 13, color: "#64748b", marginTop: 2 },
-  markAllBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "#f1f5f9",
-    borderRadius: 8,
-  },
-  markAllText: { fontSize: 13, color: "#0ea5e9", fontWeight: "600" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#334155", marginTop: 4 },
-  emptyText: { fontSize: 14, color: "#94a3b8", textAlign: "center", lineHeight: 20 },
-  list: { paddingBottom: 24 },
-  loadingFooter: { paddingVertical: 16 },
-  item: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    padding: 16,
-    paddingHorizontal: 20,
-    backgroundColor: "#fff",
-    gap: 12,
-  },
-  itemUnread: { backgroundColor: "#f0f9ff" },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 2,
-  },
-  itemBody: { flex: 1 },
-  itemTitle: { fontSize: 14, fontWeight: "600", color: "#334155", marginBottom: 2 },
-  itemTitleBold: { color: "#0f172a", fontWeight: "700" },
-  itemText: { fontSize: 13, color: "#64748b", lineHeight: 18 },
-  itemDate: { fontSize: 11, color: "#94a3b8", marginTop: 4 },
-  readIcon: { alignSelf: "center" },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#0ea5e9",
-    alignSelf: "center",
-  },
-  separator: { height: 1, backgroundColor: "#f1f5f9", marginLeft: 68 },
-});
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    container:      { flex: 1, backgroundColor: t.surface.bg },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: spacing[6],
+      paddingBottom: spacing[4],
+      backgroundColor: t.surface.bgCard,
+      borderBottomWidth: 1,
+      borderBottomColor: t.border.medium,
+    },
+    title:          { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary },
+    subtitle:       { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2 },
+    markAllBtn:     { paddingHorizontal: spacing[3], paddingVertical: 6, backgroundColor: t.border.light, borderRadius: radii.sm },
+    markAllText:    { fontSize: fontSize.sm, color: colors.sky[500], fontWeight: fontWeight.semibold },
+    center:         { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: spacing[3] },
+    emptyTitle:     { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: t.text.primary, marginTop: 4 },
+    emptyText:      { fontSize: 14, color: t.text.muted, textAlign: "center", lineHeight: 20 },
+    list:           { paddingBottom: spacing[6] },
+    loadingFooter:  { paddingVertical: spacing[4] },
+  });
+}
+
+function makeItemStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    item: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      padding: spacing[4],
+      paddingHorizontal: spacing[5],
+      backgroundColor: t.surface.bgCard,
+      gap: spacing[3],
+    },
+    itemUnread:     { backgroundColor: colors.sky[50] },
+    iconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 2,
+    },
+    itemBody:       { flex: 1 },
+    itemTitle:      { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.secondary, marginBottom: 2 },
+    itemTitleBold:  { color: t.text.primary, fontWeight: fontWeight.bold },
+    itemText:       { fontSize: fontSize.sm, color: t.text.secondary, lineHeight: 18 },
+    itemDate:       { fontSize: fontSize.xs, color: t.text.muted, marginTop: 4 },
+    readIcon:       { alignSelf: "center" },
+    unreadDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.sky[500],
+      alignSelf: "center",
+    },
+  });
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -16,7 +16,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
 import { FileUp, FileText as FileTextIcon, Check, X as XIcon } from "lucide-react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
@@ -29,8 +28,9 @@ import {
   type DocumentCreate,
   type Document,
 } from "@healthguard/api";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
 
-/** Máximo tamaño de archivo para upload (25 MB). Debe coincidir con el backend. */
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
 const ACCEPTED_TYPES = [
@@ -55,6 +55,9 @@ function friendlySize(bytes: number) {
 type RouteParams = { id: string };
 
 export function DocumentEditScreen() {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+
   const route = useRoute();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
@@ -85,7 +88,6 @@ export function DocumentEditScreen() {
   useEffect(() => {
     if (!docQuery.data || didInitRef.current) return;
     didInitRef.current = true;
-
     const d = docQuery.data as Document;
     form.setTitle(d.title);
     form.setSelectedType(d.documentType?.id);
@@ -112,10 +114,7 @@ export function DocumentEditScreen() {
       };
 
       if (file.size && file.size > MAX_FILE_SIZE_BYTES) {
-        Alert.alert(
-          "Archivo demasiado grande",
-          `El tamaño máximo permitido es 25 MB. Tu archivo pesa ${friendlySize(file.size)}.`
-        );
+        Alert.alert("Archivo demasiado grande", `El tamaño máximo permitido es 25 MB. Tu archivo pesa ${friendlySize(file.size)}.`);
         return;
       }
 
@@ -127,8 +126,7 @@ export function DocumentEditScreen() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!docQuery.data) return;
-    if (saving) return;
+    if (!docQuery.data || saving) return;
 
     const trimmedTitle = form.title.trim();
     if (!trimmedTitle) {
@@ -139,21 +137,16 @@ export function DocumentEditScreen() {
     setSaving(true);
     try {
       const d = docQuery.data as Document;
-
       let fileUrl = d.fileUrl;
       let format = d.format;
       let file_size_bytes: number | undefined = d.fileSizeBytes ?? undefined;
 
       if (replacementFile) {
         if (replacementFile.size && replacementFile.size > MAX_FILE_SIZE_BYTES) {
-          Alert.alert(
-            "Archivo demasiado grande",
-            `El tamaño máximo permitido es 25 MB. Tu archivo pesa ${friendlySize(replacementFile.size)}.`
-          );
+          Alert.alert("Archivo demasiado grande", `El tamaño máximo permitido es 25 MB. Tu archivo pesa ${friendlySize(replacementFile.size)}.`);
           setSaving(false);
           return;
         }
-
         const uploaded = await uploadFileFromUri(replacementFile.uri, replacementFile.name, replacementFile.mimeType);
         fileUrl = uploaded.storagePath;
         format = replacementFile.mimeType;
@@ -175,23 +168,15 @@ export function DocumentEditScreen() {
       };
 
       await updateDocument(id, payload);
-
-      // Refresh list + avoid stale results even if the user has search active.
       queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["document", id] });
-      Toast.show({
-        type: "success",
-        text1: "Cambios guardados",
-        text2: trimmedTitle,
-      });
+      Toast.show({ type: "success", text1: "Cambios guardados", text2: trimmedTitle });
       navigation.goBack();
     } catch (err) {
       console.warn("Error saving document", err);
       const message = isApiError(err)
         ? err.fieldErrors
-          ? Object.entries(err.fieldErrors)
-              .map(([field, msg]) => `${field}: ${msg}`)
-              .join("\n")
+          ? Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join("\n")
           : err.message
         : "No se pudo guardar el documento.";
       Toast.show({ type: "error", text1: "No se pudieron guardar los cambios", text2: message });
@@ -201,21 +186,15 @@ export function DocumentEditScreen() {
     }
   }, [docQuery.data, saving, form, replacementFile, id, queryClient, navigation]);
 
-  const showDocLoading = docQuery.isLoading && !docQuery.isRefetching;
-
   if (!id) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.error}>Documento no encontrado.</Text>
-      </View>
+      <View style={styles.center}><Text style={styles.error}>Documento no encontrado.</Text></View>
     );
   }
 
-  if (showDocLoading) {
+  if (docQuery.isLoading && !docQuery.isRefetching) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
-      </View>
+      <View style={styles.center}><ActivityIndicator size="large" color={colors.sky[500]} /></View>
     );
   }
 
@@ -230,13 +209,9 @@ export function DocumentEditScreen() {
               <Image source={{ uri: replacementFile.uri }} style={styles.previewImage} resizeMode="contain" />
             ) : (
               <View style={styles.pdfPreview}>
-                <FileTextIcon color="#0ea5e9" size={64} />
-                <Text style={styles.pdfName} numberOfLines={2}>
-                  {replacementFile.name}
-                </Text>
-                {replacementFile.size != null && (
-                  <Text style={styles.pdfSize}>{friendlySize(replacementFile.size)}</Text>
-                )}
+                <FileTextIcon color={colors.sky[500]} size={64} />
+                <Text style={styles.pdfName} numberOfLines={2}>{replacementFile.name}</Text>
+                {replacementFile.size != null && <Text style={styles.pdfSize}>{friendlySize(replacementFile.size)}</Text>}
               </View>
             )
           ) : d ? (
@@ -244,10 +219,8 @@ export function DocumentEditScreen() {
               <Image source={{ uri: signedUrl }} style={styles.previewImage} resizeMode="contain" />
             ) : (
               <View style={styles.pdfPreview}>
-                <FileTextIcon color="#0ea5e9" size={64} />
-                <Text style={styles.pdfName} numberOfLines={2}>
-                  Adjunto actual
-                </Text>
+                <FileTextIcon color={colors.sky[500]} size={64} />
+                <Text style={styles.pdfName} numberOfLines={2}>Adjunto actual</Text>
                 <Text style={styles.pdfSize}>{d.format}</Text>
               </View>
             )
@@ -256,142 +229,66 @@ export function DocumentEditScreen() {
 
         <View style={styles.fileInfoBar}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.fileInfoTitle} numberOfLines={1}>
-              {replacementFile ? "Nuevo adjunto" : "Adjunto actual"}
-            </Text>
-            <Text style={styles.fileInfoSub} numberOfLines={1}>
-              {replacementFile ? replacementFile.name : d?.format ?? ""}
-            </Text>
+            <Text style={styles.fileInfoTitle} numberOfLines={1}>{replacementFile ? "Nuevo adjunto" : "Adjunto actual"}</Text>
+            <Text style={styles.fileInfoSub} numberOfLines={1}>{replacementFile ? replacementFile.name : d?.format ?? ""}</Text>
           </View>
-
-          <TouchableOpacity
-            style={styles.changeFileBtn}
-            onPress={pickReplacementFile}
-            accessibilityRole="button"
-            accessibilityLabel="Reemplazar adjunto"
-          >
-            <FileUp size={16} color="#fff" />
+          <TouchableOpacity style={styles.changeFileBtn} onPress={pickReplacementFile} accessibilityRole="button" accessibilityLabel="Reemplazar adjunto">
+            <FileUp size={16} color={colors.white} />
             <Text style={styles.changeFileBtnText}>Cambiar</Text>
           </TouchableOpacity>
         </View>
 
         {replacementFile && (
-          <TouchableOpacity
-            style={styles.clearReplacementLink}
-            onPress={() => setReplacementFile(null)}
-            accessibilityRole="button"
-            accessibilityLabel="Cancelar reemplazo"
-          >
+          <TouchableOpacity style={styles.clearReplacementLink} onPress={() => setReplacementFile(null)} accessibilityRole="button" accessibilityLabel="Cancelar reemplazo">
             <Text style={styles.clearReplacementText}>Restaurar adjunto actual</Text>
           </TouchableOpacity>
         )}
 
-        {/* Form: titulo + tipo/especialidad + etiquetas */}
         <DocumentClassificationForm file={replacementFile ?? undefined} {...form} />
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={styles.circleBtnSecondary}
-          onPress={() => navigation.goBack()}
-          disabled={saving}
-          accessibilityRole="button"
-          accessibilityLabel="Cancelar edición"
-        >
-          <XIcon color="#fff" size={24} />
+        <TouchableOpacity style={styles.circleBtnSecondary} onPress={() => navigation.goBack()} disabled={saving} accessibilityRole="button" accessibilityLabel="Cancelar edición">
+          <XIcon color={colors.white} size={24} />
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.circleBtnPrimary, saving && styles.circleBtnPrimaryDisabled]}
-          onPress={handleSave}
-          disabled={saving}
-          accessibilityRole="button"
-          accessibilityLabel="Guardar cambios"
-        >
-          {saving ? <ActivityIndicator color="#fff" /> : <Check color="#fff" size={32} />}
+        <TouchableOpacity style={[styles.circleBtnPrimary, saving && styles.circleBtnPrimaryDisabled]} onPress={handleSave} disabled={saving} accessibilityRole="button" accessibilityLabel="Guardar cambios">
+          {saving ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={32} />}
         </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "#fff" },
-  error: { color: "#ef4444", fontSize: 16, fontWeight: "700" },
-  content: { paddingBottom: 96 },
-
-  previewContainer: {
-    height: 360,
-    backgroundColor: "#f8fafc",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  previewImage: { width: "100%", height: "100%" },
-  pdfPreview: { alignItems: "center", justifyContent: "center", gap: 12, padding: 20 },
-  pdfName: { fontSize: 15, fontWeight: "600", color: "#0f172a", textAlign: "center", maxWidth: 320 },
-  pdfSize: { fontSize: 13, color: "#64748b", textAlign: "center" },
-
-  fileInfoBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#fff",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  fileInfoTitle: { fontSize: 13, fontWeight: "700", color: "#0f172a" },
-  fileInfoSub: { fontSize: 13, color: "#64748b", marginTop: 2 },
-
-  changeFileBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 14,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: "#0ea5e9",
-  },
-  changeFileBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-
-  clearReplacementLink: {
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  clearReplacementText: { color: "#64748b", fontWeight: "600" },
-
-  bottomBar: {
-    position: "absolute",
-    bottom: Platform.OS === "ios" ? 32 : 16,
-    left: 20,
-    right: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 20,
-  },
-  circleBtnSecondary: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#64748b",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  circleBtnPrimary: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#0ea5e9",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#0ea5e9",
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 10,
-  },
-  circleBtnPrimaryDisabled: { opacity: 0.6 },
-});
-
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    container:        { flex: 1, backgroundColor: t.surface.bgCard },
+    center:           { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing[6], backgroundColor: t.surface.bgCard },
+    error:            { color: colors.error[500], fontSize: fontSize.md, fontWeight: fontWeight.bold },
+    content:          { paddingBottom: 96 },
+    previewContainer: { height: 360, backgroundColor: t.surface.bg, justifyContent: "center", alignItems: "center" },
+    previewImage:     { width: "100%", height: "100%" },
+    pdfPreview:       { alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[5] },
+    pdfName:          { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: t.text.primary, textAlign: "center", maxWidth: 320 },
+    pdfSize:          { fontSize: fontSize.sm, color: t.text.secondary, textAlign: "center" },
+    fileInfoBar:      { flexDirection: "row", alignItems: "center", gap: spacing[3], backgroundColor: t.surface.bgCard, paddingHorizontal: spacing[5], paddingVertical: spacing[3] },
+    fileInfoTitle:    { fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: t.text.primary },
+    fileInfoSub:      { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2 },
+    changeFileBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], paddingHorizontal: 14, height: 40, borderRadius: radii.md, backgroundColor: colors.sky[500] },
+    changeFileBtnText:    { color: colors.white, fontWeight: fontWeight.bold, fontSize: fontSize.sm },
+    clearReplacementLink: { paddingHorizontal: spacing[5], paddingBottom: 10 },
+    clearReplacementText: { color: t.text.secondary, fontWeight: fontWeight.semibold },
+    bottomBar: {
+      position: "absolute",
+      bottom: Platform.OS === "ios" ? 32 : 16,
+      left: 20,
+      right: 20,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: spacing[5],
+    },
+    circleBtnSecondary:      { width: 64, height: 64, borderRadius: 32, backgroundColor: t.border.medium, alignItems: "center", justifyContent: "center" },
+    circleBtnPrimary:        { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", shadowColor: colors.sky[500], shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
+    circleBtnPrimaryDisabled: { opacity: 0.6 },
+  });
+}

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   View,
   Text,
@@ -9,6 +10,8 @@ import {
 } from "react-native";
 import { Sparkles } from "lucide-react-native";
 import type { DocumentFormState, DocumentFormActions, FileSource } from "../hooks/useDocumentForm";
+import { useAppTheme, colors, radii, spacing, fontSize, fontWeight } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
 
 type Props = DocumentFormState &
   DocumentFormActions & {
@@ -40,14 +43,15 @@ export function DocumentClassificationForm({
   handleAddCustomTag,
   handleAddCategoryAndTag,
 }: Props) {
-  const currentType = catalogs.types.find((t) => t.id === selectedType);
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const currentType = catalogs.types.find((tp) => tp.id === selectedType);
   const canRunAI = !!file;
 
   return (
     <View style={styles.form}>
       <Text style={styles.formTitle}>Clasificar Documento</Text>
 
-      {/* AI Button */}
       <TouchableOpacity
         style={[styles.aiBtn, (!canRunAI || classifying) && styles.aiBtnDisabled]}
         onPress={() => {
@@ -56,22 +60,21 @@ export function DocumentClassificationForm({
         }}
         disabled={!canRunAI || classifying}
       >
-        <Sparkles color="#fff" size={20} />
+        <Sparkles color={colors.white} size={20} />
         <Text style={styles.aiBtnText}>
           {classifying ? "Clasificando..." : "Clasificar con IA"}
         </Text>
       </TouchableOpacity>
 
-      {/* AI Result */}
       {classificationResult && (
         <ClassificationResultCard
           result={classificationResult}
           catalogs={catalogs}
           selectedTags={selectedTags}
+          t={t}
         />
       )}
 
-      {/* Title */}
       <View style={styles.field}>
         <Text style={styles.label}>Título del Documento</Text>
         <TextInput
@@ -79,32 +82,30 @@ export function DocumentClassificationForm({
           value={title}
           onChangeText={setTitle}
           placeholder="Ej. Resultados Laboratorio"
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={t.text.muted}
         />
       </View>
 
-      {/* Document Type */}
       <View style={styles.field}>
         <Text style={styles.label}>Tipo de Documento</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-          {catalogs.types.map((t) => (
+          {catalogs.types.map((tp) => (
             <TouchableOpacity
-              key={t.id}
-              style={[styles.chip, selectedType === t.id && styles.chipActive]}
+              key={tp.id}
+              style={[styles.chip, selectedType === tp.id && styles.chipActive]}
               onPress={() => {
-                setSelectedType(t.id);
+                setSelectedType(tp.id);
                 setSelectedSpecialty(undefined);
               }}
             >
-              <Text style={[styles.chipText, selectedType === t.id && styles.chipTextActive]}>
-                {t.name}
+              <Text style={[styles.chipText, selectedType === tp.id && styles.chipTextActive]}>
+                {tp.name}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      {/* Specialty */}
       {currentType && currentType.specialties.length > 0 && (
         <View style={styles.field}>
           <Text style={styles.label}>Especialidad</Text>
@@ -124,7 +125,6 @@ export function DocumentClassificationForm({
         </View>
       )}
 
-      {/* Tags per category */}
       {catalogs.tags.map((category) => (
         <View key={category.id} style={styles.field}>
           <Text style={styles.label}>{category.name}</Text>
@@ -135,9 +135,7 @@ export function DocumentClassificationForm({
                 style={[styles.chip, selectedTags.includes(val.id) && styles.chipActive]}
                 onPress={() => toggleTag(val.id)}
               >
-                <Text
-                  style={[styles.chipText, selectedTags.includes(val.id) && styles.chipTextActive]}
-                >
+                <Text style={[styles.chipText, selectedTags.includes(val.id) && styles.chipTextActive]}>
                   {val.value}
                 </Text>
               </TouchableOpacity>
@@ -147,7 +145,7 @@ export function DocumentClassificationForm({
               <TextInput
                 style={styles.addTagInput}
                 placeholder="Nueva..."
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor={t.text.muted}
                 value={newTagValues[category.id] || ""}
                 onChangeText={(text) => setNewTagValue(category.id, text)}
                 onSubmitEditing={() => handleAddCustomTag(category.id)}
@@ -158,7 +156,7 @@ export function DocumentClassificationForm({
                 disabled={addingTag === category.id}
               >
                 {addingTag === category.id ? (
-                  <ActivityIndicator size="small" color="#0ea5e9" />
+                  <ActivityIndicator size="small" color={colors.sky[500]} />
                 ) : (
                   <Text style={styles.addTagBtnText}>+</Text>
                 )}
@@ -168,7 +166,6 @@ export function DocumentClassificationForm({
         </View>
       ))}
 
-      {/* New category + tag */}
       <View style={styles.field}>
         <Text style={styles.label}>Nueva etiqueta (categoría + valor)</Text>
         <View style={styles.newTagRow}>
@@ -177,14 +174,14 @@ export function DocumentClassificationForm({
             value={newCategoryName}
             onChangeText={setNewCategoryName}
             placeholder="Ej. Médico, Institución"
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor={t.text.muted}
           />
           <TextInput
             style={[styles.input, styles.newTagInput]}
             value={newTagValue}
             onChangeText={setNewTagValueField}
             placeholder="Valor"
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor={t.text.muted}
           />
           <TouchableOpacity
             style={styles.newTagSubmitBtn}
@@ -192,7 +189,7 @@ export function DocumentClassificationForm({
             disabled={addingCustomTag || !newCategoryName.trim() || !newTagValue.trim()}
           >
             {addingCustomTag ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={colors.white} />
             ) : (
               <Text style={styles.newTagSubmitText}>Agregar</Text>
             )}
@@ -203,170 +200,85 @@ export function DocumentClassificationForm({
   );
 }
 
-// ── Classification result sub-component ──────────────────
-
 function ClassificationResultCard({
   result,
   catalogs,
   selectedTags,
-}: {
+  t,
+}: Readonly<{
   result: NonNullable<DocumentFormState["classificationResult"]>;
   catalogs: DocumentFormState["catalogs"];
-  selectedTags: string[];
-}) {
+  selectedTags: readonly string[];
+  t: ThemeContextValue;
+}>) {
+  const styles = useMemo(() => makeStyles(t), [t]);
   const appliedNames = catalogs.tags.flatMap((c) =>
-    c.values
-      .filter((v) => selectedTags.includes(v.id))
-      .map((v) => `${c.name}: ${v.value}`)
+    c.values.filter((v) => selectedTags.includes(v.id)).map((v) => `${c.name}: ${v.value}`)
   );
-
-  const tagLabels = (result.customTags ?? [])
-    .map((ct) => ct.tagValueName ?? ct.tagValueId)
-    .filter(Boolean);
-
-  const newTagLabels = (result.newTags ?? []).map(
-    (nt) => `${nt.categoryName ?? ""}: ${nt.value}`
-  );
-
+  const tagLabels = (result.customTags ?? []).map((ct) => ct.tagValueName ?? ct.tagValueId).filter(Boolean);
+  const newTagLabels = (result.newTags ?? []).map((nt) => `${nt.categoryName ?? ""}: ${nt.value}`);
   const hasAnyTags = tagLabels.length > 0 || newTagLabels.length > 0 || appliedNames.length > 0;
 
   return (
     <View style={styles.classificationResult}>
       <Text style={styles.classificationResultTitle}>Resultado de la clasificación</Text>
-
       {result.type && (
-        <Text style={styles.resultLine}>
-          <Text style={styles.resultLabel}>Tipo: </Text>
-          {result.type.name}
-        </Text>
+        <Text style={styles.resultLine}><Text style={styles.resultLabel}>Tipo: </Text>{result.type.name}</Text>
       )}
-
       {(result.specialties ?? []).length > 0 && (
-        <Text style={styles.resultLine}>
-          <Text style={styles.resultLabel}>Especialidad: </Text>
-          {(result.specialties ?? []).map((s) => s.name).join(", ")}
-        </Text>
+        <Text style={styles.resultLine}><Text style={styles.resultLabel}>Especialidad: </Text>{(result.specialties ?? []).map((s) => s.name).join(", ")}</Text>
       )}
-
       {hasAnyTags && (
         <>
-          {tagLabels.length > 0 && (
-            <Text style={styles.resultLine}>
-              <Text style={styles.resultLabel}>Etiquetas: </Text>
-              {tagLabels.join(", ")}
-            </Text>
-          )}
-          {newTagLabels.length > 0 && (
-            <Text style={styles.resultLine}>
-              <Text style={styles.resultLabel}>Nuevas sugeridas: </Text>
-              {newTagLabels.join(", ")}
-            </Text>
-          )}
-          {appliedNames.length > 0 && (
-            <Text style={styles.resultLine}>
-              <Text style={styles.resultLabel}>Aplicadas: </Text>
-              {appliedNames.join(", ")}
-            </Text>
-          )}
+          {tagLabels.length > 0 && <Text style={styles.resultLine}><Text style={styles.resultLabel}>Etiquetas: </Text>{tagLabels.join(", ")}</Text>}
+          {newTagLabels.length > 0 && <Text style={styles.resultLine}><Text style={styles.resultLabel}>Nuevas sugeridas: </Text>{newTagLabels.join(", ")}</Text>}
+          {appliedNames.length > 0 && <Text style={styles.resultLine}><Text style={styles.resultLabel}>Aplicadas: </Text>{appliedNames.join(", ")}</Text>}
         </>
       )}
     </View>
   );
 }
 
-// ── Styles ───────────────────────────────────────────────
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    form:      { padding: spacing[5], backgroundColor: t.surface.bgCard, flex: 1 },
+    formTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[4] },
 
-const styles = StyleSheet.create({
-  form: {
-    padding: 20,
-    backgroundColor: "#fff",
-    flex: 1,
-  },
-  formTitle: { fontSize: 20, fontWeight: "800", color: "#0f172a", marginBottom: 16 },
+    aiBtn:         { backgroundColor: colors.violet[500], flexDirection: "row", alignItems: "center", justifyContent: "center", padding: spacing[3], borderRadius: radii.md, marginBottom: spacing[6], gap: spacing[2] },
+    aiBtnDisabled: { opacity: 0.7 },
+    aiBtnText:     { color: colors.white, fontWeight: fontWeight.bold, fontSize: 14 },
 
-  aiBtn: {
-    backgroundColor: "#8b5cf6",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 24,
-    gap: 8,
-  },
-  aiBtnDisabled: { opacity: 0.7 },
-  aiBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+    classificationResult:      { backgroundColor: colors.sky[50], padding: 14, borderRadius: radii.md, marginBottom: spacing[5], borderWidth: 1, borderColor: colors.sky[200] },
+    classificationResultTitle: { fontSize: 14, fontWeight: fontWeight.bold, color: colors.sky[700], marginBottom: spacing[2] },
+    resultLine:                { fontSize: fontSize.sm, color: colors.sky[900], marginBottom: 4 },
+    resultLabel:               { fontWeight: fontWeight.semibold },
 
-  classificationResult: {
-    backgroundColor: "#f0f9ff",
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#bae6fd",
-  },
-  classificationResultTitle: { fontSize: 14, fontWeight: "700", color: "#0369a1", marginBottom: 8 },
-  resultLine: { fontSize: 13, color: "#0c4a6e", marginBottom: 4 },
-  resultLabel: { fontWeight: "600" },
+    field: { marginBottom: spacing[5] },
+    label: { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.secondary, marginBottom: spacing[2] },
+    input: {
+      backgroundColor: t.border.light,
+      padding: spacing[3],
+      borderRadius: radii.md,
+      fontSize: fontSize.md,
+      color: t.text.primary,
+      borderWidth: 1,
+      borderColor: t.border.medium,
+    },
 
-  field: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: "600", color: "#64728b", marginBottom: 8 },
-  input: {
-    backgroundColor: "#f1f5f9",
-    padding: 12,
-    borderRadius: 12,
-    fontSize: 16,
-    color: "#0f172a",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
+    chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20 },
+    chip:        { paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.full, backgroundColor: t.border.light, marginRight: spacing[2], borderWidth: 1, borderColor: t.border.medium },
+    chipActive:  { backgroundColor: colors.sky[500], borderColor: colors.sky[500] },
+    chipText:    { fontSize: fontSize.sm, color: t.text.secondary, fontWeight: fontWeight.semibold },
+    chipTextActive: { color: colors.white },
 
-  chipScroll: { marginHorizontal: -20, paddingHorizontal: 20 },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "#f1f5f9",
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  chipActive: { backgroundColor: "#0ea5e9", borderColor: "#0ea5e9" },
-  chipText: { fontSize: 13, color: "#475569", fontWeight: "600" },
-  chipTextActive: { color: "#fff" },
+    addTagContainer: { flexDirection: "row", alignItems: "center", backgroundColor: t.surface.bg, borderRadius: radii.full, paddingLeft: spacing[3], paddingRight: 4, borderWidth: 1, borderColor: t.border.medium, height: 36, marginLeft: 4 },
+    addTagInput:     { fontSize: fontSize.sm, color: t.text.primary, width: 80, padding: 0 },
+    addTagBtn:       { width: 28, height: 28, borderRadius: 14, backgroundColor: t.surface.bgCard, alignItems: "center", justifyContent: "center", marginLeft: 4 },
+    addTagBtnText:   { color: colors.sky[500], fontSize: 18, fontWeight: fontWeight.bold },
 
-  addTagContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    borderRadius: 999,
-    paddingLeft: 12,
-    paddingRight: 4,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    height: 36,
-    marginLeft: 4,
-  },
-  addTagInput: { fontSize: 13, color: "#0f172a", width: 80, padding: 0 },
-  addTagBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 4,
-  },
-  addTagBtnText: { color: "#0ea5e9", fontSize: 18, fontWeight: "bold" },
-
-  newTagRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  newTagInput: { flex: 1, minWidth: 100 },
-  newTagSubmitBtn: {
-    backgroundColor: "#0ea5e9",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    justifyContent: "center",
-  },
-  newTagSubmitText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-});
+    newTagRow:       { flexDirection: "row", alignItems: "center", gap: spacing[2], flexWrap: "wrap" },
+    newTagInput:     { flex: 1, minWidth: 100 },
+    newTagSubmitBtn: { backgroundColor: colors.sky[500], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radii.md, justifyContent: "center" },
+    newTagSubmitText: { color: colors.white, fontWeight: fontWeight.semibold, fontSize: 14 },
+  });
+}

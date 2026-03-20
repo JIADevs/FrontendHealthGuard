@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,8 +17,13 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
+import { colors, overlay, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
 
 export function ScannerScreen() {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const params = (route.params ?? {}) as RootStackParamList["Scanner"];
@@ -79,7 +84,7 @@ export function ScannerScreen() {
   if (!permission) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#0ea5e9" />
+        <ActivityIndicator color={colors.sky[500]} />
       </View>
     );
   }
@@ -134,7 +139,7 @@ export function ScannerScreen() {
             onPress={() => setPhotoUri(null)}
             disabled={form.uploading}
           >
-            <X color="#fff" size={24} />
+            <X color={colors.white} size={24} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.circleBtnGreen}
@@ -142,9 +147,9 @@ export function ScannerScreen() {
             disabled={form.uploading}
           >
             {form.uploading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.white} />
             ) : (
-              <Check color="#fff" size={32} />
+              <Check color={colors.white} size={32} />
             )}
           </TouchableOpacity>
         </View>
@@ -160,7 +165,7 @@ export function ScannerScreen() {
       <View style={styles.overlay}>
         <View style={styles.cameraHeader}>
           <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
-            <X color="#fff" size={24} />
+            <X color={colors.white} size={24} />
           </TouchableOpacity>
         </View>
 
@@ -170,7 +175,7 @@ export function ScannerScreen() {
             <View style={styles.captureBtnInner} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.switchBtn}>
-            <RefreshCw color="#fff" size={24} />
+            <RefreshCw color={colors.white} size={24} />
           </TouchableOpacity>
         </View>
       </View>
@@ -178,87 +183,89 @@ export function ScannerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 24,
-  },
-  text: { fontSize: 16, color: "#334155", textAlign: "center", marginBottom: 16 },
-  btn: { backgroundColor: "#0ea5e9", paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
-  btnText: { color: "#fff", fontWeight: "600" },
-  helper: { marginTop: 16, fontSize: 13, color: "#64728b", textAlign: "center", lineHeight: 18 },
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: t.surface.bgCard,
+      padding: spacing[6],
+    },
+    text:    { fontSize: fontSize.md, color: t.text.primary, textAlign: "center", marginBottom: spacing[4] },
+    btn:     { backgroundColor: colors.sky[500], paddingHorizontal: spacing[5], paddingVertical: spacing[3], borderRadius: radii.md },
+    btnText: { color: colors.white, fontWeight: fontWeight.semibold },
+    helper:  { marginTop: spacing[4], fontSize: fontSize.sm, color: t.text.secondary, textAlign: "center", lineHeight: 18 },
 
-  container: { flex: 1, backgroundColor: "#000" },
-  overlay: { flex: 1, justifyContent: "space-between" },
-  cameraHeader: { padding: 24, paddingTop: 48, alignItems: "flex-start" },
-  closeBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    container:      { flex: 1, backgroundColor: colors.black },
+    overlay:        { flex: 1, justifyContent: "space-between" },
+    cameraHeader:   { padding: spacing[6], paddingTop: 48, alignItems: "flex-start" },
+    closeBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: radii.full,
+      backgroundColor: overlay.darker,
+      alignItems: "center",
+      justifyContent: "center",
+    },
 
-  cameraControls: {
-    flexDirection: "row",
-    padding: 32,
-    paddingBottom: 48,
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  captureBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 4,
-    borderColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  captureBtnInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: "#fff" },
-  switchBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    cameraControls: {
+      flexDirection: "row",
+      padding: 32,
+      paddingBottom: 48,
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    captureBtn: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      borderWidth: 4,
+      borderColor: colors.white,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    captureBtnInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.white },
+    switchBtn: {
+      width: 48,
+      height: 48,
+      borderRadius: radii.full,
+      backgroundColor: overlay.light,
+      alignItems: "center",
+      justifyContent: "center",
+    },
 
-  previewContainer: {
-    height: 450,
-    backgroundColor: "#000",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  previewImage: { width: "100%", height: "100%" },
+    previewContainer: {
+      height: 450,
+      backgroundColor: colors.black,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    previewImage: { width: "100%", height: "100%" },
 
-  previewControls: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 32,
-    paddingBottom: 48,
-    backgroundColor: "#fff",
-    paddingTop: 12,
-  },
-  circleBtnRed: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#ef4444",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  circleBtnGreen: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#22c55e",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+    previewControls: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 32,
+      paddingBottom: 48,
+      backgroundColor: t.surface.bgCard,
+      paddingTop: spacing[3],
+    },
+    circleBtnRed: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: colors.error[500],
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    circleBtnGreen: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.success[500],
+      alignItems: "center",
+      justifyContent: "center",
+    },
+  });
+}

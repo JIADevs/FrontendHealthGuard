@@ -126,7 +126,7 @@ export default function DocumentsPage() {
       {/* Grid */}
       {docs.isLoading ? (
         <div className="empty-state">
-          <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto", width: 32, height: 32 }} />
+          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
         </div>
       ) : (docs.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
@@ -400,7 +400,7 @@ function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
         <div className="modal-body">
           {doc.isLoading ? (
             <div className="empty-state">
-              <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto", width: 32, height: 32 }} />
+              <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
             </div>
           ) : d ? (
             <>
@@ -479,7 +479,7 @@ function ShareModal({ doc, onClose }: { doc: Document; onClose: () => void }) {
         <div className="modal-body">
           {shareMut.isPending ? (
             <div className="empty-state">
-              <div className="spinner" style={{ borderColor: "var(--gray-200)", borderTopColor: "var(--primary-500)", margin: "0 auto", width: 32, height: 32 }} />
+              <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
               <p style={{ marginTop: 12 }}>Generando enlace...</p>
             </div>
           ) : shareMut.data ? (

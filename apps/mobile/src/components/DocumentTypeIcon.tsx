@@ -1,5 +1,6 @@
 import { View, StyleSheet } from "react-native";
 import { FileText, FileImage, File } from "lucide-react-native";
+import { colors } from "@healthguard/ui";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -17,20 +18,20 @@ type IconVariant = {
 // ─── Mapa de colores por tipo de documento médico ────────────────────────────
 
 const TYPE_VARIANTS: Record<string, IconVariant> = {
-  "Análisis de sangre":    { bg: "#fee2e2", iconColor: "#dc2626" },
-  "Análisis de orina":     { bg: "#fef3c7", iconColor: "#d97706" },
-  "Radiografía":           { bg: "#fef9c3", iconColor: "#ca8a04" },
-  "Ecografía":             { bg: "#dbeafe", iconColor: "#2563eb" },
-  "Tomografía":            { bg: "#ede9fe", iconColor: "#7c3aed" },
-  "Resonancia magnética":  { bg: "#ede9fe", iconColor: "#7c3aed" },
-  "Receta":                { bg: "#dcfce7", iconColor: "#16a34a" },
-  "Informe médico":        { bg: "#e0f2fe", iconColor: "#0284c7" },
-  "Historia clínica":      { bg: "#f0fdf4", iconColor: "#15803d" },
-  "Vacuna":                { bg: "#fce7f3", iconColor: "#db2777" },
-  "Odontología":           { bg: "#fff7ed", iconColor: "#ea580c" },
+  "Análisis de sangre":    { bg: colors.error[50],    iconColor: colors.error[600] },
+  "Análisis de orina":     { bg: colors.amber[100],   iconColor: colors.amber[600] },
+  "Radiografía":           { bg: colors.yellow[100],  iconColor: colors.yellow[600] },
+  "Ecografía":             { bg: colors.primary[100], iconColor: colors.primary[600] },
+  "Tomografía":            { bg: colors.violet[100],  iconColor: colors.violet[600] },
+  "Resonancia magnética":  { bg: colors.violet[100],  iconColor: colors.violet[600] },
+  "Receta":                { bg: colors.green[100],   iconColor: colors.green[600] },
+  "Informe médico":        { bg: colors.sky[100],     iconColor: colors.sky[600] },
+  "Historia clínica":      { bg: colors.green[50],    iconColor: colors.green[700] },
+  "Vacuna":                { bg: colors.pink[100],    iconColor: colors.pink[600] },
+  "Odontología":           { bg: colors.orange[50],   iconColor: colors.orange[600] },
 };
 
-const DEFAULT_VARIANT: IconVariant = { bg: "#e0f2fe", iconColor: "#0ea5e9" };
+const DEFAULT_VARIANT: IconVariant = { bg: colors.sky[100], iconColor: colors.sky[500] };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -10,8 +9,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
 import { getBackpackById, getBackpackDocuments, getDocuments, addDocToBackpack, isApiError, type Document, type DocumentPage } from "@healthguard/api";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
@@ -19,6 +19,8 @@ import { Search, Plus, Check, X } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
+import { useAppTheme, colors } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id: string };
 
@@ -26,6 +28,8 @@ export function BackpackAddDocumentsScreen() {
   const route = useRoute();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const queryClient = useQueryClient();
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
   const { id } = (route.params ?? {}) as RouteParams;
 
   const [search, setSearch] = useState("");
@@ -88,7 +92,7 @@ export function BackpackAddDocumentsScreen() {
       }),
     enabled: !!id,
     staleTime: 5_000,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   const docs = useMemo(
@@ -139,7 +143,7 @@ export function BackpackAddDocumentsScreen() {
   if (backpackQuery.isLoading && !backpackQuery.isRefetching) {
     return (
       <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color="#0ea5e9" />
+        <ActivityIndicator size="large" color={colors.sky[500]} />
       </SafeAreaView>
     );
   }
@@ -152,11 +156,11 @@ export function BackpackAddDocumentsScreen() {
         </Text>
 
         <View style={styles.searchBar}>
-          <Search size={18} color="#64748b" />
+          <Search size={18} color={t.text.secondary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar documentos..."
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor={t.text.muted}
             value={search}
             onChangeText={setSearch}
             autoCorrect={false}
@@ -165,7 +169,7 @@ export function BackpackAddDocumentsScreen() {
           />
           {search.trim().length > 0 && (
             <TouchableOpacity style={styles.clearBtn} onPress={() => setSearch("")} accessibilityLabel="Limpiar búsqueda">
-              <X size={18} color="#64748b" />
+              <X size={18} color={t.text.secondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -179,14 +183,14 @@ export function BackpackAddDocumentsScreen() {
           <RefreshControl
             refreshing={docsQuery.isRefetching}
             onRefresh={() => docsQuery.refetch()}
-            colors={["#0ea5e9"]}
-            tintColor="#0ea5e9"
+            colors={[colors.sky[500]]}
+            tintColor={colors.sky[500]}
           />
         }
         ListEmptyComponent={
           docsQuery.isLoading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color="#0ea5e9" />
+              <ActivityIndicator size="large" color={colors.sky[500]} />
             </View>
           ) : (
             <View style={styles.center}>
@@ -217,24 +221,7 @@ export function BackpackAddDocumentsScreen() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.addBtn,
-                addingIds[item.id] === "loading" && styles.addBtnLoading,
-                addingIds[item.id] === "done" && styles.addBtnDone,
-              ]}
-              onPress={() => handleAdd(item)}
-              disabled={!!addingIds[item.id]}
-              accessibilityLabel={`Agregar ${item.title} a la mochila`}
-            >
-              {addingIds[item.id] === "loading" ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : addingIds[item.id] === "done" ? (
-                <Check size={18} color="#fff" />
-              ) : (
-                <Plus size={18} color="#fff" />
-              )}
-            </TouchableOpacity>
+            <AddButton item={item} addingIds={addingIds} onAdd={handleAdd} />
           </View>
         )}
       />
@@ -246,25 +233,60 @@ export function BackpackAddDocumentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  header: { padding: 20, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e2e8f0" },
-  title: { fontSize: 20, fontWeight: "800", color: "#0f172a", marginBottom: 14 },
-  searchBar: { backgroundColor: "#f1f5f9", borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10 },
-  searchInput: { flex: 1, fontSize: 14, color: "#0f172a" },
-  clearBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: "#e2e8f0" },
-  list: { padding: 16, gap: 12, paddingBottom: 90 },
-  empty: { color: "#64748b", fontSize: 15, textAlign: "center" },
-  cardRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  card: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, padding: 14, backgroundColor: "#fff", borderRadius: 16, borderWidth: 1, borderColor: "#e2e8f0" },
-  cardInfo: { flex: 1 },
-  cardTitle: { fontSize: 14, fontWeight: "800", color: "#0f172a", marginBottom: 2 },
-  cardSub: { fontSize: 13, color: "#64748b" },
-  addBtn: { backgroundColor: "#0ea5e9", borderRadius: 16, width: 48, height: 48, alignItems: "center", justifyContent: "center" },
-  addBtnLoading: { opacity: 0.7 },
-  addBtnDone: { backgroundColor: "#22c55e" },
-  fab: { position: "absolute", bottom: 22, left: 16, right: 16, backgroundColor: "#fff", borderRadius: 16, borderWidth: 1, borderColor: "#e2e8f0", paddingVertical: 14, alignItems: "center", elevation: 2 },
-  fabText: { color: "#0f172a", fontWeight: "900" },
-});
+function AddButton({
+  item,
+  addingIds,
+  onAdd,
+}: {
+  item: Document;
+  addingIds: Record<string, "loading" | "done">;
+  onAdd: (doc: Document) => void;
+}) {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const state = addingIds[item.id];
 
+  let icon: React.ReactNode;
+  if (state === "loading") {
+    icon = <ActivityIndicator size="small" color={colors.white} />;
+  } else if (state === "done") {
+    icon = <Check size={18} color={colors.white} />;
+  } else {
+    icon = <Plus size={18} color={colors.white} />;
+  }
+
+  return (
+    <TouchableOpacity
+      style={[styles.addBtn, state === "loading" && styles.addBtnLoading, state === "done" && styles.addBtnDone]}
+      onPress={() => onAdd(item)}
+      disabled={!!state}
+      accessibilityLabel={`Agregar ${item.title} a la mochila`}
+    >
+      {icon}
+    </TouchableOpacity>
+  );
+}
+
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: t.surface.bg },
+    center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+    header: { padding: 20, backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
+    title: { fontSize: 20, fontWeight: "800", color: t.text.primary, marginBottom: 14 },
+    searchBar: { backgroundColor: t.border.light, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10 },
+    searchInput: { flex: 1, fontSize: 14, color: t.text.primary },
+    clearBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: t.border.medium },
+    list: { padding: 16, gap: 12, paddingBottom: 90 },
+    empty: { color: t.text.secondary, fontSize: 15, textAlign: "center" },
+    cardRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+    card: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, padding: 14, backgroundColor: t.surface.bgCard, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium },
+    cardInfo: { flex: 1 },
+    cardTitle: { fontSize: 14, fontWeight: "800", color: t.text.primary, marginBottom: 2 },
+    cardSub: { fontSize: 13, color: t.text.secondary },
+    addBtn: { backgroundColor: colors.sky[500], borderRadius: 16, width: 48, height: 48, alignItems: "center", justifyContent: "center" },
+    addBtnLoading: { opacity: 0.7 },
+    addBtnDone: { backgroundColor: colors.green[500] },
+    fab: { position: "absolute", bottom: 22, left: 16, right: 16, backgroundColor: t.surface.bgCard, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium, paddingVertical: 14, alignItems: "center", elevation: 2 },
+    fabText: { color: t.text.primary, fontWeight: "900" },
+  });
+}

@@ -15,7 +15,8 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      # Misma IP LAN que mobile (`HOST_IP` en .env vía docker-up.js). Fallback 127.0.0.1 evita timeouts por IPv6 al usar "localhost" en Windows.
+      - NEXT_PUBLIC_API_URL=http://${HOST_IP:-127.0.0.1}:8000
     volumes:
       - .:/app
       - /app/apps/web/node_modules

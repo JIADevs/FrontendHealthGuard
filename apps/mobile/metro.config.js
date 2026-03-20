@@ -6,8 +6,12 @@ const workspaceRoot = path.resolve(projectRoot, "../..");
 
 const config = getDefaultConfig(projectRoot);
 
-// 1. Watch all files within the monorepo
-config.watchFolders = [workspaceRoot];
+// 1. Watch only workspace packages the app resolves (not the whole repo).
+//    Watching workspaceRoot includes apps/web and can exhaust memory (ENOMEM on scandir) in Docker.
+const sharedPackages = ["api", "config", "stores", "ui"];
+config.watchFolders = sharedPackages.map((name) =>
+  path.resolve(workspaceRoot, "packages", name),
+);
 
 // 2. Let Metro know where to resolve packages and in what order
 config.resolver.nodeModulesPaths = [

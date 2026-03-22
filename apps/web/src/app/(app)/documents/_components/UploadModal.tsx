@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useDocumentTypesQuery } from "@healthguard/api/hooks";
 import { Upload, FileText, X, FileUp } from "lucide-react";
 import {
-  getDocumentTypes,
   uploadFile,
   createDocument,
   isApiError,
@@ -32,7 +32,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const types = useQuery({ queryKey: ["doc-types"], queryFn: getDocumentTypes });
+  const types = useDocumentTypesQuery();
 
   function handleFilePick(files: FileList | null) {
     const f = files?.[0];

@@ -1,16 +1,16 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useShareDocumentMutation } from "@healthguard/api/hooks";
 import { X } from "lucide-react";
-import { shareDocument, type Document } from "@healthguard/api";
+import type { Document } from "@healthguard/api";
 import { ShareResult } from "@/components/ShareResult";
 
 export function ShareModal({ doc, onClose }: { doc: Document; onClose: () => void }) {
-  const shareMut = useMutation({ mutationFn: () => shareDocument(doc.id) });
+  const shareMut = useShareDocumentMutation();
 
   // Auto-trigger share on mount
   if (!shareMut.data && !shareMut.isPending && !shareMut.isError) {
-    shareMut.mutate();
+    shareMut.mutate(doc.id);
   }
 
   return (

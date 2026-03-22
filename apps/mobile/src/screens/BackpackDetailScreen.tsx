@@ -16,11 +16,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useBackpackDocumentsQuery } from "@healthguard/api/hooks";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useBackpackDocumentsQuery, useBackpackQuery, useDeleteBackpackMutation, useShareBackpackMutation } from "@healthguard/api/hooks";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { getBackpackById, removeDocFromBackpack, deleteBackpack, shareBackpack, isApiError, type DocumentPage, type Document } from "@healthguard/api";
+import { removeDocFromBackpack, isApiError, type DocumentPage, type Document } from "@healthguard/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
 import { Camera, FileText, FileUp, Plus, Search, Share2, Trash2, Edit2, X } from "lucide-react-native";
@@ -42,11 +42,7 @@ export function BackpackDetailScreen() {
   const [fabOpen, setFabOpen] = useState(false);
   const [animation] = useState(() => new Animated.Value(0));
 
-  const backpackQuery = useQuery({
-    queryKey: ["backpack", id],
-    queryFn: () => getBackpackById(id),
-    enabled: !!id,
-  });
+  const backpackQuery = useBackpackQuery(id);
 
   const docsQuery = useBackpackDocumentsQuery(id, debouncedSearch);
 
@@ -68,22 +64,8 @@ export function BackpackDetailScreen() {
     },
   });
 
-  const deleteMut = useMutation({
-    mutationFn: async () => deleteBackpack(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["backpacks"], exact: false });
-      Toast.show({ type: "success", text1: "Mochila eliminada" });
-      navigation.goBack();
-    },
-    onError: (err) => {
-      const message = isApiError(err) ? err.message : "No se pudo eliminar la mochila.";
-      Toast.show({ type: "error", text1: "Error al eliminar", text2: message });
-    },
-  });
-
-  const shareMut = useMutation({
-    mutationFn: async () => shareBackpack(id),
-  });
+  const deleteMut = useDeleteBackpackMutation();
+  const shareMut = useShareBackpackMutation();
 
   const [shareOpen, setShareOpen] = useState(false);
   const [shareData, setShareData] = useState<null | { shareUrl: string; qrCodeUrl: string }>(null);
@@ -97,7 +79,10 @@ export function BackpackDetailScreen() {
   const handleDeleteBackpack = useCallback(() => {
     Alert.alert("Eliminar mochila", "¿Querés eliminar esta mochila y sus enlaces?", [
       { text: "Cancelar", style: "cancel" },
-      { text: "Eliminar", style: "destructive", onPress: () => deleteMut.mutate() },
+      { text: "Eliminar", style: "destructive", onPress: () => deleteMut.mutate(id, {
+        onSuccess: () => { Toast.show({ type: "success", text1: "Mochila eliminada" }); navigation.goBack(); },
+        onError: (err) => { const msg = isApiError(err) ? err.message : "No se pudo eliminar la mochila."; Toast.show({ type: "error", text1: "Error al eliminar", text2: msg }); },
+      }) },
     ]);
   }, [deleteMut]);
 
@@ -145,7 +130,7 @@ export function BackpackDetailScreen() {
 
   const openShare = useCallback(async () => {
     try {
-      const res = await shareMut.mutateAsync();
+      const res = await shareMut.mutateAsync(id);
       setShareData({ shareUrl: res.shareUrl, qrCodeUrl: res.qrCodeUrl });
       setShareOpen(true);
       Toast.show({ type: "success", text1: "Link generado", text2: "Listo para compartir" });

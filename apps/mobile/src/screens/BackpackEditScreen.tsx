@@ -11,9 +11,9 @@ import {
   View,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
-import { getBackpackById, createBackpack, updateBackpack, deleteBackpack, isApiError, type BackpackCreate } from "@healthguard/api";
+import { useBackpackQuery, useCreateBackpackMutation, useUpdateBackpackMutation, useDeleteBackpackMutation } from "@healthguard/api/hooks";
+import { isApiError, type BackpackCreate } from "@healthguard/api";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useAppTheme, colors } from "@healthguard/ui";
@@ -24,17 +24,12 @@ type RouteParams = { id?: string };
 export function BackpackEditScreen() {
   const route = useRoute();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const queryClient = useQueryClient();
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const { id } = (route.params ?? {}) as RouteParams;
   const isEdit = !!id;
 
-  const { data: backpack, isLoading } = useQuery({
-    queryKey: ["backpack", id],
-    queryFn: () => (id ? getBackpackById(id) : Promise.reject(new Error("Missing backpack id"))),
-    enabled: isEdit,
-  });
+  const { data: backpack, isLoading } = useBackpackQuery(id ?? "");
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -55,12 +50,9 @@ export function BackpackEditScreen() {
     [name, description]
   );
 
-  const deleteMut = useMutation({
-    mutationFn: async () => {
-      if (!id) throw new Error("Missing backpack id");
-      return deleteBackpack(id);
-    },
-  });
+  const createMut = useCreateBackpackMutation();
+  const updateMut = useUpdateBackpackMutation();
+  const deleteMut = useDeleteBackpackMutation();
 
   const handleSave = useCallback(async () => {
     if (saving) return;
@@ -73,15 +65,12 @@ export function BackpackEditScreen() {
     setSaving(true);
     try {
       if (isEdit && id) {
-        await updateBackpack(id, payload);
+        await updateMut.mutateAsync({ id, bp: payload });
         Toast.show({ type: "success", text1: "Mochila actualizada", text2: trimmedName });
       } else {
-        await createBackpack(payload);
+        await createMut.mutateAsync(payload);
         Toast.show({ type: "success", text1: "Mochila creada", text2: trimmedName });
       }
-
-      await queryClient.invalidateQueries({ queryKey: ["backpacks"], exact: false });
-      await queryClient.invalidateQueries({ queryKey: ["backpack", id], exact: false });
       navigation.goBack();
     } catch (err) {
       const message = isApiError(err) ? err.message : "No se pudo guardar la mochila.";
@@ -90,7 +79,7 @@ export function BackpackEditScreen() {
     } finally {
       setSaving(false);
     }
-  }, [saving, name, isEdit, id, payload, queryClient, navigation]);
+  }, [saving, name, isEdit, id, payload, createMut, updateMut, navigation]);
 
   const handleDelete = useCallback(() => {
     if (!id) return;
@@ -104,9 +93,8 @@ export function BackpackEditScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteMut.mutateAsync();
+              await deleteMut.mutateAsync(id!);
               Toast.show({ type: "success", text1: "Mochila eliminada", text2: name.trim() || "—" });
-              await queryClient.invalidateQueries({ queryKey: ["backpacks"], exact: false });
               navigation.goBack();
             } catch (err) {
               const message = isApiError(err) ? err.message : "No se pudo eliminar la mochila.";
@@ -117,7 +105,7 @@ export function BackpackEditScreen() {
         },
       ]
     );
-  }, [id, deleteMut, queryClient, navigation, name]);
+  }, [id, deleteMut, navigation, name]);
 
   if (isEdit && isLoading) {
     return (

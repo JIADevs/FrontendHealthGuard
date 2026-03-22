@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -11,15 +11,16 @@ import {
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
-import { getBackpackById, getBackpackDocuments, getDocuments, addDocToBackpack, isApiError, type Document, type DocumentPage } from "@healthguard/api";
+import { useBackpackQuery, useAddDocToBackpackMutation } from "@healthguard/api/hooks";
+import { getBackpackDocuments, getDocuments, isApiError, type Document, type DocumentPage } from "@healthguard/api";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
 import { Search, Plus, Check, X } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { useAppTheme, colors } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id: string };
@@ -27,33 +28,14 @@ type RouteParams = { id: string };
 export function BackpackAddDocumentsScreen() {
   const route = useRoute();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const queryClient = useQueryClient();
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const { id } = (route.params ?? {}) as RouteParams;
 
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedSearch = useDebounceSearch(search);
 
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    const trimmed = search.trim();
-    if (!trimmed) {
-      setDebouncedSearch("");
-      return;
-    }
-    debounceRef.current = setTimeout(() => setDebouncedSearch(trimmed), 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [search]);
-
-  const backpackQuery = useQuery({
-    queryKey: ["backpack", id],
-    queryFn: () => getBackpackById(id),
-    enabled: !!id,
-  });
+  const backpackQuery = useBackpackQuery(id);
 
   const existingDocsQuery = useQuery({
     queryKey: ["backpack-doc-ids", id],
@@ -102,35 +84,33 @@ export function BackpackAddDocumentsScreen() {
 
   const [addingIds, setAddingIds] = useState<Record<string, "loading" | "done">>({});
 
-  const addMut = useMutation({
-    mutationFn: async ({ documentId }: { documentId: string }) => addDocToBackpack(id, documentId),
-    onSuccess: (_data, vars) => {
-      const title = docs.find((d) => d.id === vars.documentId)?.title ?? "Documento";
-      setAddingIds((prev) => ({ ...prev, [vars.documentId]: "done" }));
-      Toast.show({ type: "success", text1: "Documento agregado", text2: title });
-    },
-    onError: (err, vars) => {
-      setAddingIds((prev) => {
-        const next = { ...prev };
-        delete next[vars.documentId];
-        return next;
-      });
-      const message = isApiError(err) ? err.message : "No se pudo agregar el documento.";
-      Toast.show({ type: "error", text1: "Error al agregar", text2: message });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["backpack-docs", id], exact: false });
-      queryClient.invalidateQueries({ queryKey: ["backpack", id], exact: false });
-    },
-  });
+  const addMut = useAddDocToBackpackMutation();
 
   const handleAdd = useCallback(
     (doc: Document) => {
       if (addingIds[doc.id]) return;
       setAddingIds((prev) => ({ ...prev, [doc.id]: "loading" }));
-      addMut.mutate({ documentId: doc.id });
+      addMut.mutate(
+        { backpackId: id, documentId: doc.id },
+        {
+          onSuccess: (_data, vars) => {
+            const title = docs.find((d) => d.id === vars.documentId)?.title ?? "Documento";
+            setAddingIds((prev) => ({ ...prev, [vars.documentId]: "done" }));
+            Toast.show({ type: "success", text1: "Documento agregado", text2: title });
+          },
+          onError: (err, vars) => {
+            setAddingIds((prev) => {
+              const next = { ...prev };
+              delete next[vars.documentId];
+              return next;
+            });
+            const message = isApiError(err) ? err.message : "No se pudo agregar el documento.";
+            Toast.show({ type: "error", text1: "Error al agregar", text2: message });
+          },
+        }
+      );
     },
-    [addingIds, addMut]
+    [addingIds, addMut, id, docs]
   );
 
   const openDocument = useCallback(

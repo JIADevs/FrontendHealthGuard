@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useMarkNotificationReadMutation } from "@healthguard/api/hooks";
 import { useAuthStore, useNotifStore, useUnreadCount } from "@healthguard/stores";
-import { getNotifications, markNotificationAsRead } from "@healthguard/api";
+import { getNotifications } from "@healthguard/api";
 import Link from "next/link";
 import { Toaster } from "sileo";
 import {
@@ -108,7 +109,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 }
 
 function NotificationBell() {
-  const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const unread = useUnreadCount();
@@ -138,13 +138,7 @@ function NotificationBell() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const readMut = useMutation({
-    mutationFn: (id: string) => markNotificationAsRead(id),
-    onSuccess: () => {
-      decrementUnread();
-      qc.invalidateQueries({ queryKey: ["notifications"] });
-    },
-  });
+  const readMut = useMarkNotificationReadMutation();
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
@@ -167,7 +161,7 @@ function NotificationBell() {
                 <div
                   key={n.id}
                   className={`notif-item${!n.isRead ? " unread" : ""}`}
-                  onClick={() => { if (!n.isRead) readMut.mutate(n.id); }}
+                  onClick={() => { if (!n.isRead) readMut.mutate(n.id, { onSuccess: () => decrementUnread() }); }}
                 >
                   <div className={`notif-dot${n.isRead ? " read" : ""}`} />
                   <div className="notif-body">

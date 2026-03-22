@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useAppointmentsQuery,
+  useCreateAppointmentMutation,
+  useUpdateAppointmentMutation,
+  useDeleteAppointmentMutation,
+  useUpdateAppointmentStatusMutation,
+  useMedicationsQuery,
+  useCreateMedicationMutation,
+  useUpdateMedicationMutation,
+  useDeleteMedicationMutation,
+  useConfirmIntakeMutation,
+} from "@healthguard/api/hooks";
 import {
   CalendarDays,
   Pill,
@@ -17,16 +28,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import {
-  getAppointments,
-  createAppointment,
-  updateAppointment,
-  updateAppointmentStatus,
-  deleteAppointment,
-  getMedications,
-  createMedication,
-  updateMedication,
-  deleteMedication,
-  confirmIntake,
   isApiError,
   type Appointment,
   type AppointmentCreate,
@@ -85,26 +86,14 @@ export default function AgendaPage() {
 //  APPOINTMENTS TAB
 // ══════════════════════════════════════════════════════
 function AppointmentsTab() {
-  const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Appointment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
 
-  const appts = useQuery({
-    queryKey: ["appointments", page],
-    queryFn: () => getAppointments({ page, limit: 10 }),
-  });
-
-  const statusMut = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => updateAppointmentStatus(id, status),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["appointments"] }),
-  });
-
-  const deleteMut = useMutation({
-    mutationFn: (id: string) => deleteAppointment(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["appointments"] }); setDeleteTarget(null); },
-  });
+  const appts = useAppointmentsQuery("", page, 10);
+  const statusMut = useUpdateAppointmentStatusMutation();
+  const deleteMut = useDeleteAppointmentMutation();
 
   const totalPages = appts.data?.totalPages ?? 1;
 
@@ -186,7 +175,7 @@ function AppointmentsTab() {
           message={`¿Eliminar la cita de ${deleteTarget.specialty} el ${formatDate(deleteTarget.date)}?`}
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
-          onConfirm={() => deleteMut.mutate(deleteTarget.id)}
+          onConfirm={() => deleteMut.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })}
           onCancel={() => setDeleteTarget(null)}
         />
       )}
@@ -198,7 +187,6 @@ function AppointmentsTab() {
 //  APPOINTMENT FORM MODAL
 // ══════════════════════════════════════════════════════
 function AppointmentFormModal({ initial, onClose }: { initial: Appointment | null; onClose: () => void }) {
-  const qc = useQueryClient();
   const isEdit = !!initial;
 
   const [specialty, setSpecialty] = useState(initial?.specialty ?? "");
@@ -210,17 +198,8 @@ function AppointmentFormModal({ initial, onClose }: { initial: Appointment | nul
   const [examType, setExamType] = useState(initial?.examType ?? "");
   const [error, setError] = useState<string | null>(null);
 
-  const createMut = useMutation({
-    mutationFn: (data: AppointmentCreate) => createAppointment(data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["appointments"] }); onClose(); },
-    onError: (err) => setError(isApiError(err) ? err.message : "Error guardando cita"),
-  });
-
-  const updateMut = useMutation({
-    mutationFn: (data: AppointmentCreate) => updateAppointment(initial!.id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["appointments"] }); onClose(); },
-    onError: (err) => setError(isApiError(err) ? err.message : "Error actualizando cita"),
-  });
+  const createMut = useCreateAppointmentMutation();
+  const updateMut = useUpdateAppointmentMutation();
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -230,7 +209,17 @@ function AppointmentFormModal({ initial, onClose }: { initial: Appointment | nul
       examType: type === "EXAM" ? examType : undefined,
       tags: [], reminderOffsets: [],
     };
-    isEdit ? updateMut.mutate(payload) : createMut.mutate(payload);
+    if (isEdit) {
+      updateMut.mutate({ id: initial!.id, appt: payload }, {
+        onSuccess: onClose,
+        onError: (err) => setError(isApiError(err) ? err.message : "Error actualizando cita"),
+      });
+    } else {
+      createMut.mutate(payload, {
+        onSuccess: onClose,
+        onError: (err) => setError(isApiError(err) ? err.message : "Error guardando cita"),
+      });
+    }
   }
 
   const loading = createMut.isPending || updateMut.isPending;
@@ -301,26 +290,14 @@ function AppointmentFormModal({ initial, onClose }: { initial: Appointment | nul
 //  MEDICATIONS TAB
 // ══════════════════════════════════════════════════════
 function MedicationsTab() {
-  const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Medication | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Medication | null>(null);
 
-  const meds = useQuery({
-    queryKey: ["medications", page],
-    queryFn: () => getMedications({ page, limit: 10 }),
-  });
-
-  const intakeMut = useMutation({
-    mutationFn: (id: string) => confirmIntake(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["medications"] }),
-  });
-
-  const deleteMut = useMutation({
-    mutationFn: (id: string) => deleteMedication(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medications"] }); setDeleteTarget(null); },
-  });
+  const meds = useMedicationsQuery(page, 10);
+  const intakeMut = useConfirmIntakeMutation();
+  const deleteMut = useDeleteMedicationMutation();
 
   const totalPages = meds.data?.totalPages ?? 1;
 
@@ -404,7 +381,7 @@ function MedicationsTab() {
           message={`¿Eliminar "${deleteTarget.name}"? Los recordatorios también se eliminarán.`}
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
-          onConfirm={() => deleteMut.mutate(deleteTarget.id)}
+          onConfirm={() => deleteMut.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })}
           onCancel={() => setDeleteTarget(null)}
         />
       )}
@@ -416,7 +393,6 @@ function MedicationsTab() {
 //  MEDICATION FORM MODAL
 // ══════════════════════════════════════════════════════
 function MedicationFormModal({ initial, onClose }: { initial: Medication | null; onClose: () => void }) {
-  const qc = useQueryClient();
   const isEdit = !!initial;
 
   const [name, setName] = useState(initial?.name ?? "");
@@ -427,17 +403,8 @@ function MedicationFormModal({ initial, onClose }: { initial: Medication | null;
   const [indications, setIndications] = useState(initial?.indications ?? "");
   const [error, setError] = useState<string | null>(null);
 
-  const createMut = useMutation({
-    mutationFn: (data: MedicationCreate) => createMedication(data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medications"] }); onClose(); },
-    onError: (err) => setError(isApiError(err) ? err.message : "Error guardando medicamento"),
-  });
-
-  const updateMut = useMutation({
-    mutationFn: (data: MedicationCreate) => updateMedication(initial!.id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medications"] }); onClose(); },
-    onError: (err) => setError(isApiError(err) ? err.message : "Error actualizando"),
-  });
+  const createMut = useCreateMedicationMutation();
+  const updateMut = useUpdateMedicationMutation();
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -449,7 +416,17 @@ function MedicationFormModal({ initial, onClose }: { initial: Medication | null;
       indications: indications || undefined,
       reminderOffsets: [60, 30, 15, 5],
     };
-    isEdit ? updateMut.mutate(payload) : createMut.mutate(payload);
+    if (isEdit) {
+      updateMut.mutate({ id: initial!.id, med: payload }, {
+        onSuccess: onClose,
+        onError: (err) => setError(isApiError(err) ? err.message : "Error actualizando"),
+      });
+    } else {
+      createMut.mutate(payload, {
+        onSuccess: onClose,
+        onError: (err) => setError(isApiError(err) ? err.message : "Error guardando medicamento"),
+      });
+    }
   }
 
   const loading = createMut.isPending || updateMut.isPending;

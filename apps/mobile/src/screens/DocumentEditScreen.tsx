@@ -13,6 +13,7 @@ import {
 import Toast from "react-native-toast-message";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDocumentQuery } from "@healthguard/api/hooks";
 import * as DocumentPicker from "expo-document-picker";
 import { FileUp, FileText as FileTextIcon, Check, X as XIcon } from "lucide-react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -20,7 +21,6 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
 import {
-  getDocumentById,
   getSignedUrl,
   updateDocument,
   uploadFileFromUri,
@@ -65,11 +65,7 @@ export function DocumentEditScreen() {
 
   const form = useDocumentForm();
 
-  const docQuery = useQuery({
-    queryKey: ["document", id],
-    queryFn: () => getDocumentById(id),
-    enabled: !!id,
-  });
+  const docQuery = useDocumentQuery(id);
 
   const signedUrlQuery = useQuery({
     queryKey: ["signed-url", (docQuery.data as Document | undefined)?.fileUrl],

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useProfileQuery } from "@healthguard/api/hooks";
 import {
   FileText,
   CalendarDays,
@@ -10,13 +11,13 @@ import {
   ArrowRight,
   Clock,
 } from "lucide-react";
-import { getMe, getAppointments, getMedications, getDocuments } from "@healthguard/api";
+import { getAppointments, getMedications, getDocuments } from "@healthguard/api";
 import { useAuthStore } from "@healthguard/stores";
 
 export default function DashboardPage() {
   const setUser = useAuthStore((s) => s.setUser);
 
-  const profile = useQuery({ queryKey: ["me"], queryFn: getMe });
+  const profile = useProfileQuery();
   const docs = useQuery({
     queryKey: ["documents", "stats"],
     queryFn: () => getDocuments({ page: 1, limit: 1 }),

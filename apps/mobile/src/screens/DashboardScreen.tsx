@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useQuery } from "@tanstack/react-query";
-import { getMe, getAppointments, getMedications } from "@healthguard/api";
+import { useProfileQuery, useAppointmentsQuery, useMedicationsQuery } from "@healthguard/api/hooks";
 import { useAuthStore } from "@healthguard/stores";
 import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
@@ -13,17 +12,9 @@ export function DashboardScreen() {
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const logout = useAuthStore((s) => s.logout);
-  const userQuery = useQuery({ queryKey: ["me"], queryFn: getMe });
-
-  const appts = useQuery({
-    queryKey: ["appointments"],
-    queryFn: () => getAppointments({ limit: 3 }),
-  });
-
-  const meds = useQuery({
-    queryKey: ["medications"],
-    queryFn: () => getMedications({ limit: 3 }),
-  });
+  const userQuery = useProfileQuery();
+  const appts = useAppointmentsQuery("", 1, 3);
+  const meds = useMedicationsQuery(1, 3);
 
   return (
     <SafeAreaView style={styles.container}>

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useBackpackQuery, useShareBackpackMutation } from "@healthguard/api/hooks";
 import { Backpack, FileText, X, Share2, ChevronLeft } from "lucide-react";
 import { Plus } from "lucide-react";
-import { getBackpackById, removeDocFromBackpack, shareBackpack, type BackpackWithDocs } from "@healthguard/api";
+import { removeDocFromBackpack, type BackpackWithDocs } from "@healthguard/api";
 import { sileo } from "sileo";
 import { ShareResult } from "@/components/ShareResult";
 import { AddDocsModal } from "./AddDocsModal";
@@ -23,7 +24,7 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
   const [showAdd, setShowAdd] = useState(false);
   const [shareData, setShareData] = useState<{ shareUrl: string; qrCodeUrl: string; expiresAt: string } | null>(null);
 
-  const bp = useQuery({ queryKey: ["backpack", id], queryFn: () => getBackpackById(id) }) as { data: BackpackWithDocs | undefined; isLoading: boolean };
+  const bp = useBackpackQuery(id) as { data: BackpackWithDocs | undefined; isLoading: boolean };
 
   const removeMut = useMutation({
     mutationFn: (docId: string) => removeDocFromBackpack(id, docId),
@@ -45,10 +46,7 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
     },
   });
 
-  const shareMut = useMutation({
-    mutationFn: () => shareBackpack(id),
-    onSuccess: (data) => setShareData(data),
-  });
+  const shareMut = useShareBackpackMutation();
 
   return (
     <>
@@ -79,7 +77,7 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
               <button
                 className="btn btn-primary"
                 style={{ width: "auto" }}
-                onClick={() => shareMut.mutate()}
+                onClick={() => shareMut.mutate(id, { onSuccess: (data) => setShareData(data as typeof shareData) })}
                 disabled={shareMut.isPending}
               >
                 <Share2 size={16} /> Compartir Mochila

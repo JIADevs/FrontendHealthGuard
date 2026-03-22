@@ -1,8 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { View, Text, TextInput, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDocumentsQuery } from "@healthguard/api/hooks";
-import { shareDocument } from "@healthguard/api";
+import { useDocumentsQuery, useShareDocumentMutation } from "@healthguard/api/hooks";
 import { Camera, Share2, Plus, FileUp, X, Search } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -23,6 +22,7 @@ export function DocumentsScreen() {
   const debouncedSearch = useDebounceSearch(search);
 
   const docs = useDocumentsQuery(debouncedSearch);
+  const shareMut = useShareDocumentMutation();
 
   const toggleFab = useCallback(() => {
     const toValue = fabOpen ? 0 : 1;
@@ -52,7 +52,7 @@ export function DocumentsScreen() {
 
   async function handleShare(docId: string, title: string) {
     try {
-      const result = await shareDocument(docId);
+      const result = await shareMut.mutateAsync(docId);
       await Share.share({
         message: `Te comparto este documento de HealthGuard: ${title}\n\n${result.shareUrl}`,
         url: result.shareUrl,

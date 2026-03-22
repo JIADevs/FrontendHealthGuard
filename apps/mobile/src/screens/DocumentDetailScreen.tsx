@@ -1,8 +1,9 @@
 import { useLayoutEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, Alert, ScrollView, Image } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { useQuery } from "@tanstack/react-query";
-import { getDocumentById, getSignedUrl, getTagCategories, type Document, type TagCategoryOut } from "@healthguard/api";
+import { useDocumentQuery, useTagCategoriesQuery } from "@healthguard/api/hooks";
+import { getSignedUrl, type Document, type TagCategoryOut } from "@healthguard/api";
 import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
@@ -25,11 +26,7 @@ export function DocumentDetailScreen() {
     }
   }, [navigation, title]);
 
-  const doc = useQuery({
-    queryKey: ["document", id],
-    queryFn: () => getDocumentById(id),
-    enabled: !!id,
-  });
+  const doc = useDocumentQuery(id);
 
   const signedUrl = useQuery({
     queryKey: ["signed-url", (doc.data as Document | undefined)?.fileUrl],
@@ -41,10 +38,7 @@ export function DocumentDetailScreen() {
   const url = signedUrl.data?.url;
   const isImage = d?.format?.toLowerCase().match(/image|jpg|jpeg|png/);
 
-  const tagCategoriesQuery = useQuery({
-    queryKey: ["tag-categories"],
-    queryFn: getTagCategories,
-  });
+  const tagCategoriesQuery = useTagCategoriesQuery();
 
   const categoryMap = useMemo(() => {
     const map: Record<string, string> = {};

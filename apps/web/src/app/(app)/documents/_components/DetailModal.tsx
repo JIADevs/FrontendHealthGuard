@@ -1,8 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useDocumentQuery } from "@healthguard/api/hooks";
 import { X, ExternalLink } from "lucide-react";
-import { getDocumentById, getSignedUrl, type Document } from "@healthguard/api";
+import { getSignedUrl, type Document } from "@healthguard/api";
 
 function formatDate(d: string | null | undefined) {
   if (!d) return "—";
@@ -10,10 +11,7 @@ function formatDate(d: string | null | undefined) {
 }
 
 export function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
-  const doc = useQuery({
-    queryKey: ["document", id],
-    queryFn: () => getDocumentById(id),
-  });
+  const doc = useDocumentQuery(id);
 
   const signedUrl = useQuery({
     queryKey: ["signed-url", doc.data?.fileUrl],

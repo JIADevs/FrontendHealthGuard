@@ -1,30 +1,30 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useCreateBackpackMutation } from "@healthguard/api/hooks";
 import { X } from "lucide-react";
-import { createBackpack, isApiError, type BackpackCreate } from "@healthguard/api";
+import { isApiError } from "@healthguard/api";
 import { sileo } from "sileo";
 
 export function BackpackFormModal({ onClose }: { onClose: () => void }) {
-  const qc = useQueryClient();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const mut = useMutation({
-    mutationFn: (data: BackpackCreate) => createBackpack(data),
-    onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ["backpacks"] });
-      sileo.success({ title: "Mochila creada", description: vars.name });
-      onClose();
-    },
-    onError: (err) => setError(isApiError(err) ? err.message : "Error creando mochila"),
-  });
+  const mut = useCreateBackpackMutation();
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    mut.mutate({ name, description: description || undefined, type: "CUSTOM" });
+    mut.mutate(
+      { name, description: description || undefined, type: "CUSTOM" },
+      {
+        onSuccess: (_, vars) => {
+          sileo.success({ title: "Mochila creada", description: vars.name });
+          onClose();
+        },
+        onError: (err) => setError(isApiError(err) ? err.message : "Error creando mochila"),
+      },
+    );
   }
 
   return (

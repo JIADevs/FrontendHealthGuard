@@ -10,7 +10,7 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
 import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
-import { useDebounceSearch } from "../hooks/useDebounceSearch";
+import { useDebounceSearch } from "@healthguard/ui";
 
 export function DocumentsScreen() {
   const t = useAppTheme();

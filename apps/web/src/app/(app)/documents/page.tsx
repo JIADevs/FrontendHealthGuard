@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useDebounceSearch } from "@healthguard/ui/hooks";
 import { Search, Upload, FileText, Eye, Share2, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { getDocuments, deleteDocument, isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -31,14 +32,15 @@ export default function DocumentsPage() {
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounceSearch(search);
   const [showUpload, setShowUpload] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Document | null>(null);
   const [shareTarget, setShareTarget] = useState<Document | null>(null);
 
   const docs = useQuery({
-    queryKey: ["documents", page, search],
-    queryFn: () => getDocuments({ page, limit: 12, searchQuery: search || undefined }),
+    queryKey: ["documents", page, debouncedSearch],
+    queryFn: () => getDocuments({ page, limit: 12, searchQuery: debouncedSearch || undefined }),
   });
 
   const total = docs.data?.total ?? 0;

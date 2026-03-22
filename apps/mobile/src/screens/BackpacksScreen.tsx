@@ -20,7 +20,7 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
 import { useAppTheme, colors } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
-import { useDebounceSearch } from "../hooks/useDebounceSearch";
+import { useDebounceSearch } from "@healthguard/ui";
 
 export function BackpacksScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();

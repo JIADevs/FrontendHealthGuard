@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Backpack, Plus, FileText, Trash2 } from "lucide-react";
+import { Backpack, Plus, FileText, Search, Trash2 } from "lucide-react";
+import { useDebounceSearch } from "@healthguard/ui/hooks";
 import { getBackpacks, deleteBackpack, type Backpack as BackpackType } from "@healthguard/api";
 import { sileo } from "sileo";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -13,11 +14,16 @@ import "./backpacks.css";
 
 export default function BackpacksPage() {
   const qc = useQueryClient();
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounceSearch(search);
   const [showForm, setShowForm] = useState(false);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BackpackType | null>(null);
 
-  const bps = useQuery({ queryKey: ["backpacks"], queryFn: () => getBackpacks({ page: 1, limit: 50 }) });
+  const bps = useQuery({
+    queryKey: ["backpacks", debouncedSearch],
+    queryFn: () => getBackpacks({ page: 1, limit: 50, searchQuery: debouncedSearch || undefined }),
+  });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteBackpack(id),
@@ -43,7 +49,7 @@ export default function BackpacksPage() {
 
   return (
     <>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Mochilas</h1>
           <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
@@ -55,6 +61,19 @@ export default function BackpacksPage() {
         </button>
       </div>
 
+      <div className="bp-toolbar">
+        <div className="bp-search-wrapper">
+          <Search size={16} />
+          <input
+            className="bp-search-input"
+            type="text"
+            placeholder="Buscar por nombre..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
       {bps.isLoading ? (
         <div className="empty-state">
           <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
@@ -62,7 +81,7 @@ export default function BackpacksPage() {
       ) : (bps.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
           <Backpack />
-          <p>No tienes mochilas. Crea una para agrupar documentos.</p>
+          <p>{debouncedSearch ? "Sin mochilas para esta búsqueda." : "No tienes mochilas. Crea una para agrupar documentos."}</p>
         </div>
       ) : (
         <div className="bp-grid">

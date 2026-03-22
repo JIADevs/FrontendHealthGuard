@@ -8,6 +8,10 @@
         ".": {
             "react-native": "./src/index.ts",
             "default": "./src/web.ts"
+        },
+        "./hooks": {
+            "types": "./src/useDebounceSearch.ts",
+            "default": "./src/useDebounceSearch.ts"
         }
     },
     "scripts": {}

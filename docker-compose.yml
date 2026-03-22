@@ -17,6 +17,10 @@ services:
       - NODE_ENV=development
       # Misma IP LAN que mobile (`HOST_IP` en .env vía docker-up.js). Fallback 127.0.0.1 evita timeouts por IPv6 al usar "localhost" en Windows.
       - NEXT_PUBLIC_API_URL=http://${HOST_IP:-127.0.0.1}:8000
+      # Docker Desktop en Windows no propaga eventos inotify al contenedor Linux.
+      # Estas variables fuerzan polling para que Next.js detecte cambios en archivos.
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
     volumes:
       - .:/app
       - /app/apps/web/node_modules

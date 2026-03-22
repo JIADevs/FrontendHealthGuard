@@ -1,3 +1,44 @@
+/* ---------- Backpacks toolbar ---------- */
+.bp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.bp-search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+
+.bp-search-wrapper svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.bp-search-input {
+  width: 100%;
+  padding: 10px 16px 10px 40px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.bp-search-input:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-ring-sm);
+  outline: none;
+}
+
 /* ---------- Backpacks ---------- */
 .bp-grid {
   display: grid;

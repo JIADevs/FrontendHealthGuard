@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,13 +17,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useBackpackDocumentsQuery } from "@healthguard/api/hooks";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { getBackpackById, getBackpackDocuments, removeDocFromBackpack, deleteBackpack, shareBackpack, isApiError, type DocumentPage, type Document } from "@healthguard/api";
+import { getBackpackById, removeDocFromBackpack, deleteBackpack, shareBackpack, isApiError, type DocumentPage, type Document } from "@healthguard/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
 import { Camera, FileText, FileUp, Plus, Search, Share2, Trash2, Edit2, X } from "lucide-react-native";
-import { useAppTheme, colors } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id: string };
@@ -37,23 +38,9 @@ export function BackpackDetailScreen() {
   const { id } = (route.params ?? {}) as RouteParams;
 
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debouncedSearch = useDebounceSearch(search);
   const [fabOpen, setFabOpen] = useState(false);
   const [animation] = useState(() => new Animated.Value(0));
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    const trimmed = search.trim();
-    if (!trimmed) {
-      setDebouncedSearch("");
-      return;
-    }
-    debounceRef.current = setTimeout(() => setDebouncedSearch(trimmed), 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [search]);
 
   const backpackQuery = useQuery({
     queryKey: ["backpack", id],
@@ -61,18 +48,7 @@ export function BackpackDetailScreen() {
     enabled: !!id,
   });
 
-  const docsQuery = useQuery({
-    queryKey: ["backpack-docs", id, 1, debouncedSearch],
-    queryFn: () =>
-      getBackpackDocuments({
-        backpackId: id,
-        page: 1,
-        limit: 20,
-        searchQuery: debouncedSearch || undefined,
-      }),
-    enabled: !!id,
-    staleTime: 5_000,
-  });
+  const docsQuery = useBackpackDocumentsQuery(id, debouncedSearch);
 
   const docs = useMemo(() => (docsQuery.data?.items ?? []) as DocumentPage["items"], [docsQuery.data]);
 

@@ -1,16 +1,15 @@
 import { useState, useCallback, useMemo } from "react";
 import { View, Text, TextInput, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { getDocuments, shareDocument } from "@healthguard/api";
+import { useDocumentsQuery } from "@healthguard/api/hooks";
+import { shareDocument } from "@healthguard/api";
 import { Camera, Share2, Plus, FileUp, X, Search } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
-import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme } from "@healthguard/ui";
+import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, useDebounceSearch } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
-import { useDebounceSearch } from "@healthguard/ui";
 
 export function DocumentsScreen() {
   const t = useAppTheme();
@@ -23,17 +22,7 @@ export function DocumentsScreen() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounceSearch(search);
 
-  const docs = useQuery({
-    queryKey: ["documents", 1, debouncedSearch],
-    queryFn: () =>
-      getDocuments({
-        page: 1,
-        limit: 20,
-        searchQuery: debouncedSearch || undefined,
-      }),
-    staleTime: 5_000,
-    placeholderData: keepPreviousData,
-  });
+  const docs = useDocumentsQuery(debouncedSearch);
 
   const toggleFab = useCallback(() => {
     const toValue = fabOpen ? 0 : 1;

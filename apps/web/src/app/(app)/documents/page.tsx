@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useDocumentsQuery } from "@healthguard/api/hooks";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
 import { Search, Upload, FileText, Eye, Share2, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
-import { getDocuments, deleteDocument, isApiError, type Document } from "@healthguard/api";
+import { deleteDocument, isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { UploadModal } from "./_components/UploadModal";
@@ -38,10 +39,7 @@ export default function DocumentsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Document | null>(null);
   const [shareTarget, setShareTarget] = useState<Document | null>(null);
 
-  const docs = useQuery({
-    queryKey: ["documents", page, debouncedSearch],
-    queryFn: () => getDocuments({ page, limit: 12, searchQuery: debouncedSearch || undefined }),
-  });
+  const docs = useDocumentsQuery(debouncedSearch, page, 12);
 
   const total = docs.data?.total ?? 0;
   const totalPages = docs.data?.totalPages ?? 1;

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useBackpacksQuery } from "@healthguard/api/hooks";
 import { Backpack, Plus, FileText, Search, Trash2 } from "lucide-react";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { getBackpacks, deleteBackpack, type Backpack as BackpackType } from "@healthguard/api";
+import { deleteBackpack, type Backpack as BackpackType } from "@healthguard/api";
 import { sileo } from "sileo";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { BackpackFormModal } from "./_components/BackpackFormModal";
@@ -20,10 +21,7 @@ export default function BackpacksPage() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BackpackType | null>(null);
 
-  const bps = useQuery({
-    queryKey: ["backpacks", debouncedSearch],
-    queryFn: () => getBackpacks({ page: 1, limit: 50, searchQuery: debouncedSearch || undefined }),
-  });
+  const bps = useBackpacksQuery(debouncedSearch, 50);
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteBackpack(id),

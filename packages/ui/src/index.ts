@@ -4,3 +4,5 @@ export * from './useTheme';
 export * from './ThemeProvider';
 export * from './cssVariables';
 export * from './useDebounceSearch';
+export * from './formatters';
+export * from './documentTypes';

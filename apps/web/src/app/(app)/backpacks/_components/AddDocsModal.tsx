@@ -4,11 +4,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, FileText, Check } from "lucide-react";
 import { getDocuments, addDocToBackpack, isApiError, type BackpackWithDocs } from "@healthguard/api";
+import { formatDate } from "@healthguard/ui";
 import { sileo } from "sileo";
-
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 interface AddDocsModalProps {
   backpackId: string;

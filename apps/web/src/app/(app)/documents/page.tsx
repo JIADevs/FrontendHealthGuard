@@ -4,29 +4,17 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDocumentsQuery } from "@healthguard/api/hooks";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
+import { formatDate } from "@healthguard/ui";
 import { Search, Upload, FileText, Eye, Share2, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { deleteDocument, isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { DocumentTypeIcon } from "@/components/DocumentTypeIcon";
 import { UploadModal } from "./_components/UploadModal";
 import { DetailModal } from "./_components/DetailModal";
 import { ShareModal } from "./_components/ShareModal";
 
 import "./documents.css";
-
-function formatIcon(format: string) {
-  const f = format?.toLowerCase() ?? "";
-  if (f.includes("pdf")) return { cls: "pdf", label: "PDF" };
-  if (f.includes("dicom") || f.includes("dcm")) return { cls: "dcm", label: "DCM" };
-  if (f.includes("image") || f.includes("jpg") || f.includes("png") || f.includes("jpeg"))
-    return { cls: "img", label: "IMG" };
-  return { cls: "other", label: "DOC" };
-}
-
-function formatDate(d: string | null | undefined) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 export default function DocumentsPage() {
   const qc = useQueryClient();
@@ -102,12 +90,10 @@ export default function DocumentsPage() {
         </div>
       ) : (
         <div className="doc-grid">
-          {docs.data!.items.map((doc) => {
-            const icon = formatIcon(doc.format);
-            return (
+          {docs.data!.items.map((doc) => (
               <div key={doc.id} className="doc-card" onClick={() => setDetailId(doc.id)}>
                 <div className="doc-card-header">
-                  <div className={`doc-card-icon ${icon.cls}`}>{icon.label}</div>
+                  <DocumentTypeIcon format={doc.format} documentTypeName={doc.documentType?.name} />
                   <div>
                     <div className="doc-card-title">{doc.title}</div>
                     <div className="doc-card-date">{formatDate(doc.documentDate ?? doc.uploadedAt)}</div>
@@ -125,8 +111,7 @@ export default function DocumentsPage() {
                   <button className="icon-btn" title="Eliminar" onClick={(e) => { e.stopPropagation(); setDeleteTarget(doc); }}><Trash2 size={16} /></button>
                 </div>
               </div>
-            );
-          })}
+          ))}
         </div>
       )}
 

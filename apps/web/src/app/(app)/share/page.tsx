@@ -17,10 +17,7 @@ import {
   shareDocument,
   type Document,
 } from "@healthguard/api";
-
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
-}
+import { formatDate } from "@healthguard/ui";
 
 export default function SharePage() {
   const [page, setPage] = useState(1);

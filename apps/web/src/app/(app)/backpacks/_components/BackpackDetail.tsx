@@ -6,13 +6,10 @@ import { useBackpackQuery, useShareBackpackMutation } from "@healthguard/api/hoo
 import { Backpack, FileText, X, Share2, ChevronLeft } from "lucide-react";
 import { Plus } from "lucide-react";
 import { removeDocFromBackpack, type BackpackWithDocs } from "@healthguard/api";
+import { formatDate } from "@healthguard/ui";
 import { sileo } from "sileo";
 import { ShareResult } from "@/components/ShareResult";
 import { AddDocsModal } from "./AddDocsModal";
-
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 interface BackpackDetailProps {
   id: string;

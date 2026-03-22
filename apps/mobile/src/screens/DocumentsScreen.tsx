@@ -7,7 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
-import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, useDebounceSearch } from "@healthguard/ui";
+import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, useDebounceSearch, formatDate } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function DocumentsScreen() {
@@ -147,7 +147,7 @@ export function DocumentsScreen() {
               <View style={styles.info}>
                 <Text style={styles.docTitle}>{item.title}</Text>
                 <Text style={styles.docSub}>
-                  {new Date(item.uploadedAt).toLocaleDateString()}
+                  {formatDate(item.uploadedAt)}
                   {item.documentType?.name ? ` • ${item.documentType.name}` : ""}
                 </Text>
               </View>

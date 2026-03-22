@@ -18,7 +18,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
-import { useAppTheme, colors, useDebounceSearch } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function BackpacksScreen() {
@@ -127,7 +127,7 @@ export function BackpacksScreen() {
                 </Text>
                 <Text style={styles.cardSub}>
                   {item.documentCount} documento{item.documentCount === 1 ? "" : "s"}
-                  {item.createdAt ? ` • ${new Date(item.createdAt).toLocaleDateString()}` : ""}
+                  {item.createdAt ? ` • ${formatDate(item.createdAt)}` : ""}
                 </Text>
               </View>
               <Pressable style={styles.chevron} accessibilityLabel="Detalle" />

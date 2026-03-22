@@ -20,7 +20,7 @@ import { Search, Plus, Check, X } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { useAppTheme, colors, useDebounceSearch } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id: string };
@@ -195,7 +195,7 @@ export function BackpackAddDocumentsScreen() {
                   {item.title}
                 </Text>
                 <Text style={styles.cardSub}>
-                  {new Date(item.uploadedAt).toLocaleDateString()}
+                  {formatDate(item.uploadedAt)}
                   {item.documentType?.name ? ` • ${item.documentType.name}` : ""}
                 </Text>
               </View>

@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 import { Copy } from "lucide-react";
-
-function formatDate(d: string | null | undefined) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
-}
+import { formatDate } from "@healthguard/ui";
 
 interface ShareResultProps {
   shareUrl: string;

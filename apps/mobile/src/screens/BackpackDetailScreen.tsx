@@ -24,7 +24,7 @@ import { removeDocFromBackpack, isApiError, type DocumentPage, type Document } f
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
 import { Camera, FileText, FileUp, Plus, Search, Share2, Trash2, Edit2, X } from "lucide-react-native";
-import { useAppTheme, colors, useDebounceSearch } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id: string };
@@ -233,7 +233,7 @@ export function BackpackDetailScreen() {
                 {item.title}
               </Text>
               <Text style={styles.cardSub}>
-                {new Date(item.uploadedAt).toLocaleDateString()}
+                {formatDate(item.uploadedAt)}
                 {item.documentType?.name ? ` • ${item.documentType.name}` : ""}
               </Text>
             </View>

@@ -4,11 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useDocumentQuery } from "@healthguard/api/hooks";
 import { X, ExternalLink } from "lucide-react";
 import { getSignedUrl, type Document } from "@healthguard/api";
-
-function formatDate(d: string | null | undefined) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
-}
+import { formatDate, formatFileSize } from "@healthguard/ui";
 
 export function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
   const doc = useDocumentQuery(id);
@@ -42,7 +38,7 @@ export function DetailModal({ id, onClose }: { id: string; onClose: () => void }
                 <div><dt>Fecha</dt><dd>{formatDate(d.documentDate)}</dd></div>
                 <div><dt>Formato</dt><dd>{d.format}</dd></div>
                 <div><dt>Subido</dt><dd>{formatDate(d.uploadedAt)}</dd></div>
-                <div><dt>Tamaño</dt><dd>{d.fileSizeBytes ? `${(d.fileSizeBytes / 1024).toFixed(0)} KB` : "—"}</dd></div>
+                <div><dt>Tamaño</dt><dd>{formatFileSize(d.fileSizeBytes)}</dd></div>
               </dl>
 
               {(d.subtypes.length > 0 || d.customTags.length > 0 || d.specialties.length > 0) && (

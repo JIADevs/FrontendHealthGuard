@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, A
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useDocumentQuery, useTagCategoriesQuery } from "@healthguard/api/hooks";
 import { getSignedUrl, type Document, type TagCategoryOut } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = {
@@ -99,11 +99,11 @@ export function DocumentDetailScreen() {
         ) : null}
         <Text style={styles.metaItem}>
           <Text style={styles.metaLabel}>Fecha del documento: </Text>
-          {d.documentDate ? new Date(d.documentDate).toLocaleDateString() : "—"}
+          {formatDate(d.documentDate)}
         </Text>
         <Text style={styles.metaItem}>
           <Text style={styles.metaLabel}>Subido: </Text>
-          {d.uploadedAt ? new Date(d.uploadedAt).toLocaleDateString() : "—"}
+          {formatDate(d.uploadedAt)}
         </Text>
         <Text style={styles.metaItem}>
           <Text style={styles.metaLabel}>Formato: </Text>
@@ -112,7 +112,7 @@ export function DocumentDetailScreen() {
         {d.fileSizeBytes ? (
           <Text style={styles.metaItem}>
             <Text style={styles.metaLabel}>Tamaño: </Text>
-            {(d.fileSizeBytes / 1024).toFixed(0)} KB
+            {formatFileSize(d.fileSizeBytes)}
           </Text>
         ) : null}
       </View>

@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useProfileQuery } from "@healthguard/api/hooks";
+import { useEffect } from "react";
+import {
+  useProfileQuery,
+  useDocumentsQuery,
+  useAppointmentsQuery,
+  useMedicationsQuery,
+} from "@healthguard/api/hooks";
 import {
   FileText,
   CalendarDays,
@@ -11,26 +15,16 @@ import {
   ArrowRight,
   Clock,
 } from "lucide-react";
-import { getAppointments, getMedications, getDocuments } from "@healthguard/api";
+import { formatTime, todayISODate } from "@healthguard/ui";
 import { useAuthStore } from "@healthguard/stores";
 
 export default function DashboardPage() {
   const setUser = useAuthStore((s) => s.setUser);
 
   const profile = useProfileQuery();
-  const docs = useQuery({
-    queryKey: ["documents", "stats"],
-    queryFn: () => getDocuments({ page: 1, limit: 1 }),
-  });
-  const appts = useQuery({
-    queryKey: ["appointments", "upcoming"],
-    queryFn: () =>
-      getAppointments({ page: 1, limit: 3, startDate: todayStr() }),
-  });
-  const meds = useQuery({
-    queryKey: ["medications", "active"],
-    queryFn: () => getMedications({ page: 1, limit: 3 }),
-  });
+  const docs  = useDocumentsQuery("", 1, 1);
+  const appts = useAppointmentsQuery("", 1, 3, todayISODate());
+  const meds  = useMedicationsQuery(1, 3);
 
   useEffect(() => {
     if (profile.data) {
@@ -129,22 +123,12 @@ export default function DashboardPage() {
                     <CalendarDays size={18} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>
-                      {a.specialty}
-                    </div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{a.specialty}</div>
                     <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>
                       {a.doctor} — {a.location}
                     </div>
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      color: "var(--text-secondary)",
-                      fontSize: 13,
-                    }}
-                  >
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", fontSize: 13 }}>
                     <Clock size={14} />
                     {a.date} {a.time?.slice(0, 5)}
                   </div>
@@ -191,28 +175,15 @@ export default function DashboardPage() {
                     <Pill size={18} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>
-                      {m.name}
-                    </div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{m.name}</div>
                     <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>
                       {m.dosage} — cada {m.frequency}h
                     </div>
                   </div>
                   {m.nextIntakeTime && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                        color: "var(--text-secondary)",
-                        fontSize: 13,
-                      }}
-                    >
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", fontSize: 13 }}>
                       <Clock size={14} />
-                      {new Date(m.nextIntakeTime).toLocaleTimeString("es-CO", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatTime(m.nextIntakeTime)}
                     </div>
                   )}
                 </div>
@@ -245,8 +216,4 @@ function MetricCard({
       </div>
     </div>
   );
-}
-
-function todayStr() {
-  return new Date().toISOString().split("T")[0]!;
 }

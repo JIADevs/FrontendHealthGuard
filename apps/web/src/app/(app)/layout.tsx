@@ -2,10 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { useMarkNotificationReadMutation } from "@healthguard/api/hooks";
+import { useMarkNotificationReadMutation, useNotificationsQuery } from "@healthguard/api/hooks";
 import { useAuthStore, useNotifStore, useUnreadCount } from "@healthguard/stores";
-import { getNotifications } from "@healthguard/api";
+import { timeAgo } from "@healthguard/ui";
 import Link from "next/link";
 import { Toaster } from "sileo";
 import {
@@ -25,17 +24,6 @@ const NAV_ITEMS = [
   { href: "/backpacks", label: "Mochilas", icon: Backpack },
   { href: "/share", label: "Compartir", icon: Share2 },
 ] as const;
-
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "ahora";
-  if (mins < 60) return `hace ${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `hace ${hrs}h`;
-  const days = Math.floor(hrs / 24);
-  return `hace ${days}d`;
-}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -115,11 +103,7 @@ function NotificationBell() {
   const setUnreadCount = useNotifStore((s) => s.setUnreadCount);
   const decrementUnread = useNotifStore((s) => s.decrementUnread);
 
-  const notifs = useQuery({
-    queryKey: ["notifications"],
-    queryFn: () => getNotifications({ page: 1, limit: 20 }),
-    refetchInterval: 30_000,
-  });
+  const notifs = useNotificationsQuery(1, 20);
 
   // Sync unread count
   useEffect(() => {

@@ -347,6 +347,7 @@ export function useNotificationsQuery(page = 1, limit = 20) {
         queryKey: QK.notifications(page),
         queryFn: () => getNotifications({ page, limit }),
         staleTime: 30_000,
+        refetchInterval: 30_000,
     });
 }
 

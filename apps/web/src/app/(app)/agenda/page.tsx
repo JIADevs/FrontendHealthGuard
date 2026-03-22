@@ -35,6 +35,7 @@ import {
   type MedicationCreate,
 } from "@healthguard/api";
 
+import { appointmentStatusLabel } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -43,15 +44,6 @@ function formatDate(d: string) {
   return new Date(d + "T00:00:00").toLocaleDateString("es-CO", {
     weekday: "short", day: "2-digit", month: "short",
   });
-}
-
-function statusLabel(s: string) {
-  const map: Record<string, string> = { PENDING: "Pendiente", COMPLETED: "Realizada", CANCELLED: "Cancelada", RESCHEDULED: "Re-agendada" };
-  return map[s] ?? s;
-}
-
-function statusCls(s: string) {
-  return s.toLowerCase();
 }
 
 // ══════════════════════════════════════════════════════
@@ -137,10 +129,9 @@ function AppointmentsTab() {
                   value={a.status}
                   onChange={(e) => statusMut.mutate({ id: a.id, status: e.target.value })}
                 >
-                  <option value="PENDING">Pendiente</option>
-                  <option value="COMPLETED">Realizada</option>
-                  <option value="CANCELLED">Cancelada</option>
-                  <option value="RESCHEDULED">Re-agendada</option>
+                  {(["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"] as const).map((s) => (
+                    <option key={s} value={s}>{appointmentStatusLabel(s)}</option>
+                  ))}
                 </select>
                 <button className="icon-btn" title="Editar" onClick={() => { setEditTarget(a); setShowForm(true); }}><Edit3 size={15} /></button>
                 <button className="icon-btn" title="Eliminar" onClick={() => setDeleteTarget(a)}><Trash2 size={15} /></button>

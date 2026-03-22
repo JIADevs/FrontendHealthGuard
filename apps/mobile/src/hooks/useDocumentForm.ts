@@ -20,10 +20,7 @@ import {
 } from "@healthguard/api";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-
-const MAX_RETRIES = 3;
-const RETRY_BASE_MS = 800;
-const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
+import { RETRY_MAX_ATTEMPTS, RETRY_BASE_DELAY_MS, UPLOAD_MAX_FILE_SIZE_BYTES } from "@healthguard/ui";
 
 function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -150,15 +147,15 @@ export function useDocumentForm(options?: UseDocumentFormOptions): DocumentFormS
       let result: (ClassificationSuggestion & { title?: string }) | null = null;
       let lastErr: unknown;
 
-      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      for (let attempt = 1; attempt <= RETRY_MAX_ATTEMPTS; attempt++) {
         try {
           result = await classifyDocumentFromUri(file.uri, file.name, file.mimeType) as ClassificationSuggestion & { title?: string };
           break;
         } catch (err) {
           lastErr = err;
           const isRetryable = isApiError(err) ? err.isNetworkError : !(err instanceof SyntaxError || err instanceof TypeError);
-          if (!isRetryable || attempt >= MAX_RETRIES) break;
-          await delay(RETRY_BASE_MS * attempt);
+          if (!isRetryable || attempt >= RETRY_MAX_ATTEMPTS) break;
+          await delay(RETRY_BASE_DELAY_MS * attempt);
         }
       }
 
@@ -181,7 +178,7 @@ export function useDocumentForm(options?: UseDocumentFormOptions): DocumentFormS
   const handleUpload = useCallback(async (file: FileSource) => {
     if (uploading) return;
 
-    if (file.size && file.size > MAX_FILE_SIZE_BYTES) {
+    if (file.size && file.size > UPLOAD_MAX_FILE_SIZE_BYTES) {
       Alert.alert(
         "Archivo demasiado grande",
         `El tamaño máximo permitido es 25 MB. Tu archivo pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB.`
@@ -191,7 +188,7 @@ export function useDocumentForm(options?: UseDocumentFormOptions): DocumentFormS
 
     setUploading(true);
     try {
-      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      for (let attempt = 1; attempt <= RETRY_MAX_ATTEMPTS; attempt++) {
         try {
           const { storagePath } = await uploadFileFromUri(file.uri, file.name, file.mimeType);
 
@@ -224,7 +221,7 @@ export function useDocumentForm(options?: UseDocumentFormOptions): DocumentFormS
           navigation.goBack();
           return;
         } catch (err) {
-          if (attempt >= MAX_RETRIES) {
+          if (attempt >= RETRY_MAX_ATTEMPTS) {
             let detail = "Ha ocurrido un error inesperado";
             if (isApiError(err)) {
               detail = err.fieldErrors
@@ -236,7 +233,7 @@ export function useDocumentForm(options?: UseDocumentFormOptions): DocumentFormS
             Toast.show({ type: "error", text1: "No se pudo subir el documento", text2: detail });
             Alert.alert("Error de subida", detail);
           } else {
-            await delay(RETRY_BASE_MS * Math.pow(2, attempt - 1));
+            await delay(RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1));
           }
         }
       }

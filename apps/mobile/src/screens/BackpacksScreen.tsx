@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -20,27 +20,14 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
 import { useAppTheme, colors } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
+import { useDebounceSearch } from "../hooks/useDebounceSearch";
 
 export function BackpacksScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    const trimmed = search.trim();
-    if (!trimmed) {
-      setDebouncedSearch("");
-      return;
-    }
-    debounceRef.current = setTimeout(() => setDebouncedSearch(trimmed), 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [search]);
+  const debouncedSearch = useDebounceSearch(search);
 
   const query = useQuery({
     queryKey: ["backpacks", 1, debouncedSearch],

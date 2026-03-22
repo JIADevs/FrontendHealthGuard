@@ -34,6 +34,7 @@ import {
   type MedicationCreate,
 } from "@healthguard/api";
 
+import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
 // ── Helpers ──
@@ -504,27 +505,3 @@ function MedicationFormModal({ initial, onClose }: { initial: Medication | null;
   );
 }
 
-// ══════════════════════════════════════════════════════
-//  CONFIRM MODAL (same as documents — shared util)
-// ══════════════════════════════════════════════════════
-function ConfirmModal({
-  title, message, confirmLabel, loading, onConfirm, onCancel,
-}: { title: string; message: string; confirmLabel: string; loading: boolean; onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-        <div className="modal-body" style={{ paddingTop: 32 }}>
-          <p className="confirm-title">{title}</p>
-          <p className="confirm-message">{message}</p>
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button className="btn btn-secondary" onClick={onCancel} disabled={loading}>Cancelar</button>
-            <button className="btn btn-danger" onClick={onConfirm} disabled={loading}>
-              {loading && <span className="spinner" />}
-              {confirmLabel}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

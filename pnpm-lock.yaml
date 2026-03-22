@@ -74,6 +74,9 @@ importers:
       expo-document-picker:
         specifier: ^55.0.8
         version: 55.0.8(expo@54.0.33)
+      expo-modules-core:
+        specifier: ~3.0.29
+        version: 3.0.29(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       expo-notifications:
         specifier: ^0.32.16
         version: 0.32.16(expo@54.0.33)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
@@ -184,6 +187,9 @@ importers:
 
   packages/api:
     dependencies:
+      '@healthguard/config':
+        specifier: workspace:*
+        version: link:../config
       axios:
         specifier: ^1.7.0
         version: 1.13.6
@@ -191,9 +197,6 @@ importers:
         specifier: ^3.23.0
         version: 3.25.76
     devDependencies:
-      '@healthguard/config':
-        specifier: workspace:*
-        version: link:../config
       typescript:
         specifier: ^5.7.0
         version: 5.9.3

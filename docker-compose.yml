@@ -32,6 +32,7 @@ services:
       target: mobile-runner
       args:
         - APP_NAME=@healthguard/mobile
+        - HOISTED_LINKER=true
     container_name: healthguard_frontend_mobile
     working_dir: /app/apps/mobile
     tty: true

@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { View, Text, TextInput, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getDocuments, shareDocument } from "@healthguard/api";
 import { Camera, Share2, Plus, FileUp, X, Search } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -10,6 +10,7 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
 import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
+import { useDebounceSearch } from "../hooks/useDebounceSearch";
 
 export function DocumentsScreen() {
   const t = useAppTheme();
@@ -20,24 +21,7 @@ export function DocumentsScreen() {
   const [animation] = useState(() => new Animated.Value(0));
 
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    const trimmed = search.trim();
-    if (!trimmed) {
-      setDebouncedSearch("");
-      return;
-    }
-
-    debounceRef.current = setTimeout(() => setDebouncedSearch(trimmed), 300);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [search]);
+  const debouncedSearch = useDebounceSearch(search);
 
   const docs = useQuery({
     queryKey: ["documents", 1, debouncedSearch],
@@ -48,7 +32,7 @@ export function DocumentsScreen() {
         searchQuery: debouncedSearch || undefined,
       }),
     staleTime: 5_000,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   const toggleFab = useCallback(() => {

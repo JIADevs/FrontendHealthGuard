@@ -16,7 +16,15 @@ FROM base AS installer
 WORKDIR /app
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-RUN pnpm install
+# .npmrc must be present so pnpm respects shamefully-hoist=true during install.
+# HOISTED_LINKER switches pnpm to node-linker=hoisted for the mobile build only:
+# Metro cannot compute SHA-1 for files that live behind .pnpm symlinks, so mobile
+# needs real directories. Web uses the default (isolated) linker which works fine
+# with Next.js/webpack symlink resolution.
+ARG HOISTED_LINKER=false
+COPY --from=pruner /app/.npmrc ./.npmrc
+RUN if [ "$HOISTED_LINKER" = "true" ]; then echo "node-linker=hoisted" >> .npmrc; fi \
+    && pnpm install
 
 # Step 3: WEB (Production-ready stage)
 FROM base AS web-runner

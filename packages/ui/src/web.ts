@@ -5,3 +5,4 @@ export * from './cssVariables';
 export * from './formatters';
 export * from './documentTypes';
 export * from './constants';
+export * from './DocumentTypeIcon.web';

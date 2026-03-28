@@ -6,7 +6,7 @@ import { Camera, Share2, Plus, FileUp, X, Search } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
+import { DocumentTypeIcon } from "@healthguard/ui";
 import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 

@@ -39,6 +39,20 @@ export function todayISODate(): string {
   return new Date().toISOString().split("T")[0]!;
 }
 
+/**
+ * Formatea una fecha-sola de cita con día de semana corto (sin año).
+ * Ej: "lun. 21 mar."
+ * Compartido entre web y mobile para la vista de agenda.
+ */
+export function formatApptDate(d: string | null | undefined): string {
+  if (!d) return "—";
+  return new Date(d + "T00:00:00").toLocaleDateString("es-CO", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+  });
+}
+
 /** Tiempo relativo compacto (ahora / hace Nm / hace Nh / hace Nd). */
 export function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();

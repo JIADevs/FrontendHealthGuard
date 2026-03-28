@@ -15,6 +15,7 @@ import {
   Share2,
   LogOut,
   Bell,
+  UserCircle,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/backpacks", label: "Mochilas", icon: Backpack },
   { href: "/share", label: "Compartir", icon: Share2 },
+  { href: "/profile", label: "Mi Perfil", icon: UserCircle },
 ] as const;
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {

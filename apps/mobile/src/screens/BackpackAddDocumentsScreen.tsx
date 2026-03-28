@@ -15,7 +15,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
 import { useBackpackQuery, useAddDocToBackpackMutation } from "@healthguard/api/hooks";
 import { getBackpackDocuments, getDocuments, isApiError, type Document, type DocumentPage } from "@healthguard/api";
-import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
+import { DocumentTypeIcon } from "@healthguard/ui";
 import { Search, Plus, Check, X } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";

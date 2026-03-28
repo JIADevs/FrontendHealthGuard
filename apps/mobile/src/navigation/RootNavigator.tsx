@@ -12,6 +12,7 @@ import { BackpackDetailScreen } from "../screens/BackpackDetailScreen";
 import { BackpackEditScreen } from "../screens/BackpackEditScreen";
 import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
 import { ShareDocumentsScreen } from "../screens/ShareDocumentsScreen";
+import { ProfileScreen } from "../screens/ProfileScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -22,6 +23,7 @@ export type RootStackParamList = {
   DocumentDetail: { id: string; title?: string } | undefined;
   DocumentEdit: { id: string } | undefined;
   Notifications: undefined;
+  Profile: undefined;
   BackpackDetail: { id: string };
   BackpackEdit: { id?: string } | undefined;
   BackpackAddDocuments: { id: string };
@@ -82,6 +84,11 @@ export function RootNavigator() {
             name="ShareDocuments"
             component={ShareDocumentsScreen}
             options={{ headerShown: true, title: "Compartir Documentos", animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{ headerShown: true, title: "Mi Perfil", animation: "slide_from_right" }}
           />
         </>
       ) : (

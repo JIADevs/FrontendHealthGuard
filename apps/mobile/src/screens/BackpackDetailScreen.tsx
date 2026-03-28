@@ -22,7 +22,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { removeDocFromBackpack, isApiError, type DocumentPage, type Document } from "@healthguard/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
+import { DocumentTypeIcon } from "@healthguard/ui";
 import { Camera, FileText, FileUp, Plus, Search, Share2, Trash2, Edit2, X } from "lucide-react-native";
 import { useAppTheme, colors, useDebounceSearch, formatDate } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";

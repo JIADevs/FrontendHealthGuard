@@ -7,3 +7,4 @@ export * from './useDebounceSearch';
 export * from './formatters';
 export * from './documentTypes';
 export * from './constants';
+export * from './DocumentTypeIcon.native';

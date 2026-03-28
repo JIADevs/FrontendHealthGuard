@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   ScrollView,
   FlatList,
-  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -39,6 +38,7 @@ import {
   fontWeight,
   useAppTheme,
   appointmentStatusLabel,
+  formatApptDate,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import {
@@ -58,16 +58,7 @@ import {
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function formatApptDate(d: string) {
-  return new Date(d + "T00:00:00").toLocaleDateString("es-CO", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-  });
-}
-
 const STATUSES = ["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"] as const;
-type ApptStatus = (typeof STATUSES)[number];
 
 // ─── main screen ──────────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 import { FileText, FileImage, File } from "lucide-react";
-import { resolveDocTypeVariant, resolveDocFormat } from "@healthguard/ui";
+import { resolveDocTypeVariant, resolveDocFormat } from "./documentTypes";
 
-interface DocumentTypeIconProps {
+export interface DocumentTypeIconProps {
   format: string;
   documentTypeName?: string;
   size?: number;

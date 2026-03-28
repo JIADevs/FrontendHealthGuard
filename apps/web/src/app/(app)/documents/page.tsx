@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useDocumentsQuery } from "@healthguard/api/hooks";
+import { useDocumentsQuery, useDeleteDocumentMutation } from "@healthguard/api/hooks";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
 import { formatDate, PAGE_SIZE_GRID } from "@healthguard/ui";
 import { Search, Upload, FileText, Eye, Share2, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
-import { deleteDocument, isApiError, type Document } from "@healthguard/api";
+import { isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { DocumentTypeIcon } from "@/components/DocumentTypeIcon";
+import { DocumentTypeIcon } from "@healthguard/ui";
 import { UploadModal } from "./_components/UploadModal";
 import { DetailModal } from "./_components/DetailModal";
 import { ShareModal } from "./_components/ShareModal";
@@ -17,8 +16,6 @@ import { ShareModal } from "./_components/ShareModal";
 import "./documents.css";
 
 export default function DocumentsPage() {
-  const qc = useQueryClient();
-
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounceSearch(search);
@@ -28,24 +25,10 @@ export default function DocumentsPage() {
   const [shareTarget, setShareTarget] = useState<Document | null>(null);
 
   const docs = useDocumentsQuery(debouncedSearch, page, PAGE_SIZE_GRID);
+  const deleteMut = useDeleteDocumentMutation();
 
   const total = docs.data?.total ?? 0;
   const totalPages = docs.data?.totalPages ?? 1;
-
-  const deleteMut = useMutation({
-    mutationFn: (id: string) => deleteDocument(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["documents"] });
-      setDeleteTarget(null);
-      sileo.success({ title: "Documento eliminado" });
-    },
-    onError: (err) => {
-      sileo.error({
-        title: "Error al eliminar",
-        description: isApiError(err) ? err.message : "No se pudo eliminar el documento.",
-      });
-    },
-  });
 
   return (
     <>
@@ -139,7 +122,20 @@ export default function DocumentsPage() {
           message={`¿Estás seguro de eliminar "${deleteTarget.title}"? Esta acción no se puede deshacer.`}
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
-          onConfirm={() => deleteMut.mutate(deleteTarget.id)}
+          onConfirm={() =>
+            deleteMut.mutate(deleteTarget.id, {
+              onSuccess: () => {
+                setDeleteTarget(null);
+                sileo.success({ title: "Documento eliminado" });
+              },
+              onError: (err) => {
+                sileo.error({
+                  title: "Error al eliminar",
+                  description: isApiError(err) ? err.message : "No se pudo eliminar el documento.",
+                });
+              },
+            })
+          }
           onCancel={() => setDeleteTarget(null)}
         />
       )}

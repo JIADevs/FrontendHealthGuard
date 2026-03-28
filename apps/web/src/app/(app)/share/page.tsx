@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FileText,
   Check,
@@ -12,11 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import {
-  getDocuments,
-  shareDocument,
-  type Document,
-} from "@healthguard/api";
+import { useDocumentsQuery } from "@healthguard/api/hooks";
+import { shareDocument, type Document } from "@healthguard/api";
 import { formatDate } from "@healthguard/ui";
 
 export default function SharePage() {
@@ -25,10 +21,7 @@ export default function SharePage() {
   const [shareResults, setShareResults] = useState<Map<string, { shareUrl: string; qrCodeUrl: string; expiresAt: string }>>(new Map());
   const [sharing, setSharing] = useState(false);
 
-  const docs = useQuery({
-    queryKey: ["documents", "share", page],
-    queryFn: () => getDocuments({ page, limit: 12 }),
-  });
+  const docs = useDocumentsQuery("", page, 12);
 
   const totalPages = docs.data?.totalPages ?? 1;
 

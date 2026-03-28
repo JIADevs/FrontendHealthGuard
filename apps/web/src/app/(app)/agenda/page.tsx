@@ -35,16 +35,9 @@ import {
   type MedicationCreate,
 } from "@healthguard/api";
 
-import { appointmentStatusLabel } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
-
-// ── Helpers ──
-function formatDate(d: string) {
-  return new Date(d + "T00:00:00").toLocaleDateString("es-CO", {
-    weekday: "short", day: "2-digit", month: "short",
-  });
-}
 
 // ══════════════════════════════════════════════════════
 //  MAIN PAGE
@@ -122,7 +115,7 @@ function AppointmentsTab() {
               <div className="agenda-item-right">
                 <div className="agenda-item-time">
                   <Clock size={14} />
-                  {formatDate(a.date)} {a.time?.slice(0, 5)}
+                  {formatApptDate(a.date)} {a.time?.slice(0, 5)}
                 </div>
                 <select
                   className="status-select"
@@ -163,7 +156,7 @@ function AppointmentsTab() {
       {deleteTarget && (
         <ConfirmModal
           title="Eliminar Cita"
-          message={`¿Eliminar la cita de ${deleteTarget.specialty} el ${formatDate(deleteTarget.date)}?`}
+          message={`¿Eliminar la cita de ${deleteTarget.specialty} el ${formatApptDate(deleteTarget.date)}?`}
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
           onConfirm={() => deleteMut.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })}

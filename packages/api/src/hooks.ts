@@ -389,3 +389,4 @@ export function useUpdateProfileMutation() {
 }
 
 export * from './useDocumentFormCore';
+export * from './useProfileFormCore';

@@ -1,12 +1,12 @@
 import { View, StyleSheet } from "react-native";
 import { FileText, FileImage, File } from "lucide-react-native";
-import { resolveDocTypeVariant, resolveDocFormat } from "@healthguard/ui";
+import { resolveDocTypeVariant, resolveDocFormat } from "./documentTypes";
 
-type DocumentTypeIconProps = {
+export interface DocumentTypeIconProps {
   format: string;
   documentTypeName?: string;
   size?: number;
-};
+}
 
 export function DocumentTypeIcon({ format, documentTypeName, size = 24 }: DocumentTypeIconProps) {
   const { bg, iconColor } = resolveDocTypeVariant(documentTypeName);

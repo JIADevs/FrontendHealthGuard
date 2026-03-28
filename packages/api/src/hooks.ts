@@ -387,3 +387,5 @@ export function useUpdateProfileMutation() {
         onSettled: () => qc.invalidateQueries({ queryKey: QK.profile() }),
     });
 }
+
+export * from './useDocumentFormCore';

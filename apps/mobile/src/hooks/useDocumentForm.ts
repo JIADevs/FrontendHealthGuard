@@ -1,27 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigation } from "@react-navigation/native";
-import {
-  uploadFileFromUri,
-  createDocument,
-  addDocToBackpack,
-  getDocumentTypes,
-  getTagCategories,
-  classifyDocumentFromUri,
-  createCustomTag,
-  createTagCategory,
-  addTagValue,
-  isApiError,
-  retryAsync,
-  type DocumentTypeOut,
-  type TagCategoryOut,
-  type ClassificationSuggestion,
-} from "@healthguard/api";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { uploadFileFromUri, classifyDocumentFromUri } from "@healthguard/api";
+import {
+  useDocumentFormCore,
+  type DocumentFormState,
+  type DocumentFormActions,
+} from "@healthguard/api/hooks";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { RETRY_MAX_ATTEMPTS, RETRY_BASE_DELAY_MS, UPLOAD_MAX_FILE_SIZE_BYTES } from "@healthguard/ui";
+
+export type { DocumentFormState, DocumentFormActions };
 
 export interface FileSource {
   uri: string;
@@ -30,269 +20,36 @@ export interface FileSource {
   size?: number;
 }
 
-export interface DocumentFormState {
-  catalogs: { types: DocumentTypeOut[]; tags: TagCategoryOut[] };
-  selectedType: string | undefined;
-  selectedSpecialty: string | undefined;
-  selectedTags: string[];
-  title: string;
-  newTagValues: Record<string, string>;
-  addingTag: string | null;
-  classificationResult: ClassificationSuggestion | null;
-  newCategoryName: string;
-  newTagValue: string;
-  addingCustomTag: boolean;
-  uploading: boolean;
-  classifying: boolean;
-}
-
-export interface DocumentFormActions {
-  setSelectedType: (id: string | undefined) => void;
-  setSelectedSpecialty: (id: string | undefined) => void;
-  toggleTag: (tagId: string) => void;
-  setSelectedTags: (tagIds: string[]) => void;
-  setTitle: (title: string) => void;
-  setNewTagValue: (categoryId: string, text: string) => void;
-  setNewCategoryName: (name: string) => void;
-  setNewTagValueField: (val: string) => void;
-  handleAIClassify: (file: FileSource) => Promise<void>;
-  handleUpload: (file: FileSource) => Promise<void>;
-  handleAddCustomTag: (categoryId: string) => Promise<void>;
-  handleAddCategoryAndTag: () => Promise<void>;
-}
-
 type UseDocumentFormOptions = {
   backpackId?: string;
   backpackName?: string;
 };
 
-export function useDocumentForm(options?: UseDocumentFormOptions): DocumentFormState & DocumentFormActions {
-  const queryClient = useQueryClient();
+export function useDocumentForm(
+  options?: UseDocumentFormOptions,
+): DocumentFormState & DocumentFormActions<FileSource> {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const [catalogs, setCatalogs] = useState<{ types: DocumentTypeOut[]; tags: TagCategoryOut[] }>({
-    types: [],
-    tags: [],
+  const onUploadComplete = useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
+  const onError = useCallback((title: string, message: string) => {
+    Toast.show({ type: "error", text1: title, text2: message });
+    Alert.alert(title, message);
+  }, []);
+
+  return useDocumentFormCore<FileSource>({
+    adapters: {
+      classify:        (file) => classifyDocumentFromUri(file.uri, file.name, file.mimeType),
+      upload:          (file) => uploadFileFromUri(file.uri, file.name, file.mimeType),
+      getFileSize:     (file) => file.size,
+      getMimeType:     (file) => file.mimeType,
+      onError,
+      onUploadSuccess: (title, desc) => Toast.show({ type: "success", text1: title, text2: desc }),
+      onUploadComplete,
+    },
+    backpackId:  options?.backpackId,
+    backpackName: options?.backpackName,
   });
-  const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string | undefined>(undefined);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [title, setTitle] = useState("");
-  const [newTagValues, setNewTagValues] = useState<Record<string, string>>({});
-  const [addingTag, setAddingTag] = useState<string | null>(null);
-  const [classificationResult, setClassificationResult] = useState<ClassificationSuggestion | null>(null);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [newTagValue, setNewTagValue] = useState("");
-  const [addingCustomTag, setAddingCustomTag] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [classifying, setClassifying] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchCatalogs() {
-      try {
-        const [types, tags] = await Promise.all([getDocumentTypes(), getTagCategories()]);
-        if (!cancelled) setCatalogs({ types, tags });
-      } catch (err) {
-        console.warn("Error fetching catalogs", err);
-      }
-    }
-    fetchCatalogs();
-    return () => { cancelled = true; };
-  }, []);
-
-  const toggleTag = useCallback((tagId: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
-    );
-  }, []);
-
-  const setNewTagValueForCategory = useCallback((categoryId: string, text: string) => {
-    setNewTagValues((prev) => ({ ...prev, [categoryId]: text }));
-  }, []);
-
-  const applyClassificationTags = useCallback(async (result: ClassificationSuggestion) => {
-    const customTags = result.customTags ?? [];
-    const newTags = result.newTags ?? [];
-    const tagIds: string[] = customTags.map((ct) => ct.tagValueId);
-
-    for (const nt of newTags) {
-      if (nt.categoryId && nt.value) {
-        try {
-          const created = await addTagValue(nt.categoryId, nt.value);
-          tagIds.push(created.id);
-        } catch {
-          // per-tag creation may fail if it already exists
-        }
-      }
-    }
-
-    if (tagIds.length) {
-      setSelectedTags((prev) => [...new Set([...prev, ...tagIds])]);
-    }
-
-    const tags = await getTagCategories();
-    setCatalogs((prev) => ({ ...prev, tags }));
-  }, []);
-
-  const handleAIClassify = useCallback(async (file: FileSource) => {
-    if (classifying) return;
-    try {
-      setClassifying(true);
-      setClassificationResult(null);
-
-      const result = await retryAsync(
-        () => classifyDocumentFromUri(file.uri, file.name, file.mimeType),
-        { maxAttempts: RETRY_MAX_ATTEMPTS, baseDelayMs: RETRY_BASE_DELAY_MS },
-      );
-
-      setClassificationResult(result);
-      if (result.title) setTitle(result.title);
-      if (result.type?.id) setSelectedType(result.type.id);
-      if (result.specialties?.length) setSelectedSpecialty(result.specialties[0].id);
-
-      await applyClassificationTags(result);
-    } catch (err) {
-      console.warn("Error classifying with AI", err);
-      Alert.alert("IA no disponible", "No pudimos clasificar el documento automáticamente.");
-    } finally {
-      setClassifying(false);
-    }
-  }, [classifying, applyClassificationTags]);
-
-  const handleUpload = useCallback(async (file: FileSource) => {
-    if (uploading) return;
-
-    if (file.size && file.size > UPLOAD_MAX_FILE_SIZE_BYTES) {
-      Alert.alert(
-        "Archivo demasiado grande",
-        `El tamaño máximo permitido es 25 MB. Tu archivo pesa ${(file.size / (1024 * 1024)).toFixed(1)} MB.`
-      );
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const today = new Date();
-      const docTitle = title || `Documento ${today.toLocaleDateString()}`;
-
-      const { storagePath } = await retryAsync(
-        () => uploadFileFromUri(file.uri, file.name, file.mimeType),
-        { maxAttempts: RETRY_MAX_ATTEMPTS, baseDelayMs: RETRY_BASE_DELAY_MS },
-      );
-
-      const createdDoc = await createDocument({
-        title: docTitle,
-        fileUrl: storagePath,
-        format: file.mimeType,
-        file_size_bytes: file.size ?? 0,
-        documentDate: today.toISOString(),
-        typeId: selectedType,
-        subtypeIds: [],
-        specialtyIds: selectedSpecialty ? [selectedSpecialty] : [],
-        tagValueIds: selectedTags,
-      });
-
-      if (options?.backpackId) {
-        await addDocToBackpack(options.backpackId, createdDoc.id);
-        queryClient.invalidateQueries({ queryKey: ["backpack-docs", options.backpackId], exact: false });
-        queryClient.invalidateQueries({ queryKey: ["backpack", options.backpackId], exact: false });
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
-      Toast.show({
-        type: "success",
-        text1: options?.backpackId ? "Documento subido y agregado a la mochila" : "Documento creado",
-        text2: options?.backpackName ?? docTitle,
-      });
-      navigation.goBack();
-    } catch (err) {
-      let detail = "Ha ocurrido un error inesperado";
-      if (isApiError(err)) {
-        detail = err.fieldErrors
-          ? Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join("\n")
-          : err.message;
-      } else if (err instanceof Error) {
-        detail = err.message;
-      }
-      Toast.show({ type: "error", text1: "No se pudo subir el documento", text2: detail });
-      Alert.alert("Error de subida", detail);
-    } finally {
-      setUploading(false);
-    }
-  }, [uploading, title, selectedType, selectedSpecialty, selectedTags, queryClient, navigation, options?.backpackId, options?.backpackName]);
-
-  const handleAddCustomTag = useCallback(async (categoryId: string) => {
-    const value = newTagValues[categoryId];
-    if (!value?.trim() || addingTag) return;
-
-    try {
-      setAddingTag(categoryId);
-      const newTag = await createCustomTag({ categoryId, value: value.trim() });
-      const tags = await getTagCategories();
-      setCatalogs((prev) => ({ ...prev, tags }));
-      setSelectedTags((prev) => [...prev, newTag.id]);
-      setNewTagValues((prev) => ({ ...prev, [categoryId]: "" }));
-    } catch (err) {
-      console.warn("Error creating custom tag", err);
-      Alert.alert("Error", "No se pudo crear la etiqueta personalizada.");
-    } finally {
-      setAddingTag(null);
-    }
-  }, [newTagValues, addingTag]);
-
-  const handleAddCategoryAndTag = useCallback(async () => {
-    const catName = newCategoryName.trim();
-    const val = newTagValue.trim();
-    if (!catName || !val || addingCustomTag) return;
-
-    try {
-      setAddingCustomTag(true);
-      const existing = catalogs.tags.find((c) => c.name.toLowerCase() === catName.toLowerCase());
-      const categoryId = existing
-        ? existing.id
-        : (await createTagCategory({ name: catName })).id;
-
-      const created = await addTagValue(categoryId, val);
-      const tags = await getTagCategories();
-      setCatalogs((prev) => ({ ...prev, tags }));
-      setSelectedTags((prev) => [...prev, created.id]);
-      setNewCategoryName("");
-      setNewTagValue("");
-    } catch (err) {
-      console.warn("Error adding category+tag", err);
-      Alert.alert("Error", "No se pudo crear la categoría o la etiqueta.");
-    } finally {
-      setAddingCustomTag(false);
-    }
-  }, [newCategoryName, newTagValue, addingCustomTag, catalogs.tags]);
-
-  return {
-    catalogs,
-    selectedType,
-    selectedSpecialty,
-    selectedTags,
-    title,
-    newTagValues,
-    addingTag,
-    classificationResult,
-    newCategoryName,
-    newTagValue,
-    addingCustomTag,
-    uploading,
-    classifying,
-
-    setSelectedType,
-    setSelectedSpecialty,
-    toggleTag,
-    setSelectedTags,
-    setTitle,
-    setNewTagValue: setNewTagValueForCategory,
-    setNewCategoryName,
-    setNewTagValueField: setNewTagValue,
-    handleAIClassify,
-    handleUpload,
-    handleAddCustomTag,
-    handleAddCategoryAndTag,
-  };
 }

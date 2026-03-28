@@ -1,14 +1,18 @@
 import { useState, useMemo } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuthStore } from "@healthguard/stores";
 import { login, isApiError } from "@healthguard/api";
 import { colors, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
+import type { RootStackParamList } from "../navigation/RootNavigator";
 
 export function LoginScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +47,7 @@ export function LoginScreen() {
           <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
         </View>
 
-        {error && <Text style={styles.error}>{error}</Text>}
+        {!!error && <Text style={styles.error}>{error}</Text>}
 
         <View style={styles.form}>
           <Text style={styles.label}>Correo electrónico</Text>
@@ -75,6 +79,13 @@ export function LoginScreen() {
             {loading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
           </TouchableOpacity>
         </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>¿No tienes cuenta? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
+            <Text style={styles.footerLink}>Registrarse</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -96,5 +107,8 @@ function makeStyles(t: ThemeContextValue) {
     buttonDisabled: { opacity: 0.7 },
     buttonText:     { color: colors.white, fontSize: fontSize.md, fontWeight: fontWeight.semibold },
     error:          { color: colors.error[600], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, overflow: "hidden", marginBottom: spacing[4], textAlign: "center" },
+    footer:         { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
+    footerText:     { color: t.text.secondary, fontSize: fontSize.sm },
+    footerLink:     { color: colors.sky[500], fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
   });
 }

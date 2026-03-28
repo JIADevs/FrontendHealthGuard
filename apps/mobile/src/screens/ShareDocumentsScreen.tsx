@@ -1,0 +1,298 @@
+import { useState, useMemo, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Share,
+  Image,
+  RefreshControl,
+  ScrollView,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
+import { useQuery } from "@tanstack/react-query";
+import { getDocuments, shareDocument, isApiError, type Document } from "@healthguard/api";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
+import { FileText, Share2, Check, Clock, ChevronLeft, ChevronRight } from "lucide-react-native";
+
+type ShareResult = { shareUrl: string; qrCodeUrl: string; expiresAt: string };
+
+export function ShareDocumentsScreen() {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [shareResults, setShareResults] = useState<Map<string, ShareResult>>(new Map());
+  const [sharing, setSharing] = useState(false);
+  const [resultDoc, setResultDoc] = useState<Document | null>(null);
+  const [resultData, setResultData] = useState<ShareResult | null>(null);
+
+  const docs = useQuery({
+    queryKey: ["documents", "share", page],
+    queryFn: () => getDocuments({ page, limit: 12 }),
+  });
+
+  const totalPages = docs.data?.totalPages ?? 1;
+
+  const toggle = useCallback((id: string) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }, []);
+
+  const handleShare = useCallback(async () => {
+    if (selected.length === 0) return;
+    setSharing(true);
+    const results = new Map(shareResults);
+    const items = docs.data?.items ?? [];
+    let lastDoc: Document | null = null;
+    let lastResult: ShareResult | null = null;
+
+    for (const docId of selected) {
+      try {
+        const result = await shareDocument(docId);
+        results.set(docId, result);
+        const doc = items.find((d) => d.id === docId);
+        if (doc) {
+          lastDoc = doc;
+          lastResult = result;
+        }
+      } catch (err) {
+        Toast.show({
+          type: "error",
+          text1: "Error al compartir",
+          text2: isApiError(err) ? err.message : "Un documento no pudo compartirse",
+        });
+      }
+    }
+
+    setShareResults(results);
+    setSharing(false);
+
+    if (lastDoc && lastResult) {
+      setResultDoc(lastDoc);
+      setResultData(lastResult);
+    }
+  }, [selected, shareResults, docs.data]);
+
+  const handleCopyLink = useCallback((url: string) => {
+    Share.share({ message: url, url });
+  }, []);
+
+  const handleSystemShare = useCallback((url: string, title: string) => {
+    Share.share({
+      url,
+      message: `Comparto el documento "${title}": ${url}`,
+    });
+  }, []);
+
+  const items = docs.data?.items ?? [];
+  const sharedDocs = items.filter((d) => shareResults.has(d.id));
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.topBar}>
+        <View>
+          <Text style={styles.title}>Compartir Documentos</Text>
+          <Text style={styles.subtitle}>
+            Selecciona documentos y genera enlaces con código QR.
+          </Text>
+        </View>
+        {selected.length > 0 && (
+          <TouchableOpacity
+            style={[styles.shareBtn, sharing && styles.shareBtnDisabled]}
+            onPress={handleShare}
+            disabled={sharing}
+          >
+            {sharing ? (
+              <ActivityIndicator color={colors.white} size="small" />
+            ) : (
+              <>
+                <Share2 size={16} color={colors.white} />
+                <Text style={styles.shareBtnText}>
+                  Compartir ({selected.length})
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <FlatList
+        data={items}
+        keyExtractor={(d) => d.id}
+        contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={docs.isRefetching}
+            onRefresh={() => docs.refetch()}
+            tintColor={colors.sky[500]}
+          />
+        }
+        ListHeaderComponent={
+          sharedDocs.length > 0 ? (
+            <View style={styles.resultsCard}>
+              <View style={styles.resultsHeader}>
+                <Share2 size={16} color={colors.sky[500]} />
+                <Text style={styles.resultsTitle}>
+                  {shareResults.size} enlace{shareResults.size > 1 ? "s" : ""} generado{shareResults.size > 1 ? "s" : ""}
+                </Text>
+              </View>
+              {sharedDocs.map((doc) => {
+                const res = shareResults.get(doc.id)!;
+                return (
+                  <View key={doc.id} style={styles.resultRow}>
+                    <Image
+                      source={{ uri: res.qrCodeUrl }}
+                      style={styles.qrThumb}
+                    />
+                    <View style={styles.resultInfo}>
+                      <Text style={styles.resultTitle} numberOfLines={1}>
+                        {doc.title}
+                      </Text>
+                      <View style={styles.resultMeta}>
+                        <Clock size={12} color={t.text.secondary} />
+                        <Text style={styles.resultMetaText}>
+                          Expira {formatDate(res.expiresAt)}
+                        </Text>
+                      </View>
+                      <View style={styles.resultActions}>
+                        <TouchableOpacity
+                          style={styles.resultBtn}
+                          onPress={() => handleCopyLink(res.shareUrl)}
+                        >
+                          <Share2 size={13} color={colors.sky[500]} />
+                          <Text style={styles.resultBtnText}>Copiar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.resultBtn}
+                          onPress={() => handleSystemShare(res.shareUrl, doc.title)}
+                        >
+                          <Share2 size={13} color={colors.sky[500]} />
+                          <Text style={styles.resultBtnText}>Compartir</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null
+        }
+        ListEmptyComponent={
+          docs.isLoading ? (
+            <View style={styles.center}>
+              <ActivityIndicator size="large" color={colors.sky[500]} />
+            </View>
+          ) : (
+            <View style={styles.center}>
+              <FileText size={48} color={t.border.medium} />
+              <Text style={styles.emptyText}>No tienes documentos para compartir.</Text>
+            </View>
+          )
+        }
+        ListFooterComponent={
+          totalPages > 1 ? (
+            <View style={styles.pagination}>
+              <TouchableOpacity
+                style={[styles.pageBtn, page <= 1 && styles.pageBtnDisabled]}
+                disabled={page <= 1}
+                onPress={() => setPage(page - 1)}
+              >
+                <ChevronLeft size={18} color={page <= 1 ? t.border.medium : colors.sky[500]} />
+              </TouchableOpacity>
+              <Text style={styles.pageText}>{page} / {totalPages}</Text>
+              <TouchableOpacity
+                style={[styles.pageBtn, page >= totalPages && styles.pageBtnDisabled]}
+                disabled={page >= totalPages}
+                onPress={() => setPage(page + 1)}
+              >
+                <ChevronRight size={18} color={page >= totalPages ? t.border.medium : colors.sky[500]} />
+              </TouchableOpacity>
+            </View>
+          ) : null
+        }
+        renderItem={({ item: doc }) => {
+          const isSelected = selected.includes(doc.id);
+          const isShared = shareResults.has(doc.id);
+          return (
+            <TouchableOpacity
+              style={[styles.docItem, isSelected && styles.docItemSelected]}
+              onPress={() => toggle(doc.id)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                {isSelected && <Check size={12} color={colors.white} />}
+              </View>
+              <FileText size={16} color={isShared ? colors.emerald[500] : t.text.secondary} />
+              <View style={styles.docInfo}>
+                <Text style={styles.docTitle} numberOfLines={1}>
+                  {doc.title}
+                </Text>
+                <Text style={styles.docMeta}>
+                  {doc.format} · {formatDate(doc.uploadedAt)}
+                </Text>
+              </View>
+              {isShared && (
+                <View style={styles.sharedBadge}>
+                  <Text style={styles.sharedBadgeText}>Compartido</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        }}
+      />
+    </SafeAreaView>
+  );
+}
+
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    container:        { flex: 1, backgroundColor: t.surface.bg },
+    topBar:           { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing[3], padding: spacing[5], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
+    title:            { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary },
+    subtitle:         { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2, maxWidth: 200 },
+    shareBtn:         { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: colors.sky[500], paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md, alignSelf: "flex-start" },
+    shareBtnDisabled: { opacity: 0.6 },
+    shareBtnText:     { color: colors.white, fontWeight: fontWeight.semibold, fontSize: fontSize.sm },
+    list:             { padding: spacing[4], gap: spacing[2], paddingBottom: spacing[8] },
+    center:           { alignItems: "center", justifyContent: "center", gap: spacing[3], paddingVertical: spacing[10] },
+    emptyText:        { color: t.text.secondary, fontSize: fontSize.md, textAlign: "center" },
+
+    // results card
+    resultsCard:      { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium, padding: spacing[4], marginBottom: spacing[3], gap: spacing[3] },
+    resultsHeader:    { flexDirection: "row", alignItems: "center", gap: spacing[2] },
+    resultsTitle:     { fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: t.text.primary },
+    resultRow:        { flexDirection: "row", gap: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: t.border.light },
+    qrThumb:          { width: 56, height: 56, borderRadius: radii.sm, flexShrink: 0 },
+    resultInfo:       { flex: 1 },
+    resultTitle:      { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: 2 },
+    resultMeta:       { flexDirection: "row", alignItems: "center", gap: spacing[1] },
+    resultMetaText:   { fontSize: fontSize.xs, color: t.text.secondary },
+    resultActions:    { flexDirection: "row", gap: spacing[2], marginTop: spacing[2] },
+    resultBtn:        { flexDirection: "row", alignItems: "center", gap: spacing[1], paddingHorizontal: spacing[2], paddingVertical: 4, borderRadius: radii.sm, backgroundColor: colors.sky[50], borderWidth: 1, borderColor: colors.sky[200] },
+    resultBtnText:    { fontSize: fontSize.xs, color: colors.sky[600], fontWeight: fontWeight.semibold },
+
+    // doc list
+    docItem:          { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: spacing[4], backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium },
+    docItemSelected:  { borderColor: colors.sky[400], backgroundColor: colors.sky[50] },
+    checkbox:         { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: t.border.medium, alignItems: "center", justifyContent: "center" },
+    checkboxSelected: { backgroundColor: colors.sky[500], borderColor: colors.sky[500] },
+    docInfo:          { flex: 1 },
+    docTitle:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary },
+    docMeta:          { fontSize: fontSize.xs, color: t.text.secondary, marginTop: 2 },
+    sharedBadge:      { paddingHorizontal: spacing[2], paddingVertical: 3, backgroundColor: colors.emerald[50], borderRadius: radii.full, borderWidth: 1, borderColor: colors.emerald[200] },
+    sharedBadgeText:  { fontSize: fontSize.xs, color: colors.emerald[700], fontWeight: fontWeight.semibold },
+
+    // pagination
+    pagination:       { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[4], paddingVertical: spacing[4] },
+    pageBtn:          { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bgCard, borderWidth: 1, borderColor: t.border.medium },
+    pageBtnDisabled:  { opacity: 0.4 },
+    pageText:         { fontSize: fontSize.sm, color: t.text.secondary, fontWeight: fontWeight.semibold },
+  });
+}

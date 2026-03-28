@@ -7,12 +7,12 @@ interface DocumentTypeIconProps {
   size?: number;
 }
 
-export function DocumentTypeIcon({ format, documentTypeName, size = 20 }: DocumentTypeIconProps) {
+export function DocumentTypeIcon({ format, documentTypeName, size = 24 }: DocumentTypeIconProps) {
   const { bg, iconColor } = resolveDocTypeVariant(documentTypeName);
   const fmt = resolveDocFormat(format);
 
   const Icon = fmt === "image" ? FileImage : fmt === "pdf" ? FileText : File;
-  const containerSize = size * 2.2;
+  const containerSize = size * 2;
 
   return (
     <div

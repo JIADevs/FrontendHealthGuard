@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuthStore } from "@healthguard/stores";
 import { TabNavigator } from "./TabNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
+import { SignupScreen } from "../screens/SignupScreen";
 import { ScannerScreen } from "../screens/ScannerScreen";
 import { DocumentUploadScreen } from "../screens/DocumentUploadScreen";
 import { DocumentDetailScreen } from "../screens/DocumentDetailScreen";
@@ -10,9 +11,11 @@ import { NotificationsScreen } from "../screens/NotificationsScreen";
 import { BackpackDetailScreen } from "../screens/BackpackDetailScreen";
 import { BackpackEditScreen } from "../screens/BackpackEditScreen";
 import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
+import { ShareDocumentsScreen } from "../screens/ShareDocumentsScreen";
 
 export type RootStackParamList = {
   Auth: undefined;
+  Signup: undefined;
   MainTabs: undefined;
   Scanner: { backpackId?: string; backpackName?: string } | undefined;
   DocumentUpload: { backpackId?: string; backpackName?: string } | undefined;
@@ -22,6 +25,7 @@ export type RootStackParamList = {
   BackpackDetail: { id: string };
   BackpackEdit: { id?: string } | undefined;
   BackpackAddDocuments: { id: string };
+  ShareDocuments: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -74,9 +78,21 @@ export function RootNavigator() {
             component={BackpackAddDocumentsScreen}
             options={{ headerShown: true, title: "Agregar documentos" }}
           />
+          <Stack.Screen
+            name="ShareDocuments"
+            component={ShareDocumentsScreen}
+            options={{ headerShown: true, title: "Compartir Documentos", animation: "slide_from_right" }}
+          />
         </>
       ) : (
-        <Stack.Screen name="Auth" component={LoginScreen} />
+        <>
+          <Stack.Screen name="Auth" component={LoginScreen} />
+          <Stack.Screen
+            name="Signup"
+            component={SignupScreen}
+            options={{ headerShown: true, title: "Crear Cuenta" }}
+          />
+        </>
       )}
     </Stack.Navigator>
   );

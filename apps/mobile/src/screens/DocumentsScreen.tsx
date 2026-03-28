@@ -96,7 +96,17 @@ export function DocumentsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Documentos</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Documentos</Text>
+          <TouchableOpacity
+            style={styles.shareAllBtn}
+            onPress={() => navigation.navigate("ShareDocuments")}
+            accessibilityRole="button"
+            accessibilityLabel="Compartir documentos"
+          >
+            <Share2 size={18} color={colors.sky[500]} />
+          </TouchableOpacity>
+        </View>
         <View style={styles.searchBar}>
           <Search size={18} color={t.text.secondary} />
           <TextInput
@@ -231,7 +241,9 @@ function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container:   { flex: 1, backgroundColor: t.surface.bg },
     header:      { padding: spacing[6], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
+    titleRow:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     title:       { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary },
+    shareAllBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: colors.sky[50], borderWidth: 1, borderColor: colors.sky[200] },
     list:        { padding: spacing[4], gap: spacing[3] },
     searchBar: {
       marginTop: 14,

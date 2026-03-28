@@ -12,15 +12,12 @@ import {
   createTagCategory,
   addTagValue,
   isApiError,
+  retryAsync,
   type DocumentTypeOut,
   type TagCategoryOut,
   type ClassificationSuggestion,
 } from "@healthguard/api";
 import { RETRY_MAX_ATTEMPTS, RETRY_BASE_DELAY_MS, UPLOAD_MAX_FILE_SIZE_BYTES } from "@healthguard/ui";
-
-function delay(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 export interface DocumentFormState {
   catalogs: { types: DocumentTypeOut[]; tags: TagCategoryOut[] };
@@ -30,7 +27,7 @@ export interface DocumentFormState {
   title: string;
   newTagValues: Record<string, string>;
   addingTag: string | null;
-  classificationResult: (ClassificationSuggestion & { title?: string }) | null;
+  classificationResult: ClassificationSuggestion | null;
   newCategoryName: string;
   newTagValue: string;
   addingCustomTag: boolean;
@@ -75,7 +72,7 @@ export function useDocumentForm(
   const [newTagValues, setNewTagValues] = useState<Record<string, string>>({});
   const [addingTag, setAddingTag] = useState<string | null>(null);
   const [classificationResult, setClassificationResult] = useState<
-    (ClassificationSuggestion & { title?: string }) | null
+    ClassificationSuggestion | null
   >(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newTagValue, setNewTagValue] = useState("");
@@ -138,24 +135,10 @@ export function useDocumentForm(
         setClassifying(true);
         setClassificationResult(null);
 
-        let result: (ClassificationSuggestion & { title?: string }) | null = null;
-        let lastErr: unknown;
-
-        for (let attempt = 1; attempt <= RETRY_MAX_ATTEMPTS; attempt++) {
-          try {
-            result = (await classifyDocument(file)) as ClassificationSuggestion & { title?: string };
-            break;
-          } catch (err) {
-            lastErr = err;
-            const isRetryable = isApiError(err)
-              ? err.isNetworkError
-              : !(err instanceof SyntaxError || err instanceof TypeError);
-            if (!isRetryable || attempt >= RETRY_MAX_ATTEMPTS) break;
-            await delay(RETRY_BASE_DELAY_MS * attempt);
-          }
-        }
-
-        if (!result) throw lastErr;
+        const result = await retryAsync(() => classifyDocument(file), {
+          maxAttempts: RETRY_MAX_ATTEMPTS,
+          baseDelayMs: RETRY_BASE_DELAY_MS,
+        });
 
         setClassificationResult(result);
         if (result.title) setTitle(result.title);
@@ -187,52 +170,48 @@ export function useDocumentForm(
 
       setUploading(true);
       try {
-        for (let attempt = 1; attempt <= RETRY_MAX_ATTEMPTS; attempt++) {
-          try {
-            const { storagePath } = await uploadFile(file);
-            const today = new Date();
-            const docTitle = title || `Documento ${today.toLocaleDateString()}`;
-            const createdDoc = await createDocument({
-              title: docTitle,
-              fileUrl: storagePath,
-              format: file.type || "application/octet-stream",
-              file_size_bytes: file.size,
-              documentDate: docDate ?? today.toISOString(),
-              typeId: selectedType,
-              subtypeIds: [],
-              specialtyIds: selectedSpecialty ? [selectedSpecialty] : [],
-              tagValueIds: selectedTags,
-            });
+        const today = new Date();
+        const docTitle = title || `Documento ${today.toLocaleDateString()}`;
 
-            if (options?.backpackId) {
-              await addDocToBackpack(options.backpackId, createdDoc.id);
-              queryClient.invalidateQueries({ queryKey: ["backpack-docs", options.backpackId], exact: false });
-              queryClient.invalidateQueries({ queryKey: ["backpack", options.backpackId], exact: false });
-            }
+        const { storagePath } = await retryAsync(() => uploadFile(file), {
+          maxAttempts: RETRY_MAX_ATTEMPTS,
+          baseDelayMs: RETRY_BASE_DELAY_MS,
+        });
 
-            queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
-            sileo.success({
-              title: options?.backpackId ? "Documento subido y agregado a la mochila" : "Documento creado",
-              description: options?.backpackName ?? docTitle,
-            });
-            options?.onSuccess?.();
-            return;
-          } catch (err) {
-            if (attempt >= RETRY_MAX_ATTEMPTS) {
-              let detail = "Ha ocurrido un error inesperado";
-              if (isApiError(err)) {
-                detail = err.fieldErrors
-                  ? Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join("\n")
-                  : err.message;
-              } else if (err instanceof Error) {
-                detail = err.message;
-              }
-              sileo.error({ title: "No se pudo subir el documento", description: detail });
-            } else {
-              await delay(RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1));
-            }
-          }
+        const createdDoc = await createDocument({
+          title: docTitle,
+          fileUrl: storagePath,
+          format: file.type || "application/octet-stream",
+          file_size_bytes: file.size,
+          documentDate: docDate ?? today.toISOString(),
+          typeId: selectedType,
+          subtypeIds: [],
+          specialtyIds: selectedSpecialty ? [selectedSpecialty] : [],
+          tagValueIds: selectedTags,
+        });
+
+        if (options?.backpackId) {
+          await addDocToBackpack(options.backpackId, createdDoc.id);
+          queryClient.invalidateQueries({ queryKey: ["backpack-docs", options.backpackId], exact: false });
+          queryClient.invalidateQueries({ queryKey: ["backpack", options.backpackId], exact: false });
         }
+
+        queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
+        sileo.success({
+          title: options?.backpackId ? "Documento subido y agregado a la mochila" : "Documento creado",
+          description: options?.backpackName ?? docTitle,
+        });
+        options?.onSuccess?.();
+      } catch (err) {
+        let detail = "Ha ocurrido un error inesperado";
+        if (isApiError(err)) {
+          detail = err.fieldErrors
+            ? Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join("\n")
+            : err.message;
+        } else if (err instanceof Error) {
+          detail = err.message;
+        }
+        sileo.error({ title: "No se pudo subir el documento", description: detail });
       } finally {
         setUploading(false);
       }

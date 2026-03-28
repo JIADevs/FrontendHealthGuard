@@ -7,7 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "../components/DocumentTypeIcon";
-import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, useDebounceSearch, formatDate } from "@healthguard/ui";
+import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function DocumentsScreen() {
@@ -21,7 +21,7 @@ export function DocumentsScreen() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounceSearch(search);
 
-  const docs = useDocumentsQuery(debouncedSearch);
+  const docs = useDocumentsQuery(debouncedSearch, 1, PAGE_SIZE_LIST);
   const shareMut = useShareDocumentMutation();
 
   const toggleFab = useCallback(() => {

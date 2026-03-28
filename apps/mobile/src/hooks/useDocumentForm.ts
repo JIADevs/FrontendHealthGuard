@@ -14,6 +14,7 @@ import {
   createTagCategory,
   addTagValue,
   isApiError,
+  retryAsync,
   type DocumentTypeOut,
   type TagCategoryOut,
   type ClassificationSuggestion,
@@ -21,10 +22,6 @@ import {
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { RETRY_MAX_ATTEMPTS, RETRY_BASE_DELAY_MS, UPLOAD_MAX_FILE_SIZE_BYTES } from "@healthguard/ui";
-
-function delay(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 export interface FileSource {
   uri: string;
@@ -144,22 +141,10 @@ export function useDocumentForm(options?: UseDocumentFormOptions): DocumentFormS
       setClassifying(true);
       setClassificationResult(null);
 
-      let result: (ClassificationSuggestion & { title?: string }) | null = null;
-      let lastErr: unknown;
-
-      for (let attempt = 1; attempt <= RETRY_MAX_ATTEMPTS; attempt++) {
-        try {
-          result = await classifyDocumentFromUri(file.uri, file.name, file.mimeType) as ClassificationSuggestion & { title?: string };
-          break;
-        } catch (err) {
-          lastErr = err;
-          const isRetryable = isApiError(err) ? err.isNetworkError : !(err instanceof SyntaxError || err instanceof TypeError);
-          if (!isRetryable || attempt >= RETRY_MAX_ATTEMPTS) break;
-          await delay(RETRY_BASE_DELAY_MS * attempt);
-        }
-      }
-
-      if (!result) throw lastErr;
+      const result = await retryAsync(
+        () => classifyDocumentFromUri(file.uri, file.name, file.mimeType),
+        { maxAttempts: RETRY_MAX_ATTEMPTS, baseDelayMs: RETRY_BASE_DELAY_MS },
+      );
 
       setClassificationResult(result);
       if (result.title) setTitle(result.title);
@@ -188,55 +173,50 @@ export function useDocumentForm(options?: UseDocumentFormOptions): DocumentFormS
 
     setUploading(true);
     try {
-      for (let attempt = 1; attempt <= RETRY_MAX_ATTEMPTS; attempt++) {
-        try {
-          const { storagePath } = await uploadFileFromUri(file.uri, file.name, file.mimeType);
+      const today = new Date();
+      const docTitle = title || `Documento ${today.toLocaleDateString()}`;
 
-          const today = new Date();
-          const docTitle = title || `Documento ${today.toLocaleDateString()}`;
-          const createdDoc = await createDocument({
-            title: docTitle,
-            fileUrl: storagePath,
-            format: file.mimeType,
-            file_size_bytes: file.size ?? 0,
-            documentDate: today.toISOString(),
-            typeId: selectedType,
-            subtypeIds: [],
-            specialtyIds: selectedSpecialty ? [selectedSpecialty] : [],
-            tagValueIds: selectedTags,
-          });
+      const { storagePath } = await retryAsync(
+        () => uploadFileFromUri(file.uri, file.name, file.mimeType),
+        { maxAttempts: RETRY_MAX_ATTEMPTS, baseDelayMs: RETRY_BASE_DELAY_MS },
+      );
 
-          if (options?.backpackId) {
-            await addDocToBackpack(options.backpackId, createdDoc.id);
-            queryClient.invalidateQueries({ queryKey: ["backpack-docs", options.backpackId], exact: false });
-            queryClient.invalidateQueries({ queryKey: ["backpack", options.backpackId], exact: false });
-          }
+      const createdDoc = await createDocument({
+        title: docTitle,
+        fileUrl: storagePath,
+        format: file.mimeType,
+        file_size_bytes: file.size ?? 0,
+        documentDate: today.toISOString(),
+        typeId: selectedType,
+        subtypeIds: [],
+        specialtyIds: selectedSpecialty ? [selectedSpecialty] : [],
+        tagValueIds: selectedTags,
+      });
 
-          queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
-          Toast.show({
-            type: "success",
-            text1: options?.backpackId ? "Documento subido y agregado a la mochila" : "Documento creado",
-            text2: options?.backpackName ?? docTitle,
-          });
-          navigation.goBack();
-          return;
-        } catch (err) {
-          if (attempt >= RETRY_MAX_ATTEMPTS) {
-            let detail = "Ha ocurrido un error inesperado";
-            if (isApiError(err)) {
-              detail = err.fieldErrors
-                ? Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join("\n")
-                : err.message;
-            } else if (err instanceof Error) {
-              detail = err.message;
-            }
-            Toast.show({ type: "error", text1: "No se pudo subir el documento", text2: detail });
-            Alert.alert("Error de subida", detail);
-          } else {
-            await delay(RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1));
-          }
-        }
+      if (options?.backpackId) {
+        await addDocToBackpack(options.backpackId, createdDoc.id);
+        queryClient.invalidateQueries({ queryKey: ["backpack-docs", options.backpackId], exact: false });
+        queryClient.invalidateQueries({ queryKey: ["backpack", options.backpackId], exact: false });
       }
+
+      queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
+      Toast.show({
+        type: "success",
+        text1: options?.backpackId ? "Documento subido y agregado a la mochila" : "Documento creado",
+        text2: options?.backpackName ?? docTitle,
+      });
+      navigation.goBack();
+    } catch (err) {
+      let detail = "Ha ocurrido un error inesperado";
+      if (isApiError(err)) {
+        detail = err.fieldErrors
+          ? Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join("\n")
+          : err.message;
+      } else if (err instanceof Error) {
+        detail = err.message;
+      }
+      Toast.show({ type: "error", text1: "No se pudo subir el documento", text2: detail });
+      Alert.alert("Error de subida", detail);
     } finally {
       setUploading(false);
     }

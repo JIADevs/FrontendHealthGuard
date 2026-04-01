@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useBackpacksQuery } from "@healthguard/api/hooks";
+import { useBackpacksQuery, useDeleteBackpackMutation } from "@healthguard/api/hooks";
 import { Backpack, Plus, FileText, Search, Trash2 } from "lucide-react";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { deleteBackpack, type Backpack as BackpackType } from "@healthguard/api";
+import { type Backpack as BackpackType } from "@healthguard/api";
 import { sileo } from "sileo";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { BackpackFormModal } from "./_components/BackpackFormModal";
@@ -14,7 +13,6 @@ import { BackpackDetail } from "./_components/BackpackDetail";
 import "./backpacks.css";
 
 export default function BackpacksPage() {
-  const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounceSearch(search);
   const [showForm, setShowForm] = useState(false);
@@ -22,24 +20,7 @@ export default function BackpacksPage() {
   const [deleteTarget, setDeleteTarget] = useState<BackpackType | null>(null);
 
   const bps = useBackpacksQuery(debouncedSearch, 50);
-
-  const deleteMut = useMutation({
-    mutationFn: (id: string) => deleteBackpack(id),
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: ["backpacks"] });
-      const previous = qc.getQueryData(["backpacks"]);
-      qc.setQueryData(["backpacks"], (old: any) =>
-        old ? { ...old, items: old.items.filter((bp: BackpackType) => bp.id !== id) } : old
-      );
-      return { previous };
-    },
-    onError: (_, __, ctx) => {
-      qc.setQueryData(["backpacks"], ctx?.previous);
-      sileo.error({ title: "No se pudo eliminar la mochila" });
-    },
-    onSuccess: () => { setDeleteTarget(null); },
-    onSettled: () => { qc.invalidateQueries({ queryKey: ["backpacks"] }); },
-  });
+  const deleteMut = useDeleteBackpackMutation();
 
   if (detailId) {
     return <BackpackDetail id={detailId} onBack={() => setDetailId(null)} />;
@@ -109,7 +90,10 @@ export default function BackpacksPage() {
           message={`¿Eliminar "${deleteTarget.name}"? Los documentos no se eliminarán.`}
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
-          onConfirm={() => deleteMut.mutate(deleteTarget.id)}
+          onConfirm={() => deleteMut.mutate(deleteTarget.id, {
+            onSuccess: () => { setDeleteTarget(null); sileo.success({ title: "Mochila eliminada" }); },
+            onError: () => sileo.error({ title: "No se pudo eliminar la mochila" }),
+          })}
           onCancel={() => setDeleteTarget(null)}
         />
       )}

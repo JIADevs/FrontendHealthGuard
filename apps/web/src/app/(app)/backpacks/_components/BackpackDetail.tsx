@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useBackpackQuery, useShareBackpackMutation } from "@healthguard/api/hooks";
-import { Backpack, FileText, X, Share2, ChevronLeft } from "lucide-react";
-import { Plus } from "lucide-react";
-import { removeDocFromBackpack, type BackpackWithDocs } from "@healthguard/api";
+import { useBackpackQuery } from "@healthguard/api/hooks";
+import { useBackpackDetail } from "@/hooks/useBackpackDetail";
+import { type BackpackWithDocs } from "@healthguard/api";
+import { Backpack, FileText, X, Share2, ChevronLeft, Plus, Edit3, Clock, QrCode, Copy } from "lucide-react";
 import { formatDate } from "@healthguard/ui";
-import { sileo } from "sileo";
-import { ShareResult } from "@/components/ShareResult";
 import { AddDocsModal } from "./AddDocsModal";
+import { BackpackFormModal } from "./BackpackFormModal";
 
 interface BackpackDetailProps {
   id: string;
@@ -17,33 +15,19 @@ interface BackpackDetailProps {
 }
 
 export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
-  const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
-  const [shareData, setShareData] = useState<{ shareUrl: string; qrCodeUrl: string; expiresAt: string } | null>(null);
+  const [showEdit, setShowEdit] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const bp = useBackpackQuery(id) as { data: BackpackWithDocs | undefined; isLoading: boolean };
+  const detail = useBackpackDetail(id);
 
-  const removeMut = useMutation({
-    mutationFn: (docId: string) => removeDocFromBackpack(id, docId),
-    onMutate: async (docId) => {
-      await qc.cancelQueries({ queryKey: ["backpack", id] });
-      const previous = qc.getQueryData(["backpack", id]);
-      qc.setQueryData(["backpack", id], (old: BackpackWithDocs | undefined) =>
-        old ? { ...old, documents: old.documents.filter((d) => d.id !== docId) } : old
-      );
-      return { previous };
-    },
-    onError: (_, __, ctx) => {
-      qc.setQueryData(["backpack", id], ctx?.previous);
-      sileo.error({ title: "No se pudo quitar el documento" });
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["backpack", id] });
-      qc.invalidateQueries({ queryKey: ["backpacks"] });
-    },
-  });
-
-  const shareMut = useShareBackpackMutation();
+  function handleCopy() {
+    if (!detail.shareData?.shareUrl) return;
+    navigator.clipboard.writeText(detail.shareData.shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <>
@@ -68,33 +52,54 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
               )}
             </div>
             <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn btn-ghost" onClick={() => setShowEdit(true)}>
+                <Edit3 size={16} /> Editar
+              </button>
               <button className="btn btn-ghost" onClick={() => setShowAdd(true)}>
                 <Plus size={16} /> Agregar Documentos
               </button>
               <button
                 className="btn btn-primary"
                 style={{ width: "auto" }}
-                onClick={() => shareMut.mutate(id, { onSuccess: (data) => setShareData(data as typeof shareData) })}
-                disabled={shareMut.isPending}
+                onClick={detail.shareBackpack}
+                disabled={detail.isSharing}
               >
-                <Share2 size={16} /> Compartir Mochila
+                {detail.isSharing ? <span className="spinner" /> : <Share2 size={16} />}
+                Compartir Mochila
               </button>
             </div>
           </div>
 
-          {shareData && (
+          {/* Share result panel */}
+          {detail.shareData && (
             <div className="card" style={{ marginBottom: 20 }}>
-              <div className="card-body">
-                <ShareResult
-                  shareUrl={shareData.shareUrl}
-                  qrCodeUrl={shareData.qrCodeUrl}
-                  expiresAt={shareData.expiresAt}
-                  label="Enlace de compartición"
-                />
+              <div className="card-header">
+                <span className="card-title">
+                  <QrCode size={16} style={{ verticalAlign: -2, marginRight: 6 }} />
+                  Enlace generado
+                </span>
+                <button className="icon-btn" onClick={detail.clearShareData} title="Cerrar"><X size={14} /></button>
+              </div>
+              <div className="card-body" style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <img src={detail.shareData.qrCodeUrl} alt="QR" width={72} height={72} style={{ borderRadius: 8, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {detail.shareData.expiresAt && (
+                    <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                      <Clock size={12} /> Expira el {formatDate(detail.shareData.expiresAt)}
+                    </div>
+                  )}
+                  <div className="share-url">
+                    <input readOnly value={detail.shareData.shareUrl} style={{ fontSize: 12 }} />
+                    <button className="btn btn-ghost" onClick={handleCopy} style={{ padding: "4px 8px", fontSize: 12 }}>
+                      {copied ? "✓" : <Copy size={12} />}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
+          {/* Documents list */}
           <div className="card">
             <div className="card-header">
               <span className="card-title">{bp.data.documents?.length ?? 0} Documentos</span>
@@ -109,8 +114,15 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
                       <FileText size={16} style={{ color: "var(--gray-400)", flexShrink: 0 }} />
                       <span className="bp-doc-row-title">{doc.title}</span>
                       <span className="bp-doc-row-date">{formatDate(doc.uploadedAt)}</span>
-                      <button className="icon-btn" title="Quitar" onClick={() => removeMut.mutate(doc.id)}>
-                        <X size={14} />
+                      <button
+                        className="icon-btn"
+                        title="Quitar"
+                        disabled={detail.removingDocId === doc.id}
+                        onClick={() => detail.removeDocument(doc.id, doc.title)}
+                      >
+                        {detail.removingDocId === doc.id
+                          ? <span className="spinner" style={{ width: 12, height: 12 }} />
+                          : <X size={14} />}
                       </button>
                     </div>
                   ))}
@@ -125,6 +137,10 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
               existingIds={(bp.data.documents ?? []).map((d) => d.id)}
               onClose={() => setShowAdd(false)}
             />
+          )}
+
+          {showEdit && (
+            <BackpackFormModal backpackId={id} onClose={() => setShowEdit(false)} />
           )}
         </>
       ) : null}

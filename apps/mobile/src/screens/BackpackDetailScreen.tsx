@@ -16,23 +16,22 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useBackpackDocumentsQuery, useBackpackQuery, useDeleteBackpackMutation, useShareBackpackMutation } from "@healthguard/api/hooks";
+import { useBackpackDocumentsQuery, useBackpackQuery, useDeleteBackpackMutation } from "@healthguard/api/hooks";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { removeDocFromBackpack, isApiError, type DocumentPage, type Document } from "@healthguard/api";
+import { isApiError, type DocumentPage, type Document } from "@healthguard/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@healthguard/ui";
 import { Camera, FileText, FileUp, Plus, Search, Share2, Trash2, Edit2, X } from "lucide-react-native";
 import { useAppTheme, colors, useDebounceSearch, formatDate } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
+import { useBackpackDetail } from "../hooks/useBackpackDetail";
 
 type RouteParams = { id: string };
 
 export function BackpackDetailScreen() {
   const route = useRoute();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const queryClient = useQueryClient();
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const { id } = (route.params ?? {}) as RouteParams;
@@ -41,36 +40,14 @@ export function BackpackDetailScreen() {
   const debouncedSearch = useDebounceSearch(search);
   const [fabOpen, setFabOpen] = useState(false);
   const [animation] = useState(() => new Animated.Value(0));
+  const [deleteDocTarget, setDeleteDocTarget] = useState<Document | null>(null);
 
   const backpackQuery = useBackpackQuery(id);
-
   const docsQuery = useBackpackDocumentsQuery(id, debouncedSearch);
-
   const docs = useMemo(() => (docsQuery.data?.items ?? []) as DocumentPage["items"], [docsQuery.data]);
 
-  const removeMut = useMutation({
-    mutationFn: ({ documentId }: { documentId: string; title: string }) =>
-      removeDocFromBackpack(id, documentId),
-    onError: (err) => {
-      const message = isApiError(err) ? err.message : "No se pudo eliminar el documento.";
-      Toast.show({ type: "error", text1: "Error al eliminar", text2: message });
-    },
-    onSuccess: (_data, vars) => {
-      Toast.show({ type: "success", text1: "Documento eliminado", text2: vars.title });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["backpack-docs", id], exact: false });
-      queryClient.invalidateQueries({ queryKey: ["backpack", id], exact: false });
-    },
-  });
-
+  const detail = useBackpackDetail(id);
   const deleteMut = useDeleteBackpackMutation();
-  const shareMut = useShareBackpackMutation();
-
-  const [shareOpen, setShareOpen] = useState(false);
-  const [shareData, setShareData] = useState<null | { shareUrl: string; qrCodeUrl: string }>(null);
-  const [deleteDocTarget, setDeleteDocTarget] = useState<Document | null>(null);
-  const [removingDocId, setRemovingDocId] = useState<string | null>(null);
 
   const handleRemove = useCallback((doc: Document) => {
     setDeleteDocTarget(doc);
@@ -79,31 +56,23 @@ export function BackpackDetailScreen() {
   const handleDeleteBackpack = useCallback(() => {
     Alert.alert("Eliminar mochila", "¿Querés eliminar esta mochila y sus enlaces?", [
       { text: "Cancelar", style: "cancel" },
-      { text: "Eliminar", style: "destructive", onPress: () => deleteMut.mutate(id, {
-        onSuccess: () => { Toast.show({ type: "success", text1: "Mochila eliminada" }); navigation.goBack(); },
-        onError: (err) => { const msg = isApiError(err) ? err.message : "No se pudo eliminar la mochila."; Toast.show({ type: "error", text1: "Error al eliminar", text2: msg }); },
-      }) },
+      {
+        text: "Eliminar", style: "destructive", onPress: () => deleteMut.mutate(id, {
+          onSuccess: () => { Toast.show({ type: "success", text1: "Mochila eliminada" }); navigation.goBack(); },
+          onError: (err) => { const msg = isApiError(err) ? err.message : "No se pudo eliminar la mochila."; Toast.show({ type: "error", text1: "Error al eliminar", text2: msg }); },
+        }),
+      },
     ]);
-  }, [deleteMut]);
+  }, [deleteMut, id, navigation]);
 
   const toggleFab = useCallback(() => {
     const toValue = fabOpen ? 0 : 1;
-    Animated.spring(animation, {
-      toValue,
-      friction: 6,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
+    Animated.spring(animation, { toValue, friction: 6, tension: 40, useNativeDriver: true }).start();
     setFabOpen(!fabOpen);
   }, [fabOpen, animation]);
 
   const closeFab = useCallback(() => {
-    Animated.spring(animation, {
-      toValue: 0,
-      friction: 6,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
+    Animated.spring(animation, { toValue: 0, friction: 6, tension: 40, useNativeDriver: true }).start();
     setFabOpen(false);
   }, [animation]);
 
@@ -114,38 +83,20 @@ export function BackpackDetailScreen() {
 
   const openUploadNew = useCallback(() => {
     closeFab();
-    navigation.navigate("DocumentUpload", {
-      backpackId: id,
-      backpackName: backpackQuery.data?.name,
-    });
+    navigation.navigate("DocumentUpload", { backpackId: id, backpackName: backpackQuery.data?.name });
   }, [closeFab, navigation, id, backpackQuery.data?.name]);
 
   const openScanner = useCallback(() => {
     closeFab();
-    navigation.navigate("Scanner", {
-      backpackId: id,
-      backpackName: backpackQuery.data?.name,
-    });
+    navigation.navigate("Scanner", { backpackId: id, backpackName: backpackQuery.data?.name });
   }, [closeFab, navigation, id, backpackQuery.data?.name]);
-
-  const openShare = useCallback(async () => {
-    try {
-      const res = await shareMut.mutateAsync(id);
-      setShareData({ shareUrl: res.shareUrl, qrCodeUrl: res.qrCodeUrl });
-      setShareOpen(true);
-      Toast.show({ type: "success", text1: "Link generado", text2: "Listo para compartir" });
-    } catch (err) {
-      const message = isApiError(err) ? err.message : "No se pudo generar el link de compartición.";
-      Toast.show({ type: "error", text1: "Error al compartir", text2: message });
-    }
-  }, [shareMut]);
 
   const openDocument = useCallback(
     (docId: string) => navigation.navigate("DocumentDetail", { id: docId }),
-    [navigation]
+    [navigation],
   );
 
-  const shareLink = useMemo(() => shareData?.shareUrl ?? "", [shareData]);
+  const shareLink = detail.shareData?.shareUrl ?? "";
   const rotation = animation.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "45deg"] });
   const backdropOpacity = animation.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
   const option1TranslateY = animation.interpolate({ inputRange: [0, 1], outputRange: [0, -80] });
@@ -229,9 +180,7 @@ export function BackpackDetailScreen() {
           <TouchableOpacity style={styles.card} onPress={() => openDocument(item.id)} accessibilityLabel={`Abrir ${item.title}`}>
             <DocumentTypeIcon format={item.format} documentTypeName={item.documentType?.name} size={24} />
             <View style={styles.cardInfo}>
-              <Text style={styles.cardTitle} numberOfLines={1}>
-                {item.title}
-              </Text>
+              <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
               <Text style={styles.cardSub}>
                 {formatDate(item.uploadedAt)}
                 {item.documentType?.name ? ` • ${item.documentType.name}` : ""}
@@ -241,10 +190,10 @@ export function BackpackDetailScreen() {
               <TouchableOpacity
                 onPress={() => handleRemove(item)}
                 style={styles.removeBtn}
-                disabled={removingDocId === item.id}
+                disabled={detail.removingDocId === item.id}
                 accessibilityLabel={`Eliminar ${item.title} del backpack`}
               >
-                {removingDocId === item.id ? (
+                {detail.removingDocId === item.id ? (
                   <ActivityIndicator size="small" color={t.text.secondary} />
                 ) : (
                   <Trash2 size={18} color={t.text.secondary} />
@@ -258,10 +207,13 @@ export function BackpackDetailScreen() {
       <View style={styles.bottomActions}>
         <TouchableOpacity
           style={[styles.bottomBtn, styles.primaryBtn]}
-          onPress={openShare}
+          onPress={detail.shareBackpack}
+          disabled={detail.isSharing}
           accessibilityLabel="Compartir mochila"
         >
-          <Share2 size={18} color={colors.white} />
+          {detail.isSharing
+            ? <ActivityIndicator size="small" color={colors.white} />
+            : <Share2 size={18} color={colors.white} />}
           <Text style={styles.primaryBtnText}>Compartir</Text>
         </TouchableOpacity>
 
@@ -285,12 +237,8 @@ export function BackpackDetailScreen() {
         pointerEvents={fabOpen ? "auto" : "none"}
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={openAddFromDocs}>
-          <View style={styles.fabOptionLabel}>
-            <Text style={styles.fabOptionText}>Desde mis documentos</Text>
-          </View>
-          <View style={[styles.fabSmall, { backgroundColor: colors.sky[500] }]}>
-            <FileText color={colors.white} size={20} />
-          </View>
+          <View style={styles.fabOptionLabel}><Text style={styles.fabOptionText}>Desde mis documentos</Text></View>
+          <View style={[styles.fabSmall, { backgroundColor: colors.sky[500] }]}><FileText color={colors.white} size={20} /></View>
         </TouchableOpacity>
       </Animated.View>
 
@@ -299,12 +247,8 @@ export function BackpackDetailScreen() {
         pointerEvents={fabOpen ? "auto" : "none"}
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={openUploadNew}>
-          <View style={styles.fabOptionLabel}>
-            <Text style={styles.fabOptionText}>Nuevo documento</Text>
-          </View>
-          <View style={[styles.fabSmall, { backgroundColor: colors.violet[500] }]}>
-            <FileUp color={colors.white} size={20} />
-          </View>
+          <View style={styles.fabOptionLabel}><Text style={styles.fabOptionText}>Nuevo documento</Text></View>
+          <View style={[styles.fabSmall, { backgroundColor: colors.violet[500] }]}><FileUp color={colors.white} size={20} /></View>
         </TouchableOpacity>
       </Animated.View>
 
@@ -313,12 +257,8 @@ export function BackpackDetailScreen() {
         pointerEvents={fabOpen ? "auto" : "none"}
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={openScanner}>
-          <View style={styles.fabOptionLabel}>
-            <Text style={styles.fabOptionText}>Escanear</Text>
-          </View>
-          <View style={[styles.fabSmall, { backgroundColor: colors.emerald[500] }]}>
-            <Camera color={colors.white} size={20} />
-          </View>
+          <View style={styles.fabOptionLabel}><Text style={styles.fabOptionText}>Escanear</Text></View>
+          <View style={[styles.fabSmall, { backgroundColor: colors.emerald[500] }]}><Camera color={colors.white} size={20} /></View>
         </TouchableOpacity>
       </Animated.View>
 
@@ -328,29 +268,25 @@ export function BackpackDetailScreen() {
         </Animated.View>
       </TouchableOpacity>
 
-      {shareOpen && shareData && (
+      {detail.shareData && (
         <View style={styles.modalOverlay} pointerEvents="auto">
           <View style={styles.modal}>
             <Text style={styles.modalTitle}>Compartir mochila</Text>
             <Text style={styles.modalSub}>Link (válido hasta expiración):</Text>
-            <Text style={styles.linkText} numberOfLines={2}>
-              {shareLink}
-            </Text>
+            <Text style={styles.linkText} numberOfLines={2}>{shareLink}</Text>
             <View style={styles.qrWrap}>
-              <Image source={{ uri: shareData.qrCodeUrl }} style={styles.qrImg} />
+              <Image source={{ uri: detail.shareData.qrCodeUrl }} style={styles.qrImg} />
             </View>
 
             <TouchableOpacity
               style={[styles.modalBtn, styles.primaryBtn]}
-              onPress={() => {
-                Share.share({ url: shareLink, message: "Comparto una mochila con documentos médicos." });
-              }}
+              onPress={() => Share.share({ url: shareLink, message: "Comparto una mochila con documentos médicos." })}
               accessibilityLabel="Compartir link"
             >
               <Text style={styles.primaryBtnText}>Compartir</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.modalBtn, styles.secondaryBtn]} onPress={() => setShareOpen(false)} accessibilityLabel="Cerrar">
+            <TouchableOpacity style={[styles.modalBtn, styles.secondaryBtn]} onPress={detail.clearShareData} accessibilityLabel="Cerrar">
               <Text style={styles.secondaryBtnText}>Cerrar</Text>
             </TouchableOpacity>
           </View>
@@ -379,11 +315,7 @@ export function BackpackDetailScreen() {
                 onPress={() => {
                   const target = deleteDocTarget;
                   setDeleteDocTarget(null);
-                  setRemovingDocId(target.id);
-                  removeMut.mutate(
-                    { documentId: target.id, title: target.title },
-                    { onSettled: () => setRemovingDocId(null) }
-                  );
+                  detail.removeDocument(target.id, target.title);
                 }}
                 accessibilityLabel="Confirmar eliminación"
               >
@@ -410,16 +342,7 @@ function makeStyles(t: ThemeContextValue) {
     clearBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: t.border.medium },
     list: { padding: 16, gap: 12, paddingBottom: 96 },
     empty: { color: t.text.secondary, fontSize: 15, textAlign: "center" },
-    card: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-      padding: 14,
-      backgroundColor: t.surface.bgCard,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: t.border.medium,
-    },
+    card: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, backgroundColor: t.surface.bgCard, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium },
     cardInfo: { flex: 1 },
     cardTitle: { fontSize: 14, fontWeight: "800", color: t.text.primary, marginBottom: 2 },
     cardSub: { fontSize: 13, color: t.text.secondary },
@@ -435,49 +358,12 @@ function makeStyles(t: ThemeContextValue) {
     dangerBtnText: { color: colors.white, fontWeight: "800", fontSize: 14 },
     ghostBtn: { backgroundColor: t.surface.bgCard, borderWidth: 1, borderColor: t.border.medium },
     backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.3)" },
-    fab: {
-      position: "absolute",
-      bottom: 24,
-      right: 24,
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: colors.sky[500],
-      alignItems: "center",
-      justifyContent: "center",
-      shadowColor: colors.sky[500],
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.3,
-      shadowRadius: 12,
-      elevation: 8,
-      zIndex: 20,
-    },
+    fab: { position: "absolute", bottom: 24, right: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", shadowColor: colors.sky[500], shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8, zIndex: 20 },
     fabOption: { position: "absolute", bottom: 24, right: 24, alignItems: "flex-end", zIndex: 15 },
     fabOptionRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-    fabOptionLabel: {
-      backgroundColor: t.surface.bgCard,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: 10,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 4,
-    },
+    fabOptionLabel: { backgroundColor: t.surface.bgCard, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 },
     fabOptionText: { fontSize: 14, fontWeight: "600", color: t.text.primary },
-    fabSmall: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      alignItems: "center",
-      justifyContent: "center",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 6,
-      elevation: 6,
-    },
+    fabSmall: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 6 },
     modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)", alignItems: "center", justifyContent: "center" },
     modal: { width: "90%", backgroundColor: t.surface.bgCard, borderRadius: 18, padding: 18, gap: 10, elevation: 10, shadowColor: "#000", shadowOpacity: 0.25 },
     modalTitle: { fontSize: 18, fontWeight: "900", color: t.text.primary, marginTop: 2 },

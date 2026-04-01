@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useMarkNotificationReadMutation, useNotificationsQuery } from "@healthguard/api/hooks";
-import { useAuthStore, useNotifStore, useUnreadCount } from "@healthguard/stores";
+import { useAuthStore, useUnreadCount } from "@healthguard/stores";
+import { useNotificationBell } from "@/hooks/useNotificationBell";
 import { timeAgo } from "@healthguard/ui";
 import Link from "next/link";
 import { Toaster } from "sileo";
@@ -102,18 +102,7 @@ function NotificationBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const unread = useUnreadCount();
-  const setUnreadCount = useNotifStore((s) => s.setUnreadCount);
-  const decrementUnread = useNotifStore((s) => s.decrementUnread);
-
-  const notifs = useNotificationsQuery(1, 20);
-
-  // Sync unread count
-  useEffect(() => {
-    if (notifs.data) {
-      const count = notifs.data.items.filter((n) => !n.isRead).length;
-      setUnreadCount(count);
-    }
-  }, [notifs.data, setUnreadCount]);
+  const bell = useNotificationBell();
 
   // Close on click outside
   useEffect(() => {
@@ -123,8 +112,6 @@ function NotificationBell() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  const readMut = useMarkNotificationReadMutation();
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
@@ -140,14 +127,14 @@ function NotificationBell() {
             {unread > 0 && <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{unread} sin leer</span>}
           </div>
           <div className="notif-list">
-            {(notifs.data?.items.length ?? 0) === 0 ? (
+            {bell.notifications.length === 0 ? (
               <div className="notif-empty">No tienes notificaciones</div>
             ) : (
-              notifs.data!.items.map((n) => (
+              bell.notifications.map((n) => (
                 <div
                   key={n.id}
                   className={`notif-item${!n.isRead ? " unread" : ""}`}
-                  onClick={() => { if (!n.isRead) readMut.mutate(n.id, { onSuccess: () => decrementUnread() }); }}
+                  onClick={() => bell.markRead(n.id)}
                 >
                   <div className={`notif-dot${n.isRead ? " read" : ""}`} />
                   <div className="notif-body">

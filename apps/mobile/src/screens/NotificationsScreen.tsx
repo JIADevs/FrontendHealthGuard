@@ -7,16 +7,13 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { memo, useCallback, useEffect, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getNotifications, markNotificationAsRead, type Notification } from "@healthguard/api";
-import { useNotifStore } from "@healthguard/stores";
+import { type Notification } from "@healthguard/api";
+import { useNotificationsScreen } from "../hooks/useNotificationsScreen";
 import { colors, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { Bell, Calendar, Pill, Activity, Info, CheckCircle } from "lucide-react-native";
-
-const LIMIT = 20;
 
 const TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
   APPOINTMENT: { icon: Calendar, color: colors.sky[500],     bg: colors.sky[100] },
@@ -89,92 +86,32 @@ export function NotificationsScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
 
-  const queryClient = useQueryClient();
-  const { decrementUnread, markAllRead, setUnreadCount } = useNotifStore();
-
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isRefetching,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: ["notifications"],
-    queryFn: ({ pageParam = 1 }) =>
-      getNotifications({ page: pageParam as number, limit: LIMIT }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, allPages) => {
-      const fetched = allPages.length * LIMIT;
-      return fetched < lastPage.total ? allPages.length + 1 : undefined;
-    },
-  });
-
-  useEffect(() => {
-    if (!data) return;
-    const unread = data.pages.flatMap((p) => p.items).filter((n) => !n.isRead).length;
-    setUnreadCount(unread);
-  }, [data, setUnreadCount]);
-
-  const markReadMutation = useMutation({
-    mutationFn: (id: string) => markNotificationAsRead(id),
-    onSuccess: (_, id) => {
-      decrementUnread();
-      queryClient.setQueryData(["notifications"], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          pages: old.pages.map((page: any) => ({
-            ...page,
-            items: page.items.map((n: Notification) =>
-              n.id === id ? { ...n, isRead: true } : n
-            ),
-          })),
-        };
-      });
-    },
-  });
-
-  const handleMarkRead = useCallback(
-    (id: string) => markReadMutation.mutate(id),
-    [markReadMutation]
-  );
-
-  const handleMarkAllRead = useCallback(async () => {
-    const unread = data?.pages.flatMap((p) => p.items).filter((n) => !n.isRead) ?? [];
-    await Promise.allSettled(unread.map((n) => markNotificationAsRead(n.id)));
-    markAllRead();
-    refetch();
-  }, [data, markAllRead, refetch]);
+  const screen = useNotificationsScreen();
 
   const handleEndReached = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+    if (screen.hasNextPage && !screen.isFetchingNextPage) screen.fetchNextPage();
+  }, [screen.hasNextPage, screen.isFetchingNextPage, screen.fetchNextPage]);
 
   const renderItem = useCallback(
     ({ item }: { item: Notification }) => (
-      <NotificationItem item={item} onPress={handleMarkRead} />
+      <NotificationItem item={item} onPress={screen.markRead} />
     ),
-    [handleMarkRead]
+    [screen.markRead],
   );
-
-  const notifications = data?.pages.flatMap((p) => p.items) ?? [];
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Notificaciones</Text>
-          {unreadCount > 0 && (
-            <Text style={styles.subtitle}>{unreadCount} sin leer</Text>
+          {screen.unreadCount > 0 && (
+            <Text style={styles.subtitle}>{screen.unreadCount} sin leer</Text>
           )}
         </View>
-        {unreadCount > 0 && (
+        {screen.unreadCount > 0 && (
           <TouchableOpacity
             style={styles.markAllBtn}
-            onPress={handleMarkAllRead}
+            onPress={screen.markAllRead}
             accessibilityRole="button"
             accessibilityLabel="Marcar todas como leídas"
           >
@@ -183,11 +120,11 @@ export function NotificationsScreen() {
         )}
       </View>
 
-      {isLoading ? (
+      {screen.isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.sky[500]} />
         </View>
-      ) : notifications.length === 0 ? (
+      ) : screen.notifications.length === 0 ? (
         <View style={styles.center}>
           <Bell size={48} color={t.border.medium} />
           <Text style={styles.emptyTitle}>Sin notificaciones</Text>
@@ -197,20 +134,20 @@ export function NotificationsScreen() {
         </View>
       ) : (
         <FlatList
-          data={notifications}
+          data={screen.notifications}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           refreshControl={
             <RefreshControl
-              refreshing={isRefetching && !isFetchingNextPage}
-              onRefresh={refetch}
+              refreshing={screen.isRefetching}
+              onRefresh={screen.refetch}
               tintColor={colors.sky[500]}
             />
           }
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.3}
           ListFooterComponent={
-            isFetchingNextPage ? (
+            screen.isFetchingNextPage ? (
               <ActivityIndicator style={styles.loadingFooter} color={colors.sky[500]} />
             ) : null
           }

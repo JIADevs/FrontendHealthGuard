@@ -394,3 +394,4 @@ export * from './useBackpackFormCore';
 export * from './useBackpackDetailCore';
 export * from './useMedicationFormCore';
 export * from './useAppointmentFormCore';
+export * from './useNotificationsCore';

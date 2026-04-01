@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import {
   useAppointmentsQuery,
-  useCreateAppointmentMutation,
-  useUpdateAppointmentMutation,
   useDeleteAppointmentMutation,
   useUpdateAppointmentStatusMutation,
   useMedicationsQuery,
@@ -28,10 +26,10 @@ import {
 import {
   isApiError,
   type Appointment,
-  type AppointmentCreate,
   type Medication,
 } from "@healthguard/api";
 import { useMedicationForm } from "@/hooks/useMedicationForm";
+import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
 import { appointmentStatusLabel, formatApptDate } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -169,97 +167,62 @@ function AppointmentsTab() {
 //  APPOINTMENT FORM MODAL
 // ══════════════════════════════════════════════════════
 function AppointmentFormModal({ initial, onClose }: { initial: Appointment | null; onClose: () => void }) {
-  const isEdit = !!initial;
-
-  const [specialty, setSpecialty] = useState(initial?.specialty ?? "");
-  const [doctor, setDoctor] = useState(initial?.doctor ?? "");
-  const [location, setLocation] = useState(initial?.location ?? "");
-  const [date, setDate] = useState(initial?.date ?? new Date().toISOString().split("T")[0]!);
-  const [time, setTime] = useState(initial?.time?.slice(0, 5) ?? "09:00");
-  const [type, setType] = useState<"APPOINTMENT" | "EXAM">(initial?.type ?? "APPOINTMENT");
-  const [examType, setExamType] = useState(initial?.examType ?? "");
-  const [error, setError] = useState<string | null>(null);
-
-  const createMut = useCreateAppointmentMutation();
-  const updateMut = useUpdateAppointmentMutation();
-
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const payload: AppointmentCreate = {
-      specialty, doctor, location, date, time, type,
-      status: initial?.status ?? "PENDING",
-      examType: type === "EXAM" ? examType : undefined,
-      tags: [], reminderOffsets: [],
-    };
-    if (isEdit) {
-      updateMut.mutate({ id: initial!.id, appt: payload }, {
-        onSuccess: onClose,
-        onError: (err) => setError(isApiError(err) ? err.message : "Error actualizando cita"),
-      });
-    } else {
-      createMut.mutate(payload, {
-        onSuccess: onClose,
-        onError: (err) => setError(isApiError(err) ? err.message : "Error guardando cita"),
-      });
-    }
-  }
-
-  const loading = createMut.isPending || updateMut.isPending;
+  const form = useAppointmentForm({ initial, onClose });
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="modal-title">{isEdit ? "Editar Cita" : "Nueva Cita"}</h3>
+          <h3 className="modal-title">{form.isEdit ? "Editar Cita" : "Nueva Cita"}</h3>
           <button className="modal-close" onClick={onClose}><X size={16} /></button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { e.preventDefault(); form.handleSave(); }}>
           <div className="modal-body">
             <div className="form-group">
               <label>Tipo de evento</label>
-              <select className="form-input" value={type} onChange={(e) => setType(e.target.value as "APPOINTMENT" | "EXAM")}>
+              <select className="form-input" value={form.type} onChange={(e) => form.setType(e.target.value as "APPOINTMENT" | "EXAM")}>
                 <option value="APPOINTMENT">Cita Médica</option>
                 <option value="EXAM">Examen / Procedimiento</option>
               </select>
             </div>
 
-            {type === "EXAM" && (
+            {form.type === "EXAM" && (
               <div className="form-group">
                 <label>Tipo de examen</label>
-                <input className="form-input" value={examType} onChange={(e) => setExamType(e.target.value)} placeholder="Ej: Resonancia, Hemograma..." />
+                <input className="form-input" value={form.examType} onChange={(e) => form.setExamType(e.target.value)} placeholder="Ej: Resonancia, Hemograma..." />
               </div>
             )}
 
             <div className="form-grid">
               <div className="form-group">
                 <label>Especialidad *</label>
-                <input className="form-input" required value={specialty} onChange={(e) => setSpecialty(e.target.value)} placeholder="Ej: Neurología" />
+                <input className="form-input" required value={form.specialty} onChange={(e) => form.setSpecialty(e.target.value)} placeholder="Ej: Neurología" />
               </div>
               <div className="form-group">
                 <label>Médico *</label>
-                <input className="form-input" required value={doctor} onChange={(e) => setDoctor(e.target.value)} placeholder="Dr. nombre" />
+                <input className="form-input" required value={form.doctor} onChange={(e) => form.setDoctor(e.target.value)} placeholder="Dr. nombre" />
               </div>
               <div className="form-group">
                 <label>Fecha *</label>
-                <input className="form-input" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+                <input className="form-input" type="date" required value={form.date} onChange={(e) => form.setDate(e.target.value)} />
               </div>
               <div className="form-group">
                 <label>Hora *</label>
-                <input className="form-input" type="time" required value={time} onChange={(e) => setTime(e.target.value)} />
+                <input className="form-input" type="time" required value={form.time} onChange={(e) => form.setTime(e.target.value)} />
               </div>
               <div className="form-group full">
                 <label>Lugar *</label>
-                <input className="form-input" required value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Hospital / Clínica" />
+                <input className="form-input" required value={form.location} onChange={(e) => form.setLocation(e.target.value)} placeholder="Hospital / Clínica" />
               </div>
             </div>
 
-            {error && <p className="form-error">{error}</p>}
+            {form.error && <p className="form-error">{form.error}</p>}
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={loading}>
-              {loading && <span className="spinner" />}
-              {isEdit ? "Guardar Cambios" : "Agendar Cita"}
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={form.saving}>
+              {form.saving && <span className="spinner" />}
+              {form.isEdit ? "Guardar Cambios" : "Agendar Cita"}
             </button>
           </div>
         </form>

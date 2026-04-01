@@ -393,3 +393,4 @@ export * from './useProfileFormCore';
 export * from './useBackpackFormCore';
 export * from './useBackpackDetailCore';
 export * from './useMedicationFormCore';
+export * from './useAppointmentFormCore';

@@ -13,8 +13,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import {
   useAppointmentsQuery,
-  useCreateAppointmentMutation,
-  useUpdateAppointmentMutation,
   useDeleteAppointmentMutation,
   useUpdateAppointmentStatusMutation,
   useMedicationsQuery,
@@ -24,10 +22,10 @@ import {
 import {
   isApiError,
   type Appointment,
-  type AppointmentCreate,
   type Medication,
 } from "@healthguard/api";
 import { useMedicationForm } from "../hooks/useMedicationForm";
+import { useAppointmentForm } from "../hooks/useAppointmentForm";
 import {
   colors,
   radii,
@@ -311,72 +309,14 @@ function AppointmentFormModal({
 }) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const isEdit = !!initial;
-
-  const [specialty, setSpecialty] = useState(initial?.specialty ?? "");
-  const [doctor, setDoctor] = useState(initial?.doctor ?? "");
-  const [location, setLocation] = useState(initial?.location ?? "");
-  const [date, setDate] = useState(
-    initial?.date ?? new Date().toISOString().split("T")[0]!
-  );
-  const [time, setTime] = useState(initial?.time?.slice(0, 5) ?? "09:00");
-  const [type, setType] = useState<"APPOINTMENT" | "EXAM">(
-    initial?.type ?? "APPOINTMENT"
-  );
-  const [examType, setExamType] = useState(initial?.examType ?? "");
-  const [error, setError] = useState<string | null>(null);
-
-  const createMut = useCreateAppointmentMutation();
-  const updateMut = useUpdateAppointmentMutation();
-  const loading = createMut.isPending || updateMut.isPending;
-
-  function handleSubmit() {
-    if (!specialty.trim() || !doctor.trim() || !location.trim() || !date || !time) {
-      setError("Completa todos los campos obligatorios.");
-      return;
-    }
-    const payload: AppointmentCreate = {
-      specialty,
-      doctor,
-      location,
-      date,
-      time,
-      type,
-      status: initial?.status ?? "PENDING",
-      examType: type === "EXAM" ? examType : undefined,
-      tags: [],
-      reminderOffsets: [],
-    };
-    if (isEdit) {
-      updateMut.mutate(
-        { id: initial!.id, appt: payload },
-        {
-          onSuccess: () => {
-            Toast.show({ type: "success", text1: "Cita actualizada" });
-            onClose();
-          },
-          onError: (err) =>
-            setError(isApiError(err) ? err.message : "Error actualizando cita"),
-        }
-      );
-    } else {
-      createMut.mutate(payload, {
-        onSuccess: () => {
-          Toast.show({ type: "success", text1: "Cita agendada" });
-          onClose();
-        },
-        onError: (err) =>
-          setError(isApiError(err) ? err.message : "Error guardando cita"),
-      });
-    }
-  }
+  const form = useAppointmentForm({ initial, onClose });
 
   return (
     <View style={styles.overlay}>
       <View style={styles.modal}>
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>
-            {isEdit ? "Editar Cita" : "Nueva Cita"}
+            {form.isEdit ? "Editar Cita" : "Nueva Cita"}
           </Text>
           <TouchableOpacity onPress={onClose}>
             <X size={20} color={t.text.secondary} />
@@ -389,13 +329,13 @@ function AppointmentFormModal({
             {(["APPOINTMENT", "EXAM"] as const).map((tp) => (
               <TouchableOpacity
                 key={tp}
-                style={[styles.typePill, type === tp && styles.typePillActive]}
-                onPress={() => setType(tp)}
+                style={[styles.typePill, form.type === tp && styles.typePillActive]}
+                onPress={() => form.setType(tp)}
               >
                 <Text
                   style={[
                     styles.typePillText,
-                    type === tp && styles.typePillTextActive,
+                    form.type === tp && styles.typePillTextActive,
                   ]}
                 >
                   {tp === "APPOINTMENT" ? "Cita Médica" : "Examen"}
@@ -404,13 +344,13 @@ function AppointmentFormModal({
             ))}
           </View>
 
-          {type === "EXAM" && (
+          {form.type === "EXAM" && (
             <>
               <Text style={styles.fieldLabel}>Tipo de examen</Text>
               <TextInput
                 style={styles.input}
-                value={examType}
-                onChangeText={setExamType}
+                value={form.examType}
+                onChangeText={form.setExamType}
                 placeholder="Ej: Resonancia, Hemograma..."
                 placeholderTextColor={t.text.muted}
               />
@@ -420,8 +360,8 @@ function AppointmentFormModal({
           <Text style={styles.fieldLabel}>Especialidad *</Text>
           <TextInput
             style={styles.input}
-            value={specialty}
-            onChangeText={setSpecialty}
+            value={form.specialty}
+            onChangeText={form.setSpecialty}
             placeholder="Ej: Neurología"
             placeholderTextColor={t.text.muted}
           />
@@ -429,8 +369,8 @@ function AppointmentFormModal({
           <Text style={styles.fieldLabel}>Médico *</Text>
           <TextInput
             style={styles.input}
-            value={doctor}
-            onChangeText={setDoctor}
+            value={form.doctor}
+            onChangeText={form.setDoctor}
             placeholder="Dr. nombre"
             placeholderTextColor={t.text.muted}
           />
@@ -438,8 +378,8 @@ function AppointmentFormModal({
           <Text style={styles.fieldLabel}>Lugar *</Text>
           <TextInput
             style={styles.input}
-            value={location}
-            onChangeText={setLocation}
+            value={form.location}
+            onChangeText={form.setLocation}
             placeholder="Hospital / Clínica"
             placeholderTextColor={t.text.muted}
           />
@@ -447,8 +387,8 @@ function AppointmentFormModal({
           <Text style={styles.fieldLabel}>Fecha * (AAAA-MM-DD)</Text>
           <TextInput
             style={styles.input}
-            value={date}
-            onChangeText={setDate}
+            value={form.date}
+            onChangeText={form.setDate}
             placeholder="2025-12-31"
             placeholderTextColor={t.text.muted}
             keyboardType="numbers-and-punctuation"
@@ -457,14 +397,14 @@ function AppointmentFormModal({
           <Text style={styles.fieldLabel}>Hora * (HH:MM)</Text>
           <TextInput
             style={styles.input}
-            value={time}
-            onChangeText={setTime}
+            value={form.time}
+            onChangeText={form.setTime}
             placeholder="09:00"
             placeholderTextColor={t.text.muted}
             keyboardType="numbers-and-punctuation"
           />
 
-          {error && <Text style={styles.errorText}>{error}</Text>}
+          {form.error && <Text style={styles.errorText}>{form.error}</Text>}
         </ScrollView>
 
         <View style={styles.modalFooter}>
@@ -472,15 +412,15 @@ function AppointmentFormModal({
             <Text style={styles.cancelBtnText}>Cancelar</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.saveBtn, loading && styles.saveBtnDisabled]}
-            onPress={handleSubmit}
-            disabled={loading}
+            style={[styles.saveBtn, form.saving && styles.saveBtnDisabled]}
+            onPress={form.handleSave}
+            disabled={form.saving}
           >
-            {loading ? (
+            {form.saving ? (
               <ActivityIndicator color={colors.white} size="small" />
             ) : (
               <Text style={styles.saveBtnText}>
-                {isEdit ? "Guardar Cambios" : "Agendar Cita"}
+                {form.isEdit ? "Guardar Cambios" : "Agendar Cita"}
               </Text>
             )}
           </TouchableOpacity>

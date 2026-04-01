@@ -20,8 +20,6 @@ import {
   Edit3,
   Check,
   X,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import {
   isApiError,
@@ -31,7 +29,7 @@ import {
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate, Button } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button, Pagination } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -130,17 +128,7 @@ function AppointmentsTab() {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft size={16} /></button>
-          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-            const p = i + Math.max(1, page - 2);
-            if (p > totalPages) return null;
-            return <button key={p} className={p === page ? "active" : ""} onClick={() => setPage(p)}>{p}</button>;
-          })}
-          <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}><ChevronRight size={16} /></button>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       {showForm && (
         <AppointmentFormModal
@@ -300,17 +288,7 @@ function MedicationsTab() {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft size={16} /></button>
-          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-            const p = i + Math.max(1, page - 2);
-            if (p > totalPages) return null;
-            return <button key={p} className={p === page ? "active" : ""} onClick={() => setPage(p)}>{p}</button>;
-          })}
-          <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}><ChevronRight size={16} /></button>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       {showForm && (
         <MedicationFormModal

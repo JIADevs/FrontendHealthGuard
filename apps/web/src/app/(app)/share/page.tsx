@@ -8,12 +8,10 @@ import {
   Copy,
   QrCode,
   Clock,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { useDocumentsQuery } from "@healthguard/api/hooks";
 import { shareDocument, type Document } from "@healthguard/api";
-import { formatDate, Button } from "@healthguard/ui";
+import { formatDate, Button, Pagination } from "@healthguard/ui";
 
 export default function SharePage() {
   const [page, setPage] = useState(1);
@@ -128,17 +126,7 @@ export default function SharePage() {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft size={16} /></button>
-          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-            const p = i + Math.max(1, page - 2);
-            if (p > totalPages) return null;
-            return <button key={p} className={p === page ? "active" : ""} onClick={() => setPage(p)}>{p}</button>;
-          })}
-          <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}><ChevronRight size={16} /></button>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </>
   );
 }

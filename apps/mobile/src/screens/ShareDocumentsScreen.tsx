@@ -15,9 +15,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useQuery } from "@tanstack/react-query";
 import { getDocuments, shareDocument, isApiError, type Document } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
-import { FileText, Share2, Check, Clock, ChevronLeft, ChevronRight } from "lucide-react-native";
+import { FileText, Share2, Check, Clock } from "lucide-react-native";
 
 type ShareResult = { shareUrl: string; qrCodeUrl: string; expiresAt: string };
 
@@ -176,25 +176,7 @@ export function ShareDocumentsScreen() {
           )
         }
         ListFooterComponent={
-          totalPages > 1 ? (
-            <View style={styles.pagination}>
-              <TouchableOpacity
-                style={[styles.pageBtn, page <= 1 && styles.pageBtnDisabled]}
-                disabled={page <= 1}
-                onPress={() => setPage(page - 1)}
-              >
-                <ChevronLeft size={18} color={page <= 1 ? t.border.medium : colors.sky[500]} />
-              </TouchableOpacity>
-              <Text style={styles.pageText}>{page} / {totalPages}</Text>
-              <TouchableOpacity
-                style={[styles.pageBtn, page >= totalPages && styles.pageBtnDisabled]}
-                disabled={page >= totalPages}
-                onPress={() => setPage(page + 1)}
-              >
-                <ChevronRight size={18} color={page >= totalPages ? t.border.medium : colors.sky[500]} />
-              </TouchableOpacity>
-            </View>
-          ) : null
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         }
         renderItem={({ item: doc }) => {
           const isSelected = selected.includes(doc.id);
@@ -263,10 +245,5 @@ function makeStyles(t: ThemeContextValue) {
     sharedBadge:      { paddingHorizontal: spacing[2], paddingVertical: 3, backgroundColor: colors.emerald[50], borderRadius: radii.full, borderWidth: 1, borderColor: colors.emerald[200] },
     sharedBadgeText:  { fontSize: fontSize.xs, color: colors.emerald[700], fontWeight: fontWeight.semibold },
 
-    // pagination
-    pagination:       { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[4], paddingVertical: spacing[4] },
-    pageBtn:          { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bgCard, borderWidth: 1, borderColor: t.border.medium },
-    pageBtnDisabled:  { opacity: 0.4 },
-    pageText:         { fontSize: fontSize.sm, color: t.text.secondary, fontWeight: fontWeight.semibold },
   });
 }

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useDocumentsQuery, useDeleteDocumentMutation } from "@healthguard/api/hooks";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { formatDate, PAGE_SIZE_GRID, Button } from "@healthguard/ui";
-import { Search, Upload, FileText, Eye, Share2, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { formatDate, PAGE_SIZE_GRID, Button, Pagination } from "@healthguard/ui";
+import { Search, Upload, FileText, Eye, Share2, Trash2 } from "lucide-react";
 import { isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -98,18 +98,7 @@ export default function DocumentsPage() {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft size={16} /></button>
-          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-            const p = i + Math.max(1, page - 2);
-            if (p > totalPages) return null;
-            return <button key={p} className={p === page ? "active" : ""} onClick={() => setPage(p)}>{p}</button>;
-          })}
-          <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}><ChevronRight size={16} /></button>
-          <span className="pagination-info">{total} resultados</span>
-        </div>
-      )}
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       {/* Modals */}
       {showUpload && <UploadModal onClose={() => setShowUpload(false)} />}

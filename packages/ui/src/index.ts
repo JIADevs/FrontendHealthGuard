@@ -10,3 +10,5 @@ export * from './constants';
 export * from './DocumentTypeIcon.native';
 export * from './Button.types';
 export * from './Button.native';
+export * from './Pagination.types';
+export * from './Pagination.native';

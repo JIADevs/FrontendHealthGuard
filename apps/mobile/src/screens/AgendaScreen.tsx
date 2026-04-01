@@ -36,6 +36,7 @@ import {
   appointmentStatusLabel,
   formatApptDate,
   Button,
+  Pagination,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import {
@@ -49,8 +50,6 @@ import {
   Edit3,
   Check,
   X,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react-native";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -245,33 +244,7 @@ function AppointmentsTab() {
             </View>
           )}
           ListFooterComponent={
-            totalPages > 1 ? (
-              <View style={styles.pagination}>
-                <TouchableOpacity
-                  style={[styles.pageBtn, page <= 1 && styles.pageBtnDisabled]}
-                  disabled={page <= 1}
-                  onPress={() => setPage(page - 1)}
-                >
-                  <ChevronLeft size={18} color={page <= 1 ? t.border.medium : colors.sky[500]} />
-                </TouchableOpacity>
-                <Text style={styles.pageText}>
-                  {page} / {totalPages}
-                </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.pageBtn,
-                    page >= totalPages && styles.pageBtnDisabled,
-                  ]}
-                  disabled={page >= totalPages}
-                  onPress={() => setPage(page + 1)}
-                >
-                  <ChevronRight
-                    size={18}
-                    color={page >= totalPages ? t.border.medium : colors.sky[500]}
-                  />
-                </TouchableOpacity>
-              </View>
-            ) : null
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           }
         />
       )}
@@ -551,33 +524,7 @@ function MedicationsTab() {
             </View>
           )}
           ListFooterComponent={
-            totalPages > 1 ? (
-              <View style={styles.pagination}>
-                <TouchableOpacity
-                  style={[styles.pageBtn, page <= 1 && styles.pageBtnDisabled]}
-                  disabled={page <= 1}
-                  onPress={() => setPage(page - 1)}
-                >
-                  <ChevronLeft size={18} color={page <= 1 ? t.border.medium : colors.sky[500]} />
-                </TouchableOpacity>
-                <Text style={styles.pageText}>
-                  {page} / {totalPages}
-                </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.pageBtn,
-                    page >= totalPages && styles.pageBtnDisabled,
-                  ]}
-                  disabled={page >= totalPages}
-                  onPress={() => setPage(page + 1)}
-                >
-                  <ChevronRight
-                    size={18}
-                    color={page >= totalPages ? t.border.medium : colors.sky[500]}
-                  />
-                </TouchableOpacity>
-              </View>
-            ) : null
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           }
         />
       )}
@@ -770,10 +717,7 @@ function makeStyles(t: ThemeContextValue) {
     statusPillTextActive: { color: colors.white },
     intakeBtn:          { flexDirection: "row", alignItems: "center", gap: spacing[1], marginTop: spacing[1], backgroundColor: colors.emerald[500], alignSelf: "flex-start", paddingHorizontal: spacing[3], paddingVertical: 4, borderRadius: radii.full },
     intakeBtnText:      { color: colors.white, fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
-    pagination:         { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[4], paddingVertical: spacing[4] },
-    pageBtn:            { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bgCard, borderWidth: 1, borderColor: t.border.medium },
-    pageBtnDisabled:    { opacity: 0.4 },
-    pageText:           { fontSize: fontSize.sm, color: t.text.secondary, fontWeight: fontWeight.semibold },
+
 
     // modal
     overlay:            { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", zIndex: 50 },

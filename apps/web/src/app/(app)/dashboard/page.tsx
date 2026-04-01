@@ -1,12 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import {
-  useProfileQuery,
-  useDocumentsQuery,
-  useAppointmentsQuery,
-  useMedicationsQuery,
-} from "@healthguard/api/hooks";
+import { useDashboardCore } from "@healthguard/api/hooks";
 import {
   FileText,
   CalendarDays,
@@ -15,29 +9,10 @@ import {
   ArrowRight,
   Clock,
 } from "lucide-react";
-import { formatTime, todayISODate } from "@healthguard/ui";
-import { useAuthStore } from "@healthguard/stores";
+import { formatTime } from "@healthguard/ui";
 
 export default function DashboardPage() {
-  const setUser = useAuthStore((s) => s.setUser);
-
-  const profile = useProfileQuery();
-  const docs  = useDocumentsQuery("", 1, 1);
-  const appts = useAppointmentsQuery("", 1, 3, todayISODate());
-  const meds  = useMedicationsQuery(1, 3);
-
-  useEffect(() => {
-    if (profile.data) {
-      setUser({
-        id: profile.data.id,
-        name: profile.data.name,
-        email: profile.data.email,
-      });
-    }
-  }, [profile.data, setUser]);
-
-  const todayApptCount =
-    appts.data?.items.filter((a) => a.status === "PENDING").length ?? 0;
+  const dash = useDashboardCore();
 
   return (
     <>
@@ -47,32 +22,15 @@ export default function DashboardPage() {
           ¡Hola de nuevo! 👋
         </h1>
         <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-          {todayApptCount > 0
-            ? `Tienes ${todayApptCount} cita${todayApptCount > 1 ? "s" : ""} pendiente${todayApptCount > 1 ? "s" : ""} hoy.`
-            : "No tienes citas pendientes hoy."}
+          {dash.apptSubtitle}
         </p>
       </div>
 
       {/* Metrics */}
       <div className="metric-grid">
-        <MetricCard
-          icon={<FileText size={24} />}
-          color="blue"
-          label="Documentos"
-          value={docs.data?.total ?? "—"}
-        />
-        <MetricCard
-          icon={<CalendarDays size={24} />}
-          color="green"
-          label="Citas Totales"
-          value={appts.data?.total ?? "—"}
-        />
-        <MetricCard
-          icon={<Pill size={24} />}
-          color="amber"
-          label="Medicamentos Activos"
-          value={meds.data?.total ?? "—"}
-        />
+        <MetricCard icon={<FileText size={24} />} color="blue"  label="Documentos"          value={dash.docTotal}  />
+        <MetricCard icon={<CalendarDays size={24} />} color="green" label="Citas Totales"   value={dash.apptTotal} />
+        <MetricCard icon={<Pill size={24} />} color="amber" label="Medicamentos Activos"    value={dash.medTotal}  />
       </div>
 
       {/* Quick actions */}
@@ -91,33 +49,24 @@ export default function DashboardPage() {
       <div className="card" style={{ marginBottom: 24 }}>
         <div className="card-header">
           <span className="card-title">Citas Pendientes</span>
-          <a href="/agenda" className="btn btn-ghost" style={{ fontSize: 13 }}>
-            Ver todas
-          </a>
+          <a href="/agenda" className="btn btn-ghost" style={{ fontSize: 13 }}>Ver todas</a>
         </div>
         <div className="card-body">
-          {appts.isLoading ? (
+          {dash.isApptsLoading ? (
             <div className="empty-state">
               <div className="spinner spinner--page" style={{ margin: "0 auto" }} />
             </div>
-          ) : (appts.data?.items.length ?? 0) === 0 ? (
+          ) : dash.upcomingAppts.length === 0 ? (
             <div className="empty-state">
               <CalendarDays />
               <p>No hay citas pendientes.</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {appts.data?.items.map((a) => (
+              {dash.upcomingAppts.map((a) => (
                 <div
                   key={a.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 16,
-                    padding: "12px 16px",
-                    background: "var(--gray-50)",
-                    borderRadius: "var(--radius-sm)",
-                  }}
+                  style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", background: "var(--gray-50)", borderRadius: "var(--radius-sm)" }}
                 >
                   <div className="metric-icon blue" style={{ width: 40, height: 40 }}>
                     <CalendarDays size={18} />
@@ -143,33 +92,24 @@ export default function DashboardPage() {
       <div className="card">
         <div className="card-header">
           <span className="card-title">Tratamientos Activos</span>
-          <a href="/agenda" className="btn btn-ghost" style={{ fontSize: 13 }}>
-            Gestionar
-          </a>
+          <a href="/agenda" className="btn btn-ghost" style={{ fontSize: 13 }}>Gestionar</a>
         </div>
         <div className="card-body">
-          {meds.isLoading ? (
+          {dash.isMedsLoading ? (
             <div className="empty-state">
               <div className="spinner spinner--page" style={{ margin: "0 auto" }} />
             </div>
-          ) : (meds.data?.items.length ?? 0) === 0 ? (
+          ) : dash.activeMeds.length === 0 ? (
             <div className="empty-state">
               <Pill />
               <p>Sin medicamentos activos.</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {meds.data?.items.map((m) => (
+              {dash.activeMeds.map((m) => (
                 <div
                   key={m.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 16,
-                    padding: "12px 16px",
-                    background: "var(--gray-50)",
-                    borderRadius: "var(--radius-sm)",
-                  }}
+                  style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", background: "var(--gray-50)", borderRadius: "var(--radius-sm)" }}
                 >
                   <div className="metric-icon amber" style={{ width: 40, height: 40 }}>
                     <Pill size={18} />

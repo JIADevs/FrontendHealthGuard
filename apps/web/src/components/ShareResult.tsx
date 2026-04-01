@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Copy } from "lucide-react";
-import { formatDate } from "@healthguard/ui";
+import { formatDate, Button } from "@healthguard/ui";
 
 interface ShareResultProps {
   shareUrl: string;
@@ -33,9 +33,9 @@ export function ShareResult({ shareUrl, qrCodeUrl, expiresAt, label }: ShareResu
       </p>
       <div className="share-url">
         <input readOnly value={shareUrl} />
-        <button className="btn btn-ghost" onClick={handleCopy} style={{ padding: "6px 12px" }}>
+        <Button variant="ghost" size="sm" onPress={handleCopy}>
           {copied ? "✓ Copiado" : <><Copy size={14} /> Copiar</>}
-        </button>
+        </Button>
       </div>
     </div>
   );

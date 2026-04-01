@@ -5,7 +5,7 @@ import { useBackpackQuery } from "@healthguard/api/hooks";
 import { useBackpackDetail } from "@/hooks/useBackpackDetail";
 import { type BackpackWithDocs } from "@healthguard/api";
 import { Backpack, FileText, X, Share2, ChevronLeft, Plus, Edit3, Clock, QrCode, Copy } from "lucide-react";
-import { formatDate } from "@healthguard/ui";
+import { formatDate, Button } from "@healthguard/ui";
 import { AddDocsModal } from "./AddDocsModal";
 import { BackpackFormModal } from "./BackpackFormModal";
 
@@ -31,9 +31,11 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
 
   return (
     <>
-      <button className="btn btn-ghost" onClick={onBack} style={{ marginBottom: 16 }}>
-        <ChevronLeft size={16} /> Volver a mochilas
-      </button>
+      <div style={{ marginBottom: 16 }}>
+        <Button variant="ghost" onPress={onBack}>
+          <ChevronLeft size={16} /> Volver a mochilas
+        </Button>
+      </div>
 
       {bp.isLoading ? (
         <div className="empty-state">
@@ -52,21 +54,15 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
               )}
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button className="btn btn-ghost" onClick={() => setShowEdit(true)}>
+              <Button variant="ghost" onPress={() => setShowEdit(true)}>
                 <Edit3 size={16} /> Editar
-              </button>
-              <button className="btn btn-ghost" onClick={() => setShowAdd(true)}>
+              </Button>
+              <Button variant="ghost" onPress={() => setShowAdd(true)}>
                 <Plus size={16} /> Agregar Documentos
-              </button>
-              <button
-                className="btn btn-primary"
-                style={{ width: "auto" }}
-                onClick={detail.shareBackpack}
-                disabled={detail.isSharing}
-              >
-                {detail.isSharing ? <span className="spinner" /> : <Share2 size={16} />}
-                Compartir Mochila
-              </button>
+              </Button>
+              <Button onPress={detail.shareBackpack} disabled={detail.isSharing} loading={detail.isSharing}>
+                <Share2 size={16} /> Compartir Mochila
+              </Button>
             </div>
           </div>
 
@@ -90,9 +86,9 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
                   )}
                   <div className="share-url">
                     <input readOnly value={detail.shareData.shareUrl} style={{ fontSize: 12 }} />
-                    <button className="btn btn-ghost" onClick={handleCopy} style={{ padding: "4px 8px", fontSize: 12 }}>
+                    <Button variant="ghost" size="sm" onPress={handleCopy}>
                       {copied ? "✓" : <Copy size={12} />}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>

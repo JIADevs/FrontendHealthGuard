@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useDocumentsQuery } from "@healthguard/api/hooks";
 import { shareDocument, type Document } from "@healthguard/api";
-import { formatDate } from "@healthguard/ui";
+import { formatDate, Button } from "@healthguard/ui";
 
 export default function SharePage() {
   const [page, setPage] = useState(1);
@@ -61,10 +61,9 @@ export default function SharePage() {
           </p>
         </div>
         {selected.length > 0 && (
-          <button className="btn btn-primary" style={{ width: "auto" }} onClick={handleShareSelected} disabled={sharing}>
-            {sharing && <span className="spinner" />}
+          <Button onPress={handleShareSelected} disabled={sharing} loading={sharing}>
             <Share2 size={16} /> Compartir ({selected.length})
-          </button>
+          </Button>
         )}
       </div>
 
@@ -76,9 +75,9 @@ export default function SharePage() {
               <QrCode size={16} style={{ verticalAlign: -2, marginRight: 6 }} />
               {shareResults.size} enlace{shareResults.size > 1 ? "s" : ""} generado{shareResults.size > 1 ? "s" : ""}
             </span>
-            <button className="btn btn-ghost" onClick={handleCopyAll} style={{ fontSize: 13 }}>
+            <Button variant="ghost" size="sm" onPress={handleCopyAll}>
               <Copy size={14} /> Copiar todos
-            </button>
+            </Button>
           </div>
           <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {sharedDocs.map((doc) => {
@@ -163,9 +162,9 @@ function ShareResultRow({ doc, result }: { doc: Document; result: { shareUrl: st
         </div>
         <div className="share-url" style={{ marginTop: 6 }}>
           <input readOnly value={result.shareUrl} style={{ fontSize: 12 }} />
-          <button className="btn btn-ghost" onClick={handleCopy} style={{ padding: "4px 8px", fontSize: 12 }}>
+          <Button variant="ghost" size="sm" onPress={handleCopy}>
             {copied ? "✓" : <Copy size={12} />}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

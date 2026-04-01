@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signup, login } from "@healthguard/api";
 import { useAuthStore } from "@healthguard/stores";
 import { isApiError } from "@healthguard/api";
+import { Button } from "@healthguard/ui";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -91,15 +92,14 @@ export default function SignupPage() {
 
           {error && <p className="form-error">{error}</p>}
 
-          <button
+          <Button
             type="submit"
-            className="btn btn-primary"
+            fullWidth
             disabled={loading}
-            id="signup-submit"
+            loading={loading}
           >
-            {loading ? <span className="spinner" /> : null}
             {loading ? "Creando cuenta..." : "Crear Cuenta"}
-          </button>
+          </Button>
         </form>
 
         <div className="login-footer" style={{ marginTop: 24 }}>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useDocumentsQuery, useDeleteDocumentMutation } from "@healthguard/api/hooks";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { formatDate, PAGE_SIZE_GRID } from "@healthguard/ui";
+import { formatDate, PAGE_SIZE_GRID, Button } from "@healthguard/ui";
 import { Search, Upload, FileText, Eye, Share2, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -40,10 +40,9 @@ export default function DocumentsPage() {
             {total} documento{total !== 1 ? "s" : ""} en tu carpeta
           </p>
         </div>
-        <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setShowUpload(true)} id="upload-doc-btn">
-          <Upload size={16} />
-          Subir Documento
-        </button>
+        <Button onPress={() => setShowUpload(true)}>
+          <Upload size={16} /> Subir Documento
+        </Button>
       </div>
 
       {/* Search */}

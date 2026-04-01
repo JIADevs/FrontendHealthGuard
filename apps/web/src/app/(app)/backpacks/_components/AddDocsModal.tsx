@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, FileText, Check } from "lucide-react";
 import { getDocuments, addDocToBackpack, isApiError, type BackpackWithDocs } from "@healthguard/api";
-import { formatDate } from "@healthguard/ui";
+import { formatDate, Button } from "@healthguard/ui";
 import { sileo } from "sileo";
 
 interface AddDocsModalProps {
@@ -88,11 +88,10 @@ export function AddDocsModal({ backpackId, existingIds, onClose }: AddDocsModalP
           )}
         </div>
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-          <button className="btn btn-primary" style={{ width: "auto" }} disabled={selected.length === 0 || addMut.isPending} onClick={() => addMut.mutate()}>
-            {addMut.isPending && <span className="spinner" />}
+          <Button variant="secondary" onPress={onClose}>Cancelar</Button>
+          <Button disabled={selected.length === 0 || addMut.isPending} loading={addMut.isPending} onPress={() => addMut.mutate()}>
             Agregar {selected.length > 0 ? `(${selected.length})` : ""}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

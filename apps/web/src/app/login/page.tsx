@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { login } from "@healthguard/api";
 import { useAuthStore } from "@healthguard/stores";
 import { isApiError } from "@healthguard/api";
+import { Button } from "@healthguard/ui";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -82,15 +83,14 @@ export default function LoginPage() {
 
           {error && <p className="form-error">{error}</p>}
 
-          <button
+          <Button
             type="submit"
-            className="btn btn-primary"
+            fullWidth
             disabled={loading}
-            id="login-submit"
+            loading={loading}
           >
-            {loading ? <span className="spinner" /> : null}
             {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
-          </button>
+          </Button>
         </form>
 
         <div className="login-divider">o continúa con</div>

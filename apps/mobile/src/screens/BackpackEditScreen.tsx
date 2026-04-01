@@ -7,12 +7,11 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { useBackpackForm } from "../hooks/useBackpackForm";
-import { useAppTheme, colors } from "@healthguard/ui";
+import { useAppTheme, colors, Button } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id?: string };
@@ -75,30 +74,14 @@ export function BackpackEditScreen() {
         />
 
         {form.isEdit && (
-          <TouchableOpacity
-            style={[styles.secondaryBtn, styles.dangerBtn]}
-            onPress={confirmDelete}
-            disabled={form.deleting}
-            accessibilityRole="button"
-            accessibilityLabel="Eliminar mochila"
-          >
-            {form.deleting
-              ? <ActivityIndicator color={colors.error[500]} />
-              : <Text style={[styles.secondaryBtnText, { color: colors.error[500] }]}>Eliminar</Text>}
-          </TouchableOpacity>
+          <Button variant="danger" fullWidth onPress={confirmDelete} disabled={form.deleting} loading={form.deleting}>
+            Eliminar
+          </Button>
         )}
 
-        <TouchableOpacity
-          style={[styles.primaryBtn, (form.saving || form.deleting) && styles.primaryBtnDisabled]}
-          onPress={form.handleSave}
-          disabled={form.saving || form.deleting}
-          accessibilityRole="button"
-          accessibilityLabel="Guardar mochila"
-        >
-          {form.saving
-            ? <ActivityIndicator color={colors.white} />
-            : <Text style={styles.primaryBtnText}>{form.isEdit ? "Guardar" : "Crear"}</Text>}
-        </TouchableOpacity>
+        <Button fullWidth onPress={form.handleSave} disabled={form.saving || form.deleting} loading={form.saving}>
+          {form.isEdit ? "Guardar" : "Crear"}
+        </Button>
       </View>
     </KeyboardAvoidingView>
   );
@@ -113,11 +96,5 @@ function makeStyles(t: ThemeContextValue) {
     label:              { fontSize: 14, fontWeight: "700", color: t.text.primary, marginBottom: 8 },
     input:              { backgroundColor: t.surface.bgCard, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: t.border.medium, fontSize: 14, color: t.text.primary },
     multiline:          { height: 120, textAlignVertical: "top" },
-    primaryBtn:         { backgroundColor: colors.sky[500], borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 18 },
-    primaryBtnDisabled: { opacity: 0.7 },
-    primaryBtnText:     { color: colors.white, fontSize: 15, fontWeight: "800" },
-    secondaryBtn:       { backgroundColor: t.surface.bgCard, borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 12, borderWidth: 1, borderColor: colors.sky[500] },
-    secondaryBtnText:   { color: colors.sky[500], fontSize: 15, fontWeight: "800" },
-    dangerBtn:          { borderColor: colors.error[500] },
   });
 }

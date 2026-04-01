@@ -1,10 +1,10 @@
 import { useLayoutEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, Alert, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, Linking, Alert, ScrollView, Image } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useDocumentQuery, useTagCategoriesQuery } from "@healthguard/api/hooks";
 import { getSignedUrl, type Document, type TagCategoryOut } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = {
@@ -157,27 +157,12 @@ export function DocumentDetailScreen() {
       )}
 
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.button, !url && styles.buttonDisabled]}
-          onPress={handleOpen}
-          disabled={!url || signedUrl.isLoading}
-        >
-          {signedUrl.isLoading ? (
-            <ActivityIndicator color={colors.white} />
-          ) : (
-            <Text style={styles.buttonText}>Ver documento</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.buttonSecondary}
-          onPress={() => navigation.navigate("DocumentEdit", { id: d.id })}
-          accessibilityRole="button"
-          accessibilityLabel="Editar documento"
-          disabled={doc.isLoading}
-        >
-          <Text style={styles.buttonSecondaryText}>Editar</Text>
-        </TouchableOpacity>
+        <Button onPress={handleOpen} disabled={!url || signedUrl.isLoading} loading={signedUrl.isLoading} fullWidth>
+          Ver documento
+        </Button>
+        <Button variant="secondary" onPress={() => navigation.navigate("DocumentEdit", { id: d.id })} disabled={doc.isLoading} fullWidth>
+          Editar
+        </Button>
       </View>
     </ScrollView>
   );
@@ -211,11 +196,6 @@ function makeStyles(t: ThemeContextValue) {
     actions:         { marginTop: spacing[2], flexDirection: "row", gap: spacing[3] },
     preview:         { marginBottom: spacing[4], backgroundColor: colors.black, borderRadius: radii.lg, overflow: "hidden", height: 400 },
     image:           { flex: 1, width: "100%", height: "100%" },
-    button:          { backgroundColor: colors.sky[500], borderRadius: radii.full, paddingVertical: 14, alignItems: "center", justifyContent: "center", flex: 1 },
-    buttonSecondary: { backgroundColor: t.surface.bgCard, borderRadius: radii.full, paddingVertical: 14, alignItems: "center", justifyContent: "center", flex: 1, borderWidth: 1, borderColor: colors.sky[500] },
-    buttonDisabled:      { backgroundColor: t.border.medium },
-    buttonText:          { color: colors.white, fontSize: fontSize.base, fontWeight: fontWeight.bold },
-    buttonSecondaryText: { color: colors.sky[500], fontSize: fontSize.base, fontWeight: fontWeight.bold },
     error:               { fontSize: fontSize.base, color: colors.error[500] },
   });
 }

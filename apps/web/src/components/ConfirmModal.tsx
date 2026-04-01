@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Button } from "@healthguard/ui";
 
 interface ConfirmModalProps {
   title: string;
@@ -19,11 +19,8 @@ export function ConfirmModal({ title, message, confirmLabel, loading, onConfirm,
           <p className="confirm-title">{title}</p>
           <p className="confirm-message">{message}</p>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button className="btn btn-secondary" onClick={onCancel} disabled={loading}>Cancelar</button>
-            <button className="btn btn-danger" onClick={onConfirm} disabled={loading}>
-              {loading && <span className="spinner" />}
-              {confirmLabel}
-            </button>
+            <Button variant="secondary" onPress={onCancel} disabled={loading}>Cancelar</Button>
+            <Button variant="danger" onPress={onConfirm} disabled={loading} loading={loading}>{confirmLabel}</Button>
           </div>
         </div>
       </div>

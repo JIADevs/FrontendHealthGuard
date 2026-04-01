@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { useProfileQuery } from "@healthguard/api/hooks";
 import { useProfileForm } from "@/hooks/useProfileForm";
 import { User, Save, Mail, Phone, MapPin, Heart, Shield, Loader2 } from "lucide-react";
+import { Button } from "@healthguard/ui";
 
 export default function ProfilePage() {
   const profile = useProfileQuery();
@@ -161,12 +162,9 @@ export default function ProfilePage() {
           </div>
 
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={form.saving}>
-              {form.saving
-                ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
-                : <Save size={16} />}
-              {form.saving ? "Guardando..." : "Guardar Cambios"}
-            </button>
+            <Button type="submit" disabled={form.saving} loading={form.saving}>
+              {form.saving ? "Guardando..." : <><Save size={16} /> Guardar Cambios</>}
+            </Button>
           </div>
         </form>
       )}

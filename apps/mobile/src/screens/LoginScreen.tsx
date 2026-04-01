@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuthStore } from "@healthguard/stores";
 import { login, isApiError } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Button } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
@@ -71,13 +71,14 @@ export function LoginScreen() {
             secureTextEntry
           />
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            disabled={loading || !email || !password}
+          <Button
+            fullWidth
+            disabled={!email || !password}
+            loading={loading}
             onPress={handleLogin}
           >
-            {loading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.buttonText}>Entrar</Text>}
-          </TouchableOpacity>
+            Entrar
+          </Button>
         </View>
 
         <View style={styles.footer}>
@@ -103,9 +104,6 @@ function makeStyles(t: ThemeContextValue) {
     form:           { gap: spacing[4] },
     label:          { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: -8 },
     input:          { borderWidth: 1, borderColor: t.border.medium, borderRadius: radii.md, padding: 14, fontSize: fontSize.md, backgroundColor: t.surface.bg, color: t.text.primary },
-    button:         { backgroundColor: colors.sky[500], padding: spacing[4], borderRadius: radii.md, alignItems: "center", marginTop: spacing[2] },
-    buttonDisabled: { opacity: 0.7 },
-    buttonText:     { color: colors.white, fontSize: fontSize.md, fontWeight: fontWeight.semibold },
     error:          { color: colors.error[600], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, overflow: "hidden", marginBottom: spacing[4], textAlign: "center" },
     footer:         { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
     footerText:     { color: t.text.secondary, fontSize: fontSize.sm },

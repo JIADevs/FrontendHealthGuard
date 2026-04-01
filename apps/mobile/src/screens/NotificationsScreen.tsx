@@ -11,7 +11,7 @@ import { memo, useCallback, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { type Notification } from "@healthguard/api";
 import { useNotificationsScreen } from "../hooks/useNotificationsScreen";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Button } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { Bell, Calendar, Pill, Activity, Info, CheckCircle } from "lucide-react-native";
 
@@ -109,14 +109,9 @@ export function NotificationsScreen() {
           )}
         </View>
         {screen.unreadCount > 0 && (
-          <TouchableOpacity
-            style={styles.markAllBtn}
-            onPress={screen.markAllRead}
-            accessibilityRole="button"
-            accessibilityLabel="Marcar todas como leídas"
-          >
-            <Text style={styles.markAllText}>Marcar todo leído</Text>
-          </TouchableOpacity>
+          <Button variant="ghost" size="sm" onPress={screen.markAllRead}>
+            Marcar todo leído
+          </Button>
         )}
       </View>
 
@@ -174,8 +169,6 @@ function makeStyles(t: ThemeContextValue) {
     },
     title:          { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary },
     subtitle:       { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2 },
-    markAllBtn:     { paddingHorizontal: spacing[3], paddingVertical: 6, backgroundColor: t.border.light, borderRadius: radii.sm },
-    markAllText:    { fontSize: fontSize.sm, color: colors.sky[500], fontWeight: fontWeight.semibold },
     center:         { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: spacing[3] },
     emptyTitle:     { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: t.text.primary, marginTop: 4 },
     emptyText:      { fontSize: 14, color: t.text.muted, textAlign: "center", lineHeight: 20 },

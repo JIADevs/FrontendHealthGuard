@@ -19,6 +19,7 @@ import {
   fontWeight,
   shadows,
   useAppTheme,
+  Button,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { Save, User, Phone, Heart, Shield, ChevronDown } from "lucide-react-native";
@@ -103,18 +104,9 @@ export function ProfileScreen() {
         </View>
 
         {/* Save button */}
-        <TouchableOpacity
-          style={[styles.saveBtn, form.saving && styles.saveBtnDisabled]}
-          onPress={form.handleSave}
-          disabled={form.saving}
-        >
-          {form.saving
-            ? <ActivityIndicator size="small" color={colors.white} />
-            : <Save size={18} color={colors.white} />}
-          <Text style={styles.saveBtnText}>
-            {form.saving ? "Guardando..." : "Guardar Cambios"}
-          </Text>
-        </TouchableOpacity>
+        <Button fullWidth onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
+          {form.saving ? "Guardando..." : "Guardar Cambios"}
+        </Button>
       </ScrollView>
     </SafeAreaView>
   );
@@ -235,8 +227,5 @@ function makeStyles(t: ThemeContextValue) {
     pickerDropdown:   { marginTop: spacing[2], borderRadius: radii.md, borderWidth: 1, borderColor: t.border.medium, overflow: "hidden" },
     pickerOption:     { paddingHorizontal: spacing[4], paddingVertical: spacing[3] },
     pickerOptionText: { fontSize: fontSize.base, color: t.text.primary },
-    saveBtn:          { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], backgroundColor: colors.primary[500], borderRadius: radii.md, padding: spacing[4], marginTop: spacing[2] },
-    saveBtnDisabled:  { opacity: 0.7 },
-    saveBtnText:      { color: colors.white, fontWeight: fontWeight.semibold, fontSize: fontSize.base },
   });
 }

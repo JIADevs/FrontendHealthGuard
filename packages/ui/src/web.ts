@@ -6,3 +6,5 @@ export * from './formatters';
 export * from './documentTypes';
 export * from './constants';
 export * from './DocumentTypeIcon.web';
+export * from './Button.types';
+export * from './Button.web';

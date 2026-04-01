@@ -23,7 +23,7 @@ import { isApiError, type DocumentPage, type Document } from "@healthguard/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@healthguard/ui";
 import { Camera, FileText, FileUp, Plus, Search, Share2, Trash2, Edit2, X } from "lucide-react-native";
-import { useAppTheme, colors, useDebounceSearch, formatDate } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, Button } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { useBackpackDetail } from "../hooks/useBackpackDetail";
 
@@ -205,25 +205,12 @@ export function BackpackDetailScreen() {
       />
 
       <View style={styles.bottomActions}>
-        <TouchableOpacity
-          style={[styles.bottomBtn, styles.primaryBtn]}
-          onPress={detail.shareBackpack}
-          disabled={detail.isSharing}
-          accessibilityLabel="Compartir mochila"
-        >
-          {detail.isSharing
-            ? <ActivityIndicator size="small" color={colors.white} />
-            : <Share2 size={18} color={colors.white} />}
-          <Text style={styles.primaryBtnText}>Compartir</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.bottomBtn, styles.ghostBtn]}
-          onPress={() => navigation.navigate("BackpackEdit", { id })}
-          accessibilityLabel="Editar mochila"
-        >
+        <Button onPress={detail.shareBackpack} disabled={detail.isSharing} loading={detail.isSharing} fullWidth>
+          <Share2 size={18} color={colors.white} /> Compartir
+        </Button>
+        <Button variant="ghost" onPress={() => navigation.navigate("BackpackEdit", { id })}>
           <Edit2 size={18} color={colors.sky[500]} />
-        </TouchableOpacity>
+        </Button>
       </View>
 
       {fabOpen && (
@@ -278,17 +265,10 @@ export function BackpackDetailScreen() {
               <Image source={{ uri: detail.shareData.qrCodeUrl }} style={styles.qrImg} />
             </View>
 
-            <TouchableOpacity
-              style={[styles.modalBtn, styles.primaryBtn]}
-              onPress={() => Share.share({ url: shareLink, message: "Comparto una mochila con documentos médicos." })}
-              accessibilityLabel="Compartir link"
-            >
-              <Text style={styles.primaryBtnText}>Compartir</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.modalBtn, styles.secondaryBtn]} onPress={detail.clearShareData} accessibilityLabel="Cerrar">
-              <Text style={styles.secondaryBtnText}>Cerrar</Text>
-            </TouchableOpacity>
+            <Button fullWidth onPress={() => Share.share({ url: shareLink, message: "Comparto una mochila con documentos médicos." })}>
+              Compartir
+            </Button>
+            <Button variant="secondary" fullWidth onPress={detail.clearShareData}>Cerrar</Button>
           </View>
         </View>
       )}
@@ -302,25 +282,12 @@ export function BackpackDetailScreen() {
             </Text>
 
             <View style={styles.confirmActions}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.secondaryBtn]}
-                onPress={() => setDeleteDocTarget(null)}
-                accessibilityLabel="Cancelar eliminación"
-              >
-                <Text style={styles.secondaryBtnText}>Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.dangerBtn]}
-                onPress={() => {
-                  const target = deleteDocTarget;
-                  setDeleteDocTarget(null);
-                  detail.removeDocument(target.id, target.title);
-                }}
-                accessibilityLabel="Confirmar eliminación"
-              >
-                <Text style={styles.dangerBtnText}>Eliminar</Text>
-              </TouchableOpacity>
+              <Button variant="secondary" fullWidth onPress={() => setDeleteDocTarget(null)}>Cancelar</Button>
+              <Button variant="danger" fullWidth onPress={() => {
+                const target = deleteDocTarget;
+                setDeleteDocTarget(null);
+                detail.removeDocument(target.id, target.title);
+              }}>Eliminar</Button>
             </View>
           </View>
         </View>
@@ -349,13 +316,6 @@ function makeStyles(t: ThemeContextValue) {
     actionsRight: { flexDirection: "row" },
     removeBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bg, borderWidth: 1, borderColor: t.border.medium },
     bottomActions: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 14, backgroundColor: t.surface.bgCard, borderTopWidth: 1, borderTopColor: t.border.medium, flexDirection: "row", gap: 10, alignItems: "center", paddingRight: 92 },
-    bottomBtn: { flex: 1, borderRadius: 16, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" },
-    primaryBtn: { backgroundColor: colors.sky[500] },
-    primaryBtnText: { color: colors.white, fontWeight: "800", fontSize: 14 },
-    secondaryBtn: { backgroundColor: t.surface.bgCard, borderWidth: 1, borderColor: colors.sky[500] },
-    secondaryBtnText: { color: colors.sky[500], fontWeight: "800", fontSize: 14 },
-    dangerBtn: { backgroundColor: colors.error[500] },
-    dangerBtnText: { color: colors.white, fontWeight: "800", fontSize: 14 },
     ghostBtn: { backgroundColor: t.surface.bgCard, borderWidth: 1, borderColor: t.border.medium },
     backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.3)" },
     fab: { position: "absolute", bottom: 24, right: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", shadowColor: colors.sky[500], shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8, zIndex: 20 },
@@ -372,6 +332,5 @@ function makeStyles(t: ThemeContextValue) {
     linkText: { fontSize: 13, color: t.text.primary, paddingVertical: 4 },
     qrWrap: { alignItems: "center", justifyContent: "center", marginVertical: 8, padding: 10, backgroundColor: t.surface.bg, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium },
     qrImg: { width: 170, height: 170 },
-    modalBtn: { flex: 1, minHeight: 48, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, alignItems: "center", justifyContent: "center" },
   });
 }

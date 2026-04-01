@@ -35,6 +35,7 @@ import {
   useAppTheme,
   appointmentStatusLabel,
   formatApptDate,
+  Button,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import {
@@ -408,22 +409,10 @@ function AppointmentFormModal({
         </ScrollView>
 
         <View style={styles.modalFooter}>
-          <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-            <Text style={styles.cancelBtnText}>Cancelar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.saveBtn, form.saving && styles.saveBtnDisabled]}
-            onPress={form.handleSave}
-            disabled={form.saving}
-          >
-            {form.saving ? (
-              <ActivityIndicator color={colors.white} size="small" />
-            ) : (
-              <Text style={styles.saveBtnText}>
-                {form.isEdit ? "Guardar Cambios" : "Agendar Cita"}
-              </Text>
-            )}
-          </TouchableOpacity>
+          <Button variant="secondary" onPress={onClose}>Cancelar</Button>
+          <Button onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
+            {form.isEdit ? "Guardar Cambios" : "Agendar Cita"}
+          </Button>
         </View>
       </View>
     </View>
@@ -703,22 +692,10 @@ function MedicationFormModal({
         </ScrollView>
 
         <View style={styles.modalFooter}>
-          <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-            <Text style={styles.cancelBtnText}>Cancelar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.saveBtn, form.saving && styles.saveBtnDisabled]}
-            onPress={form.handleSave}
-            disabled={form.saving}
-          >
-            {form.saving ? (
-              <ActivityIndicator color={colors.white} size="small" />
-            ) : (
-              <Text style={styles.saveBtnText}>
-                {form.isEdit ? "Guardar Cambios" : "Registrar"}
-              </Text>
-            )}
-          </TouchableOpacity>
+          <Button variant="secondary" onPress={onClose}>Cancelar</Button>
+          <Button onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
+            {form.isEdit ? "Guardar Cambios" : "Registrar"}
+          </Button>
         </View>
       </View>
     </View>
@@ -751,20 +728,8 @@ function ConfirmDeleteModal({
           {message}
         </Text>
         <View style={styles.modalFooter}>
-          <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
-            <Text style={styles.cancelBtnText}>Cancelar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.saveBtn, { backgroundColor: colors.error[500] }, loading && styles.saveBtnDisabled]}
-            onPress={onConfirm}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.white} size="small" />
-            ) : (
-              <Text style={styles.saveBtnText}>Eliminar</Text>
-            )}
-          </TouchableOpacity>
+          <Button variant="secondary" onPress={onCancel}>Cancelar</Button>
+          <Button variant="danger" onPress={onConfirm} disabled={loading} loading={loading}>Eliminar</Button>
         </View>
       </View>
     </View>
@@ -825,10 +790,5 @@ function makeStyles(t: ThemeContextValue) {
     typePillActive:     { backgroundColor: colors.sky[500], borderColor: colors.sky[500] },
     typePillText:       { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.secondary },
     typePillTextActive: { color: colors.white },
-    cancelBtn:          { flex: 1, paddingVertical: spacing[3], borderRadius: radii.md, alignItems: "center", backgroundColor: t.surface.bg, borderWidth: 1, borderColor: t.border.medium },
-    cancelBtnText:      { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.secondary },
-    saveBtn:            { flex: 1, paddingVertical: spacing[3], borderRadius: radii.md, alignItems: "center", backgroundColor: colors.sky[500] },
-    saveBtnDisabled:    { opacity: 0.6 },
-    saveBtnText:        { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.white },
   });
 }

@@ -3,6 +3,7 @@
 import { type FormEvent } from "react";
 import { X } from "lucide-react";
 import { useBackpackForm } from "@/hooks/useBackpackForm";
+import { Button } from "@healthguard/ui";
 
 interface BackpackFormModalProps {
   onClose: () => void;
@@ -60,22 +61,16 @@ export function BackpackFormModal({ onClose, backpackId }: BackpackFormModalProp
           </div>
           <div className="modal-footer">
             {isEdit && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ color: "var(--error-600)", borderColor: "var(--error-600)", marginRight: "auto" }}
-                disabled={form.deleting}
-                onClick={form.handleDelete}
-              >
-                {form.deleting && <span className="spinner" />}
-                Eliminar
-              </button>
+              <div style={{ marginRight: "auto" }}>
+                <Button variant="danger" type="button" disabled={form.deleting} loading={form.deleting} onPress={form.handleDelete}>
+                  Eliminar
+                </Button>
+              </div>
             )}
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={form.saving}>
-              {form.saving && <span className="spinner" />}
+            <Button variant="secondary" type="button" onPress={onClose}>Cancelar</Button>
+            <Button type="submit" disabled={form.saving} loading={form.saving}>
               {isEdit ? "Guardar Cambios" : "Crear Mochila"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

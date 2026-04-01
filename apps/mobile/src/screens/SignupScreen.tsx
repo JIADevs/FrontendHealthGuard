@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuthStore } from "@healthguard/stores";
 import { signup, login, isApiError } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Button } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
@@ -110,17 +109,14 @@ export function SignupScreen() {
               <Text style={styles.fieldError}>{fieldErrors.password}</Text>
             ) : null}
 
-            <TouchableOpacity
-              style={[styles.button, !canSubmit && styles.buttonDisabled]}
+            <Button
+              fullWidth
               disabled={!canSubmit}
+              loading={loading}
               onPress={handleSignup}
             >
-              {loading ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <Text style={styles.buttonText}>Crear Cuenta</Text>
-              )}
-            </TouchableOpacity>
+              Crear Cuenta
+            </Button>
           </View>
 
           <View style={styles.footer}>
@@ -149,9 +145,6 @@ function makeStyles(t: ThemeContextValue) {
     input:        { borderWidth: 1, borderColor: t.border.medium, borderRadius: radii.md, padding: 14, fontSize: fontSize.md, backgroundColor: t.surface.bg, color: t.text.primary },
     inputError:   { borderColor: colors.error[400] },
     fieldError:   { color: colors.error[500], fontSize: fontSize.xs, marginTop: -spacing[1] },
-    button:       { backgroundColor: colors.sky[500], padding: spacing[4], borderRadius: radii.md, alignItems: "center", marginTop: spacing[2] },
-    buttonDisabled: { opacity: 0.5 },
-    buttonText:   { color: colors.white, fontSize: fontSize.md, fontWeight: fontWeight.semibold },
     error:        { color: colors.error[600], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, overflow: "hidden", marginBottom: spacing[4], textAlign: "center" },
     footer:       { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
     footerText:   { color: t.text.secondary, fontSize: fontSize.sm },

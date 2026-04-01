@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Upload, FileText, X, FileUp, Sparkles, Loader2, Plus, Check } from "lucide-react";
+import { Button } from "@healthguard/ui";
 import { useDocumentForm } from "@/hooks/useDocumentForm";
 
 const TEMPLATE_ICONS: Record<string, string> = {
@@ -137,38 +138,30 @@ export function UploadModal({
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                    <button
+                    <Button
                       type="button"
-                      className="btn btn-ghost"
-                      style={{ width: "auto", gap: 8 }}
-                      onClick={() => form.handleAIClassify(file)}
+                      variant="ghost"
+                      onPress={() => form.handleAIClassify(file)}
                       disabled={form.classifying}
+                      loading={form.classifying}
                     >
-                      {form.classifying
-                        ? <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} />
-                        : <Sparkles size={15} />}
-                      {form.classifying ? "Clasificando..." : "Clasificar con IA"}
-                    </button>
+                      {form.classifying ? <><Loader2 size={15} /> Clasificando...</> : <><Sparkles size={15} /> Clasificar con IA</>}
+                    </Button>
                     {form.classificationResult && (
                       <span style={{ fontSize: 12, color: "var(--success-600)" }}>
                         <Check size={12} style={{ verticalAlign: -1, marginRight: 3 }} />
                         Clasificado automáticamente
                       </span>
                     )}
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      style={{ width: "auto", marginLeft: "auto" }}
-                      onClick={() => setStep("details")}
-                    >
+                    <Button type="button" onPress={() => setStep("details")}>
                       Continuar →
-                    </button>
+                    </Button>
                   </div>
                 </>
               )}
 
               <div style={{ marginTop: 4 }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setStep("template")}>← Atrás</button>
+                <Button type="button" variant="ghost" onPress={() => setStep("template")}>← Atrás</Button>
               </div>
             </>
           )}
@@ -186,18 +179,16 @@ export function UploadModal({
                     {form.classificationResult && " · Clasificado con IA"}
                   </div>
                 </div>
-                <button
+                <Button
                   type="button"
-                  className="btn btn-ghost"
-                  style={{ width: "auto", fontSize: 12, padding: "4px 8px" }}
-                  onClick={() => form.handleAIClassify(file)}
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => form.handleAIClassify(file)}
                   disabled={form.classifying}
+                  loading={form.classifying}
                 >
-                  {form.classifying
-                    ? <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
-                    : <Sparkles size={13} />}
-                  {form.classifying ? "..." : "Re-clasificar"}
-                </button>
+                  {form.classifying ? "..." : <><Sparkles size={13} /> Re-clasificar</>}
+                </Button>
               </div>
 
               {/* Title + date */}
@@ -350,30 +341,28 @@ export function UploadModal({
                     style={{ flex: 1 }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); form.handleAddCategoryAndTag(); } }}
                   />
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-secondary"
-                    style={{ width: "auto" }}
-                    onClick={() => form.handleAddCategoryAndTag()}
+                    variant="secondary"
+                    onPress={() => form.handleAddCategoryAndTag()}
                     disabled={!form.newCategoryName.trim() || !form.newTagValue.trim() || form.addingCustomTag}
+                    loading={form.addingCustomTag}
                   >
-                    {form.addingCustomTag ? <span className="spinner" /> : <Plus size={14} />}
-                  </button>
+                    <Plus size={14} />
+                  </Button>
                 </div>
               </div>
 
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setStep("file")}>← Atrás</button>
-                <button
+                <Button type="button" variant="secondary" onPress={() => setStep("file")}>← Atrás</Button>
+                <Button
                   type="button"
-                  className="btn btn-primary"
-                  style={{ width: "auto" }}
                   disabled={!form.title || form.uploading}
-                  onClick={() => form.handleUpload(file, docDate)}
+                  loading={form.uploading}
+                  onPress={() => form.handleUpload(file, docDate)}
                 >
-                  {form.uploading ? <span className="spinner" /> : <Upload size={16} />}
-                  {form.uploading ? "Subiendo..." : "Guardar Documento"}
-                </button>
+                  {form.uploading ? "Subiendo..." : <><Upload size={16} /> Guardar Documento</>}
+                </Button>
               </div>
             </>
           )}

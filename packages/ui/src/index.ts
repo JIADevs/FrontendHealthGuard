@@ -8,3 +8,5 @@ export * from './formatters';
 export * from './documentTypes';
 export * from './constants';
 export * from './DocumentTypeIcon.native';
+export * from './Button.types';
+export * from './Button.native';

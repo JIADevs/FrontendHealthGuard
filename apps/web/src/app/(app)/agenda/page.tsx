@@ -31,7 +31,7 @@ import {
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -81,9 +81,9 @@ function AppointmentsTab() {
   return (
     <>
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-        <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => { setEditTarget(null); setShowForm(true); }}>
+        <Button onPress={() => { setEditTarget(null); setShowForm(true); }}>
           <Plus size={16} /> Nueva Cita
-        </button>
+        </Button>
       </div>
 
       {appts.isLoading ? (
@@ -219,11 +219,10 @@ function AppointmentFormModal({ initial, onClose }: { initial: Appointment | nul
             {form.error && <p className="form-error">{form.error}</p>}
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={form.saving}>
-              {form.saving && <span className="spinner" />}
+            <Button variant="secondary" type="button" onPress={onClose}>Cancelar</Button>
+            <Button type="submit" disabled={form.saving} loading={form.saving}>
               {form.isEdit ? "Guardar Cambios" : "Agendar Cita"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -249,9 +248,9 @@ function MedicationsTab() {
   return (
     <>
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-        <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => { setEditTarget(null); setShowForm(true); }}>
+        <Button onPress={() => { setEditTarget(null); setShowForm(true); }}>
           <Plus size={16} /> Nuevo Medicamento
-        </button>
+        </Button>
       </div>
 
       {meds.isLoading ? (
@@ -379,11 +378,10 @@ function MedicationFormModal({ initial, onClose }: { initial: Medication | null;
             {form.error && <p className="form-error">{form.error}</p>}
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={form.saving}>
-              {form.saving && <span className="spinner" />}
+            <Button variant="secondary" type="button" onPress={onClose}>Cancelar</Button>
+            <Button type="submit" disabled={form.saving} loading={form.saving}>
               {form.isEdit ? "Guardar Cambios" : "Registrar Medicamento"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

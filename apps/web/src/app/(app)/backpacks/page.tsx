@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useBackpacksQuery, useDeleteBackpackMutation } from "@healthguard/api/hooks";
 import { Backpack, Plus, FileText, Search, Trash2 } from "lucide-react";
+import { Button } from "@healthguard/ui";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
 import { type Backpack as BackpackType } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -35,9 +36,9 @@ export default function BackpacksPage() {
             Organiza documentos en paquetes para compartir fácilmente.
           </p>
         </div>
-        <button className="btn btn-primary" style={{ width: "auto" }} onClick={() => setShowForm(true)}>
+        <Button onPress={() => setShowForm(true)}>
           <Plus size={16} /> Nueva Mochila
-        </button>
+        </Button>
       </div>
 
       <div className="bp-toolbar">

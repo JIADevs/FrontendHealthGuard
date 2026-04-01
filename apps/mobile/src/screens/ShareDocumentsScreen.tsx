@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useQuery } from "@tanstack/react-query";
 import { getDocuments, shareDocument, isApiError, type Document } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { FileText, Share2, Check, Clock, ChevronLeft, ChevronRight } from "lucide-react-native";
 
@@ -104,22 +104,9 @@ export function ShareDocumentsScreen() {
           </Text>
         </View>
         {selected.length > 0 && (
-          <TouchableOpacity
-            style={[styles.shareBtn, sharing && styles.shareBtnDisabled]}
-            onPress={handleShare}
-            disabled={sharing}
-          >
-            {sharing ? (
-              <ActivityIndicator color={colors.white} size="small" />
-            ) : (
-              <>
-                <Share2 size={16} color={colors.white} />
-                <Text style={styles.shareBtnText}>
-                  Compartir ({selected.length})
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+          <Button onPress={handleShare} disabled={sharing} loading={sharing}>
+            <Share2 size={16} color={colors.white} /> Compartir ({selected.length})
+          </Button>
         )}
       </View>
 
@@ -162,20 +149,12 @@ export function ShareDocumentsScreen() {
                         </Text>
                       </View>
                       <View style={styles.resultActions}>
-                        <TouchableOpacity
-                          style={styles.resultBtn}
-                          onPress={() => handleCopyLink(res.shareUrl)}
-                        >
-                          <Share2 size={13} color={colors.sky[500]} />
-                          <Text style={styles.resultBtnText}>Copiar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.resultBtn}
-                          onPress={() => handleSystemShare(res.shareUrl, doc.title)}
-                        >
-                          <Share2 size={13} color={colors.sky[500]} />
-                          <Text style={styles.resultBtnText}>Compartir</Text>
-                        </TouchableOpacity>
+                        <Button variant="secondary" size="sm" onPress={() => handleCopyLink(res.shareUrl)}>
+                          <Share2 size={13} color={colors.sky[500]} /> Copiar
+                        </Button>
+                        <Button variant="secondary" size="sm" onPress={() => handleSystemShare(res.shareUrl, doc.title)}>
+                          <Share2 size={13} color={colors.sky[500]} /> Compartir
+                        </Button>
                       </View>
                     </View>
                   </View>
@@ -257,9 +236,6 @@ function makeStyles(t: ThemeContextValue) {
     topBar:           { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing[3], padding: spacing[5], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     title:            { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary },
     subtitle:         { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2, maxWidth: 200 },
-    shareBtn:         { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: colors.sky[500], paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md, alignSelf: "flex-start" },
-    shareBtnDisabled: { opacity: 0.6 },
-    shareBtnText:     { color: colors.white, fontWeight: fontWeight.semibold, fontSize: fontSize.sm },
     list:             { padding: spacing[4], gap: spacing[2], paddingBottom: spacing[8] },
     center:           { alignItems: "center", justifyContent: "center", gap: spacing[3], paddingVertical: spacing[10] },
     emptyText:        { color: t.text.secondary, fontSize: fontSize.md, textAlign: "center" },
@@ -275,8 +251,6 @@ function makeStyles(t: ThemeContextValue) {
     resultMeta:       { flexDirection: "row", alignItems: "center", gap: spacing[1] },
     resultMetaText:   { fontSize: fontSize.xs, color: t.text.secondary },
     resultActions:    { flexDirection: "row", gap: spacing[2], marginTop: spacing[2] },
-    resultBtn:        { flexDirection: "row", alignItems: "center", gap: spacing[1], paddingHorizontal: spacing[2], paddingVertical: 4, borderRadius: radii.sm, backgroundColor: colors.sky[50], borderWidth: 1, borderColor: colors.sky[200] },
-    resultBtnText:    { fontSize: fontSize.xs, color: colors.sky[600], fontWeight: fontWeight.semibold },
 
     // doc list
     docItem:          { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: spacing[4], backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium },

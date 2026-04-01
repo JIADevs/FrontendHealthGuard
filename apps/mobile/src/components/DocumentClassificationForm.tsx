@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Sparkles } from "lucide-react-native";
 import type { DocumentFormState, DocumentFormActions, FileSource } from "../hooks/useDocumentForm";
-import { useAppTheme, colors, radii, spacing, fontSize, fontWeight } from "@healthguard/ui";
+import { useAppTheme, colors, radii, spacing, fontSize, fontWeight, Chip } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type Props = DocumentFormState &
@@ -88,20 +88,14 @@ export function DocumentClassificationForm({
 
       <View style={styles.field}>
         <Text style={styles.label}>Tipo de Documento</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
           {catalogs.types.map((tp) => (
-            <TouchableOpacity
+            <Chip
               key={tp.id}
-              style={[styles.chip, selectedType === tp.id && styles.chipActive]}
-              onPress={() => {
-                setSelectedType(tp.id);
-                setSelectedSpecialty(undefined);
-              }}
-            >
-              <Text style={[styles.chipText, selectedType === tp.id && styles.chipTextActive]}>
-                {tp.name}
-              </Text>
-            </TouchableOpacity>
+              label={tp.name}
+              selected={selectedType === tp.id}
+              onPress={() => { setSelectedType(tp.id); setSelectedSpecialty(undefined); }}
+            />
           ))}
         </ScrollView>
       </View>
@@ -109,17 +103,14 @@ export function DocumentClassificationForm({
       {currentType && currentType.specialties.length > 0 && (
         <View style={styles.field}>
           <Text style={styles.label}>Especialidad</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
             {currentType.specialties.map((s) => (
-              <TouchableOpacity
+              <Chip
                 key={s.id}
-                style={[styles.chip, selectedSpecialty === s.id && styles.chipActive]}
+                label={s.name}
+                selected={selectedSpecialty === s.id}
                 onPress={() => setSelectedSpecialty(s.id)}
-              >
-                <Text style={[styles.chipText, selectedSpecialty === s.id && styles.chipTextActive]}>
-                  {s.name}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
           </ScrollView>
         </View>
@@ -128,17 +119,14 @@ export function DocumentClassificationForm({
       {catalogs.tags.map((category) => (
         <View key={category.id} style={styles.field}>
           <Text style={styles.label}>{category.name}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
             {category.values.map((val) => (
-              <TouchableOpacity
+              <Chip
                 key={val.id}
-                style={[styles.chip, selectedTags.includes(val.id) && styles.chipActive]}
+                label={val.value}
+                selected={selectedTags.includes(val.id)}
                 onPress={() => toggleTag(val.id)}
-              >
-                <Text style={[styles.chipText, selectedTags.includes(val.id) && styles.chipTextActive]}>
-                  {val.value}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
 
             <View style={styles.addTagContainer}>
@@ -266,10 +254,6 @@ function makeStyles(t: ThemeContextValue) {
     },
 
     chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20 },
-    chip:        { paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.full, backgroundColor: t.border.light, marginRight: spacing[2], borderWidth: 1, borderColor: t.border.medium },
-    chipActive:  { backgroundColor: colors.sky[500], borderColor: colors.sky[500] },
-    chipText:    { fontSize: fontSize.sm, color: t.text.secondary, fontWeight: fontWeight.semibold },
-    chipTextActive: { color: colors.white },
 
     addTagContainer: { flexDirection: "row", alignItems: "center", backgroundColor: t.surface.bg, borderRadius: radii.full, paddingLeft: spacing[3], paddingRight: 4, borderWidth: 1, borderColor: t.border.medium, height: 36, marginLeft: 4 },
     addTagInput:     { fontSize: fontSize.sm, color: t.text.primary, width: 80, padding: 0 },

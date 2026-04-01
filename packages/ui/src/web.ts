@@ -8,5 +8,7 @@ export * from './constants';
 export * from './DocumentTypeIcon.web';
 export * from './Button.types';
 export * from './Button.web';
+export * from './Chip.types';
+export * from './Chip.web';
 export * from './Pagination.types';
 export * from './Pagination.web';

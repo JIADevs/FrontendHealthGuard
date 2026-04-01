@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useDocumentQuery } from "@healthguard/api/hooks";
 import { X, ExternalLink } from "lucide-react";
 import { getSignedUrl, type Document } from "@healthguard/api";
-import { formatDate, formatFileSize } from "@healthguard/ui";
+import { formatDate, formatFileSize, Chip } from "@healthguard/ui";
 
 export function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
   const doc = useDocumentQuery(id);
@@ -43,9 +43,9 @@ export function DetailModal({ id, onClose }: { id: string; onClose: () => void }
 
               {(d.subtypes.length > 0 || d.customTags.length > 0 || d.specialties.length > 0) && (
                 <div className="doc-card-tags" style={{ marginBottom: 20 }}>
-                  {d.subtypes.map((s) => <span key={s.id} className="tag-chip">{s.name}</span>)}
-                  {d.specialties.map((s) => <span key={s.id} className="tag-chip amber">{s.name}</span>)}
-                  {d.customTags.map((t) => <span key={t.id} className="tag-chip green">{t.value}</span>)}
+                  {d.subtypes.map((s) => <Chip key={s.id} label={s.name} />)}
+                  {d.specialties.map((s) => <Chip key={s.id} label={s.name} color="amber" />)}
+                  {d.customTags.map((t) => <Chip key={t.id} label={t.value} color="green" />)}
                 </div>
               )}
 

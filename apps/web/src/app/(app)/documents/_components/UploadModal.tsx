@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Upload, FileText, X, FileUp, Sparkles, Loader2, Plus, Check } from "lucide-react";
-import { Button } from "@healthguard/ui";
+import { Button, Chip } from "@healthguard/ui";
 import { useDocumentForm } from "@/hooks/useDocumentForm";
 
 const TEMPLATE_ICONS: Record<string, string> = {
@@ -221,14 +221,12 @@ export function UploadModal({
                   <label>Tipo de documento</label>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {form.catalogs.types.slice(0, 6).map((t) => (
-                      <button
+                      <Chip
                         key={t.id}
-                        type="button"
-                        className={`tag-chip${form.selectedType === t.id ? " selected" : ""}`}
-                        onClick={() => form.setSelectedType(form.selectedType === t.id ? undefined : t.id)}
-                      >
-                        {t.name}
-                      </button>
+                        label={t.name}
+                        selected={form.selectedType === t.id}
+                        onPress={() => form.setSelectedType(form.selectedType === t.id ? undefined : t.id)}
+                      />
                     ))}
                   </div>
                 </div>
@@ -240,14 +238,12 @@ export function UploadModal({
                   <label>Especialidad</label>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {availableSpecialties.map((s) => (
-                      <button
+                      <Chip
                         key={s.id}
-                        type="button"
-                        className={`tag-chip${form.selectedSpecialty === s.id ? " selected" : ""}`}
-                        onClick={() => form.setSelectedSpecialty(form.selectedSpecialty === s.id ? undefined : s.id)}
-                      >
-                        {s.name}
-                      </button>
+                        label={s.name}
+                        selected={form.selectedSpecialty === s.id}
+                        onPress={() => form.setSelectedSpecialty(form.selectedSpecialty === s.id ? undefined : s.id)}
+                      />
                     ))}
                   </div>
                 </div>
@@ -264,15 +260,12 @@ export function UploadModal({
                       </div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                         {cat.values.map((v) => (
-                          <button
+                          <Chip
                             key={v.id}
-                            type="button"
-                            className={`tag-chip${form.selectedTags.includes(v.id) ? " selected" : ""}`}
-                            onClick={() => form.toggleTag(v.id)}
-                          >
-                            {form.selectedTags.includes(v.id) && <Check size={11} style={{ marginRight: 3 }} />}
-                            {v.value}
-                          </button>
+                            label={v.value}
+                            selected={form.selectedTags.includes(v.id)}
+                            onPress={() => form.toggleTag(v.id)}
+                          />
                         ))}
 
                         {openTagCat === cat.id ? (

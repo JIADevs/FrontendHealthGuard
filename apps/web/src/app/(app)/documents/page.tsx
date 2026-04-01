@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useDocumentsQuery, useDeleteDocumentMutation } from "@healthguard/api/hooks";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { formatDate, PAGE_SIZE_GRID, Button, Pagination } from "@healthguard/ui";
+import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip } from "@healthguard/ui";
 import { Search, Upload, FileText, Eye, Share2, Trash2 } from "lucide-react";
 import { isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -83,8 +83,8 @@ export default function DocumentsPage() {
                 </div>
                 {(doc.subtypes.length > 0 || doc.customTags.length > 0) && (
                   <div className="doc-card-tags">
-                    {doc.subtypes.map((s) => <span key={s.id} className="tag-chip">{s.name}</span>)}
-                    {doc.customTags.slice(0, 3).map((t) => <span key={t.id} className="tag-chip green">{t.value}</span>)}
+                    {doc.subtypes.map((s) => <Chip key={s.id} label={s.name} />)}
+                    {doc.customTags.slice(0, 3).map((t) => <Chip key={t.id} label={t.value} color="green" />)}
                   </div>
                 )}
                 <div className="doc-card-actions">

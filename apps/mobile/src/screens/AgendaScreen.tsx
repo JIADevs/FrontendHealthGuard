@@ -18,8 +18,6 @@ import {
   useDeleteAppointmentMutation,
   useUpdateAppointmentStatusMutation,
   useMedicationsQuery,
-  useCreateMedicationMutation,
-  useUpdateMedicationMutation,
   useDeleteMedicationMutation,
   useConfirmIntakeMutation,
 } from "@healthguard/api/hooks";
@@ -28,8 +26,8 @@ import {
   type Appointment,
   type AppointmentCreate,
   type Medication,
-  type MedicationCreate,
 } from "@healthguard/api";
+import { useMedicationForm } from "../hooks/useMedicationForm";
 import {
   colors,
   radii,
@@ -689,72 +687,14 @@ function MedicationFormModal({
 }) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const isEdit = !!initial;
-
-  const [name, setName] = useState(initial?.name ?? "");
-  const [dosage, setDosage] = useState(initial?.dosage ?? "");
-  const [frequency, setFrequency] = useState(
-    initial?.frequency?.toString() ?? "8"
-  );
-  const [startDate, setStartDate] = useState(
-    initial?.startDate ?? new Date().toISOString().split("T")[0]!
-  );
-  const [firstIntakeTime, setFirstIntakeTime] = useState(
-    initial?.firstIntakeTime?.slice(0, 5) ?? "08:00"
-  );
-  const [indications, setIndications] = useState(initial?.indications ?? "");
-  const [error, setError] = useState<string | null>(null);
-
-  const createMut = useCreateMedicationMutation();
-  const updateMut = useUpdateMedicationMutation();
-  const loading = createMut.isPending || updateMut.isPending;
-
-  function handleSubmit() {
-    if (!name.trim() || !dosage.trim() || !frequency || !startDate || !firstIntakeTime) {
-      setError("Completa todos los campos obligatorios.");
-      return;
-    }
-    const payload: MedicationCreate = {
-      name,
-      dosage,
-      frequency: parseInt(frequency, 10),
-      startDate,
-      firstIntakeTime,
-      indications: indications || undefined,
-      reminderOffsets: [60, 30, 15, 5],
-    };
-    if (isEdit) {
-      updateMut.mutate(
-        { id: initial!.id, med: payload },
-        {
-          onSuccess: () => {
-            Toast.show({ type: "success", text1: "Medicamento actualizado" });
-            onClose();
-          },
-          onError: (err) =>
-            setError(isApiError(err) ? err.message : "Error actualizando"),
-        }
-      );
-    } else {
-      createMut.mutate(payload, {
-        onSuccess: () => {
-          Toast.show({ type: "success", text1: "Medicamento registrado" });
-          onClose();
-        },
-        onError: (err) =>
-          setError(
-            isApiError(err) ? err.message : "Error guardando medicamento"
-          ),
-      });
-    }
-  }
+  const form = useMedicationForm({ initial, onClose });
 
   return (
     <View style={styles.overlay}>
       <View style={styles.modal}>
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>
-            {isEdit ? "Editar Medicamento" : "Nuevo Medicamento"}
+            {form.isEdit ? "Editar Medicamento" : "Nuevo Medicamento"}
           </Text>
           <TouchableOpacity onPress={onClose}>
             <X size={20} color={t.text.secondary} />
@@ -765,8 +705,8 @@ function MedicationFormModal({
           <Text style={styles.fieldLabel}>Nombre del medicamento *</Text>
           <TextInput
             style={styles.input}
-            value={name}
-            onChangeText={setName}
+            value={form.name}
+            onChangeText={form.setName}
             placeholder="Ej: Ibuprofeno 400mg"
             placeholderTextColor={t.text.muted}
           />
@@ -774,8 +714,8 @@ function MedicationFormModal({
           <Text style={styles.fieldLabel}>Dosis *</Text>
           <TextInput
             style={styles.input}
-            value={dosage}
-            onChangeText={setDosage}
+            value={form.dosage}
+            onChangeText={form.setDosage}
             placeholder="Ej: 1 tableta"
             placeholderTextColor={t.text.muted}
           />
@@ -783,8 +723,8 @@ function MedicationFormModal({
           <Text style={styles.fieldLabel}>Frecuencia (horas) *</Text>
           <TextInput
             style={styles.input}
-            value={frequency}
-            onChangeText={setFrequency}
+            value={form.frequency}
+            onChangeText={form.setFrequency}
             placeholder="8"
             placeholderTextColor={t.text.muted}
             keyboardType="number-pad"
@@ -793,8 +733,8 @@ function MedicationFormModal({
           <Text style={styles.fieldLabel}>Fecha de inicio * (AAAA-MM-DD)</Text>
           <TextInput
             style={styles.input}
-            value={startDate}
-            onChangeText={setStartDate}
+            value={form.startDate}
+            onChangeText={form.setStartDate}
             placeholder="2025-01-01"
             placeholderTextColor={t.text.muted}
             keyboardType="numbers-and-punctuation"
@@ -803,8 +743,8 @@ function MedicationFormModal({
           <Text style={styles.fieldLabel}>Hora de primera toma * (HH:MM)</Text>
           <TextInput
             style={styles.input}
-            value={firstIntakeTime}
-            onChangeText={setFirstIntakeTime}
+            value={form.firstIntakeTime}
+            onChangeText={form.setFirstIntakeTime}
             placeholder="08:00"
             placeholderTextColor={t.text.muted}
             keyboardType="numbers-and-punctuation"
@@ -813,13 +753,13 @@ function MedicationFormModal({
           <Text style={styles.fieldLabel}>Indicaciones (opcional)</Text>
           <TextInput
             style={styles.input}
-            value={indications}
-            onChangeText={setIndications}
+            value={form.indications}
+            onChangeText={form.setIndications}
             placeholder="Ej: Tomar con alimentos"
             placeholderTextColor={t.text.muted}
           />
 
-          {error && <Text style={styles.errorText}>{error}</Text>}
+          {form.error && <Text style={styles.errorText}>{form.error}</Text>}
         </ScrollView>
 
         <View style={styles.modalFooter}>
@@ -827,15 +767,15 @@ function MedicationFormModal({
             <Text style={styles.cancelBtnText}>Cancelar</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.saveBtn, loading && styles.saveBtnDisabled]}
-            onPress={handleSubmit}
-            disabled={loading}
+            style={[styles.saveBtn, form.saving && styles.saveBtnDisabled]}
+            onPress={form.handleSave}
+            disabled={form.saving}
           >
-            {loading ? (
+            {form.saving ? (
               <ActivityIndicator color={colors.white} size="small" />
             ) : (
               <Text style={styles.saveBtnText}>
-                {isEdit ? "Guardar Cambios" : "Registrar"}
+                {form.isEdit ? "Guardar Cambios" : "Registrar"}
               </Text>
             )}
           </TouchableOpacity>

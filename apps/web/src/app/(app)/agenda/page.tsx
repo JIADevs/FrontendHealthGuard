@@ -8,8 +8,6 @@ import {
   useDeleteAppointmentMutation,
   useUpdateAppointmentStatusMutation,
   useMedicationsQuery,
-  useCreateMedicationMutation,
-  useUpdateMedicationMutation,
   useDeleteMedicationMutation,
   useConfirmIntakeMutation,
 } from "@healthguard/api/hooks";
@@ -32,8 +30,8 @@ import {
   type Appointment,
   type AppointmentCreate,
   type Medication,
-  type MedicationCreate,
 } from "@healthguard/api";
+import { useMedicationForm } from "@/hooks/useMedicationForm";
 
 import { appointmentStatusLabel, formatApptDate } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -377,87 +375,51 @@ function MedicationsTab() {
 //  MEDICATION FORM MODAL
 // ══════════════════════════════════════════════════════
 function MedicationFormModal({ initial, onClose }: { initial: Medication | null; onClose: () => void }) {
-  const isEdit = !!initial;
-
-  const [name, setName] = useState(initial?.name ?? "");
-  const [dosage, setDosage] = useState(initial?.dosage ?? "");
-  const [frequency, setFrequency] = useState(initial?.frequency?.toString() ?? "8");
-  const [startDate, setStartDate] = useState(initial?.startDate ?? new Date().toISOString().split("T")[0]!);
-  const [firstIntakeTime, setFirstIntakeTime] = useState(initial?.firstIntakeTime?.slice(0, 5) ?? "08:00");
-  const [indications, setIndications] = useState(initial?.indications ?? "");
-  const [error, setError] = useState<string | null>(null);
-
-  const createMut = useCreateMedicationMutation();
-  const updateMut = useUpdateMedicationMutation();
-
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const payload: MedicationCreate = {
-      name, dosage,
-      frequency: parseInt(frequency, 10),
-      startDate,
-      firstIntakeTime,
-      indications: indications || undefined,
-      reminderOffsets: [60, 30, 15, 5],
-    };
-    if (isEdit) {
-      updateMut.mutate({ id: initial!.id, med: payload }, {
-        onSuccess: onClose,
-        onError: (err) => setError(isApiError(err) ? err.message : "Error actualizando"),
-      });
-    } else {
-      createMut.mutate(payload, {
-        onSuccess: onClose,
-        onError: (err) => setError(isApiError(err) ? err.message : "Error guardando medicamento"),
-      });
-    }
-  }
-
-  const loading = createMut.isPending || updateMut.isPending;
+  const form = useMedicationForm({ initial, onClose });
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="modal-title">{isEdit ? "Editar Medicamento" : "Nuevo Medicamento"}</h3>
+          <h3 className="modal-title">{form.isEdit ? "Editar Medicamento" : "Nuevo Medicamento"}</h3>
           <button className="modal-close" onClick={onClose}><X size={16} /></button>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { e.preventDefault(); form.handleSave(); }}>
           <div className="modal-body">
             <div className="form-grid">
               <div className="form-group full">
                 <label>Nombre del medicamento *</label>
-                <input className="form-input" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Ibuprofeno 400mg" />
+                <input className="form-input" required value={form.name} onChange={(e) => form.setName(e.target.value)} placeholder="Ej: Ibuprofeno 400mg" />
               </div>
               <div className="form-group">
                 <label>Dosis *</label>
-                <input className="form-input" required value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="Ej: 1 tableta" />
+                <input className="form-input" required value={form.dosage} onChange={(e) => form.setDosage(e.target.value)} placeholder="Ej: 1 tableta" />
               </div>
               <div className="form-group">
                 <label>Frecuencia (horas) *</label>
-                <input className="form-input" type="number" required min={1} max={72} value={frequency} onChange={(e) => setFrequency(e.target.value)} />
+                <input className="form-input" type="number" required min={1} max={72} value={form.frequency} onChange={(e) => form.setFrequency(e.target.value)} />
               </div>
               <div className="form-group">
                 <label>Fecha de inicio *</label>
-                <input className="form-input" type="date" required value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <input className="form-input" type="date" required value={form.startDate} onChange={(e) => form.setStartDate(e.target.value)} />
               </div>
               <div className="form-group">
                 <label>Hora de primera toma *</label>
-                <input className="form-input" type="time" required value={firstIntakeTime} onChange={(e) => setFirstIntakeTime(e.target.value)} />
+                <input className="form-input" type="time" required value={form.firstIntakeTime} onChange={(e) => form.setFirstIntakeTime(e.target.value)} />
               </div>
               <div className="form-group full">
                 <label>Indicaciones (opcional)</label>
-                <input className="form-input" value={indications} onChange={(e) => setIndications(e.target.value)} placeholder="Ej: Tomar con alimentos" />
+                <input className="form-input" value={form.indications} onChange={(e) => form.setIndications(e.target.value)} placeholder="Ej: Tomar con alimentos" />
               </div>
             </div>
 
-            {error && <p className="form-error">{error}</p>}
+            {form.error && <p className="form-error">{form.error}</p>}
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={loading}>
-              {loading && <span className="spinner" />}
-              {isEdit ? "Guardar Cambios" : "Registrar Medicamento"}
+            <button type="submit" className="btn btn-primary" style={{ width: "auto" }} disabled={form.saving}>
+              {form.saving && <span className="spinner" />}
+              {form.isEdit ? "Guardar Cambios" : "Registrar Medicamento"}
             </button>
           </div>
         </form>

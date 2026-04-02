@@ -19,7 +19,6 @@ import {
   Trash2,
   Edit3,
   Check,
-  X,
 } from "lucide-react";
 import {
   isApiError,
@@ -29,7 +28,7 @@ import {
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate, Button, Pagination } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -158,63 +157,60 @@ function AppointmentFormModal({ initial, onClose }: { initial: Appointment | nul
   const form = useAppointmentForm({ initial, onClose });
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3 className="modal-title">{form.isEdit ? "Editar Cita" : "Nueva Cita"}</h3>
-          <button className="modal-close" onClick={onClose}><X size={16} /></button>
+    <Modal
+      title={form.isEdit ? "Editar Cita" : "Nueva Cita"}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" type="button" onPress={onClose}>Cancelar</Button>
+          <Button type="submit" form="appointment-form" disabled={form.saving} loading={form.saving}>
+            {form.isEdit ? "Guardar Cambios" : "Agendar Cita"}
+          </Button>
+        </>
+      }
+    >
+      <form id="appointment-form" onSubmit={(e) => { e.preventDefault(); form.handleSave(); }}>
+        <div className="form-group">
+          <label>Tipo de evento</label>
+          <select className="form-input" value={form.type} onChange={(e) => form.setType(e.target.value as "APPOINTMENT" | "EXAM")}>
+            <option value="APPOINTMENT">Cita Médica</option>
+            <option value="EXAM">Examen / Procedimiento</option>
+          </select>
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); form.handleSave(); }}>
-          <div className="modal-body">
-            <div className="form-group">
-              <label>Tipo de evento</label>
-              <select className="form-input" value={form.type} onChange={(e) => form.setType(e.target.value as "APPOINTMENT" | "EXAM")}>
-                <option value="APPOINTMENT">Cita Médica</option>
-                <option value="EXAM">Examen / Procedimiento</option>
-              </select>
-            </div>
 
-            {form.type === "EXAM" && (
-              <div className="form-group">
-                <label>Tipo de examen</label>
-                <input className="form-input" value={form.examType} onChange={(e) => form.setExamType(e.target.value)} placeholder="Ej: Resonancia, Hemograma..." />
-              </div>
-            )}
-
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Especialidad *</label>
-                <input className="form-input" required value={form.specialty} onChange={(e) => form.setSpecialty(e.target.value)} placeholder="Ej: Neurología" />
-              </div>
-              <div className="form-group">
-                <label>Médico *</label>
-                <input className="form-input" required value={form.doctor} onChange={(e) => form.setDoctor(e.target.value)} placeholder="Dr. nombre" />
-              </div>
-              <div className="form-group">
-                <label>Fecha *</label>
-                <input className="form-input" type="date" required value={form.date} onChange={(e) => form.setDate(e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>Hora *</label>
-                <input className="form-input" type="time" required value={form.time} onChange={(e) => form.setTime(e.target.value)} />
-              </div>
-              <div className="form-group full">
-                <label>Lugar *</label>
-                <input className="form-input" required value={form.location} onChange={(e) => form.setLocation(e.target.value)} placeholder="Hospital / Clínica" />
-              </div>
-            </div>
-
-            {form.error && <p className="form-error">{form.error}</p>}
+        {form.type === "EXAM" && (
+          <div className="form-group">
+            <label>Tipo de examen</label>
+            <input className="form-input" value={form.examType} onChange={(e) => form.setExamType(e.target.value)} placeholder="Ej: Resonancia, Hemograma..." />
           </div>
-          <div className="modal-footer">
-            <Button variant="secondary" type="button" onPress={onClose}>Cancelar</Button>
-            <Button type="submit" disabled={form.saving} loading={form.saving}>
-              {form.isEdit ? "Guardar Cambios" : "Agendar Cita"}
-            </Button>
+        )}
+
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Especialidad *</label>
+            <input className="form-input" required value={form.specialty} onChange={(e) => form.setSpecialty(e.target.value)} placeholder="Ej: Neurología" />
           </div>
-        </form>
-      </div>
-    </div>
+          <div className="form-group">
+            <label>Médico *</label>
+            <input className="form-input" required value={form.doctor} onChange={(e) => form.setDoctor(e.target.value)} placeholder="Dr. nombre" />
+          </div>
+          <div className="form-group">
+            <label>Fecha *</label>
+            <input className="form-input" type="date" required value={form.date} onChange={(e) => form.setDate(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Hora *</label>
+            <input className="form-input" type="time" required value={form.time} onChange={(e) => form.setTime(e.target.value)} />
+          </div>
+          <div className="form-group full">
+            <label>Lugar *</label>
+            <input className="form-input" required value={form.location} onChange={(e) => form.setLocation(e.target.value)} placeholder="Hospital / Clínica" />
+          </div>
+        </div>
+
+        {form.error && <p className="form-error">{form.error}</p>}
+      </form>
+    </Modal>
   );
 }
 
@@ -318,52 +314,49 @@ function MedicationFormModal({ initial, onClose }: { initial: Medication | null;
   const form = useMedicationForm({ initial, onClose });
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3 className="modal-title">{form.isEdit ? "Editar Medicamento" : "Nuevo Medicamento"}</h3>
-          <button className="modal-close" onClick={onClose}><X size={16} /></button>
+    <Modal
+      title={form.isEdit ? "Editar Medicamento" : "Nuevo Medicamento"}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" type="button" onPress={onClose}>Cancelar</Button>
+          <Button type="submit" form="medication-form" disabled={form.saving} loading={form.saving}>
+            {form.isEdit ? "Guardar Cambios" : "Registrar Medicamento"}
+          </Button>
+        </>
+      }
+    >
+      <form id="medication-form" onSubmit={(e) => { e.preventDefault(); form.handleSave(); }}>
+        <div className="form-grid">
+          <div className="form-group full">
+            <label>Nombre del medicamento *</label>
+            <input className="form-input" required value={form.name} onChange={(e) => form.setName(e.target.value)} placeholder="Ej: Ibuprofeno 400mg" />
+          </div>
+          <div className="form-group">
+            <label>Dosis *</label>
+            <input className="form-input" required value={form.dosage} onChange={(e) => form.setDosage(e.target.value)} placeholder="Ej: 1 tableta" />
+          </div>
+          <div className="form-group">
+            <label>Frecuencia (horas) *</label>
+            <input className="form-input" type="number" required min={1} max={72} value={form.frequency} onChange={(e) => form.setFrequency(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Fecha de inicio *</label>
+            <input className="form-input" type="date" required value={form.startDate} onChange={(e) => form.setStartDate(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Hora de primera toma *</label>
+            <input className="form-input" type="time" required value={form.firstIntakeTime} onChange={(e) => form.setFirstIntakeTime(e.target.value)} />
+          </div>
+          <div className="form-group full">
+            <label>Indicaciones (opcional)</label>
+            <input className="form-input" value={form.indications} onChange={(e) => form.setIndications(e.target.value)} placeholder="Ej: Tomar con alimentos" />
+          </div>
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); form.handleSave(); }}>
-          <div className="modal-body">
-            <div className="form-grid">
-              <div className="form-group full">
-                <label>Nombre del medicamento *</label>
-                <input className="form-input" required value={form.name} onChange={(e) => form.setName(e.target.value)} placeholder="Ej: Ibuprofeno 400mg" />
-              </div>
-              <div className="form-group">
-                <label>Dosis *</label>
-                <input className="form-input" required value={form.dosage} onChange={(e) => form.setDosage(e.target.value)} placeholder="Ej: 1 tableta" />
-              </div>
-              <div className="form-group">
-                <label>Frecuencia (horas) *</label>
-                <input className="form-input" type="number" required min={1} max={72} value={form.frequency} onChange={(e) => form.setFrequency(e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>Fecha de inicio *</label>
-                <input className="form-input" type="date" required value={form.startDate} onChange={(e) => form.setStartDate(e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>Hora de primera toma *</label>
-                <input className="form-input" type="time" required value={form.firstIntakeTime} onChange={(e) => form.setFirstIntakeTime(e.target.value)} />
-              </div>
-              <div className="form-group full">
-                <label>Indicaciones (opcional)</label>
-                <input className="form-input" value={form.indications} onChange={(e) => form.setIndications(e.target.value)} placeholder="Ej: Tomar con alimentos" />
-              </div>
-            </div>
 
-            {form.error && <p className="form-error">{form.error}</p>}
-          </div>
-          <div className="modal-footer">
-            <Button variant="secondary" type="button" onPress={onClose}>Cancelar</Button>
-            <Button type="submit" disabled={form.saving} loading={form.saving}>
-              {form.isEdit ? "Guardar Cambios" : "Registrar Medicamento"}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {form.error && <p className="form-error">{form.error}</p>}
+      </form>
+    </Modal>
   );
 }
 

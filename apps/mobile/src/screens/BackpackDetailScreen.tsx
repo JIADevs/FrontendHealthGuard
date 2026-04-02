@@ -23,7 +23,7 @@ import { isApiError, type DocumentPage, type Document } from "@healthguard/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@healthguard/ui";
 import { Camera, FileText, FileUp, Plus, Search, Share2, Trash2, Edit2, X } from "lucide-react-native";
-import { useAppTheme, colors, useDebounceSearch, formatDate, Button } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, Button, Modal, fontSize } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { useBackpackDetail } from "../hooks/useBackpackDetail";
 
@@ -256,41 +256,49 @@ export function BackpackDetailScreen() {
       </TouchableOpacity>
 
       {detail.shareData && (
-        <View style={styles.modalOverlay} pointerEvents="auto">
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>Compartir mochila</Text>
-            <Text style={styles.modalSub}>Link (válido hasta expiración):</Text>
-            <Text style={styles.linkText} numberOfLines={2}>{shareLink}</Text>
-            <View style={styles.qrWrap}>
-              <Image source={{ uri: detail.shareData.qrCodeUrl }} style={styles.qrImg} />
-            </View>
-
-            <Button fullWidth onPress={() => Share.share({ url: shareLink, message: "Comparto una mochila con documentos médicos." })}>
-              Compartir
-            </Button>
-            <Button variant="secondary" fullWidth onPress={detail.clearShareData}>Cerrar</Button>
+        <Modal
+          title="Compartir mochila"
+          onClose={detail.clearShareData}
+          footer={
+            <>
+              <Button fullWidth onPress={() => Share.share({ url: shareLink, message: "Comparto una mochila con documentos médicos." })}>
+                Compartir
+              </Button>
+              <Button variant="secondary" fullWidth onPress={detail.clearShareData}>Cerrar</Button>
+            </>
+          }
+        >
+          <Text style={{ fontSize: fontSize.sm, color: t.text.secondary, marginBottom: 8 }}>
+            Link (válido hasta expiración):
+          </Text>
+          <Text style={{ fontSize: fontSize.sm, color: t.text.primary, paddingVertical: 4, marginBottom: 8 }} numberOfLines={2}>
+            {shareLink}
+          </Text>
+          <View style={styles.qrWrap}>
+            <Image source={{ uri: detail.shareData.qrCodeUrl }} style={styles.qrImg} />
           </View>
-        </View>
+        </Modal>
       )}
 
       {deleteDocTarget && (
-        <View style={styles.modalOverlay} pointerEvents="auto">
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>Eliminar documento</Text>
-            <Text style={styles.modalSub}>
-              ¿Querés eliminar "{deleteDocTarget.title}" de esta mochila?
-            </Text>
-
-            <View style={styles.confirmActions}>
+        <Modal
+          title="Eliminar documento"
+          onClose={() => setDeleteDocTarget(null)}
+          footer={
+            <>
               <Button variant="secondary" fullWidth onPress={() => setDeleteDocTarget(null)}>Cancelar</Button>
               <Button variant="danger" fullWidth onPress={() => {
                 const target = deleteDocTarget;
                 setDeleteDocTarget(null);
                 detail.removeDocument(target.id, target.title);
               }}>Eliminar</Button>
-            </View>
-          </View>
-        </View>
+            </>
+          }
+        >
+          <Text style={{ fontSize: fontSize.sm, color: t.text.secondary }}>
+            ¿Querés eliminar "{deleteDocTarget.title}" de esta mochila?
+          </Text>
+        </Modal>
       )}
     </SafeAreaView>
   );
@@ -324,12 +332,6 @@ function makeStyles(t: ThemeContextValue) {
     fabOptionLabel: { backgroundColor: t.surface.bgCard, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 },
     fabOptionText: { fontSize: 14, fontWeight: "600", color: t.text.primary },
     fabSmall: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 6 },
-    modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)", alignItems: "center", justifyContent: "center" },
-    modal: { width: "90%", backgroundColor: t.surface.bgCard, borderRadius: 18, padding: 18, gap: 10, elevation: 10, shadowColor: "#000", shadowOpacity: 0.25 },
-    modalTitle: { fontSize: 18, fontWeight: "900", color: t.text.primary, marginTop: 2 },
-    modalSub: { fontSize: 13, color: t.text.secondary, marginTop: -2 },
-    confirmActions: { flexDirection: "row", gap: 10, marginTop: 8 },
-    linkText: { fontSize: 13, color: t.text.primary, paddingVertical: 4 },
     qrWrap: { alignItems: "center", justifyContent: "center", marginVertical: 8, padding: 10, backgroundColor: t.surface.bg, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium },
     qrImg: { width: 170, height: 170 },
   });

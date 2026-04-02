@@ -12,5 +12,7 @@ export * from './Button.types';
 export * from './Button.native';
 export * from './Chip.types';
 export * from './Chip.native';
+export * from './Modal.types';
+export * from './Modal.native';
 export * from './Pagination.types';
 export * from './Pagination.native';

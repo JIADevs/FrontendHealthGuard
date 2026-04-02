@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@healthguard/ui";
+import { Button, Modal } from "@healthguard/ui";
 
 interface ConfirmModalProps {
   title: string;
@@ -13,17 +13,18 @@ interface ConfirmModalProps {
 
 export function ConfirmModal({ title, message, confirmLabel, loading, onConfirm, onCancel }: ConfirmModalProps) {
   return (
-    <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
-        <div className="modal-body" style={{ paddingTop: 32 }}>
-          <p className="confirm-title">{title}</p>
-          <p className="confirm-message">{message}</p>
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <Button variant="secondary" onPress={onCancel} disabled={loading}>Cancelar</Button>
-            <Button variant="danger" onPress={onConfirm} disabled={loading} loading={loading}>{confirmLabel}</Button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <Modal
+      title={title}
+      size="sm"
+      onClose={onCancel}
+      footer={
+        <>
+          <Button variant="secondary" onPress={onCancel} disabled={loading}>Cancelar</Button>
+          <Button variant="danger" onPress={onConfirm} disabled={loading} loading={loading}>{confirmLabel}</Button>
+        </>
+      }
+    >
+      <p className="confirm-message">{message}</p>
+    </Modal>
   );
 }

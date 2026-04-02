@@ -37,6 +37,7 @@ import {
   formatApptDate,
   Button,
   Pagination,
+  Modal,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import {
@@ -49,7 +50,6 @@ import {
   Trash2,
   Edit3,
   Check,
-  X,
 } from "lucide-react-native";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -286,18 +286,18 @@ function AppointmentFormModal({
   const form = useAppointmentForm({ initial, onClose });
 
   return (
-    <View style={styles.overlay}>
-      <View style={styles.modal}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>
-            {form.isEdit ? "Editar Cita" : "Nueva Cita"}
-          </Text>
-          <TouchableOpacity onPress={onClose}>
-            <X size={20} color={t.text.secondary} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+    <Modal
+      title={form.isEdit ? "Editar Cita" : "Nueva Cita"}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" onPress={onClose}>Cancelar</Button>
+          <Button onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
+            {form.isEdit ? "Guardar Cambios" : "Agendar Cita"}
+          </Button>
+        </>
+      }
+    >
           <Text style={styles.fieldLabel}>Tipo de evento</Text>
           <View style={styles.typeRow}>
             {(["APPOINTMENT", "EXAM"] as const).map((tp) => (
@@ -379,16 +379,7 @@ function AppointmentFormModal({
           />
 
           {form.error && <Text style={styles.errorText}>{form.error}</Text>}
-        </ScrollView>
-
-        <View style={styles.modalFooter}>
-          <Button variant="secondary" onPress={onClose}>Cancelar</Button>
-          <Button onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
-            {form.isEdit ? "Guardar Cambios" : "Agendar Cita"}
-          </Button>
-        </View>
-      </View>
-    </View>
+    </Modal>
   );
 }
 
@@ -566,18 +557,18 @@ function MedicationFormModal({
   const form = useMedicationForm({ initial, onClose });
 
   return (
-    <View style={styles.overlay}>
-      <View style={styles.modal}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>
-            {form.isEdit ? "Editar Medicamento" : "Nuevo Medicamento"}
-          </Text>
-          <TouchableOpacity onPress={onClose}>
-            <X size={20} color={t.text.secondary} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+    <Modal
+      title={form.isEdit ? "Editar Medicamento" : "Nuevo Medicamento"}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" onPress={onClose}>Cancelar</Button>
+          <Button onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
+            {form.isEdit ? "Guardar Cambios" : "Registrar"}
+          </Button>
+        </>
+      }
+    >
           <Text style={styles.fieldLabel}>Nombre del medicamento *</Text>
           <TextInput
             style={styles.input}
@@ -636,16 +627,7 @@ function MedicationFormModal({
           />
 
           {form.error && <Text style={styles.errorText}>{form.error}</Text>}
-        </ScrollView>
-
-        <View style={styles.modalFooter}>
-          <Button variant="secondary" onPress={onClose}>Cancelar</Button>
-          <Button onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
-            {form.isEdit ? "Guardar Cambios" : "Registrar"}
-          </Button>
-        </View>
-      </View>
-    </View>
+    </Modal>
   );
 }
 
@@ -668,18 +650,18 @@ function ConfirmDeleteModal({
   const styles = useMemo(() => makeStyles(t), [t]);
 
   return (
-    <View style={styles.overlay}>
-      <View style={[styles.modal, { maxHeight: undefined }]}>
-        <Text style={styles.modalTitle}>{title}</Text>
-        <Text style={[styles.cardMetaText, { marginVertical: spacing[3] }]}>
-          {message}
-        </Text>
-        <View style={styles.modalFooter}>
+    <Modal
+      title={title}
+      onClose={onCancel}
+      footer={
+        <>
           <Button variant="secondary" onPress={onCancel}>Cancelar</Button>
           <Button variant="danger" onPress={onConfirm} disabled={loading} loading={loading}>Eliminar</Button>
-        </View>
-      </View>
-    </View>
+        </>
+      }
+    >
+      <Text style={{ fontSize: fontSize.sm, color: t.text.secondary }}>{message}</Text>
+    </Modal>
   );
 }
 
@@ -719,13 +701,6 @@ function makeStyles(t: ThemeContextValue) {
     intakeBtnText:      { color: colors.white, fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
 
 
-    // modal
-    overlay:            { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", zIndex: 50 },
-    modal:              { width: "92%", maxHeight: "85%", backgroundColor: t.surface.bgCard, borderRadius: radii.xl, overflow: "hidden" },
-    modalHeader:        { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: spacing[5], borderBottomWidth: 1, borderBottomColor: t.border.medium },
-    modalTitle:         { fontSize: fontSize.lg, fontWeight: fontWeight.extrabold, color: t.text.primary },
-    modalBody:          { padding: spacing[5] },
-    modalFooter:        { flexDirection: "row", gap: spacing[3], padding: spacing[4], borderTopWidth: 1, borderTopColor: t.border.medium },
     fieldLabel:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: spacing[1], marginTop: spacing[3] },
     input:              { borderWidth: 1, borderColor: t.border.medium, borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[3], fontSize: fontSize.md, color: t.text.primary, backgroundColor: t.surface.bg },
     errorText:          { color: colors.error[500], fontSize: fontSize.sm, marginTop: spacing[3], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm },

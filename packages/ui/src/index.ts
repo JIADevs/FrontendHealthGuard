@@ -14,5 +14,7 @@ export * from './Chip.types';
 export * from './Chip.native';
 export * from './Modal.types';
 export * from './Modal.native';
+export * from './Card.types';
+export * from './Card.native';
 export * from './Pagination.types';
 export * from './Pagination.native';

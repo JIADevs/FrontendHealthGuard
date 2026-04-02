@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useBackpacksQuery, useDeleteBackpackMutation } from "@healthguard/api/hooks";
 import { Backpack, Plus, FileText, Search, Trash2 } from "lucide-react";
-import { Button } from "@healthguard/ui";
+import { Button, Card } from "@healthguard/ui";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
 import { type Backpack as BackpackType } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -66,19 +66,21 @@ export default function BackpacksPage() {
       ) : (
         <div className="bp-grid">
           {bps.data!.items.map((bp) => (
-            <div key={bp.id} className="bp-card" onClick={() => setDetailId(bp.id)}>
-              <div className="bp-card-header">
-                <div className="bp-card-icon"><Backpack size={22} /></div>
-                <div className="bp-card-name">{bp.name}</div>
-              </div>
-              {bp.description && <div className="bp-card-desc">{bp.description}</div>}
-              <div className="bp-card-footer">
-                <span className="bp-doc-count"><FileText size={14} /> {bp.documentCount} documentos</span>
-                <div style={{ display: "flex", gap: 4 }}>
+            <Card
+              key={bp.id}
+              title={bp.name}
+              subtitle={bp.description}
+              icon={<Backpack size={22} />}
+              onPress={() => setDetailId(bp.id)}
+              footer={
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: 1 }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text-secondary)" }}>
+                    <FileText size={14} /> {bp.documentCount} documentos
+                  </span>
                   <button className="icon-btn" title="Eliminar" onClick={(e) => { e.stopPropagation(); setDeleteTarget(bp); }}><Trash2 size={15} /></button>
                 </div>
-              </div>
-            </div>
+              }
+            />
           ))}
         </div>
       )}

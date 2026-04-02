@@ -7,7 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@healthguard/ui";
-import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST } from "@healthguard/ui";
+import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function DocumentsScreen() {
@@ -149,22 +149,17 @@ export function DocumentsScreen() {
             />
           }
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.card}
+            <Card
+              title={item.title}
+              subtitle={`${formatDate(item.uploadedAt)}${item.documentType?.name ? ` • ${item.documentType.name}` : ""}`}
+              icon={<DocumentTypeIcon format={item.format} documentTypeName={item.documentType?.name} />}
               onPress={() => navigation.navigate("DocumentDetail", { id: item.id, title: item.title })}
-            >
-              <DocumentTypeIcon format={item.format} documentTypeName={item.documentType?.name} />
-              <View style={styles.info}>
-                <Text style={styles.docTitle}>{item.title}</Text>
-                <Text style={styles.docSub}>
-                  {formatDate(item.uploadedAt)}
-                  {item.documentType?.name ? ` • ${item.documentType.name}` : ""}
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.shareBtn} onPress={() => handleShare(item.id, item.title)}>
-                <Share2 size={20} color={t.text.secondary} />
-              </TouchableOpacity>
-            </TouchableOpacity>
+              actions={
+                <TouchableOpacity onPress={() => handleShare(item.id, item.title)}>
+                  <Share2 size={20} color={t.text.secondary} />
+                </TouchableOpacity>
+              }
+            />
           )}
           ListEmptyComponent={
             <View style={styles.center}>
@@ -269,11 +264,6 @@ function makeStyles(t: ThemeContextValue) {
       justifyContent: "center",
       backgroundColor: t.border.medium,
     },
-    card:       { flexDirection: "row", alignItems: "center", gap: spacing[4], backgroundColor: t.surface.bgCard, padding: spacing[4], borderRadius: radii.lg, ...shadows.md },
-    info:       { flex: 1 },
-    docTitle:   { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: 2 },
-    docSub:     { fontSize: fontSize.sm, color: t.text.secondary },
-    shareBtn:   { padding: spacing[2] },
     center:     { flex: 1, alignItems: "center", justifyContent: "center" },
     empty:      { color: t.text.secondary, fontSize: fontSize.base },
 

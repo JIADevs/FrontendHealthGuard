@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useDocumentsQuery, useDeleteDocumentMutation } from "@healthguard/api/hooks";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip } from "@healthguard/ui";
+import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card } from "@healthguard/ui";
 import { Search, Upload, FileText, Eye, Share2, Trash2 } from "lucide-react";
 import { isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -73,26 +73,27 @@ export default function DocumentsPage() {
       ) : (
         <div className="doc-grid">
           {docs.data!.items.map((doc) => (
-              <div key={doc.id} className="doc-card" onClick={() => setDetailId(doc.id)}>
-                <div className="doc-card-header">
-                  <DocumentTypeIcon format={doc.format} documentTypeName={doc.documentType?.name} />
-                  <div>
-                    <div className="doc-card-title">{doc.title}</div>
-                    <div className="doc-card-date">{formatDate(doc.documentDate ?? doc.uploadedAt)}</div>
-                  </div>
-                </div>
-                {(doc.subtypes.length > 0 || doc.customTags.length > 0) && (
-                  <div className="doc-card-tags">
-                    {doc.subtypes.map((s) => <Chip key={s.id} label={s.name} />)}
-                    {doc.customTags.slice(0, 3).map((t) => <Chip key={t.id} label={t.value} color="green" />)}
-                  </div>
-                )}
-                <div className="doc-card-actions">
+            <Card
+              key={doc.id}
+              title={doc.title}
+              subtitle={formatDate(doc.documentDate ?? doc.uploadedAt)}
+              icon={<DocumentTypeIcon format={doc.format} documentTypeName={doc.documentType?.name} />}
+              onPress={() => setDetailId(doc.id)}
+              footer={
+                <div style={{ display: "flex", gap: 4 }}>
                   <button className="icon-btn" title="Ver" onClick={(e) => { e.stopPropagation(); setDetailId(doc.id); }}><Eye size={16} /></button>
                   <button className="icon-btn" title="Compartir" onClick={(e) => { e.stopPropagation(); setShareTarget(doc); }}><Share2 size={16} /></button>
                   <button className="icon-btn" title="Eliminar" onClick={(e) => { e.stopPropagation(); setDeleteTarget(doc); }}><Trash2 size={16} /></button>
                 </div>
-              </div>
+              }
+            >
+              {(doc.subtypes.length > 0 || doc.customTags.length > 0) && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {doc.subtypes.map((s) => <Chip key={s.id} label={s.name} />)}
+                  {doc.customTags.slice(0, 3).map((t) => <Chip key={t.id} label={t.value} color="green" />)}
+                </div>
+              )}
+            </Card>
           ))}
         </div>
       )}

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -18,7 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
-import { useAppTheme, colors, useDebounceSearch, formatDate } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, Card } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function BackpacksScreen() {
@@ -112,26 +111,12 @@ export function BackpacksScreen() {
             </View>
           }
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.card}
+            <Card
+              title={item.name}
+              subtitle={`${item.documentCount} documento${item.documentCount === 1 ? "" : "s"}` + (item.createdAt ? ` • ${formatDate(item.createdAt)}` : "")}
+              icon={<FileText size={22} color={colors.sky[500]} />}
               onPress={() => navigateToDetail(item.id)}
-              accessibilityRole="button"
-              accessibilityLabel={`Abrir mochila ${item.name}`}
-            >
-              <View style={styles.iconBg}>
-                <FileText size={22} color={colors.sky[500]} />
-              </View>
-              <View style={styles.info}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={styles.cardSub}>
-                  {item.documentCount} documento{item.documentCount === 1 ? "" : "s"}
-                  {item.createdAt ? ` • ${formatDate(item.createdAt)}` : ""}
-                </Text>
-              </View>
-              <Pressable style={styles.chevron} accessibilityLabel="Detalle" />
-            </TouchableOpacity>
+            />
           )}
         />
       )}
@@ -162,23 +147,5 @@ function makeStyles(t: ThemeContextValue) {
     list: { padding: 16, gap: 12 },
     center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
     empty: { color: t.text.secondary, fontSize: 15, textAlign: "center" },
-    card: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 16,
-      backgroundColor: t.surface.bgCard,
-      padding: 16,
-      borderRadius: 16,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
-      elevation: 2,
-    },
-    iconBg: { width: 48, height: 48, borderRadius: 12, backgroundColor: t.border.light, alignItems: "center", justifyContent: "center" },
-    info: { flex: 1 },
-    cardTitle: { fontSize: 15, fontWeight: "700", color: t.text.primary, marginBottom: 2 },
-    cardSub: { fontSize: 13, color: t.text.secondary },
-    chevron: { width: 10, height: 10, borderRadius: 6, backgroundColor: t.border.medium },
   });
 }

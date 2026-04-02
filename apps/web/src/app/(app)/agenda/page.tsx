@@ -28,7 +28,7 @@ import {
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -95,34 +95,40 @@ function AppointmentsTab() {
       ) : (
         <div className="agenda-list">
           {appts.data!.items.map((a) => (
-            <div key={a.id} className="agenda-item">
-              <div className="agenda-item-icon blue"><CalendarDays size={20} /></div>
-              <div className="agenda-item-info">
-                <div className="agenda-item-title">{a.specialty}</div>
-                <div className="agenda-item-sub">
+            <Card
+              key={a.id}
+              title={a.specialty}
+              subtitle={
+                <span>
                   <User size={12} style={{ verticalAlign: -1, marginRight: 4 }} />{a.doctor}
                   <span style={{ margin: "0 8px" }}>·</span>
                   <MapPin size={12} style={{ verticalAlign: -1, marginRight: 4 }} />{a.location}
+                </span>
+              }
+              icon={<CalendarDays size={20} />}
+              iconBackground="var(--primary-50)"
+              actions={
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                    <Clock size={14} />
+                    {formatApptDate(a.date)} {a.time?.slice(0, 5)}
+                  </div>
+                  <select
+                    className="status-select"
+                    value={a.status}
+                    onChange={(e) => statusMut.mutate({ id: a.id, status: e.target.value })}
+                  >
+                    {(["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"] as const).map((s) => (
+                      <option key={s} value={s}>{appointmentStatusLabel(s)}</option>
+                    ))}
+                  </select>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <button className="icon-btn" title="Editar" onClick={() => { setEditTarget(a); setShowForm(true); }}><Edit3 size={15} /></button>
+                    <button className="icon-btn" title="Eliminar" onClick={() => setDeleteTarget(a)}><Trash2 size={15} /></button>
+                  </div>
                 </div>
-              </div>
-              <div className="agenda-item-right">
-                <div className="agenda-item-time">
-                  <Clock size={14} />
-                  {formatApptDate(a.date)} {a.time?.slice(0, 5)}
-                </div>
-                <select
-                  className="status-select"
-                  value={a.status}
-                  onChange={(e) => statusMut.mutate({ id: a.id, status: e.target.value })}
-                >
-                  {(["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"] as const).map((s) => (
-                    <option key={s} value={s}>{appointmentStatusLabel(s)}</option>
-                  ))}
-                </select>
-                <button className="icon-btn" title="Editar" onClick={() => { setEditTarget(a); setShowForm(true); }}><Edit3 size={15} /></button>
-                <button className="icon-btn" title="Eliminar" onClick={() => setDeleteTarget(a)}><Trash2 size={15} /></button>
-              </div>
-            </div>
+              }
+            />
           ))}
         </div>
       )}
@@ -249,37 +255,38 @@ function MedicationsTab() {
       ) : (
         <div className="agenda-list">
           {meds.data!.items.map((m) => (
-            <div key={m.id} className="agenda-item">
-              <div className="agenda-item-icon amber"><Pill size={20} /></div>
-              <div className="agenda-item-info">
-                <div className="agenda-item-title">{m.name}</div>
-                <div className="agenda-item-sub">
-                  {m.dosage} — cada {m.frequency}h
-                  {m.indications && <span style={{ margin: "0 8px" }}>· {m.indications}</span>}
-                </div>
-              </div>
-              <div className="agenda-item-right">
-                {m.nextIntakeTime && (
-                  <div className="agenda-item-time">
-                    <Clock size={14} />
-                    {new Date(m.nextIntakeTime).toLocaleString("es-CO", {
-                      month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit",
-                    })}
+            <Card
+              key={m.id}
+              title={m.name}
+              subtitle={`${m.dosage} — cada ${m.frequency}h${m.indications ? ` · ${m.indications}` : ""}`}
+              icon={<Pill size={20} />}
+              iconBackground="var(--warning-50)"
+              actions={
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {m.nextIntakeTime && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                      <Clock size={14} />
+                      {new Date(m.nextIntakeTime).toLocaleString("es-CO", {
+                        month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit",
+                      })}
+                    </div>
+                  )}
+                  <button
+                    className="btn-intake"
+                    onClick={() => intakeMut.mutate(m.id)}
+                    disabled={intakeMut.isPending}
+                    title="Confirmar toma"
+                  >
+                    <Check size={13} style={{ verticalAlign: -2, marginRight: 4 }} />
+                    Tomado
+                  </button>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <button className="icon-btn" title="Editar" onClick={() => { setEditTarget(m); setShowForm(true); }}><Edit3 size={15} /></button>
+                    <button className="icon-btn" title="Eliminar" onClick={() => setDeleteTarget(m)}><Trash2 size={15} /></button>
                   </div>
-                )}
-                <button
-                  className="btn-intake"
-                  onClick={() => intakeMut.mutate(m.id)}
-                  disabled={intakeMut.isPending}
-                  title="Confirmar toma"
-                >
-                  <Check size={13} style={{ verticalAlign: -2, marginRight: 4 }} />
-                  Tomado
-                </button>
-                <button className="icon-btn" title="Editar" onClick={() => { setEditTarget(m); setShowForm(true); }}><Edit3 size={15} /></button>
-                <button className="icon-btn" title="Eliminar" onClick={() => setDeleteTarget(m)}><Trash2 size={15} /></button>
-              </div>
-            </div>
+                </div>
+              }
+            />
           ))}
         </div>
       )}

@@ -12,5 +12,7 @@ export * from './Chip.types';
 export * from './Chip.web';
 export * from './Modal.types';
 export * from './Modal.web';
+export * from './Card.types';
+export * from './Card.web';
 export * from './Pagination.types';
 export * from './Pagination.web';

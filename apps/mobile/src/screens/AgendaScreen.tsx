@@ -38,6 +38,7 @@ import {
   Button,
   Pagination,
   Modal,
+  Card,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import {
@@ -184,64 +185,49 @@ function AppointmentsTab() {
           keyExtractor={(a) => a.id}
           contentContainerStyle={styles.list}
           renderItem={({ item: a }) => (
-            <View style={styles.card}>
-              <View style={[styles.cardIcon, { backgroundColor: colors.sky[100] }]}>
-                <CalendarDays size={20} color={colors.sky[500]} />
-              </View>
-              <View style={styles.cardInfo}>
-                <Text style={styles.cardTitle}>{a.specialty}</Text>
-                <View style={styles.cardMeta}>
-                  <User size={12} color={t.text.secondary} />
-                  <Text style={styles.cardMetaText}>{a.doctor}</Text>
-                  <MapPin size={12} color={t.text.secondary} />
-                  <Text style={styles.cardMetaText}>{a.location}</Text>
+            <Card
+              title={a.specialty}
+              subtitle={
+                <View style={{ gap: spacing[1] }}>
+                  <View style={styles.cardMeta}>
+                    <User size={12} color={t.text.secondary} />
+                    <Text style={styles.cardMetaText}>{a.doctor}</Text>
+                    <MapPin size={12} color={t.text.secondary} />
+                    <Text style={styles.cardMetaText}>{a.location}</Text>
+                  </View>
+                  <View style={styles.cardMeta}>
+                    <Clock size={12} color={t.text.secondary} />
+                    <Text style={styles.cardMetaText}>{formatApptDate(a.date)} {a.time?.slice(0, 5)}</Text>
+                  </View>
                 </View>
-                <View style={styles.cardMeta}>
-                  <Clock size={12} color={t.text.secondary} />
-                  <Text style={styles.cardMetaText}>
-                    {formatApptDate(a.date)} {a.time?.slice(0, 5)}
-                  </Text>
+              }
+              icon={<CalendarDays size={20} color={colors.sky[500]} />}
+              iconBackground={colors.sky[100]}
+              actions={
+                <View style={styles.cardActions}>
+                  <TouchableOpacity style={styles.iconBtn} onPress={() => { setEditTarget(a); setShowForm(true); }}>
+                    <Edit3 size={16} color={t.text.secondary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.iconBtn} onPress={() => setDeleteTarget(a)}>
+                    <Trash2 size={16} color={colors.error[500]} />
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.statusRow}>
-                  {STATUSES.map((s) => (
-                    <TouchableOpacity
-                      key={s}
-                      style={[
-                        styles.statusPill,
-                        a.status === s && styles.statusPillActive,
-                      ]}
-                      onPress={() => handleStatusChange(a.id, s)}
-                    >
-                      <Text
-                        style={[
-                          styles.statusPillText,
-                          a.status === s && styles.statusPillTextActive,
-                        ]}
-                      >
-                        {appointmentStatusLabel(s)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+              }
+            >
+              <View style={styles.statusRow}>
+                {STATUSES.map((s) => (
+                  <TouchableOpacity
+                    key={s}
+                    style={[styles.statusPill, a.status === s && styles.statusPillActive]}
+                    onPress={() => handleStatusChange(a.id, s)}
+                  >
+                    <Text style={[styles.statusPillText, a.status === s && styles.statusPillTextActive]}>
+                      {appointmentStatusLabel(s)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              <View style={styles.cardActions}>
-                <TouchableOpacity
-                  style={styles.iconBtn}
-                  onPress={() => {
-                    setEditTarget(a);
-                    setShowForm(true);
-                  }}
-                >
-                  <Edit3 size={16} color={t.text.secondary} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.iconBtn}
-                  onPress={() => setDeleteTarget(a)}
-                >
-                  <Trash2 size={16} color={colors.error[500]} />
-                </TouchableOpacity>
-              </View>
-            </View>
+            </Card>
           )}
           ListFooterComponent={
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
@@ -461,58 +447,40 @@ function MedicationsTab() {
           keyExtractor={(m) => m.id}
           contentContainerStyle={styles.list}
           renderItem={({ item: m }) => (
-            <View style={styles.card}>
-              <View style={[styles.cardIcon, { backgroundColor: colors.warning[50] }]}>
-                <Pill size={20} color={colors.warning[500]} />
-              </View>
-              <View style={styles.cardInfo}>
-                <Text style={styles.cardTitle}>{m.name}</Text>
-                <Text style={styles.cardMetaText}>
-                  {m.dosage} — cada {m.frequency}h
-                </Text>
-                {m.indications ? (
-                  <Text style={styles.cardMetaText}>{m.indications}</Text>
-                ) : null}
-                {m.nextIntakeTime ? (
-                  <View style={styles.cardMeta}>
-                    <Clock size={12} color={t.text.secondary} />
-                    <Text style={styles.cardMetaText}>
-                      {new Date(m.nextIntakeTime).toLocaleString("es-CO", {
-                        month: "short",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </Text>
-                  </View>
-                ) : null}
-                <TouchableOpacity
-                  style={styles.intakeBtn}
-                  onPress={() => handleIntake(m.id)}
-                  disabled={intakeMut.isPending}
-                >
-                  <Check size={13} color={colors.white} />
-                  <Text style={styles.intakeBtnText}>Tomado</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.cardActions}>
-                <TouchableOpacity
-                  style={styles.iconBtn}
-                  onPress={() => {
-                    setEditTarget(m);
-                    setShowForm(true);
-                  }}
-                >
-                  <Edit3 size={16} color={t.text.secondary} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.iconBtn}
-                  onPress={() => setDeleteTarget(m)}
-                >
-                  <Trash2 size={16} color={colors.error[500]} />
-                </TouchableOpacity>
-              </View>
-            </View>
+            <Card
+              title={m.name}
+              subtitle={`${m.dosage} — cada ${m.frequency}h`}
+              icon={<Pill size={20} color={colors.warning[500]} />}
+              iconBackground={colors.warning[50]}
+              actions={
+                <View style={styles.cardActions}>
+                  <TouchableOpacity style={styles.iconBtn} onPress={() => { setEditTarget(m); setShowForm(true); }}>
+                    <Edit3 size={16} color={t.text.secondary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.iconBtn} onPress={() => setDeleteTarget(m)}>
+                    <Trash2 size={16} color={colors.error[500]} />
+                  </TouchableOpacity>
+                </View>
+              }
+            >
+              {m.indications ? (
+                <Text style={styles.cardMetaText}>{m.indications}</Text>
+              ) : null}
+              {m.nextIntakeTime ? (
+                <View style={styles.cardMeta}>
+                  <Clock size={12} color={t.text.secondary} />
+                  <Text style={styles.cardMetaText}>
+                    {new Date(m.nextIntakeTime).toLocaleString("es-CO", {
+                      month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit",
+                    })}
+                  </Text>
+                </View>
+              ) : null}
+              <TouchableOpacity style={styles.intakeBtn} onPress={() => handleIntake(m.id)} disabled={intakeMut.isPending}>
+                <Check size={13} color={colors.white} />
+                <Text style={styles.intakeBtnText}>Tomado</Text>
+              </TouchableOpacity>
+            </Card>
           )}
           ListFooterComponent={
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
@@ -684,10 +652,6 @@ function makeStyles(t: ThemeContextValue) {
     center:             { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
     emptyText:          { color: t.text.secondary, fontSize: fontSize.md, textAlign: "center" },
     list:               { padding: spacing[4], gap: spacing[3], paddingBottom: spacing[8] },
-    card:               { flexDirection: "row", gap: spacing[3], padding: spacing[4], backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium },
-    cardIcon:           { width: 44, height: 44, borderRadius: radii.md, alignItems: "center", justifyContent: "center", flexShrink: 0 },
-    cardInfo:           { flex: 1, gap: spacing[1] },
-    cardTitle:          { fontSize: fontSize.base, fontWeight: fontWeight.bold, color: t.text.primary },
     cardMeta:           { flexDirection: "row", alignItems: "center", gap: spacing[1] },
     cardMetaText:       { fontSize: fontSize.sm, color: t.text.secondary },
     cardActions:        { gap: spacing[2] },

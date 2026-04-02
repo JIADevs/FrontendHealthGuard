@@ -39,6 +39,7 @@ import {
   Pagination,
   Modal,
   Card,
+  cardContentStyle,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import {
@@ -183,7 +184,7 @@ function AppointmentsTab() {
         <FlatList
           data={items}
           keyExtractor={(a) => a.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={cardContentStyle}
           renderItem={({ item: a }) => (
             <Card
               title={a.specialty}
@@ -445,7 +446,7 @@ function MedicationsTab() {
         <FlatList
           data={items}
           keyExtractor={(m) => m.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={cardContentStyle}
           renderItem={({ item: m }) => (
             <Card
               title={m.name}
@@ -651,7 +652,6 @@ function makeStyles(t: ThemeContextValue) {
     addBtnText:         { color: colors.white, fontWeight: fontWeight.semibold, fontSize: fontSize.sm },
     center:             { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
     emptyText:          { color: t.text.secondary, fontSize: fontSize.md, textAlign: "center" },
-    list:               { padding: spacing[4], gap: spacing[3], paddingBottom: spacing[8] },
     cardMeta:           { flexDirection: "row", alignItems: "center", gap: spacing[1] },
     cardMetaText:       { fontSize: fontSize.sm, color: t.text.secondary },
     cardActions:        { gap: spacing[2] },

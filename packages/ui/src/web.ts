@@ -16,3 +16,5 @@ export * from './Card.types';
 export * from './Card.web';
 export * from './Pagination.types';
 export * from './Pagination.web';
+export * from './CardGrid.types';
+export * from './CardGrid.web';

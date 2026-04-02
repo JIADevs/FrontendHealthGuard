@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useBackpacksQuery, useDeleteBackpackMutation } from "@healthguard/api/hooks";
 import { Backpack, Plus, FileText, Search, Trash2 } from "lucide-react";
-import { Button, Card } from "@healthguard/ui";
+import { Button, Card, CardGrid } from "@healthguard/ui";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
 import { type Backpack as BackpackType } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -64,7 +64,7 @@ export default function BackpacksPage() {
           <p>{debouncedSearch ? "Sin mochilas para esta búsqueda." : "No tienes mochilas. Crea una para agrupar documentos."}</p>
         </div>
       ) : (
-        <div className="bp-grid">
+        <CardGrid variant="grid">
           {bps.data!.items.map((bp) => (
             <Card
               key={bp.id}
@@ -82,7 +82,7 @@ export default function BackpacksPage() {
               }
             />
           ))}
-        </div>
+        </CardGrid>
       )}
 
       {showForm && <BackpackFormModal onClose={() => setShowForm(false)} />}

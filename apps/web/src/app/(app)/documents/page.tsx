@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useDocumentsQuery, useDeleteDocumentMutation } from "@healthguard/api/hooks";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card } from "@healthguard/ui";
+import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card, CardGrid } from "@healthguard/ui";
 import { Search, Upload, FileText, Eye, Share2, Trash2 } from "lucide-react";
 import { isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -71,7 +71,7 @@ export default function DocumentsPage() {
           <p>{search ? "Sin resultados para esta búsqueda." : "No tienes documentos aún. ¡Sube tu primer documento!"}</p>
         </div>
       ) : (
-        <div className="doc-grid">
+        <CardGrid variant="grid">
           {docs.data!.items.map((doc) => (
             <Card
               key={doc.id}
@@ -95,7 +95,7 @@ export default function DocumentsPage() {
               )}
             </Card>
           ))}
-        </div>
+        </CardGrid>
       )}
 
       {/* Pagination */}

@@ -17,7 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
-import { useAppTheme, colors, useDebounceSearch, formatDate, Card } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, Card, cardContentStyle } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function BackpacksScreen() {
@@ -92,7 +92,7 @@ export function BackpacksScreen() {
         <FlatList
           data={items}
           keyExtractor={(b) => b.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={cardContentStyle}
           refreshControl={
             <RefreshControl
               refreshing={query.isRefetching}
@@ -144,7 +144,6 @@ function makeStyles(t: ThemeContextValue) {
     clearBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: t.border.medium },
     createBtn: { backgroundColor: colors.sky[500], borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center" },
     createBtnText: { color: colors.white, fontSize: 14, fontWeight: "700" },
-    list: { padding: 16, gap: 12 },
     center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
     empty: { color: t.text.secondary, fontSize: 15, textAlign: "center" },
   });

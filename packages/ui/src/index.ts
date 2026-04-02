@@ -18,3 +18,5 @@ export * from './Card.types';
 export * from './Card.native';
 export * from './Pagination.types';
 export * from './Pagination.native';
+export * from './CardGrid.types';
+export * from './CardGrid.native';

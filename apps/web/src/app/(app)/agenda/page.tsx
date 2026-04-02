@@ -28,7 +28,7 @@ import {
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -93,7 +93,7 @@ function AppointmentsTab() {
           <p>No tienes citas registradas.</p>
         </div>
       ) : (
-        <div className="agenda-list">
+        <CardGrid variant="list">
           {appts.data!.items.map((a) => (
             <Card
               key={a.id}
@@ -130,7 +130,7 @@ function AppointmentsTab() {
               }
             />
           ))}
-        </div>
+        </CardGrid>
       )}
 
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
@@ -253,7 +253,7 @@ function MedicationsTab() {
           <p>No tienes medicamentos registrados.</p>
         </div>
       ) : (
-        <div className="agenda-list">
+        <CardGrid variant="list">
           {meds.data!.items.map((m) => (
             <Card
               key={m.id}
@@ -288,7 +288,7 @@ function MedicationsTab() {
               }
             />
           ))}
-        </div>
+        </CardGrid>
       )}
 
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />

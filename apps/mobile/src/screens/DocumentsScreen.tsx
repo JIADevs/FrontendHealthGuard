@@ -7,7 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@healthguard/ui";
-import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card } from "@healthguard/ui";
+import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function DocumentsScreen() {
@@ -139,7 +139,7 @@ export function DocumentsScreen() {
         <FlatList
           data={docs.data?.items ?? []}
           keyExtractor={(d) => d.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={cardContentStyle}
           refreshControl={
             <RefreshControl
               refreshing={docs.isRefetching}
@@ -239,7 +239,6 @@ function makeStyles(t: ThemeContextValue) {
     titleRow:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     title:       { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary },
     shareAllBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: colors.sky[50], borderWidth: 1, borderColor: colors.sky[200] },
-    list:        { padding: spacing[4], gap: spacing[3] },
     searchBar: {
       marginTop: 14,
       backgroundColor: t.border.light,

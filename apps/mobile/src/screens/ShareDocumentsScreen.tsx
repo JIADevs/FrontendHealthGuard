@@ -15,9 +15,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useQuery } from "@tanstack/react-query";
 import { getDocuments, shareDocument, isApiError, type Document } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Typography } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
-import { FileText, Share2, Check, Clock } from "lucide-react-native";
+import { FileText, Share2, Clock } from "lucide-react-native";
 
 type ShareResult = { shareUrl: string; qrCodeUrl: string; expiresAt: string };
 
@@ -183,9 +183,7 @@ export function ShareDocumentsScreen() {
               onPress={() => toggle(doc.id)}
               activeOpacity={0.7}
             >
-              <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                {isSelected && <Check size={12} color={colors.white} />}
-              </View>
+              <Checkbox checked={isSelected} />
               <FileText size={16} color={isShared ? colors.emerald[500] : t.text.secondary} />
               <View style={styles.docInfo}>
                 <Typography variant="label" numberOfLines={1}>{doc.title}</Typography>
@@ -229,8 +227,6 @@ function makeStyles(t: ThemeContextValue) {
     // doc list
     docItem:          { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: spacing[4], backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium },
     docItemSelected:  { borderColor: colors.sky[400], backgroundColor: colors.sky[50] },
-    checkbox:         { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: t.border.medium, alignItems: "center", justifyContent: "center" },
-    checkboxSelected: { backgroundColor: colors.sky[500], borderColor: colors.sky[500] },
     docInfo:          { flex: 1 },
     docTitle:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary },
     docMeta:          { fontSize: fontSize.xs, color: t.text.secondary, marginTop: 2 },

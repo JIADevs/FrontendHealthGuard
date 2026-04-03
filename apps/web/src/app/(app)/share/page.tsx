@@ -3,7 +3,6 @@
 import { useState } from "react";
 import {
   FileText,
-  Check,
   Share2,
   Copy,
   QrCode,
@@ -11,7 +10,7 @@ import {
 } from "lucide-react";
 import { useDocumentsQuery } from "@healthguard/api/hooks";
 import { shareDocument, type Document } from "@healthguard/api";
-import { formatDate, Button, Pagination, Typography } from "@healthguard/ui";
+import { formatDate, Button, Pagination, Checkbox, Typography } from "@healthguard/ui";
 
 export default function SharePage() {
   const [page, setPage] = useState(1);
@@ -110,9 +109,7 @@ export default function SharePage() {
             <div className="doc-selector" style={{ border: "none", maxHeight: "none" }}>
               {docs.data!.items.map((doc) => (
                 <div key={doc.id} className="doc-selector-item" onClick={() => toggle(doc.id)}>
-                  <div className={`doc-check${selected.includes(doc.id) ? " checked" : ""}`}>
-                    {selected.includes(doc.id) && <Check size={12} />}
-                  </div>
+                  <Checkbox checked={selected.includes(doc.id)} />
                   <FileText size={14} style={{ color: "var(--gray-400)" }} />
                   <span style={{ flex: 1, fontWeight: 500 }}>{doc.title}</span>
                   <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{doc.format}</span>

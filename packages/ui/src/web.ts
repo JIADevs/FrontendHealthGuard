@@ -22,5 +22,7 @@ export * from './TextField.types';
 export * from './TextField.web';
 export * from './Select.types';
 export * from './Select.web';
+export * from './Checkbox.types';
+export * from './Checkbox.web';
 export * from './Typography.types';
 export * from './Typography.web';

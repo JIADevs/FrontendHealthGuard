@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FileText, Check } from "lucide-react";
+import { FileText } from "lucide-react";
 import { getDocuments, addDocToBackpack, isApiError, type BackpackWithDocs } from "@healthguard/api";
-import { formatDate, Button, Modal, Typography } from "@healthguard/ui";
+import { formatDate, Button, Modal, Checkbox, Typography } from "@healthguard/ui";
 import { sileo } from "sileo";
 
 interface AddDocsModalProps {
@@ -80,9 +80,7 @@ export function AddDocsModal({ backpackId, existingIds, onClose }: AddDocsModalP
           <div className="doc-selector">
             {available.map((doc) => (
               <div key={doc.id} className="doc-selector-item" onClick={() => toggle(doc.id)}>
-                <div className={`doc-check${selected.includes(doc.id) ? " checked" : ""}`}>
-                  {selected.includes(doc.id) && <Check size={12} />}
-                </div>
+                <Checkbox checked={selected.includes(doc.id)} />
                 <FileText size={14} style={{ color: "var(--gray-400)" }} />
                 <span style={{ flex: 1 }}>{doc.title}</span>
                 <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{formatDate(doc.uploadedAt)}</span>

@@ -24,5 +24,7 @@ export * from './TextField.types';
 export * from './TextField.native';
 export * from './Select.types';
 export * from './Select.native';
+export * from './Checkbox.types';
+export * from './Checkbox.native';
 export * from './Typography.types';
 export * from './Typography.native';

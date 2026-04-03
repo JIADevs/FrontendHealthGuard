@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useBackpacksQuery, useDeleteBackpackMutation } from "@healthguard/api/hooks";
 import { Backpack, Plus, FileText, Search, Trash2 } from "lucide-react";
-import { Button, Card, CardGrid } from "@healthguard/ui";
+import { Button, Card, CardGrid, Typography } from "@healthguard/ui";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
 import { type Backpack as BackpackType } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -31,10 +31,8 @@ export default function BackpacksPage() {
     <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Mochilas</h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-            Organiza documentos en paquetes para compartir fácilmente.
-          </p>
+          <Typography variant="h2">Mochilas</Typography>
+          <Typography variant="bodySm" color="secondary">Organiza documentos en paquetes para compartir fácilmente.</Typography>
         </div>
         <Button onPress={() => setShowForm(true)}>
           <Plus size={16} /> Nueva Mochila
@@ -61,7 +59,7 @@ export default function BackpacksPage() {
       ) : (bps.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
           <Backpack />
-          <p>{debouncedSearch ? "Sin mochilas para esta búsqueda." : "No tienes mochilas. Crea una para agrupar documentos."}</p>
+          <Typography variant="bodySm" color="secondary">{debouncedSearch ? "Sin mochilas para esta búsqueda." : "No tienes mochilas. Crea una para agrupar documentos."}</Typography>
         </div>
       ) : (
         <CardGrid variant="grid">

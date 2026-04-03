@@ -5,12 +5,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { useBackpackForm } from "../hooks/useBackpackForm";
-import { useAppTheme, colors, Button, TextField } from "@healthguard/ui";
+import { useAppTheme, colors, spacing, Button, TextField, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id?: string };
@@ -47,7 +46,9 @@ export function BackpackEditScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>{form.isEdit ? "Editar mochila" : "Crear mochila"}</Text>
+        <View style={{ marginBottom: spacing[5] }}>
+          <Typography variant="h3">{form.isEdit ? "Editar mochila" : "Crear mochila"}</Typography>
+        </View>
 
         <TextField
           label="Nombre"
@@ -84,9 +85,8 @@ export function BackpackEditScreen() {
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
-    container:          { flex: 1, backgroundColor: t.surface.bg },
-    center:             { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-    content:            { padding: 20 },
-    title:              { fontSize: 22, fontWeight: "800", color: t.text.primary, marginBottom: 18 },
+    container: { flex: 1, backgroundColor: t.surface.bg },
+    center:    { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+    content:   { padding: 20, gap: spacing[4] },
   });
 }

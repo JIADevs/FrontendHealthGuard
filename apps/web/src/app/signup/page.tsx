@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signup, login } from "@healthguard/api";
 import { useAuthStore } from "@healthguard/stores";
 import { isApiError } from "@healthguard/api";
-import { Button, TextField } from "@healthguard/ui";
+import { Button, TextField, Typography } from "@healthguard/ui";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -49,11 +49,11 @@ export default function SignupPage() {
       <div className="login-card">
         <div className="login-logo">
           <div className="login-logo-icon">H</div>
-          <h1>HealthGuard</h1>
+          <Typography variant="h2">HealthGuard</Typography>
         </div>
-        <p className="login-subtitle">
+        <Typography variant="bodySm" color="secondary" align="center">
           Crea tu cuenta para gestionar tu información médica de forma segura.
-        </p>
+        </Typography>
 
         <form onSubmit={handleSubmit}>
           <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 20 }}>

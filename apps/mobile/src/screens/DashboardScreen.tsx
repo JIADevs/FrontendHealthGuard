@@ -12,6 +12,7 @@ import {
   shadows,
   useAppTheme,
   formatDateLocal,
+  Typography,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { LogOut, Calendar, Pill, FileText, Upload, UserCircle } from "lucide-react-native";
@@ -31,11 +32,11 @@ export function DashboardScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.greeting}>{dash.apptSubtitle}</Text>
+          <Typography variant="bodySm" color="secondary">{dash.apptSubtitle}</Typography>
           {dash.isProfileLoading ? (
             <ActivityIndicator size="small" color={colors.primary[500]} style={{ marginTop: 4 }} />
           ) : (
-            <Text style={styles.name}>{dash.userName}</Text>
+            <Typography variant="h2">{dash.userName}</Typography>
           )}
         </View>
         <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.navigate("Profile")}>
@@ -53,22 +54,22 @@ export function DashboardScreen() {
             <View style={[styles.metricIcon, { backgroundColor: colors.primary[50] }]}>
               <FileText size={20} color={colors.primary[600]} />
             </View>
-            <Text style={styles.metricValue}>{dash.docTotal}</Text>
-            <Text style={styles.metricLabel}>Documentos</Text>
+            <Typography variant="h3" align="center">{dash.docTotal}</Typography>
+            <Typography variant="caption" color="secondary" align="center">Documentos</Typography>
           </View>
           <View style={[styles.metricCard, { flex: 1 }]}>
             <View style={[styles.metricIcon, { backgroundColor: colors.success[50] }]}>
               <Calendar size={20} color={colors.success[600]} />
             </View>
-            <Text style={styles.metricValue}>{dash.apptTotal}</Text>
-            <Text style={styles.metricLabel}>Citas Totales</Text>
+            <Typography variant="h3" align="center">{dash.apptTotal}</Typography>
+            <Typography variant="caption" color="secondary" align="center">Citas Totales</Typography>
           </View>
           <View style={[styles.metricCard, { flex: 1 }]}>
             <View style={[styles.metricIcon, { backgroundColor: colors.warning[50] }]}>
               <Pill size={20} color={colors.warning[600]} />
             </View>
-            <Text style={styles.metricValue}>{dash.medTotal}</Text>
-            <Text style={styles.metricLabel}>Medicamentos</Text>
+            <Typography variant="h3" align="center">{dash.medTotal}</Typography>
+            <Typography variant="caption" color="secondary" align="center">Medicamentos</Typography>
           </View>
         </View>
 
@@ -85,17 +86,17 @@ export function DashboardScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Calendar size={20} color={colors.primary[500]} />
-            <Text style={styles.cardTitle}>Próximas Citas</Text>
+            <Typography variant="h4">Próximas Citas</Typography>
           </View>
           {dash.isApptsLoading ? (
             <ActivityIndicator color={colors.primary[500]} />
           ) : dash.upcomingAppts.length === 0 ? (
-            <Text style={styles.emptyText}>No hay citas pendientes.</Text>
+            <Typography variant="bodySm" color="secondary" align="center">No hay citas pendientes.</Typography>
           ) : (
             dash.upcomingAppts.map((a) => (
               <View key={a.id} style={styles.listItem}>
-                <Text style={styles.listTitle}>{a.specialty}</Text>
-                <Text style={styles.listSub}>{formatDateLocal(a.date)} — {a.doctor}</Text>
+                <Typography variant="label">{a.specialty}</Typography>
+                <Typography variant="bodySm" color="secondary">{formatDateLocal(a.date)} — {a.doctor}</Typography>
               </View>
             ))
           )}
@@ -105,17 +106,17 @@ export function DashboardScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Pill size={20} color={colors.warning[500]} />
-            <Text style={styles.cardTitle}>Medicamentos Activos</Text>
+            <Typography variant="h4">Medicamentos Activos</Typography>
           </View>
           {dash.isMedsLoading ? (
             <ActivityIndicator color={colors.warning[500]} />
           ) : dash.activeMeds.length === 0 ? (
-            <Text style={styles.emptyText}>Sin medicamentos activos.</Text>
+            <Typography variant="bodySm" color="secondary" align="center">Sin medicamentos activos.</Typography>
           ) : (
             dash.activeMeds.map((m) => (
               <View key={m.id} style={styles.listItem}>
-                <Text style={styles.listTitle}>{m.name}</Text>
-                <Text style={styles.listSub}>{m.dosage} cada {m.frequency}h</Text>
+                <Typography variant="label">{m.name}</Typography>
+                <Typography variant="bodySm" color="secondary">{m.dosage} cada {m.frequency}h</Typography>
               </View>
             ))
           )}
@@ -129,23 +130,15 @@ function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container:     { flex: 1, backgroundColor: t.surface.bg },
     header:        { flexDirection: "row", alignItems: "center", gap: spacing[2], padding: spacing[6], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
-    greeting:      { fontSize: fontSize.sm, color: t.text.secondary, marginBottom: 2 },
-    name:          { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary },
     headerBtn:     { padding: spacing[2], backgroundColor: t.border.light, borderRadius: radii.md },
     content:       { padding: spacing[4], gap: spacing[4] },
     metricRow:     { flexDirection: "row", gap: spacing[3] },
     metricCard:    { backgroundColor: t.surface.bgCard, padding: spacing[4], borderRadius: radii.lg, alignItems: "center", gap: spacing[2], ...shadows.sm },
     metricIcon:    { width: 40, height: 40, borderRadius: radii.md, alignItems: "center", justifyContent: "center" },
-    metricValue:   { fontSize: fontSize["2xl"], fontWeight: fontWeight.extrabold, color: t.text.primary },
-    metricLabel:   { fontSize: fontSize.xs, color: t.text.secondary, textAlign: "center" },
     uploadBtn:     { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], backgroundColor: colors.primary[500], borderRadius: radii.md, padding: spacing[3] },
     uploadBtnText: { color: colors.white, fontWeight: fontWeight.semibold, fontSize: fontSize.sm },
     card:          { backgroundColor: t.surface.bgCard, padding: spacing[5], borderRadius: radii.lg, ...shadows.md },
     cardHeader:    { flexDirection: "row", alignItems: "center", gap: spacing[3], marginBottom: spacing[4] },
-    cardTitle:     { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: t.text.primary },
-    listItem:      { paddingVertical: spacing[3], borderTopWidth: 1, borderTopColor: t.border.light },
-    listTitle:     { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: 2 },
-    listSub:       { fontSize: fontSize.sm, color: t.text.secondary },
-    emptyText:     { fontSize: fontSize.sm, color: t.text.secondary, textAlign: "center", paddingVertical: spacing[2] },
+    listItem:      { paddingVertical: spacing[3], borderTopWidth: 1, borderTopColor: t.border.light, gap: 2 },
   });
 }

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Upload, FileText, FileUp, Sparkles, Loader2, Plus, Check, X } from "lucide-react";
-import { Button, Chip, Modal, TextField } from "@healthguard/ui";
+import { Button, Chip, Modal, TextField, Typography } from "@healthguard/ui";
 import { useDocumentForm } from "@/hooks/useDocumentForm";
 
 const TEMPLATE_ICONS: Record<string, string> = {
@@ -61,9 +61,7 @@ export function UploadModal({
       {/* ── Step 1: Template ── */}
       {step === "template" && (
         <>
-          <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 16 }}>
-            Selecciona el tipo para sugerir etiquetas automáticamente.
-          </p>
+          <Typography variant="bodySm" color="secondary">Selecciona el tipo para sugerir etiquetas automáticamente.</Typography>
           <div className="template-grid">
             {form.catalogs.types.slice(0, 5).map((t) => (
               <div
@@ -108,7 +106,7 @@ export function UploadModal({
             >
               <FileUp size={40} />
               <p>Arrastra tu archivo aquí o <span className="highlight">haz clic para seleccionar</span></p>
-              <p style={{ fontSize: 12, marginTop: 8 }}>PDF, imágenes o DICOM — máx. 25 MB</p>
+              <Typography variant="caption" color="secondary">PDF, imágenes o DICOM — máx. 25 MB</Typography>
               <input
                 ref={fileInputRef}
                 type="file"

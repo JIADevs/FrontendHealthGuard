@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -13,13 +13,10 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuthStore } from "@healthguard/stores";
 import { signup, login, isApiError } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Button, TextField } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { colors, radii, spacing, fontWeight, Button, TextField, Typography } from "@healthguard/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
 export function SignupScreen() {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [email, setEmail] = useState("");
@@ -36,7 +33,6 @@ export function SignupScreen() {
     setFieldErrors({});
     try {
       await signup({ email, password });
-      // Auto-login after signup
       const tokens = await login({ email, password });
       setAuth(tokens.access_token, tokens.refresh_token);
     } catch (err) {
@@ -58,25 +54,25 @@ export function SignupScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
             <View style={styles.logo}>
               <Text style={styles.logoText}>H</Text>
             </View>
-            <Text style={styles.title}>HealthGuard</Text>
-            <Text style={styles.subtitle}>
-              Crea tu cuenta para gestionar tu información médica de forma segura.
-            </Text>
+            <Typography variant="h2" align="center">HealthGuard</Typography>
+            <View style={{ marginTop: spacing[1] }}>
+              <Typography variant="bodySm" color="secondary" align="center">
+                Crea tu cuenta para gestionar tu información médica de forma segura.
+              </Typography>
+            </View>
           </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <View style={styles.errorBox}>
+              <Typography variant="bodySm" color="error" align="center">{error}</Typography>
+            </View>
+          ) : null}
 
           <View style={styles.form}>
             <TextField
@@ -89,7 +85,6 @@ export function SignupScreen() {
               autoComplete="email"
               error={fieldErrors.email}
             />
-
             <TextField
               label="Contraseña"
               placeholder="Mínimo 8 caracteres"
@@ -99,19 +94,13 @@ export function SignupScreen() {
               autoComplete="new-password"
               error={fieldErrors.password}
             />
-
-            <Button
-              fullWidth
-              disabled={!canSubmit}
-              loading={loading}
-              onPress={handleSignup}
-            >
+            <Button fullWidth disabled={!canSubmit} loading={loading} onPress={handleSignup}>
               Crear Cuenta
             </Button>
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>¿Ya tienes cuenta? </Text>
+            <Typography variant="bodySm" color="secondary">¿Ya tienes cuenta? </Typography>
             <TouchableOpacity onPress={() => navigation.navigate("Auth")}>
               <Text style={styles.footerLink}>Iniciar sesión</Text>
             </TouchableOpacity>
@@ -122,19 +111,14 @@ export function SignupScreen() {
   );
 }
 
-function makeStyles(t: ThemeContextValue) {
-  return StyleSheet.create({
-    container:    { flex: 1, backgroundColor: t.surface.bgCard },
-    content:      { flexGrow: 1, padding: spacing[6], justifyContent: "center" },
-    header:       { alignItems: "center", marginBottom: 40 },
-    logo:         { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
-    logoText:     { color: colors.white, fontSize: 28, fontWeight: fontWeight.extrabold },
-    title:        { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[2] },
-    subtitle:     { fontSize: fontSize.sm, color: t.text.secondary, textAlign: "center", lineHeight: 20 },
-    form:         { gap: spacing[3] },
-    error:        { color: colors.error[600], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, overflow: "hidden", marginBottom: spacing[4], textAlign: "center" },
-    footer:       { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
-    footerText:   { color: t.text.secondary, fontSize: fontSize.sm },
-    footerLink:   { color: colors.sky[500], fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
-  });
-}
+const styles = StyleSheet.create({
+  container:  { flex: 1, backgroundColor: "white" },
+  content:    { flexGrow: 1, padding: spacing[6], justifyContent: "center" },
+  header:     { alignItems: "center", marginBottom: 40, gap: spacing[1] },
+  logo:       { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
+  logoText:   { color: colors.white, fontSize: 28, fontWeight: fontWeight.extrabold },
+  form:       { gap: spacing[3], marginTop: spacing[2] },
+  errorBox:   { backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, marginBottom: spacing[4] },
+  footer:     { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
+  footerLink: { color: colors.sky[500], fontWeight: fontWeight.semibold },
+});

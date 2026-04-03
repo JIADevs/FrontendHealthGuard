@@ -17,7 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
-import { useAppTheme, colors, useDebounceSearch, formatDate, Card, cardContentStyle } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, Card, cardContentStyle, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function BackpacksScreen() {
@@ -49,7 +49,7 @@ export function BackpacksScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mochilas</Text>
+        <Typography variant="h2">Mochilas</Typography>
 
         <View style={styles.toolbarRow}>
           <View style={styles.searchBar}>
@@ -103,11 +103,11 @@ export function BackpacksScreen() {
           }
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={styles.empty}>
+              <Typography variant="body" color="secondary" align="center">
                 {debouncedSearch.trim()
                   ? "Sin mochilas para esta búsqueda."
                   : "Todavía no tenés mochilas. Creá la primera."}
-              </Text>
+              </Typography>
             </View>
           }
           renderItem={({ item }) => (
@@ -128,7 +128,7 @@ function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: t.surface.bg },
     header: { padding: 24, paddingBottom: 16, backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
-    title: { fontSize: 24, fontWeight: "800", color: t.text.primary, marginBottom: 12 },
+    titleRow: { marginBottom: 12 },
     toolbarRow: { flexDirection: "row", gap: 12, alignItems: "center" },
     searchBar: {
       flex: 1,
@@ -145,6 +145,5 @@ function makeStyles(t: ThemeContextValue) {
     createBtn: { backgroundColor: colors.sky[500], borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center" },
     createBtnText: { color: colors.white, fontSize: 14, fontWeight: "700" },
     center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-    empty: { color: t.text.secondary, fontSize: 15, textAlign: "center" },
   });
 }

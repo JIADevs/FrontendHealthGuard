@@ -20,3 +20,5 @@ export * from './CardGrid.types';
 export * from './CardGrid.web';
 export * from './TextField.types';
 export * from './TextField.web';
+export * from './Typography.types';
+export * from './Typography.web';

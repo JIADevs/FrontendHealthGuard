@@ -22,3 +22,5 @@ export * from './CardGrid.types';
 export * from './CardGrid.native';
 export * from './TextField.types';
 export * from './TextField.native';
+export * from './Typography.types';
+export * from './Typography.native';

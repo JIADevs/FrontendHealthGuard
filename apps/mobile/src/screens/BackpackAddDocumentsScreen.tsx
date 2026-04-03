@@ -20,7 +20,7 @@ import { Search, Plus, Check, X } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { useAppTheme, colors, useDebounceSearch, formatDate } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id: string };
@@ -131,9 +131,9 @@ export function BackpackAddDocumentsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title} numberOfLines={1}>
+        <Typography variant="h3" numberOfLines={1}>
           Agregar a: {backpackName || "Mochila"}
-        </Text>
+        </Typography>
 
         <View style={styles.searchBar}>
           <Search size={18} color={t.text.secondary} />
@@ -174,11 +174,11 @@ export function BackpackAddDocumentsScreen() {
             </View>
           ) : (
             <View style={styles.center}>
-              <Text style={styles.empty}>
+              <Typography variant="body" color="secondary" align="center">
                 {debouncedSearch.trim()
                   ? "Sin resultados."
                   : "No hay documentos disponibles para agregar."}
-              </Text>
+              </Typography>
             </View>
           )
         }
@@ -191,13 +191,11 @@ export function BackpackAddDocumentsScreen() {
             >
               <DocumentTypeIcon format={item.format} documentTypeName={item.documentType?.name} size={24} />
               <View style={styles.cardInfo}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <Text style={styles.cardSub}>
+                <Typography variant="label" numberOfLines={1}>{item.title}</Typography>
+                <Typography variant="caption" color="secondary">
                   {formatDate(item.uploadedAt)}
                   {item.documentType?.name ? ` • ${item.documentType.name}` : ""}
-                </Text>
+                </Typography>
               </View>
             </TouchableOpacity>
 

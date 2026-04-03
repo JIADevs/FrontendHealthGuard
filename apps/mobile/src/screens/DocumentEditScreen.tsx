@@ -28,7 +28,7 @@ import {
   type DocumentCreate,
   type Document,
 } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
@@ -184,7 +184,7 @@ export function DocumentEditScreen() {
 
   if (!id) {
     return (
-      <View style={styles.center}><Text style={styles.error}>Documento no encontrado.</Text></View>
+      <View style={styles.center}><Typography variant="body" color="error">Documento no encontrado.</Typography></View>
     );
   }
 
@@ -206,8 +206,8 @@ export function DocumentEditScreen() {
             ) : (
               <View style={styles.pdfPreview}>
                 <FileTextIcon color={colors.sky[500]} size={64} />
-                <Text style={styles.pdfName} numberOfLines={2}>{replacementFile.name}</Text>
-                {replacementFile.size != null && <Text style={styles.pdfSize}>{friendlySize(replacementFile.size)}</Text>}
+                <Typography variant="label" numberOfLines={2} align="center">{replacementFile.name}</Typography>
+                {replacementFile.size != null && <Typography variant="caption" color="secondary" align="center">{friendlySize(replacementFile.size)}</Typography>}
               </View>
             )
           ) : d ? (
@@ -216,8 +216,8 @@ export function DocumentEditScreen() {
             ) : (
               <View style={styles.pdfPreview}>
                 <FileTextIcon color={colors.sky[500]} size={64} />
-                <Text style={styles.pdfName} numberOfLines={2}>Adjunto actual</Text>
-                <Text style={styles.pdfSize}>{d.format}</Text>
+                <Typography variant="label" numberOfLines={2} align="center">Adjunto actual</Typography>
+                <Typography variant="caption" color="secondary" align="center">{d.format}</Typography>
               </View>
             )
           ) : null}

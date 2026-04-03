@@ -20,9 +20,10 @@ import {
   useAppTheme,
   Button,
   TextField,
+  Typography,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
-import { Save, User, Phone, Heart, Shield, ChevronDown } from "lucide-react-native";
+import { User, Phone, Heart, Shield, ChevronDown } from "lucide-react-native";
 
 const GENDER_OPTIONS = [
   { value: "", label: "Sin especificar" },
@@ -69,8 +70,8 @@ export function ProfileScreen() {
             <Text style={styles.avatarText}>{initials}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.avatarName}>{profile.data?.name || "Sin nombre"}</Text>
-            <Text style={styles.avatarEmail}>{profile.data?.email}</Text>
+            <Typography variant="h4">{profile.data?.name || "Sin nombre"}</Typography>
+            <Typography variant="bodySm" color="secondary">{profile.data?.email}</Typography>
           </View>
         </View>
 
@@ -103,7 +104,6 @@ export function ProfileScreen() {
           <Field label="Teléfono" value={form.emergencyContactPhone} onChangeText={form.setEmergencyContactPhone} placeholder="+57 300 000 0000" keyboardType="phone-pad" styles={styles} last />
         </View>
 
-        {/* Save button */}
         <Button fullWidth onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
           {form.saving ? "Guardando..." : "Guardar Cambios"}
         </Button>
@@ -118,9 +118,7 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8, marginTop: 4 }}>
       {icon}
-      <Text style={{ fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: "gray", textTransform: "uppercase", letterSpacing: 0.5 }}>
-        {title}
-      </Text>
+      <Typography variant="overline" color="secondary">{title}</Typography>
     </View>
   );
 }
@@ -180,9 +178,11 @@ function PickerField({
 
   return (
     <View style={[styles.fieldRow, last && styles.fieldRowLast]}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Typography variant="label" color="secondary">{label}</Typography>
       <TouchableOpacity style={styles.pickerTrigger} onPress={() => setOpen(!open)}>
-        <Text style={[styles.fieldInput, { flex: 1, paddingVertical: 0, borderWidth: 0 }]}>{selected}</Text>
+        <View style={{ flex: 1 }}>
+          <Typography variant="body">{selected}</Typography>
+        </View>
         <ChevronDown size={16} color={t.text.secondary} />
       </TouchableOpacity>
       {open && (
@@ -193,12 +193,14 @@ function PickerField({
               style={[styles.pickerOption, opt.value === value && { backgroundColor: colors.primary[50] }]}
               onPress={() => { onSelect(opt.value); setOpen(false); }}
             >
-              <Text style={[
-                styles.pickerOptionText,
-                opt.value === value && { color: colors.primary[600], fontWeight: fontWeight.semibold },
-              ]}>
-                {opt.label}
-              </Text>
+              <Typography
+                variant="body"
+                color={opt.value === value ? "inherit" : "default"}
+              >
+                <Text style={opt.value === value ? { color: colors.primary[600], fontWeight: fontWeight.semibold } : undefined}>
+                  {opt.label}
+                </Text>
+              </Typography>
             </TouchableOpacity>
           ))}
         </View>
@@ -214,14 +216,11 @@ function makeStyles(t: ThemeContextValue) {
     avatarCard:       { flexDirection: "row", alignItems: "center", gap: spacing[4], backgroundColor: t.surface.bgCard, padding: spacing[4], borderRadius: radii.lg, ...shadows.sm },
     avatar:           { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary[500], alignItems: "center", justifyContent: "center" },
     avatarText:       { color: colors.white, fontSize: fontSize.xl, fontWeight: fontWeight.bold },
-    avatarName:       { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: t.text.primary },
-    avatarEmail:      { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2 },
     card:             { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, ...shadows.sm, overflow: "hidden" },
     fieldRow:         { paddingHorizontal: spacing[4], paddingTop: spacing[3], borderBottomWidth: 1, borderBottomColor: t.border.light },
     fieldRowLast:     { borderBottomWidth: 0 },
-    pickerTrigger:    { flexDirection: "row", alignItems: "center" },
+    pickerTrigger:    { flexDirection: "row", alignItems: "center", marginTop: spacing[1] },
     pickerDropdown:   { marginTop: spacing[2], borderRadius: radii.md, borderWidth: 1, borderColor: t.border.medium, overflow: "hidden" },
     pickerOption:     { paddingHorizontal: spacing[4], paddingVertical: spacing[3] },
-    pickerOptionText: { fontSize: fontSize.base, color: t.text.primary },
   });
 }

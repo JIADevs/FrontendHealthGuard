@@ -9,7 +9,6 @@ import {
   RefreshControl,
   Share,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -23,7 +22,7 @@ import { isApiError, type DocumentPage, type Document } from "@healthguard/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@healthguard/ui";
 import { Camera, FileText, FileUp, Plus, Search, Share2, Trash2, Edit2, X } from "lucide-react-native";
-import { useAppTheme, colors, useDebounceSearch, formatDate, Button, Modal, fontSize } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, Button, Modal, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { useBackpackDetail } from "../hooks/useBackpackDetail";
 
@@ -119,12 +118,10 @@ export function BackpackDetailScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title} numberOfLines={1}>
-            {backpack?.name ?? "Mochila"}
-          </Text>
-          <Text style={styles.subtitle}>
+          <Typography variant="h3" numberOfLines={1}>{backpack?.name ?? "Mochila"}</Typography>
+          <Typography variant="bodySm" color="secondary">
             {backpack?.documentCount ?? 0} documento{(backpack?.documentCount ?? 0) === 1 ? "" : "s"}
-          </Text>
+          </Typography>
         </View>
 
         <TouchableOpacity style={styles.iconBtn} onPress={handleDeleteBackpack} accessibilityLabel="Eliminar mochila">
@@ -170,9 +167,9 @@ export function BackpackDetailScreen() {
             </View>
           ) : (
             <View style={styles.center}>
-              <Text style={styles.empty}>
+              <Typography variant="body" color="secondary" align="center">
                 {debouncedSearch.trim() ? "Sin resultados." : "Todavía no hay documentos en esta mochila."}
-              </Text>
+              </Typography>
             </View>
           )
         }
@@ -180,11 +177,10 @@ export function BackpackDetailScreen() {
           <TouchableOpacity style={styles.card} onPress={() => openDocument(item.id)} accessibilityLabel={`Abrir ${item.title}`}>
             <DocumentTypeIcon format={item.format} documentTypeName={item.documentType?.name} size={24} />
             <View style={styles.cardInfo}>
-              <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-              <Text style={styles.cardSub}>
-                {formatDate(item.uploadedAt)}
-                {item.documentType?.name ? ` • ${item.documentType.name}` : ""}
-              </Text>
+              <Typography variant="label" numberOfLines={1}>{item.title}</Typography>
+              <Typography variant="bodySm" color="secondary">
+                {formatDate(item.uploadedAt)}{item.documentType?.name ? ` • ${item.documentType.name}` : ""}
+              </Typography>
             </View>
             <View style={styles.actionsRight}>
               <TouchableOpacity
@@ -224,7 +220,7 @@ export function BackpackDetailScreen() {
         pointerEvents={fabOpen ? "auto" : "none"}
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={openAddFromDocs}>
-          <View style={styles.fabOptionLabel}><Text style={styles.fabOptionText}>Desde mis documentos</Text></View>
+          <View style={styles.fabOptionLabel}><Typography variant="label">Desde mis documentos</Typography></View>
           <View style={[styles.fabSmall, { backgroundColor: colors.sky[500] }]}><FileText color={colors.white} size={20} /></View>
         </TouchableOpacity>
       </Animated.View>
@@ -234,7 +230,7 @@ export function BackpackDetailScreen() {
         pointerEvents={fabOpen ? "auto" : "none"}
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={openUploadNew}>
-          <View style={styles.fabOptionLabel}><Text style={styles.fabOptionText}>Nuevo documento</Text></View>
+          <View style={styles.fabOptionLabel}><Typography variant="label">Nuevo documento</Typography></View>
           <View style={[styles.fabSmall, { backgroundColor: colors.violet[500] }]}><FileUp color={colors.white} size={20} /></View>
         </TouchableOpacity>
       </Animated.View>
@@ -244,7 +240,7 @@ export function BackpackDetailScreen() {
         pointerEvents={fabOpen ? "auto" : "none"}
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={openScanner}>
-          <View style={styles.fabOptionLabel}><Text style={styles.fabOptionText}>Escanear</Text></View>
+          <View style={styles.fabOptionLabel}><Typography variant="label">Escanear</Typography></View>
           <View style={[styles.fabSmall, { backgroundColor: colors.emerald[500] }]}><Camera color={colors.white} size={20} /></View>
         </TouchableOpacity>
       </Animated.View>
@@ -268,12 +264,10 @@ export function BackpackDetailScreen() {
             </>
           }
         >
-          <Text style={{ fontSize: fontSize.sm, color: t.text.secondary, marginBottom: 8 }}>
-            Link (válido hasta expiración):
-          </Text>
-          <Text style={{ fontSize: fontSize.sm, color: t.text.primary, paddingVertical: 4, marginBottom: 8 }} numberOfLines={2}>
-            {shareLink}
-          </Text>
+          <Typography variant="bodySm" color="secondary">Link (válido hasta expiración):</Typography>
+          <View style={{ paddingVertical: 4, marginBottom: 8 }}>
+            <Typography variant="bodySm" numberOfLines={2}>{shareLink}</Typography>
+          </View>
           <View style={styles.qrWrap}>
             <Image source={{ uri: detail.shareData.qrCodeUrl }} style={styles.qrImg} />
           </View>
@@ -295,9 +289,9 @@ export function BackpackDetailScreen() {
             </>
           }
         >
-          <Text style={{ fontSize: fontSize.sm, color: t.text.secondary }}>
+          <Typography variant="bodySm" color="secondary">
             ¿Querés eliminar "{deleteDocTarget.title}" de esta mochila?
-          </Text>
+          </Typography>
         </Modal>
       )}
     </SafeAreaView>
@@ -309,18 +303,13 @@ function makeStyles(t: ThemeContextValue) {
     container: { flex: 1, backgroundColor: t.surface.bg },
     center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
     header: { padding: 20, backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium, flexDirection: "row", gap: 12, alignItems: "center" },
-    title: { fontSize: 22, fontWeight: "800", color: t.text.primary, marginBottom: 2 },
-    subtitle: { fontSize: 13, color: t.text.secondary },
     iconBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bgCard },
     searchBar: { margin: 16, marginTop: 10, backgroundColor: t.surface.bgCard, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: t.border.medium },
     searchInput: { flex: 1, fontSize: 14, color: t.text.primary, paddingVertical: 0 },
     clearBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: t.border.medium },
     list: { padding: 16, gap: 12, paddingBottom: 96 },
-    empty: { color: t.text.secondary, fontSize: 15, textAlign: "center" },
     card: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, backgroundColor: t.surface.bgCard, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium },
     cardInfo: { flex: 1 },
-    cardTitle: { fontSize: 14, fontWeight: "800", color: t.text.primary, marginBottom: 2 },
-    cardSub: { fontSize: 13, color: t.text.secondary },
     actionsRight: { flexDirection: "row" },
     removeBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bg, borderWidth: 1, borderColor: t.border.medium },
     bottomActions: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 14, backgroundColor: t.surface.bgCard, borderTopWidth: 1, borderTopColor: t.border.medium, flexDirection: "row", gap: 10, alignItems: "center", paddingRight: 92 },
@@ -330,7 +319,6 @@ function makeStyles(t: ThemeContextValue) {
     fabOption: { position: "absolute", bottom: 24, right: 24, alignItems: "flex-end", zIndex: 15 },
     fabOptionRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     fabOptionLabel: { backgroundColor: t.surface.bgCard, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 },
-    fabOptionText: { fontSize: 14, fontWeight: "600", color: t.text.primary },
     fabSmall: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 6 },
     qrWrap: { alignItems: "center", justifyContent: "center", marginVertical: 8, padding: 10, backgroundColor: t.surface.bg, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium },
     qrImg: { width: 170, height: 170 },

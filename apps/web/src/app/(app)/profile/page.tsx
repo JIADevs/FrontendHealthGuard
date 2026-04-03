@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { useProfileQuery } from "@healthguard/api/hooks";
 import { useProfileForm } from "@/hooks/useProfileForm";
 import { User, Save, Mail, Phone, Heart, Shield } from "lucide-react";
-import { Button, TextField } from "@healthguard/ui";
+import { Button, TextField, Typography } from "@healthguard/ui";
 
 export default function ProfilePage() {
   const profile = useProfileQuery();
@@ -29,10 +29,8 @@ export default function ProfilePage() {
     <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Mi Perfil</h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-            Administra tu información personal y de contacto.
-          </p>
+          <Typography variant="h2">Mi Perfil</Typography>
+          <Typography variant="bodySm" color="secondary">Administra tu información personal y de contacto.</Typography>
         </div>
       </div>
 
@@ -49,7 +47,7 @@ export default function ProfilePage() {
                 {initials}
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 18 }}>{profile.data?.name || "Sin nombre"}</div>
+                <Typography variant="h4">{profile.data?.name || "Sin nombre"}</Typography>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", fontSize: 14, marginTop: 4 }}>
                   <Mail size={14} />
                   {profile.data?.email}

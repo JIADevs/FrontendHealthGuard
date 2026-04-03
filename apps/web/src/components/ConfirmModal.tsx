@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Modal } from "@healthguard/ui";
+import { Button, Modal, Typography } from "@healthguard/ui";
 
 interface ConfirmModalProps {
   title: string;
@@ -24,7 +24,7 @@ export function ConfirmModal({ title, message, confirmLabel, loading, onConfirm,
         </>
       }
     >
-      <p className="confirm-message">{message}</p>
+      <Typography variant="body" color="secondary">{message}</Typography>
     </Modal>
   );
 }

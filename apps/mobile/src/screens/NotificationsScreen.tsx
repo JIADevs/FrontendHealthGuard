@@ -11,7 +11,7 @@ import { memo, useCallback, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { type Notification } from "@healthguard/api";
 import { useNotificationsScreen } from "../hooks/useNotificationsScreen";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Button } from "@healthguard/ui";
+import { colors, radii, spacing, fontWeight, useAppTheme, Button, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { Bell, Calendar, Pill, Activity, Info, CheckCircle } from "lucide-react-native";
 
@@ -63,10 +63,10 @@ const NotificationItem = memo(function NotificationItem({
         <Text style={[styles.itemTitle, !item.isRead && styles.itemTitleBold]}>
           {item.title}
         </Text>
-        <Text style={styles.itemText} numberOfLines={2}>
-          {item.body}
-        </Text>
-        <Text style={styles.itemDate}>{formattedDate}</Text>
+        <Typography variant="bodySm" color="secondary" numberOfLines={2}>{item.body}</Typography>
+        <View style={{ marginTop: 4 }}>
+          <Typography variant="caption" color="muted">{formattedDate}</Typography>
+        </View>
       </View>
 
       {item.isRead
@@ -103,9 +103,9 @@ export function NotificationsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Notificaciones</Text>
+          <Typography variant="h2">Notificaciones</Typography>
           {screen.unreadCount > 0 && (
-            <Text style={styles.subtitle}>{screen.unreadCount} sin leer</Text>
+            <Typography variant="bodySm" color="secondary">{screen.unreadCount} sin leer</Typography>
           )}
         </View>
         {screen.unreadCount > 0 && (
@@ -122,10 +122,10 @@ export function NotificationsScreen() {
       ) : screen.notifications.length === 0 ? (
         <View style={styles.center}>
           <Bell size={48} color={t.border.medium} />
-          <Text style={styles.emptyTitle}>Sin notificaciones</Text>
-          <Text style={styles.emptyText}>
+          <Typography variant="h4">Sin notificaciones</Typography>
+          <Typography variant="bodySm" color="muted" align="center">
             Aquí aparecerán tus recordatorios de citas, medicamentos y más.
-          </Text>
+          </Typography>
         </View>
       ) : (
         <FlatList
@@ -156,7 +156,7 @@ export function NotificationsScreen() {
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
-    container:      { flex: 1, backgroundColor: t.surface.bg },
+    container:     { flex: 1, backgroundColor: t.surface.bg },
     header: {
       flexDirection: "row",
       alignItems: "center",
@@ -167,13 +167,9 @@ function makeStyles(t: ThemeContextValue) {
       borderBottomWidth: 1,
       borderBottomColor: t.border.medium,
     },
-    title:          { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary },
-    subtitle:       { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2 },
-    center:         { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: spacing[3] },
-    emptyTitle:     { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: t.text.primary, marginTop: 4 },
-    emptyText:      { fontSize: 14, color: t.text.muted, textAlign: "center", lineHeight: 20 },
-    list:           { paddingBottom: spacing[6] },
-    loadingFooter:  { paddingVertical: spacing[4] },
+    center:        { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: spacing[3] },
+    list:          { paddingBottom: spacing[6] },
+    loadingFooter: { paddingVertical: spacing[4] },
   });
 }
 
@@ -187,7 +183,7 @@ function makeItemStyles(t: ThemeContextValue) {
       backgroundColor: t.surface.bgCard,
       gap: spacing[3],
     },
-    itemUnread:     { backgroundColor: colors.sky[50] },
+    itemUnread:    { backgroundColor: colors.sky[50] },
     iconWrap: {
       width: 36,
       height: 36,
@@ -196,12 +192,10 @@ function makeItemStyles(t: ThemeContextValue) {
       justifyContent: "center",
       marginTop: 2,
     },
-    itemBody:       { flex: 1 },
-    itemTitle:      { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.secondary, marginBottom: 2 },
-    itemTitleBold:  { color: t.text.primary, fontWeight: fontWeight.bold },
-    itemText:       { fontSize: fontSize.sm, color: t.text.secondary, lineHeight: 18 },
-    itemDate:       { fontSize: fontSize.xs, color: t.text.muted, marginTop: 4 },
-    readIcon:       { alignSelf: "center" },
+    itemBody:      { flex: 1, gap: 2 },
+    itemTitle:     { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.secondary, marginBottom: 2 },
+    itemTitleBold: { color: t.text.primary, fontWeight: fontWeight.bold },
+    readIcon:      { alignSelf: "center" },
     unreadDot: {
       width: 8,
       height: 8,

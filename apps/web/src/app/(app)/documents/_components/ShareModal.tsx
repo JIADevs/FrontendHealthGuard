@@ -3,7 +3,7 @@
 import { useShareDocumentMutation } from "@healthguard/api/hooks";
 import type { Document } from "@healthguard/api";
 import { ShareResult } from "@/components/ShareResult";
-import { Modal } from "@healthguard/ui";
+import { Modal, Typography } from "@healthguard/ui";
 
 export function ShareModal({ doc, onClose }: { doc: Document; onClose: () => void }) {
   const shareMut = useShareDocumentMutation();
@@ -18,7 +18,7 @@ export function ShareModal({ doc, onClose }: { doc: Document; onClose: () => voi
       {shareMut.isPending ? (
         <div className="empty-state">
           <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
-          <p style={{ marginTop: 12 }}>Generando enlace...</p>
+          <Typography variant="bodySm" color="secondary">Generando enlace...</Typography>
         </div>
       ) : shareMut.data ? (
         <ShareResult
@@ -28,7 +28,7 @@ export function ShareModal({ doc, onClose }: { doc: Document; onClose: () => voi
           label={doc.title}
         />
       ) : shareMut.isError ? (
-        <div className="empty-state"><p>Error generando el enlace.</p></div>
+        <div className="empty-state"><Typography variant="bodySm" color="error">Error generando el enlace.</Typography></div>
       ) : null}
     </Modal>
   );

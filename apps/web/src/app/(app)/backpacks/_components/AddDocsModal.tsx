@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileText, Check } from "lucide-react";
 import { getDocuments, addDocToBackpack, isApiError, type BackpackWithDocs } from "@healthguard/api";
-import { formatDate, Button, Modal } from "@healthguard/ui";
+import { formatDate, Button, Modal, Typography } from "@healthguard/ui";
 import { sileo } from "sileo";
 
 interface AddDocsModalProps {
@@ -71,12 +71,12 @@ export function AddDocsModal({ backpackId, existingIds, onClose }: AddDocsModalP
           <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
         </div>
       ) : available.length === 0 ? (
-        <div className="empty-state"><p>Todos tus documentos ya están en esta mochila.</p></div>
+        <div className="empty-state"><Typography variant="bodySm" color="secondary">Todos tus documentos ya están en esta mochila.</Typography></div>
       ) : (
         <>
-          <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 12 }}>
+          <Typography variant="bodySm" color="secondary">
             Selecciona los documentos para agregar ({selected.length} seleccionados)
-          </p>
+          </Typography>
           <div className="doc-selector">
             {available.map((doc) => (
               <div key={doc.id} className="doc-selector-item" onClick={() => toggle(doc.id)}>

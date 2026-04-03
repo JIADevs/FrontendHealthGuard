@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ActivityIndicator, Linking, Alert, ScrollView, 
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useDocumentQuery, useTagCategoriesQuery } from "@healthguard/api/hooks";
 import { getSignedUrl, type Document, type TagCategoryOut } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = {
@@ -65,7 +65,7 @@ export function DocumentDetailScreen() {
   if (!id) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>Documento no encontrado.</Text>
+        <Typography variant="body" color="error">Documento no encontrado.</Typography>
       </View>
     );
   }
@@ -81,14 +81,14 @@ export function DocumentDetailScreen() {
   if (!d) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>No se pudo cargar el documento.</Text>
+        <Typography variant="body" color="error">No se pudo cargar el documento.</Typography>
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{d.title}</Text>
+      <Typography variant="h2">{d.title}</Typography>
 
       <View style={styles.meta}>
         {d.documentType?.name ? (
@@ -119,7 +119,7 @@ export function DocumentDetailScreen() {
 
       {(d.documentType || d.subtypes.length > 0 || d.customTags.length > 0 || d.specialties.length > 0) && (
         <View style={styles.tagsSection}>
-          <Text style={styles.sectionTitle}>Etiquetas</Text>
+          <Typography variant="h4">Etiquetas</Typography>
           <View style={styles.tagsContainer}>
             {d.documentType && (
               <Text style={[styles.tag, styles.tagBlue]}>

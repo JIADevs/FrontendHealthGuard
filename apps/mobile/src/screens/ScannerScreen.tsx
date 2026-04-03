@@ -17,7 +17,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
-import { colors, overlay, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import { colors, overlay, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function ScannerScreen() {
@@ -92,7 +92,7 @@ export function ScannerScreen() {
   if (!permission.granted) {
     return (
       <View style={styles.center}>
-        <Text style={styles.text}>Necesitamos permiso para usar la cámara</Text>
+        <Typography variant="body" align="center">Necesitamos permiso para usar la cámara</Typography>
         <TouchableOpacity style={styles.btn} onPress={handleRequestPermission}>
           <Text style={styles.btnText}>
             {!permission.canAskAgain && permission.status === "denied"
@@ -101,10 +101,9 @@ export function ScannerScreen() {
           </Text>
         </TouchableOpacity>
         {!permission.canAskAgain && (
-          <Text style={styles.helper}>
-            Parece que el permiso fue denegado permanentemente. Ve a los ajustes del dispositivo y
-            habilita la cámara para esta app.
-          </Text>
+          <Typography variant="bodySm" color="secondary" align="center">
+            Parece que el permiso fue denegado permanentemente. Ve a los ajustes del dispositivo y habilita la cámara para esta app.
+          </Typography>
         )}
       </View>
     );

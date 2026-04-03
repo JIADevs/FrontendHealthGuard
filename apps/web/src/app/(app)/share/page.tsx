@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useDocumentsQuery } from "@healthguard/api/hooks";
 import { shareDocument, type Document } from "@healthguard/api";
-import { formatDate, Button, Pagination } from "@healthguard/ui";
+import { formatDate, Button, Pagination, Typography } from "@healthguard/ui";
 
 export default function SharePage() {
   const [page, setPage] = useState(1);
@@ -53,10 +53,8 @@ export default function SharePage() {
     <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Compartir Documentos</h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-            Selecciona documentos y genera enlaces de compartición con código QR.
-          </p>
+          <Typography variant="h2">Compartir Documentos</Typography>
+          <Typography variant="bodySm" color="secondary">Selecciona documentos y genera enlaces de compartición con código QR.</Typography>
         </div>
         {selected.length > 0 && (
           <Button onPress={handleShareSelected} disabled={sharing} loading={sharing}>
@@ -96,7 +94,7 @@ export default function SharePage() {
       ) : (docs.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
           <FileText />
-          <p>No tienes documentos para compartir.</p>
+          <Typography variant="bodySm" color="secondary">No tienes documentos para compartir.</Typography>
         </div>
       ) : (
         <div className="card">

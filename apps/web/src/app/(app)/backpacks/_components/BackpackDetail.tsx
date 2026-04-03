@@ -5,7 +5,7 @@ import { useBackpackQuery } from "@healthguard/api/hooks";
 import { useBackpackDetail } from "@/hooks/useBackpackDetail";
 import { type BackpackWithDocs } from "@healthguard/api";
 import { Backpack, FileText, X, Share2, ChevronLeft, Plus, Edit3, Clock, QrCode, Copy } from "lucide-react";
-import { formatDate, Button } from "@healthguard/ui";
+import { formatDate, Button, Typography } from "@healthguard/ui";
 import { AddDocsModal } from "./AddDocsModal";
 import { BackpackFormModal } from "./BackpackFormModal";
 
@@ -45,12 +45,12 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
         <>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
             <div>
-              <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>
-                <Backpack size={22} style={{ verticalAlign: -3, marginRight: 8, color: "var(--primary-500)" }} />
-                {bp.data.name}
-              </h1>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Backpack size={22} style={{ color: "var(--primary-500)", flexShrink: 0 }} />
+                <Typography variant="h2">{bp.data.name}</Typography>
+              </div>
               {bp.data.description && (
-                <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>{bp.data.description}</p>
+                <Typography variant="bodySm" color="secondary">{bp.data.description}</Typography>
               )}
             </div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -102,7 +102,7 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
             </div>
             <div className="card-body">
               {(bp.data.documents?.length ?? 0) === 0 ? (
-                <div className="empty-state"><p>Esta mochila no tiene documentos.</p></div>
+                <div className="empty-state"><Typography variant="bodySm" color="secondary">Esta mochila no tiene documentos.</Typography></div>
               ) : (
                 <div className="bp-detail-docs">
                   {bp.data.documents.map((doc) => (

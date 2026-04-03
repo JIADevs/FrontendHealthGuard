@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Copy } from "lucide-react";
-import { formatDate, Button } from "@healthguard/ui";
+import { formatDate, Button, Typography } from "@healthguard/ui";
 
 interface ShareResultProps {
   shareUrl: string;
@@ -27,10 +27,8 @@ export function ShareResult({ shareUrl, qrCodeUrl, expiresAt, label }: ShareResu
   return (
     <div className="share-result">
       <img src={qrCodeUrl} alt="QR Code" width={150} height={150} style={{ display: "block" }} />
-      {label && <p style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{label}</p>}
-      <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>
-        Expira el {formatDate(expiresAt)}
-      </p>
+      {label && <Typography variant="bodyLg">{label}</Typography>}
+      <Typography variant="bodySm" color="secondary">Expira el {formatDate(expiresAt)}</Typography>
       <div className="share-url">
         <input readOnly value={shareUrl} />
         <Button variant="ghost" size="sm" onPress={handleCopy}>

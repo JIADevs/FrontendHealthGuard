@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useDocumentsQuery, useDeleteDocumentMutation } from "@healthguard/api/hooks";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card, CardGrid } from "@healthguard/ui";
+import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card, CardGrid, Typography } from "@healthguard/ui";
 import { Search, Upload, FileText, Eye, Share2, Trash2 } from "lucide-react";
 import { isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -35,10 +35,8 @@ export default function DocumentsPage() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Documentos Médicos</h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-            {total} documento{total !== 1 ? "s" : ""} en tu carpeta
-          </p>
+          <Typography variant="h2">Documentos Médicos</Typography>
+          <Typography variant="bodySm" color="secondary">{total} documento{total !== 1 ? "s" : ""} en tu carpeta</Typography>
         </div>
         <Button onPress={() => setShowUpload(true)}>
           <Upload size={16} /> Subir Documento
@@ -68,7 +66,7 @@ export default function DocumentsPage() {
       ) : (docs.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
           <FileText />
-          <p>{search ? "Sin resultados para esta búsqueda." : "No tienes documentos aún. ¡Sube tu primer documento!"}</p>
+          <Typography variant="bodySm" color="secondary">{search ? "Sin resultados para esta búsqueda." : "No tienes documentos aún. ¡Sube tu primer documento!"}</Typography>
         </div>
       ) : (
         <CardGrid variant="grid">

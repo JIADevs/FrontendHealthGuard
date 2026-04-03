@@ -9,7 +9,7 @@ import {
   ArrowRight,
   Clock,
 } from "lucide-react";
-import { formatTime } from "@healthguard/ui";
+import { formatTime, Typography } from "@healthguard/ui";
 
 export default function DashboardPage() {
   const dash = useDashboardCore();
@@ -18,12 +18,8 @@ export default function DashboardPage() {
     <>
       {/* Greeting */}
       <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 4 }}>
-          ¡Hola de nuevo! 👋
-        </h1>
-        <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-          {dash.apptSubtitle}
-        </p>
+        <Typography variant="h2">¡Hola de nuevo! 👋</Typography>
+        <Typography variant="bodySm" color="secondary">{dash.apptSubtitle}</Typography>
       </div>
 
       {/* Metrics */}
@@ -59,7 +55,7 @@ export default function DashboardPage() {
           ) : dash.upcomingAppts.length === 0 ? (
             <div className="empty-state">
               <CalendarDays />
-              <p>No hay citas pendientes.</p>
+              <Typography variant="bodySm" color="secondary">No hay citas pendientes.</Typography>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -72,10 +68,8 @@ export default function DashboardPage() {
                     <CalendarDays size={18} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{a.specialty}</div>
-                    <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>
-                      {a.doctor} — {a.location}
-                    </div>
+                    <Typography variant="label">{a.specialty}</Typography>
+                    <Typography variant="caption" color="secondary">{a.doctor} — {a.location}</Typography>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", fontSize: 13 }}>
                     <Clock size={14} />
@@ -102,7 +96,7 @@ export default function DashboardPage() {
           ) : dash.activeMeds.length === 0 ? (
             <div className="empty-state">
               <Pill />
-              <p>Sin medicamentos activos.</p>
+              <Typography variant="bodySm" color="secondary">Sin medicamentos activos.</Typography>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -115,10 +109,8 @@ export default function DashboardPage() {
                     <Pill size={18} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{m.name}</div>
-                    <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>
-                      {m.dosage} — cada {m.frequency}h
-                    </div>
+                    <Typography variant="label">{m.name}</Typography>
+                    <Typography variant="caption" color="secondary">{m.dosage} — cada {m.frequency}h</Typography>
                   </div>
                   {m.nextIntakeTime && (
                     <div style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--text-secondary)", fontSize: 13 }}>

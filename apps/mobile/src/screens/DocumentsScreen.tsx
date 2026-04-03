@@ -7,7 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@healthguard/ui";
-import { colors, overlay, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle } from "@healthguard/ui";
+import { colors, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function DocumentsScreen() {
@@ -97,7 +97,7 @@ export function DocumentsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Documentos</Text>
+          <Typography variant="h2">Documentos</Typography>
           <TouchableOpacity
             style={styles.shareAllBtn}
             onPress={() => navigation.navigate("ShareDocuments")}
@@ -163,11 +163,11 @@ export function DocumentsScreen() {
           )}
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={styles.empty}>
+              <Typography variant="body" color="secondary" align="center">
                 {debouncedSearch.trim()
                   ? "Sin resultados para esta búsqueda."
                   : "No tienes documentos aún."}
-              </Text>
+              </Typography>
             </View>
           }
         />
@@ -193,7 +193,7 @@ export function DocumentsScreen() {
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={() => handleNavigate("DocumentUpload")}>
           <View style={styles.fabOptionLabel}>
-            <Text style={styles.fabOptionText}>Subir archivo</Text>
+            <Typography variant="label">Subir archivo</Typography>
           </View>
           <View style={[styles.fabSmall, { backgroundColor: colors.violet[500] }]}>
             <FileUp color={colors.white} size={22} />
@@ -214,7 +214,7 @@ export function DocumentsScreen() {
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={() => handleNavigate("Scanner")}>
           <View style={styles.fabOptionLabel}>
-            <Text style={styles.fabOptionText}>Escanear</Text>
+            <Typography variant="label">Escanear</Typography>
           </View>
           <View style={[styles.fabSmall, { backgroundColor: colors.sky[500] }]}>
             <Camera color={colors.white} size={22} />
@@ -237,7 +237,6 @@ function makeStyles(t: ThemeContextValue) {
     container:   { flex: 1, backgroundColor: t.surface.bg },
     header:      { padding: spacing[6], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     titleRow:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    title:       { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary },
     shareAllBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: colors.sky[50], borderWidth: 1, borderColor: colors.sky[200] },
     searchBar: {
       marginTop: 14,
@@ -264,7 +263,6 @@ function makeStyles(t: ThemeContextValue) {
       backgroundColor: t.border.medium,
     },
     center:     { flex: 1, alignItems: "center", justifyContent: "center" },
-    empty:      { color: t.text.secondary, fontSize: fontSize.base },
 
     backdrop: {
       ...StyleSheet.absoluteFillObject,
@@ -307,11 +305,6 @@ function makeStyles(t: ThemeContextValue) {
       paddingVertical: spacing[2],
       borderRadius: 10,
       ...shadows.md,
-    },
-    fabOptionText: {
-      fontSize: 14,
-      fontWeight: fontWeight.semibold,
-      color: t.text.primary,
     },
     fabSmall: {
       width: 48,

@@ -39,6 +39,7 @@ import {
   Card,
   cardContentStyle,
   TextField,
+  Typography,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import {
@@ -67,7 +68,7 @@ export function AgendaScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Agenda Médica</Text>
+        <Typography variant="h2">Agenda Médica</Typography>
       </View>
 
       <View style={styles.tabs}>
@@ -79,14 +80,9 @@ export function AgendaScreen() {
             size={14}
             color={tab === "appointments" ? colors.sky[500] : t.text.secondary}
           />
-          <Text
-            style={[
-              styles.tabText,
-              tab === "appointments" && styles.tabTextActive,
-            ]}
-          >
-            Citas
-          </Text>
+          <Typography variant="label" color={tab === "appointments" ? "inherit" : "secondary"}>
+            <Text style={tab === "appointments" ? { color: colors.sky[500] } : undefined}>Citas</Text>
+          </Typography>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, tab === "medications" && styles.tabActive]}
@@ -96,14 +92,9 @@ export function AgendaScreen() {
             size={14}
             color={tab === "medications" ? colors.sky[500] : t.text.secondary}
           />
-          <Text
-            style={[
-              styles.tabText,
-              tab === "medications" && styles.tabTextActive,
-            ]}
-          >
-            Medicamentos
-          </Text>
+          <Typography variant="label" color={tab === "medications" ? "inherit" : "secondary"}>
+            <Text style={tab === "medications" ? { color: colors.sky[500] } : undefined}>Medicamentos</Text>
+          </Typography>
         </TouchableOpacity>
       </View>
 
@@ -177,7 +168,7 @@ function AppointmentsTab() {
       ) : items.length === 0 ? (
         <View style={styles.center}>
           <CalendarDays size={48} color={t.border.medium} />
-          <Text style={styles.emptyText}>No tienes citas registradas.</Text>
+          <Typography variant="body" color="secondary" align="center">No tienes citas registradas.</Typography>
         </View>
       ) : (
         <FlatList
@@ -394,7 +385,7 @@ function MedicationsTab() {
       ) : items.length === 0 ? (
         <View style={styles.center}>
           <Pill size={48} color={t.border.medium} />
-          <Text style={styles.emptyText}>No tienes medicamentos registrados.</Text>
+          <Typography variant="body" color="secondary" align="center">No tienes medicamentos registrados.</Typography>
         </View>
       ) : (
         <FlatList
@@ -533,7 +524,7 @@ function ConfirmDeleteModal({
         </>
       }
     >
-      <Text style={{ fontSize: fontSize.sm, color: t.text.secondary }}>{message}</Text>
+      <Typography variant="bodySm" color="secondary">{message}</Typography>
     </Modal>
   );
 }
@@ -544,18 +535,14 @@ function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container:          { flex: 1, backgroundColor: t.surface.bg },
     header:             { padding: spacing[6], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
-    title:              { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary },
     tabs:               { flexDirection: "row", backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium, paddingHorizontal: spacing[4] },
     tab:                { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], paddingVertical: spacing[3], borderBottomWidth: 2, borderBottomColor: "transparent" },
     tabActive:          { borderBottomColor: colors.sky[500] },
-    tabText:            { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.secondary },
-    tabTextActive:      { color: colors.sky[500] },
     tabContent:         { flex: 1 },
     addRow:             { flexDirection: "row", justifyContent: "flex-end", padding: spacing[4] },
     addBtn:             { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: colors.sky[500], paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md },
     addBtnText:         { color: colors.white, fontWeight: fontWeight.semibold, fontSize: fontSize.sm },
     center:             { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
-    emptyText:          { color: t.text.secondary, fontSize: fontSize.md, textAlign: "center" },
     cardMeta:           { flexDirection: "row", alignItems: "center", gap: spacing[1] },
     cardMetaText:       { fontSize: fontSize.sm, color: t.text.secondary },
     cardActions:        { gap: spacing[2] },

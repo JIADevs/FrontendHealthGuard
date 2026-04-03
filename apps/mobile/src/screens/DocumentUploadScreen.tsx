@@ -25,7 +25,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 const ACCEPTED_TYPES = [
@@ -101,10 +101,10 @@ export function DocumentUploadScreen() {
           <View style={styles.pickerIconBg}>
             <FileUp color={colors.sky[500]} size={48} />
           </View>
-          <Text style={styles.pickerTitle}>Subir Documento</Text>
-          <Text style={styles.pickerSubtitle}>
+          <Typography variant="h2">Subir Documento</Typography>
+          <Typography variant="body" color="secondary" align="center">
             Seleccioná un PDF o imagen desde tu dispositivo
-          </Text>
+          </Typography>
           <TouchableOpacity style={styles.pickerBtn} onPress={pickDocument}>
             <Text style={styles.pickerBtnText}>Elegir archivo</Text>
           </TouchableOpacity>
@@ -130,9 +130,9 @@ export function DocumentUploadScreen() {
           ) : (
             <View style={styles.pdfPreview}>
               <FileTextIcon color={colors.sky[500]} size={64} />
-              <Text style={styles.pdfName} numberOfLines={2}>{pickerAsset.name}</Text>
+              <Typography variant="label" numberOfLines={2} align="center">{pickerAsset.name}</Typography>
               {pickerAsset.size != null && (
-                <Text style={styles.pdfSize}>{friendlySize(pickerAsset.size)}</Text>
+                <Typography variant="caption" color="secondary">{friendlySize(pickerAsset.size)}</Typography>
               )}
             </View>
           )}

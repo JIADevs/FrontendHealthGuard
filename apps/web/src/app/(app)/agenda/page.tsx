@@ -28,7 +28,7 @@ import {
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField, Typography } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -41,7 +41,7 @@ export default function AgendaPage() {
   return (
     <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800 }}>Agenda Médica</h1>
+        <Typography variant="h2">Agenda Médica</Typography>
       </div>
 
       <div className="agenda-tabs">
@@ -90,7 +90,7 @@ function AppointmentsTab() {
       ) : (appts.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
           <CalendarDays />
-          <p>No tienes citas registradas.</p>
+          <Typography variant="bodySm" color="secondary">No tienes citas registradas.</Typography>
         </div>
       ) : (
         <CardGrid variant="list">
@@ -234,7 +234,7 @@ function MedicationsTab() {
       ) : (meds.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
           <Pill />
-          <p>No tienes medicamentos registrados.</p>
+          <Typography variant="bodySm" color="secondary">No tienes medicamentos registrados.</Typography>
         </div>
       ) : (
         <CardGrid variant="list">

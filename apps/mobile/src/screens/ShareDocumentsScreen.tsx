@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useQuery } from "@tanstack/react-query";
 import { getDocuments, shareDocument, isApiError, type Document } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { FileText, Share2, Check, Clock } from "lucide-react-native";
 
@@ -98,10 +98,10 @@ export function ShareDocumentsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
         <View>
-          <Text style={styles.title}>Compartir Documentos</Text>
-          <Text style={styles.subtitle}>
+          <Typography variant="h3">Compartir Documentos</Typography>
+          <Typography variant="bodySm" color="secondary">
             Selecciona documentos y genera enlaces con código QR.
-          </Text>
+          </Typography>
         </View>
         {selected.length > 0 && (
           <Button onPress={handleShare} disabled={sharing} loading={sharing}>
@@ -126,9 +126,9 @@ export function ShareDocumentsScreen() {
             <View style={styles.resultsCard}>
               <View style={styles.resultsHeader}>
                 <Share2 size={16} color={colors.sky[500]} />
-                <Text style={styles.resultsTitle}>
+                <Typography variant="label">
                   {shareResults.size} enlace{shareResults.size > 1 ? "s" : ""} generado{shareResults.size > 1 ? "s" : ""}
-                </Text>
+                </Typography>
               </View>
               {sharedDocs.map((doc) => {
                 const res = shareResults.get(doc.id)!;
@@ -139,14 +139,10 @@ export function ShareDocumentsScreen() {
                       style={styles.qrThumb}
                     />
                     <View style={styles.resultInfo}>
-                      <Text style={styles.resultTitle} numberOfLines={1}>
-                        {doc.title}
-                      </Text>
+                      <Typography variant="label" numberOfLines={1}>{doc.title}</Typography>
                       <View style={styles.resultMeta}>
                         <Clock size={12} color={t.text.secondary} />
-                        <Text style={styles.resultMetaText}>
-                          Expira {formatDate(res.expiresAt)}
-                        </Text>
+                        <Typography variant="caption" color="secondary">Expira {formatDate(res.expiresAt)}</Typography>
                       </View>
                       <View style={styles.resultActions}>
                         <Button variant="secondary" size="sm" onPress={() => handleCopyLink(res.shareUrl)}>
@@ -171,7 +167,7 @@ export function ShareDocumentsScreen() {
           ) : (
             <View style={styles.center}>
               <FileText size={48} color={t.border.medium} />
-              <Text style={styles.emptyText}>No tienes documentos para compartir.</Text>
+              <Typography variant="body" color="secondary" align="center">No tienes documentos para compartir.</Typography>
             </View>
           )
         }
@@ -192,12 +188,8 @@ export function ShareDocumentsScreen() {
               </View>
               <FileText size={16} color={isShared ? colors.emerald[500] : t.text.secondary} />
               <View style={styles.docInfo}>
-                <Text style={styles.docTitle} numberOfLines={1}>
-                  {doc.title}
-                </Text>
-                <Text style={styles.docMeta}>
-                  {doc.format} · {formatDate(doc.uploadedAt)}
-                </Text>
+                <Typography variant="label" numberOfLines={1}>{doc.title}</Typography>
+                <Typography variant="caption" color="secondary">{doc.format} · {formatDate(doc.uploadedAt)}</Typography>
               </View>
               {isShared && (
                 <View style={styles.sharedBadge}>

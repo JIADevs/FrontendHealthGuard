@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { useProfileQuery } from "@healthguard/api/hooks";
 import { useProfileForm } from "@/hooks/useProfileForm";
 import { User, Save, Mail, Phone, Heart, Shield } from "lucide-react";
-import { Button, TextField, Select, Typography } from "@healthguard/ui";
+import { Button, TextField, Select, Typography, DatePicker } from "@healthguard/ui";
 
 export default function ProfilePage() {
   const profile = useProfileQuery();
@@ -68,7 +68,7 @@ export default function ProfilePage() {
               <div className="form-grid">
                 <TextField id="profile-name" label="Nombre completo" value={form.name} onChange={form.setName} placeholder="Tu nombre" />
                 <TextField id="profile-doc" label="Documento de identidad" value={form.documentId} onChange={form.setDocumentId} placeholder="Cédula / Pasaporte" />
-                <TextField id="profile-birth" label="Fecha de nacimiento" type="date" value={form.birthDate} onChange={form.setBirthDate} />
+                <DatePicker id="profile-birth" label="Fecha de nacimiento" value={form.birthDate} onChange={form.setBirthDate} />
                 <Select
                   label="Género"
                   value={form.gender || undefined}

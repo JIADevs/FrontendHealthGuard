@@ -21,6 +21,7 @@ import {
   TextField,
   Select,
   Typography,
+  DatePicker,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { User, Phone, Heart, Shield } from "lucide-react-native";
@@ -80,7 +81,9 @@ export function ProfileScreen() {
         <View style={styles.card}>
           <Field label="Nombre completo" value={form.name} onChangeText={form.setName} placeholder="Tu nombre" styles={styles} />
           <Field label="Documento de identidad" value={form.documentId} onChangeText={form.setDocumentId} placeholder="Cédula / Pasaporte" styles={styles} />
-          <Field label="Fecha de nacimiento" value={form.birthDate} onChangeText={form.setBirthDate} placeholder="YYYY-MM-DD" styles={styles} />
+          <View style={styles.fieldRow}>
+            <DatePicker label="Fecha de nacimiento" value={form.birthDate} onChange={form.setBirthDate} />
+          </View>
           <View style={[styles.fieldRow, styles.fieldRowLast]}>
             <Select
               label="Género"

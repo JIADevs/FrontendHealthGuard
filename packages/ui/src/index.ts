@@ -32,3 +32,7 @@ export * from './Typography.types';
 export * from './Typography.native';
 export * from './DateTimePicker.types';
 export * from './DateTimePicker.native';
+export * from './DatePicker.types';
+export * from './DatePicker.native';
+export * from './TimePicker.types';
+export * from './TimePicker.native';

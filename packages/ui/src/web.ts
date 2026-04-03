@@ -30,3 +30,7 @@ export * from './Typography.types';
 export * from './Typography.web';
 export * from './DateTimePicker.types';
 export * from './DateTimePicker.web';
+export * from './DatePicker.types';
+export * from './DatePicker.web';
+export * from './TimePicker.types';
+export * from './TimePicker.web';

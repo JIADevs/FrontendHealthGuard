@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Upload, FileText, FileUp, Sparkles, Loader2, Plus, Check, X } from "lucide-react";
-import { Button, Chip, Modal, TextField, Typography } from "@healthguard/ui";
+import { Button, Chip, Modal, TextField, Typography, DatePicker } from "@healthguard/ui";
 import { useDocumentForm } from "@/hooks/useDocumentForm";
 
 const TEMPLATE_ICONS: Record<string, string> = {
@@ -185,7 +185,7 @@ export function UploadModal({
           {/* Title + date */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <TextField id="doc-title" label="Nombre del documento" value={form.title} onChange={form.setTitle} required />
-            <TextField id="doc-date" label="Fecha del documento" type="date" value={docDate} onChange={setDocDate} />
+            <DatePicker id="doc-date" label="Fecha del documento" value={docDate} onChange={setDocDate} />
           </div>
 
           {/* Type chips */}

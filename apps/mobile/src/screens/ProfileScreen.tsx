@@ -1,9 +1,8 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
   ActivityIndicator,
 } from "react-native";
@@ -20,10 +19,11 @@ import {
   useAppTheme,
   Button,
   TextField,
+  Select,
   Typography,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
-import { User, Phone, Heart, Shield, ChevronDown } from "lucide-react-native";
+import { User, Phone, Heart, Shield } from "lucide-react-native";
 
 const GENDER_OPTIONS = [
   { value: "", label: "Sin especificar" },
@@ -81,7 +81,15 @@ export function ProfileScreen() {
           <Field label="Nombre completo" value={form.name} onChangeText={form.setName} placeholder="Tu nombre" styles={styles} />
           <Field label="Documento de identidad" value={form.documentId} onChangeText={form.setDocumentId} placeholder="Cédula / Pasaporte" styles={styles} />
           <Field label="Fecha de nacimiento" value={form.birthDate} onChangeText={form.setBirthDate} placeholder="YYYY-MM-DD" styles={styles} />
-          <PickerField label="Género" value={form.gender} options={GENDER_OPTIONS} onSelect={form.setGender} styles={styles} t={t} last />
+          <View style={[styles.fieldRow, styles.fieldRowLast]}>
+            <Select
+              label="Género"
+              value={form.gender || undefined}
+              onChange={form.setGender}
+              placeholder="Sin especificar"
+              options={GENDER_OPTIONS.filter((o) => o.value !== "")}
+            />
+          </View>
         </View>
 
         {/* Contacto */}
@@ -94,7 +102,15 @@ export function ProfileScreen() {
         {/* Información médica */}
         <SectionHeader icon={<Heart size={16} color={t.text.secondary} />} title="Información Médica" />
         <View style={styles.card}>
-          <PickerField label="Tipo de sangre" value={form.bloodType} options={BLOOD_TYPE_OPTIONS} onSelect={form.setBloodType} styles={styles} t={t} last />
+          <View style={[styles.fieldRow, styles.fieldRowLast]}>
+            <Select
+              label="Tipo de sangre"
+              value={form.bloodType || undefined}
+              onChange={form.setBloodType}
+              placeholder="Sin especificar"
+              options={BLOOD_TYPE_OPTIONS.filter((o) => o.value !== "")}
+            />
+          </View>
         </View>
 
         {/* Contacto de emergencia */}
@@ -156,58 +172,6 @@ function Field({
   );
 }
 
-function PickerField({
-  label,
-  value,
-  options,
-  onSelect,
-  styles,
-  t,
-  last,
-}: {
-  label: string;
-  value: string;
-  options: { value: string; label: string }[];
-  onSelect: (v: string) => void;
-  styles: StylesType;
-  t: ThemeContextValue;
-  last?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const selected = options.find((o) => o.value === value)?.label ?? "Sin especificar";
-
-  return (
-    <View style={[styles.fieldRow, last && styles.fieldRowLast]}>
-      <Typography variant="label" color="secondary">{label}</Typography>
-      <TouchableOpacity style={styles.pickerTrigger} onPress={() => setOpen(!open)}>
-        <View style={{ flex: 1 }}>
-          <Typography variant="body">{selected}</Typography>
-        </View>
-        <ChevronDown size={16} color={t.text.secondary} />
-      </TouchableOpacity>
-      {open && (
-        <View style={[styles.pickerDropdown, { backgroundColor: t.surface.bgCard }]}>
-          {options.map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[styles.pickerOption, opt.value === value && { backgroundColor: colors.primary[50] }]}
-              onPress={() => { onSelect(opt.value); setOpen(false); }}
-            >
-              <Typography
-                variant="body"
-                color={opt.value === value ? "inherit" : "default"}
-              >
-                <Text style={opt.value === value ? { color: colors.primary[600], fontWeight: fontWeight.semibold } : undefined}>
-                  {opt.label}
-                </Text>
-              </Typography>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-}
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
@@ -217,10 +181,7 @@ function makeStyles(t: ThemeContextValue) {
     avatar:           { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary[500], alignItems: "center", justifyContent: "center" },
     avatarText:       { color: colors.white, fontSize: fontSize.xl, fontWeight: fontWeight.bold },
     card:             { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, ...shadows.sm, overflow: "hidden" },
-    fieldRow:         { paddingHorizontal: spacing[4], paddingTop: spacing[3], borderBottomWidth: 1, borderBottomColor: t.border.light },
+    fieldRow:         { paddingHorizontal: spacing[4], paddingTop: spacing[3], paddingBottom: spacing[3], borderBottomWidth: 1, borderBottomColor: t.border.light },
     fieldRowLast:     { borderBottomWidth: 0 },
-    pickerTrigger:    { flexDirection: "row", alignItems: "center", marginTop: spacing[1] },
-    pickerDropdown:   { marginTop: spacing[2], borderRadius: radii.md, borderWidth: 1, borderColor: t.border.medium, overflow: "hidden" },
-    pickerOption:     { paddingHorizontal: spacing[4], paddingVertical: spacing[3] },
   });
 }

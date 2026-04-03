@@ -28,7 +28,7 @@ import {
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField, Typography } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField, Select, Typography } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -113,15 +113,11 @@ function AppointmentsTab() {
                     <Clock size={14} />
                     {formatApptDate(a.date)} {a.time?.slice(0, 5)}
                   </div>
-                  <select
-                    className="status-select"
+                  <Select
                     value={a.status}
-                    onChange={(e) => statusMut.mutate({ id: a.id, status: e.target.value })}
-                  >
-                    {(["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"] as const).map((s) => (
-                      <option key={s} value={s}>{appointmentStatusLabel(s)}</option>
-                    ))}
-                  </select>
+                    onChange={(s) => statusMut.mutate({ id: a.id, status: s })}
+                    options={(["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"] as const).map((s) => ({ value: s, label: appointmentStatusLabel(s) }))}
+                  />
                   <div style={{ display: "flex", gap: 4 }}>
                     <button className="icon-btn" title="Editar" onClick={() => { setEditTarget(a); setShowForm(true); }}><Edit3 size={15} /></button>
                     <button className="icon-btn" title="Eliminar" onClick={() => setDeleteTarget(a)}><Trash2 size={15} /></button>
@@ -176,13 +172,15 @@ function AppointmentFormModal({ initial, onClose }: { initial: Appointment | nul
       }
     >
       <form id="appointment-form" onSubmit={(e) => { e.preventDefault(); form.handleSave(); }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div className="form-group">
-          <label>Tipo de evento</label>
-          <select className="form-input" value={form.type} onChange={(e) => form.setType(e.target.value as "APPOINTMENT" | "EXAM")}>
-            <option value="APPOINTMENT">Cita Médica</option>
-            <option value="EXAM">Examen / Procedimiento</option>
-          </select>
-        </div>
+        <Select
+          label="Tipo de evento"
+          value={form.type}
+          onChange={(v) => form.setType(v as "APPOINTMENT" | "EXAM")}
+          options={[
+            { value: "APPOINTMENT", label: "Cita Médica" },
+            { value: "EXAM", label: "Examen / Procedimiento" },
+          ]}
+        />
 
         {form.type === "EXAM" && (
           <TextField label="Tipo de examen" value={form.examType} onChange={form.setExamType} placeholder="Ej: Resonancia, Hemograma..." />

@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { useProfileQuery } from "@healthguard/api/hooks";
 import { useProfileForm } from "@/hooks/useProfileForm";
 import { User, Save, Mail, Phone, Heart, Shield } from "lucide-react";
-import { Button, TextField, Typography } from "@healthguard/ui";
+import { Button, TextField, Select, Typography } from "@healthguard/ui";
 
 export default function ProfilePage() {
   const profile = useProfileQuery();
@@ -69,15 +69,17 @@ export default function ProfilePage() {
                 <TextField id="profile-name" label="Nombre completo" value={form.name} onChange={form.setName} placeholder="Tu nombre" />
                 <TextField id="profile-doc" label="Documento de identidad" value={form.documentId} onChange={form.setDocumentId} placeholder="Cédula / Pasaporte" />
                 <TextField id="profile-birth" label="Fecha de nacimiento" type="date" value={form.birthDate} onChange={form.setBirthDate} />
-                <div className="form-group">
-                  <label htmlFor="profile-gender">Género</label>
-                  <select id="profile-gender" className="form-input" value={form.gender} onChange={(e) => form.setGender(e.target.value)}>
-                    <option value="">Sin especificar</option>
-                    <option value="M">Masculino</option>
-                    <option value="F">Femenino</option>
-                    <option value="O">Otro</option>
-                  </select>
-                </div>
+                <Select
+                  label="Género"
+                  value={form.gender || undefined}
+                  onChange={form.setGender}
+                  placeholder="Sin especificar"
+                  options={[
+                    { value: "M", label: "Masculino" },
+                    { value: "F", label: "Femenino" },
+                    { value: "O", label: "Otro" },
+                  ]}
+                />
               </div>
             </div>
           </div>
@@ -109,14 +111,14 @@ export default function ProfilePage() {
               </span>
             </div>
             <div className="card-body">
-              <div className="form-group" style={{ maxWidth: 200 }}>
-                <label htmlFor="profile-blood">Tipo de sangre</label>
-                <select id="profile-blood" className="form-input" value={form.bloodType} onChange={(e) => form.setBloodType(e.target.value)}>
-                  <option value="">Sin especificar</option>
-                  {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((bt) => (
-                    <option key={bt} value={bt}>{bt}</option>
-                  ))}
-                </select>
+              <div style={{ maxWidth: 200 }}>
+                <Select
+                  label="Tipo de sangre"
+                  value={form.bloodType || undefined}
+                  onChange={form.setBloodType}
+                  placeholder="Sin especificar"
+                  options={["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((bt) => ({ value: bt, label: bt }))}
+                />
               </div>
             </div>
           </div>

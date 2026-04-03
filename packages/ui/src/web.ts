@@ -18,3 +18,5 @@ export * from './Pagination.types';
 export * from './Pagination.web';
 export * from './CardGrid.types';
 export * from './CardGrid.web';
+export * from './TextField.types';
+export * from './TextField.web';

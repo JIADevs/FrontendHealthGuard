@@ -3,8 +3,8 @@
 import type { FormEvent } from "react";
 import { useProfileQuery } from "@healthguard/api/hooks";
 import { useProfileForm } from "@/hooks/useProfileForm";
-import { User, Save, Mail, Phone, MapPin, Heart, Shield, Loader2 } from "lucide-react";
-import { Button } from "@healthguard/ui";
+import { User, Save, Mail, Phone, Heart, Shield } from "lucide-react";
+import { Button, TextField } from "@healthguard/ui";
 
 export default function ProfilePage() {
   const profile = useProfileQuery();
@@ -68,18 +68,9 @@ export default function ProfilePage() {
             </div>
             <div className="card-body">
               <div className="form-grid">
-                <div className="form-group">
-                  <label htmlFor="profile-name">Nombre completo</label>
-                  <input id="profile-name" className="form-input" value={form.name} onChange={(e) => form.setName(e.target.value)} placeholder="Tu nombre" />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="profile-doc">Documento de identidad</label>
-                  <input id="profile-doc" className="form-input" value={form.documentId} onChange={(e) => form.setDocumentId(e.target.value)} placeholder="Cédula / Pasaporte" />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="profile-birth">Fecha de nacimiento</label>
-                  <input id="profile-birth" className="form-input" type="date" value={form.birthDate} onChange={(e) => form.setBirthDate(e.target.value)} />
-                </div>
+                <TextField id="profile-name" label="Nombre completo" value={form.name} onChange={form.setName} placeholder="Tu nombre" />
+                <TextField id="profile-doc" label="Documento de identidad" value={form.documentId} onChange={form.setDocumentId} placeholder="Cédula / Pasaporte" />
+                <TextField id="profile-birth" label="Fecha de nacimiento" type="date" value={form.birthDate} onChange={form.setBirthDate} />
                 <div className="form-group">
                   <label htmlFor="profile-gender">Género</label>
                   <select id="profile-gender" className="form-input" value={form.gender} onChange={(e) => form.setGender(e.target.value)}>
@@ -103,16 +94,9 @@ export default function ProfilePage() {
             </div>
             <div className="card-body">
               <div className="form-grid">
-                <div className="form-group">
-                  <label htmlFor="profile-phone">Teléfono</label>
-                  <input id="profile-phone" className="form-input" value={form.phone} onChange={(e) => form.setPhone(e.target.value)} placeholder="+57 300 000 0000" />
-                </div>
-                <div className="form-group full">
-                  <label htmlFor="profile-address">
-                    <MapPin size={13} style={{ verticalAlign: -1, marginRight: 4 }} />
-                    Dirección
-                  </label>
-                  <input id="profile-address" className="form-input" value={form.address} onChange={(e) => form.setAddress(e.target.value)} placeholder="Ciudad, departamento, dirección" />
+                <TextField id="profile-phone" label="Teléfono" value={form.phone} onChange={form.setPhone} placeholder="+57 300 000 0000" />
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <TextField id="profile-address" label="Dirección" value={form.address} onChange={form.setAddress} placeholder="Ciudad, departamento, dirección" />
                 </div>
               </div>
             </div>
@@ -149,14 +133,8 @@ export default function ProfilePage() {
             </div>
             <div className="card-body">
               <div className="form-grid">
-                <div className="form-group">
-                  <label htmlFor="profile-ec-name">Nombre</label>
-                  <input id="profile-ec-name" className="form-input" value={form.emergencyContactName} onChange={(e) => form.setEmergencyContactName(e.target.value)} placeholder="Nombre del contacto" />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="profile-ec-phone">Teléfono</label>
-                  <input id="profile-ec-phone" className="form-input" value={form.emergencyContactPhone} onChange={(e) => form.setEmergencyContactPhone(e.target.value)} placeholder="+57 300 000 0000" />
-                </div>
+                <TextField id="profile-ec-name" label="Nombre" value={form.emergencyContactName} onChange={form.setEmergencyContactName} placeholder="Nombre del contacto" />
+                <TextField id="profile-ec-phone" label="Teléfono" value={form.emergencyContactPhone} onChange={form.setEmergencyContactPhone} placeholder="+57 300 000 0000" />
               </div>
             </div>
           </div>

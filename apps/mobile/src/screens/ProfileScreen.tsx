@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -20,6 +19,7 @@ import {
   shadows,
   useAppTheme,
   Button,
+  TextField,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { Save, User, Phone, Heart, Shield, ChevronDown } from "lucide-react-native";
@@ -146,13 +146,11 @@ function Field({
 }) {
   return (
     <View style={[styles.fieldRow, last && styles.fieldRowLast]}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        style={styles.fieldInput}
+      <TextField
+        label={label}
         value={value}
-        onChangeText={onChangeText}
+        onChange={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="gray"
         keyboardType={keyboardType ?? "default"}
         autoCapitalize="none"
       />
@@ -219,10 +217,8 @@ function makeStyles(t: ThemeContextValue) {
     avatarName:       { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: t.text.primary },
     avatarEmail:      { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2 },
     card:             { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, ...shadows.sm, overflow: "hidden" },
-    fieldRow:         { paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderBottomWidth: 1, borderBottomColor: t.border.light },
+    fieldRow:         { paddingHorizontal: spacing[4], paddingTop: spacing[3], borderBottomWidth: 1, borderBottomColor: t.border.light },
     fieldRowLast:     { borderBottomWidth: 0 },
-    fieldLabel:       { fontSize: fontSize.xs, color: t.text.secondary, fontWeight: fontWeight.medium, marginBottom: 4 },
-    fieldInput:       { fontSize: fontSize.base, color: t.text.primary },
     pickerTrigger:    { flexDirection: "row", alignItems: "center" },
     pickerDropdown:   { marginTop: spacing[2], borderRadius: radii.md, borderWidth: 1, borderColor: t.border.medium, overflow: "hidden" },
     pickerOption:     { paddingHorizontal: spacing[4], paddingVertical: spacing[3] },

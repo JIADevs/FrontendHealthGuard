@@ -6,12 +6,11 @@ import {
   Platform,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { useBackpackForm } from "../hooks/useBackpackForm";
-import { useAppTheme, colors, Button } from "@healthguard/ui";
+import { useAppTheme, colors, Button, TextField } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id?: string };
@@ -50,27 +49,23 @@ export function BackpackEditScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>{form.isEdit ? "Editar mochila" : "Crear mochila"}</Text>
 
-        <Text style={styles.label}>Nombre</Text>
-        <TextInput
-          style={styles.input}
+        <TextField
+          label="Nombre"
           value={form.name}
-          onChangeText={form.setName}
+          onChange={form.setName}
           placeholder="Ej: Mochila de Radiología"
           autoCapitalize="words"
           accessibilityLabel="Nombre de la mochila"
-          placeholderTextColor={t.text.muted}
         />
 
-        <Text style={[styles.label, { marginTop: 14 }]}>Descripción (opcional)</Text>
-        <TextInput
-          style={[styles.input, styles.multiline]}
+        <TextField
+          label="Descripción (opcional)"
           value={form.description}
-          onChangeText={form.setDescription}
+          onChange={form.setDescription}
           placeholder="Ej: Documentos para esta especialidad..."
           multiline
           numberOfLines={4}
           accessibilityLabel="Descripción de la mochila"
-          placeholderTextColor={t.text.muted}
         />
 
         {form.isEdit && (
@@ -93,8 +88,5 @@ function makeStyles(t: ThemeContextValue) {
     center:             { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
     content:            { padding: 20 },
     title:              { fontSize: 22, fontWeight: "800", color: t.text.primary, marginBottom: 18 },
-    label:              { fontSize: 14, fontWeight: "700", color: t.text.primary, marginBottom: 8 },
-    input:              { backgroundColor: t.surface.bgCard, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: t.border.medium, fontSize: 14, color: t.text.primary },
-    multiline:          { height: 120, textAlignVertical: "top" },
   });
 }

@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuthStore } from "@healthguard/stores";
 import { login, isApiError } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Button } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Button, TextField } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
@@ -50,25 +50,22 @@ export function LoginScreen() {
         {!!error && <Text style={styles.error}>{error}</Text>}
 
         <View style={styles.form}>
-          <Text style={styles.label}>Correo electrónico</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
+            label="Correo electrónico"
             placeholder="nombre@ejemplo.com"
-            placeholderTextColor={t.text.muted}
             value={email}
-            onChangeText={setEmail}
+            onChange={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            autoComplete="email"
           />
 
-          <Text style={styles.label}>Contraseña</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
+            label="Contraseña"
             placeholder="••••••••"
-            placeholderTextColor={t.text.muted}
             value={password}
-            onChangeText={setPassword}
-            secureTextEntry
+            onChange={setPassword}
+            type="password"
           />
 
           <Button
@@ -102,8 +99,6 @@ function makeStyles(t: ThemeContextValue) {
     title:          { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[2] },
     subtitle:       { fontSize: fontSize.md, color: t.text.secondary },
     form:           { gap: spacing[4] },
-    label:          { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: -8 },
-    input:          { borderWidth: 1, borderColor: t.border.medium, borderRadius: radii.md, padding: 14, fontSize: fontSize.md, backgroundColor: t.surface.bg, color: t.text.primary },
     error:          { color: colors.error[600], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, overflow: "hidden", marginBottom: spacing[4], textAlign: "center" },
     footer:         { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
     footerText:     { color: t.text.secondary, fontSize: fontSize.sm },

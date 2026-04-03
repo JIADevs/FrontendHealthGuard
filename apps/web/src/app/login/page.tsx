@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { login } from "@healthguard/api";
 import { useAuthStore } from "@healthguard/stores";
 import { isApiError } from "@healthguard/api";
-import { Button } from "@healthguard/ui";
+import { Button, TextField } from "@healthguard/ui";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,32 +53,9 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email">Correo electrónico</label>
-            <input
-              id="email"
-              type="email"
-              className="form-input"
-              placeholder="tu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">Contraseña</label>
-            <input
-              id="password"
-              type="password"
-              className="form-input"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              autoComplete="current-password"
-            />
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 20 }}>
+            <TextField id="email" label="Correo electrónico" type="email" placeholder="tu@email.com" value={email} onChange={setEmail} required autoComplete="email" />
+            <TextField id="password" label="Contraseña" type="password" placeholder="••••••••" value={password} onChange={setPassword} required autoComplete="current-password" />
           </div>
 
           {error && <p className="form-error">{error}</p>}

@@ -28,7 +28,7 @@ import {
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -175,7 +175,7 @@ function AppointmentFormModal({ initial, onClose }: { initial: Appointment | nul
         </>
       }
     >
-      <form id="appointment-form" onSubmit={(e) => { e.preventDefault(); form.handleSave(); }}>
+      <form id="appointment-form" onSubmit={(e) => { e.preventDefault(); form.handleSave(); }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div className="form-group">
           <label>Tipo de evento</label>
           <select className="form-input" value={form.type} onChange={(e) => form.setType(e.target.value as "APPOINTMENT" | "EXAM")}>
@@ -185,32 +185,16 @@ function AppointmentFormModal({ initial, onClose }: { initial: Appointment | nul
         </div>
 
         {form.type === "EXAM" && (
-          <div className="form-group">
-            <label>Tipo de examen</label>
-            <input className="form-input" value={form.examType} onChange={(e) => form.setExamType(e.target.value)} placeholder="Ej: Resonancia, Hemograma..." />
-          </div>
+          <TextField label="Tipo de examen" value={form.examType} onChange={form.setExamType} placeholder="Ej: Resonancia, Hemograma..." />
         )}
 
         <div className="form-grid">
-          <div className="form-group">
-            <label>Especialidad *</label>
-            <input className="form-input" required value={form.specialty} onChange={(e) => form.setSpecialty(e.target.value)} placeholder="Ej: Neurología" />
-          </div>
-          <div className="form-group">
-            <label>Médico *</label>
-            <input className="form-input" required value={form.doctor} onChange={(e) => form.setDoctor(e.target.value)} placeholder="Dr. nombre" />
-          </div>
-          <div className="form-group">
-            <label>Fecha *</label>
-            <input className="form-input" type="date" required value={form.date} onChange={(e) => form.setDate(e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label>Hora *</label>
-            <input className="form-input" type="time" required value={form.time} onChange={(e) => form.setTime(e.target.value)} />
-          </div>
-          <div className="form-group full">
-            <label>Lugar *</label>
-            <input className="form-input" required value={form.location} onChange={(e) => form.setLocation(e.target.value)} placeholder="Hospital / Clínica" />
+          <TextField label="Especialidad" value={form.specialty} onChange={form.setSpecialty} placeholder="Ej: Neurología" required />
+          <TextField label="Médico" value={form.doctor} onChange={form.setDoctor} placeholder="Dr. nombre" required />
+          <TextField label="Fecha" type="date" value={form.date} onChange={form.setDate} required />
+          <TextField label="Hora" type="time" value={form.time} onChange={form.setTime} required />
+          <div style={{ gridColumn: "1 / -1" }}>
+            <TextField label="Lugar" value={form.location} onChange={form.setLocation} placeholder="Hospital / Clínica" required />
           </div>
         </div>
 
@@ -333,31 +317,17 @@ function MedicationFormModal({ initial, onClose }: { initial: Medication | null;
         </>
       }
     >
-      <form id="medication-form" onSubmit={(e) => { e.preventDefault(); form.handleSave(); }}>
+      <form id="medication-form" onSubmit={(e) => { e.preventDefault(); form.handleSave(); }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ gridColumn: "1 / -1" }}>
+          <TextField label="Nombre del medicamento" value={form.name} onChange={form.setName} placeholder="Ej: Ibuprofeno 400mg" required />
+        </div>
         <div className="form-grid">
-          <div className="form-group full">
-            <label>Nombre del medicamento *</label>
-            <input className="form-input" required value={form.name} onChange={(e) => form.setName(e.target.value)} placeholder="Ej: Ibuprofeno 400mg" />
-          </div>
-          <div className="form-group">
-            <label>Dosis *</label>
-            <input className="form-input" required value={form.dosage} onChange={(e) => form.setDosage(e.target.value)} placeholder="Ej: 1 tableta" />
-          </div>
-          <div className="form-group">
-            <label>Frecuencia (horas) *</label>
-            <input className="form-input" type="number" required min={1} max={72} value={form.frequency} onChange={(e) => form.setFrequency(e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label>Fecha de inicio *</label>
-            <input className="form-input" type="date" required value={form.startDate} onChange={(e) => form.setStartDate(e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label>Hora de primera toma *</label>
-            <input className="form-input" type="time" required value={form.firstIntakeTime} onChange={(e) => form.setFirstIntakeTime(e.target.value)} />
-          </div>
-          <div className="form-group full">
-            <label>Indicaciones (opcional)</label>
-            <input className="form-input" value={form.indications} onChange={(e) => form.setIndications(e.target.value)} placeholder="Ej: Tomar con alimentos" />
+          <TextField label="Dosis" value={form.dosage} onChange={form.setDosage} placeholder="Ej: 1 tableta" required />
+          <TextField label="Frecuencia (horas)" type="number" value={form.frequency} onChange={form.setFrequency} required />
+          <TextField label="Fecha de inicio" type="date" value={form.startDate} onChange={form.setStartDate} required />
+          <TextField label="Hora de primera toma" type="time" value={form.firstIntakeTime} onChange={form.setFirstIntakeTime} required />
+          <div style={{ gridColumn: "1 / -1" }}>
+            <TextField label="Indicaciones (opcional)" value={form.indications} onChange={form.setIndications} placeholder="Ej: Tomar con alimentos" />
           </div>
         </div>
 

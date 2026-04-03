@@ -2,7 +2,7 @@
 
 import { type FormEvent } from "react";
 import { useBackpackForm } from "@/hooks/useBackpackForm";
-import { Button, Modal } from "@healthguard/ui";
+import { Button, Modal, TextField } from "@healthguard/ui";
 
 interface BackpackFormModalProps {
   onClose: () => void;
@@ -49,26 +49,9 @@ export function BackpackFormModal({ onClose, backpackId }: BackpackFormModalProp
         </>
       }
     >
-      <form id="backpack-form" onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Nombre *</label>
-          <input
-            className="form-input"
-            required
-            value={form.name}
-            onChange={(e) => form.setName(e.target.value)}
-            placeholder="Ej: Consulta Neurología 2026"
-          />
-        </div>
-        <div className="form-group">
-          <label>Descripción (opcional)</label>
-          <input
-            className="form-input"
-            value={form.description}
-            onChange={(e) => form.setDescription(e.target.value)}
-            placeholder="¿Para qué es esta mochila?"
-          />
-        </div>
+      <form id="backpack-form" onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <TextField label="Nombre" value={form.name} onChange={form.setName} placeholder="Ej: Consulta Neurología 2026" required />
+        <TextField label="Descripción (opcional)" value={form.description} onChange={form.setDescription} placeholder="¿Para qué es esta mochila?" />
       </form>
     </Modal>
   );

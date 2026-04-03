@@ -20,3 +20,5 @@ export * from './Pagination.types';
 export * from './Pagination.native';
 export * from './CardGrid.types';
 export * from './CardGrid.native';
+export * from './TextField.types';
+export * from './TextField.native';

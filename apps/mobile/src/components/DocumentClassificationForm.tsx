@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Sparkles } from "lucide-react-native";
 import type { DocumentFormState, DocumentFormActions, FileSource } from "../hooks/useDocumentForm";
-import { useAppTheme, colors, radii, spacing, fontSize, fontWeight, Chip } from "@healthguard/ui";
+import { useAppTheme, colors, radii, spacing, fontSize, fontWeight, Chip, TextField } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type Props = DocumentFormState &
@@ -76,13 +76,11 @@ export function DocumentClassificationForm({
       )}
 
       <View style={styles.field}>
-        <Text style={styles.label}>Título del Documento</Text>
-        <TextInput
-          style={styles.input}
+        <TextField
+          label="Título del Documento"
           value={title}
-          onChangeText={setTitle}
+          onChange={setTitle}
           placeholder="Ej. Resultados Laboratorio"
-          placeholderTextColor={t.text.muted}
         />
       </View>
 
@@ -156,20 +154,18 @@ export function DocumentClassificationForm({
 
       <View style={styles.field}>
         <Text style={styles.label}>Nueva etiqueta (categoría + valor)</Text>
-        <View style={styles.newTagRow}>
-          <TextInput
-            style={[styles.input, styles.newTagInput]}
+        <View style={{ gap: spacing[2] }}>
+          <TextField
+            label="Categoría"
             value={newCategoryName}
-            onChangeText={setNewCategoryName}
+            onChange={setNewCategoryName}
             placeholder="Ej. Médico, Institución"
-            placeholderTextColor={t.text.muted}
           />
-          <TextInput
-            style={[styles.input, styles.newTagInput]}
+          <TextField
+            label="Valor"
             value={newTagValue}
-            onChangeText={setNewTagValueField}
+            onChange={setNewTagValueField}
             placeholder="Valor"
-            placeholderTextColor={t.text.muted}
           />
           <TouchableOpacity
             style={styles.newTagSubmitBtn}
@@ -243,15 +239,6 @@ function makeStyles(t: ThemeContextValue) {
 
     field: { marginBottom: spacing[5] },
     label: { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.secondary, marginBottom: spacing[2] },
-    input: {
-      backgroundColor: t.border.light,
-      padding: spacing[3],
-      borderRadius: radii.md,
-      fontSize: fontSize.md,
-      color: t.text.primary,
-      borderWidth: 1,
-      borderColor: t.border.medium,
-    },
 
     chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20 },
 
@@ -260,9 +247,7 @@ function makeStyles(t: ThemeContextValue) {
     addTagBtn:       { width: 28, height: 28, borderRadius: 14, backgroundColor: t.surface.bgCard, alignItems: "center", justifyContent: "center", marginLeft: 4 },
     addTagBtnText:   { color: colors.sky[500], fontSize: 18, fontWeight: fontWeight.bold },
 
-    newTagRow:       { flexDirection: "row", alignItems: "center", gap: spacing[2], flexWrap: "wrap" },
-    newTagInput:     { flex: 1, minWidth: 100 },
-    newTagSubmitBtn: { backgroundColor: colors.sky[500], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radii.md, justifyContent: "center" },
+    newTagSubmitBtn: { backgroundColor: colors.sky[500], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radii.md, justifyContent: "center", alignSelf: "flex-start" },
     newTagSubmitText: { color: colors.white, fontWeight: fontWeight.semibold, fontSize: 14 },
   });
 }

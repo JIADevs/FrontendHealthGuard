@@ -4,9 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   ActivityIndicator,
-  ScrollView,
   FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -40,6 +38,7 @@ import {
   Modal,
   Card,
   cardContentStyle,
+  TextField,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import {
@@ -306,64 +305,19 @@ function AppointmentFormModal({
           </View>
 
           {form.type === "EXAM" && (
-            <>
-              <Text style={styles.fieldLabel}>Tipo de examen</Text>
-              <TextInput
-                style={styles.input}
-                value={form.examType}
-                onChangeText={form.setExamType}
-                placeholder="Ej: Resonancia, Hemograma..."
-                placeholderTextColor={t.text.muted}
-              />
-            </>
+            <TextField
+              label="Tipo de examen"
+              value={form.examType}
+              onChange={form.setExamType}
+              placeholder="Ej: Resonancia, Hemograma..."
+            />
           )}
 
-          <Text style={styles.fieldLabel}>Especialidad *</Text>
-          <TextInput
-            style={styles.input}
-            value={form.specialty}
-            onChangeText={form.setSpecialty}
-            placeholder="Ej: Neurología"
-            placeholderTextColor={t.text.muted}
-          />
-
-          <Text style={styles.fieldLabel}>Médico *</Text>
-          <TextInput
-            style={styles.input}
-            value={form.doctor}
-            onChangeText={form.setDoctor}
-            placeholder="Dr. nombre"
-            placeholderTextColor={t.text.muted}
-          />
-
-          <Text style={styles.fieldLabel}>Lugar *</Text>
-          <TextInput
-            style={styles.input}
-            value={form.location}
-            onChangeText={form.setLocation}
-            placeholder="Hospital / Clínica"
-            placeholderTextColor={t.text.muted}
-          />
-
-          <Text style={styles.fieldLabel}>Fecha * (AAAA-MM-DD)</Text>
-          <TextInput
-            style={styles.input}
-            value={form.date}
-            onChangeText={form.setDate}
-            placeholder="2025-12-31"
-            placeholderTextColor={t.text.muted}
-            keyboardType="numbers-and-punctuation"
-          />
-
-          <Text style={styles.fieldLabel}>Hora * (HH:MM)</Text>
-          <TextInput
-            style={styles.input}
-            value={form.time}
-            onChangeText={form.setTime}
-            placeholder="09:00"
-            placeholderTextColor={t.text.muted}
-            keyboardType="numbers-and-punctuation"
-          />
+          <TextField label="Especialidad" value={form.specialty} onChange={form.setSpecialty} placeholder="Ej: Neurología" />
+          <TextField label="Médico" value={form.doctor} onChange={form.setDoctor} placeholder="Dr. nombre" />
+          <TextField label="Lugar" value={form.location} onChange={form.setLocation} placeholder="Hospital / Clínica" />
+          <TextField label="Fecha (AAAA-MM-DD)" value={form.date} onChange={form.setDate} placeholder="2025-12-31" keyboardType="numbers-and-punctuation" />
+          <TextField label="Hora (HH:MM)" value={form.time} onChange={form.setTime} placeholder="09:00" keyboardType="numbers-and-punctuation" />
 
           {form.error && <Text style={styles.errorText}>{form.error}</Text>}
     </Modal>
@@ -538,62 +492,12 @@ function MedicationFormModal({
         </>
       }
     >
-          <Text style={styles.fieldLabel}>Nombre del medicamento *</Text>
-          <TextInput
-            style={styles.input}
-            value={form.name}
-            onChangeText={form.setName}
-            placeholder="Ej: Ibuprofeno 400mg"
-            placeholderTextColor={t.text.muted}
-          />
-
-          <Text style={styles.fieldLabel}>Dosis *</Text>
-          <TextInput
-            style={styles.input}
-            value={form.dosage}
-            onChangeText={form.setDosage}
-            placeholder="Ej: 1 tableta"
-            placeholderTextColor={t.text.muted}
-          />
-
-          <Text style={styles.fieldLabel}>Frecuencia (horas) *</Text>
-          <TextInput
-            style={styles.input}
-            value={form.frequency}
-            onChangeText={form.setFrequency}
-            placeholder="8"
-            placeholderTextColor={t.text.muted}
-            keyboardType="number-pad"
-          />
-
-          <Text style={styles.fieldLabel}>Fecha de inicio * (AAAA-MM-DD)</Text>
-          <TextInput
-            style={styles.input}
-            value={form.startDate}
-            onChangeText={form.setStartDate}
-            placeholder="2025-01-01"
-            placeholderTextColor={t.text.muted}
-            keyboardType="numbers-and-punctuation"
-          />
-
-          <Text style={styles.fieldLabel}>Hora de primera toma * (HH:MM)</Text>
-          <TextInput
-            style={styles.input}
-            value={form.firstIntakeTime}
-            onChangeText={form.setFirstIntakeTime}
-            placeholder="08:00"
-            placeholderTextColor={t.text.muted}
-            keyboardType="numbers-and-punctuation"
-          />
-
-          <Text style={styles.fieldLabel}>Indicaciones (opcional)</Text>
-          <TextInput
-            style={styles.input}
-            value={form.indications}
-            onChangeText={form.setIndications}
-            placeholder="Ej: Tomar con alimentos"
-            placeholderTextColor={t.text.muted}
-          />
+          <TextField label="Nombre del medicamento" value={form.name} onChange={form.setName} placeholder="Ej: Ibuprofeno 400mg" />
+          <TextField label="Dosis" value={form.dosage} onChange={form.setDosage} placeholder="Ej: 1 tableta" />
+          <TextField label="Frecuencia (horas)" value={form.frequency} onChange={form.setFrequency} placeholder="8" keyboardType="number-pad" />
+          <TextField label="Fecha de inicio (AAAA-MM-DD)" value={form.startDate} onChange={form.setStartDate} placeholder="2025-01-01" keyboardType="numbers-and-punctuation" />
+          <TextField label="Hora de primera toma (HH:MM)" value={form.firstIntakeTime} onChange={form.setFirstIntakeTime} placeholder="08:00" keyboardType="numbers-and-punctuation" />
+          <TextField label="Indicaciones (opcional)" value={form.indications} onChange={form.setIndications} placeholder="Ej: Tomar con alimentos" />
 
           {form.error && <Text style={styles.errorText}>{form.error}</Text>}
     </Modal>
@@ -665,8 +569,6 @@ function makeStyles(t: ThemeContextValue) {
     intakeBtnText:      { color: colors.white, fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
 
 
-    fieldLabel:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: spacing[1], marginTop: spacing[3] },
-    input:              { borderWidth: 1, borderColor: t.border.medium, borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[3], fontSize: fontSize.md, color: t.text.primary, backgroundColor: t.surface.bg },
     errorText:          { color: colors.error[500], fontSize: fontSize.sm, marginTop: spacing[3], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm },
     typeRow:            { flexDirection: "row", gap: spacing[2] },
     typePill:           { flex: 1, paddingVertical: spacing[2], borderRadius: radii.md, alignItems: "center", backgroundColor: t.surface.bg, borderWidth: 1, borderColor: t.border.medium },

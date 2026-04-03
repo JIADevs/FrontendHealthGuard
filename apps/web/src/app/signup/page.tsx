@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signup, login } from "@healthguard/api";
 import { useAuthStore } from "@healthguard/stores";
 import { isApiError } from "@healthguard/api";
-import { Button } from "@healthguard/ui";
+import { Button, TextField } from "@healthguard/ui";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -56,38 +56,9 @@ export default function SignupPage() {
         </p>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="signup-email">Correo electrónico</label>
-            <input
-              id="signup-email"
-              type="email"
-              className="form-input"
-              placeholder="tu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-            {fieldErrors.email && (
-              <p className="form-error">{fieldErrors.email}</p>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="signup-password">Contraseña</label>
-            <input
-              id="signup-password"
-              type="password"
-              className="form-input"
-              placeholder="Mínimo 8 caracteres"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              autoComplete="new-password"
-            />
-            {fieldErrors.password && (
-              <p className="form-error">{fieldErrors.password}</p>
-            )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 20 }}>
+            <TextField id="signup-email" label="Correo electrónico" type="email" placeholder="tu@email.com" value={email} onChange={setEmail} required autoComplete="email" error={fieldErrors.email} />
+            <TextField id="signup-password" label="Contraseña" type="password" placeholder="Mínimo 8 caracteres" value={password} onChange={setPassword} required autoComplete="new-password" error={fieldErrors.password} />
           </div>
 
           {error && <p className="form-error">{error}</p>}

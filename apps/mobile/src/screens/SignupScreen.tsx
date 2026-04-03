@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
@@ -14,7 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuthStore } from "@healthguard/stores";
 import { signup, login, isApiError } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Button } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Button, TextField } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
@@ -80,34 +79,26 @@ export function SignupScreen() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <View style={styles.form}>
-            <Text style={styles.label}>Correo electrónico</Text>
-            <TextInput
-              style={[styles.input, fieldErrors.email ? styles.inputError : null]}
+            <TextField
+              label="Correo electrónico"
               placeholder="nombre@ejemplo.com"
-              placeholderTextColor={t.text.muted}
               value={email}
-              onChangeText={setEmail}
+              onChange={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
+              error={fieldErrors.email}
             />
-            {fieldErrors.email ? (
-              <Text style={styles.fieldError}>{fieldErrors.email}</Text>
-            ) : null}
 
-            <Text style={styles.label}>Contraseña</Text>
-            <TextInput
-              style={[styles.input, fieldErrors.password ? styles.inputError : null]}
+            <TextField
+              label="Contraseña"
               placeholder="Mínimo 8 caracteres"
-              placeholderTextColor={t.text.muted}
               value={password}
-              onChangeText={setPassword}
-              secureTextEntry
+              onChange={setPassword}
+              type="password"
               autoComplete="new-password"
+              error={fieldErrors.password}
             />
-            {fieldErrors.password ? (
-              <Text style={styles.fieldError}>{fieldErrors.password}</Text>
-            ) : null}
 
             <Button
               fullWidth
@@ -141,10 +132,6 @@ function makeStyles(t: ThemeContextValue) {
     title:        { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[2] },
     subtitle:     { fontSize: fontSize.sm, color: t.text.secondary, textAlign: "center", lineHeight: 20 },
     form:         { gap: spacing[3] },
-    label:        { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.primary },
-    input:        { borderWidth: 1, borderColor: t.border.medium, borderRadius: radii.md, padding: 14, fontSize: fontSize.md, backgroundColor: t.surface.bg, color: t.text.primary },
-    inputError:   { borderColor: colors.error[400] },
-    fieldError:   { color: colors.error[500], fontSize: fontSize.xs, marginTop: -spacing[1] },
     error:        { color: colors.error[600], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, overflow: "hidden", marginBottom: spacing[4], textAlign: "center" },
     footer:       { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
     footerText:   { color: t.text.secondary, fontSize: fontSize.sm },

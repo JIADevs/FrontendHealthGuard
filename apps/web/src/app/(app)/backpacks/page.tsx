@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useBackpacksQuery, useDeleteBackpackMutation } from "@healthguard/api/hooks";
-import { Backpack, Plus, FileText, Search, Trash2 } from "lucide-react";
-import { Button, Card, CardGrid, Typography } from "@healthguard/ui";
+import { Backpack, Plus, FileText, Trash2 } from "lucide-react";
+import { Button, Card, CardGrid, SearchField, Typography } from "@healthguard/ui";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
 import { type Backpack as BackpackType } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -40,16 +40,12 @@ export default function BackpacksPage() {
       </div>
 
       <div className="bp-toolbar">
-        <div className="bp-search-wrapper">
-          <Search size={16} />
-          <input
-            className="bp-search-input"
-            type="text"
-            placeholder="Buscar por nombre..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por nombre..."
+          accessibilityLabel="Buscar mochilas"
+        />
       </div>
 
       {bps.isLoading ? (

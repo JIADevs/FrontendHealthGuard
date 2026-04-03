@@ -1,13 +1,13 @@
 import { useState, useCallback, useMemo } from "react";
-import { View, Text, TextInput, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
+import { View, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDocumentsQuery, useShareDocumentMutation } from "@healthguard/api/hooks";
-import { Camera, Share2, Plus, FileUp, X, Search } from "lucide-react-native";
+import { Camera, Share2, Plus, FileUp } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@healthguard/ui";
-import { colors, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, Typography } from "@healthguard/ui";
+import { colors, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function DocumentsScreen() {
@@ -107,29 +107,13 @@ export function DocumentsScreen() {
             <Share2 size={18} color={colors.sky[500]} />
           </TouchableOpacity>
         </View>
-        <View style={styles.searchBar}>
-          <Search size={18} color={t.text.secondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar por nombre o etiqueta..."
-            placeholderTextColor={t.text.muted}
+        <View style={{ marginTop: 14 }}>
+          <SearchField
             value={search}
-            onChangeText={setSearch}
-            autoCorrect={false}
-            autoCapitalize="none"
-            returnKeyType="search"
+            onChange={setSearch}
+            placeholder="Buscar por nombre o etiqueta..."
             accessibilityLabel="Buscar documentos"
           />
-          {search.trim().length > 0 && (
-            <TouchableOpacity
-              style={styles.clearBtn}
-              onPress={() => setSearch("")}
-              accessibilityRole="button"
-              accessibilityLabel="Limpiar búsqueda"
-            >
-              <X size={18} color={t.text.secondary} />
-            </TouchableOpacity>
-          )}
         </View>
       </View>
 
@@ -238,30 +222,6 @@ function makeStyles(t: ThemeContextValue) {
     header:      { padding: spacing[6], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     titleRow:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     shareAllBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: colors.sky[50], borderWidth: 1, borderColor: colors.sky[200] },
-    searchBar: {
-      marginTop: 14,
-      backgroundColor: t.border.light,
-      borderRadius: 14,
-      paddingHorizontal: spacing[3],
-      paddingVertical: 10,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-    },
-    searchInput: {
-      flex: 1,
-      fontSize: 14,
-      color: t.text.primary,
-      paddingVertical: 0,
-    },
-    clearBtn: {
-      width: 32,
-      height: 32,
-      borderRadius: radii.full,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: t.border.medium,
-    },
     center:     { flex: 1, alignItems: "center", justifyContent: "center" },
 
     backdrop: {

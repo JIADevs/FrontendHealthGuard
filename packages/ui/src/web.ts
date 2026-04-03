@@ -24,5 +24,7 @@ export * from './Select.types';
 export * from './Select.web';
 export * from './Checkbox.types';
 export * from './Checkbox.web';
+export * from './SearchField.types';
+export * from './SearchField.web';
 export * from './Typography.types';
 export * from './Typography.web';

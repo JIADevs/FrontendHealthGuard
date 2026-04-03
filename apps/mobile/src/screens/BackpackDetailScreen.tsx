@@ -9,7 +9,6 @@ import {
   RefreshControl,
   Share,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -20,9 +19,8 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { isApiError, type DocumentPage, type Document } from "@healthguard/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { DocumentTypeIcon } from "@healthguard/ui";
-import { Camera, FileText, FileUp, Plus, Search, Share2, Trash2, Edit2, X } from "lucide-react-native";
-import { useAppTheme, colors, useDebounceSearch, formatDate, Button, Modal, Typography } from "@healthguard/ui";
+import { Camera, FileText, FileUp, Plus, Share2, Trash2, Edit2 } from "lucide-react-native";
+import { DocumentTypeIcon, useAppTheme, colors, useDebounceSearch, formatDate, Button, Modal, SearchField, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { useBackpackDetail } from "../hooks/useBackpackDetail";
 
@@ -129,23 +127,13 @@ export function BackpackDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchBar}>
-        <Search size={18} color={t.text.secondary} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Buscar documentos..."
-          placeholderTextColor={t.text.muted}
+      <View style={{ margin: 16, marginTop: 10 }}>
+        <SearchField
           value={search}
-          onChangeText={setSearch}
+          onChange={setSearch}
+          placeholder="Buscar documentos..."
           accessibilityLabel="Buscar dentro de la mochila"
-          autoCorrect={false}
-          autoCapitalize="none"
         />
-        {search.trim().length > 0 && (
-          <TouchableOpacity style={styles.clearBtn} onPress={() => setSearch("")} accessibilityLabel="Limpiar búsqueda">
-            <X size={18} color={t.text.secondary} />
-          </TouchableOpacity>
-        )}
       </View>
 
       <FlatList
@@ -304,9 +292,6 @@ function makeStyles(t: ThemeContextValue) {
     center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
     header: { padding: 20, backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium, flexDirection: "row", gap: 12, alignItems: "center" },
     iconBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bgCard },
-    searchBar: { margin: 16, marginTop: 10, backgroundColor: t.surface.bgCard, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: t.border.medium },
-    searchInput: { flex: 1, fontSize: 14, color: t.text.primary, paddingVertical: 0 },
-    clearBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: t.border.medium },
     list: { padding: 16, gap: 12, paddingBottom: 96 },
     card: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, backgroundColor: t.surface.bgCard, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium },
     cardInfo: { flex: 1 },

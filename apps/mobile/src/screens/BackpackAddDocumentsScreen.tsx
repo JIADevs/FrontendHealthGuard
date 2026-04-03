@@ -5,7 +5,6 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -16,11 +15,11 @@ import Toast from "react-native-toast-message";
 import { useBackpackQuery, useAddDocToBackpackMutation } from "@healthguard/api/hooks";
 import { getBackpackDocuments, getDocuments, isApiError, type Document, type DocumentPage } from "@healthguard/api";
 import { DocumentTypeIcon } from "@healthguard/ui";
-import { Search, Plus, Check, X } from "lucide-react-native";
+import { Plus, Check } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { useAppTheme, colors, useDebounceSearch, formatDate, Typography } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, SearchField, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id: string };
@@ -135,23 +134,13 @@ export function BackpackAddDocumentsScreen() {
           Agregar a: {backpackName || "Mochila"}
         </Typography>
 
-        <View style={styles.searchBar}>
-          <Search size={18} color={t.text.secondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar documentos..."
-            placeholderTextColor={t.text.muted}
+        <View style={{ marginTop: 14 }}>
+          <SearchField
             value={search}
-            onChangeText={setSearch}
-            autoCorrect={false}
-            autoCapitalize="none"
+            onChange={setSearch}
+            placeholder="Buscar documentos..."
             accessibilityLabel="Buscar documentos para agregar"
           />
-          {search.trim().length > 0 && (
-            <TouchableOpacity style={styles.clearBtn} onPress={() => setSearch("")} accessibilityLabel="Limpiar búsqueda">
-              <X size={18} color={t.text.secondary} />
-            </TouchableOpacity>
-          )}
         </View>
       </View>
 
@@ -251,9 +240,6 @@ function makeStyles(t: ThemeContextValue) {
     center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
     header: { padding: 20, backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     title: { fontSize: 20, fontWeight: "800", color: t.text.primary, marginBottom: 14 },
-    searchBar: { backgroundColor: t.border.light, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10 },
-    searchInput: { flex: 1, fontSize: 14, color: t.text.primary },
-    clearBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: t.border.medium },
     list: { padding: 16, gap: 12, paddingBottom: 90 },
     empty: { color: t.text.secondary, fontSize: 15, textAlign: "center" },
     cardRow: { flexDirection: "row", alignItems: "center", gap: 12 },

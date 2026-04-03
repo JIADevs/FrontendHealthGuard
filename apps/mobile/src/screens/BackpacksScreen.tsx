@@ -5,19 +5,18 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBackpacksQuery } from "@healthguard/api/hooks";
 import { isApiError, type BackpackPage } from "@healthguard/api";
-import { FileText, Plus, Search, X } from "lucide-react-native";
+import { FileText, Plus } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
-import { useAppTheme, colors, useDebounceSearch, formatDate, Card, cardContentStyle, Typography } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, Card, cardContentStyle, SearchField, Typography } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function BackpacksScreen() {
@@ -52,29 +51,13 @@ export function BackpacksScreen() {
         <Typography variant="h2">Mochilas</Typography>
 
         <View style={styles.toolbarRow}>
-          <View style={styles.searchBar}>
-            <Search size={18} color={t.text.secondary} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Buscar por nombre..."
-              placeholderTextColor={t.text.muted}
+          <View style={{ flex: 1 }}>
+            <SearchField
               value={search}
-              onChangeText={setSearch}
-              autoCorrect={false}
-              autoCapitalize="none"
-              returnKeyType="search"
+              onChange={setSearch}
+              placeholder="Buscar por nombre..."
               accessibilityLabel="Buscar mochilas"
             />
-            {search.trim().length > 0 && (
-              <TouchableOpacity
-                style={styles.clearBtn}
-                onPress={() => setSearch("")}
-                accessibilityRole="button"
-                accessibilityLabel="Limpiar búsqueda"
-              >
-                <X size={18} color={t.text.secondary} />
-              </TouchableOpacity>
-            )}
           </View>
 
           <TouchableOpacity style={styles.createBtn} onPress={navigateToCreate} accessibilityLabel="Crear mochila">
@@ -130,18 +113,6 @@ function makeStyles(t: ThemeContextValue) {
     header: { padding: 24, paddingBottom: 16, backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     titleRow: { marginBottom: 12 },
     toolbarRow: { flexDirection: "row", gap: 12, alignItems: "center" },
-    searchBar: {
-      flex: 1,
-      backgroundColor: t.border.light,
-      borderRadius: 14,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-    },
-    searchInput: { flex: 1, fontSize: 14, color: t.text.primary, paddingVertical: 0 },
-    clearBtn: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: t.border.medium },
     createBtn: { backgroundColor: colors.sky[500], borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center" },
     createBtnText: { color: colors.white, fontSize: 14, fontWeight: "700" },
     center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },

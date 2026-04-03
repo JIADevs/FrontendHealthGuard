@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useDocumentsQuery, useDeleteDocumentMutation } from "@healthguard/api/hooks";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card, CardGrid, Typography } from "@healthguard/ui";
-import { Search, Upload, FileText, Eye, Share2, Trash2 } from "lucide-react";
+import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card, CardGrid, SearchField, Typography } from "@healthguard/ui";
+import { Upload, FileText, Eye, Share2, Trash2 } from "lucide-react";
 import { isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -45,17 +45,12 @@ export default function DocumentsPage() {
 
       {/* Search */}
       <div className="docs-toolbar">
-        <div className="search-wrapper">
-          <Search size={18} />
-          <input
-            className="search-input"
-            type="text"
-            placeholder="Buscar por nombre o etiqueta..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            id="doc-search"
-          />
-        </div>
+        <SearchField
+          value={search}
+          onChange={(v) => { setSearch(v); setPage(1); }}
+          placeholder="Buscar por nombre o etiqueta..."
+          accessibilityLabel="Buscar documentos"
+        />
       </div>
 
       {/* Grid */}

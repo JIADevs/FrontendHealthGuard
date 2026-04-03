@@ -28,3 +28,5 @@ export * from './SearchField.types';
 export * from './SearchField.web';
 export * from './Typography.types';
 export * from './Typography.web';
+export * from './DateTimePicker.types';
+export * from './DateTimePicker.web';

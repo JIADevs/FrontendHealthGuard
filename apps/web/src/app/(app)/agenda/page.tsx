@@ -28,7 +28,7 @@ import {
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField, Select, Typography } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField, Select, Typography, DateTimePicker } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -189,8 +189,12 @@ function AppointmentFormModal({ initial, onClose }: { initial: Appointment | nul
         <div className="form-grid">
           <TextField label="Especialidad" value={form.specialty} onChange={form.setSpecialty} placeholder="Ej: Neurología" required />
           <TextField label="Médico" value={form.doctor} onChange={form.setDoctor} placeholder="Dr. nombre" required />
-          <TextField label="Fecha" type="date" value={form.date} onChange={form.setDate} required />
-          <TextField label="Hora" type="time" value={form.time} onChange={form.setTime} required />
+          <DateTimePicker
+            label="Fecha y hora"
+            value={form.date && form.time ? `${form.date}T${form.time}` : ""}
+            onChange={(v) => { form.setDate(v.slice(0, 10)); form.setTime(v.slice(11, 16)); }}
+            required
+          />
           <div style={{ gridColumn: "1 / -1" }}>
             <TextField label="Lugar" value={form.location} onChange={form.setLocation} placeholder="Hospital / Clínica" required />
           </div>
@@ -322,8 +326,12 @@ function MedicationFormModal({ initial, onClose }: { initial: Medication | null;
         <div className="form-grid">
           <TextField label="Dosis" value={form.dosage} onChange={form.setDosage} placeholder="Ej: 1 tableta" required />
           <TextField label="Frecuencia (horas)" type="number" value={form.frequency} onChange={form.setFrequency} required />
-          <TextField label="Fecha de inicio" type="date" value={form.startDate} onChange={form.setStartDate} required />
-          <TextField label="Hora de primera toma" type="time" value={form.firstIntakeTime} onChange={form.setFirstIntakeTime} required />
+          <DateTimePicker
+            label="Inicio y primera toma"
+            value={form.startDate && form.firstIntakeTime ? `${form.startDate}T${form.firstIntakeTime}` : ""}
+            onChange={(v) => { form.setStartDate(v.slice(0, 10)); form.setFirstIntakeTime(v.slice(11, 16)); }}
+            required
+          />
           <div style={{ gridColumn: "1 / -1" }}>
             <TextField label="Indicaciones (opcional)" value={form.indications} onChange={form.setIndications} placeholder="Ej: Tomar con alimentos" />
           </div>

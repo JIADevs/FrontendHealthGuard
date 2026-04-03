@@ -40,6 +40,7 @@ import {
   cardContentStyle,
   TextField,
   Typography,
+  DateTimePicker,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import {
@@ -307,8 +308,12 @@ function AppointmentFormModal({
           <TextField label="Especialidad" value={form.specialty} onChange={form.setSpecialty} placeholder="Ej: Neurología" />
           <TextField label="Médico" value={form.doctor} onChange={form.setDoctor} placeholder="Dr. nombre" />
           <TextField label="Lugar" value={form.location} onChange={form.setLocation} placeholder="Hospital / Clínica" />
-          <TextField label="Fecha (AAAA-MM-DD)" value={form.date} onChange={form.setDate} placeholder="2025-12-31" keyboardType="numbers-and-punctuation" />
-          <TextField label="Hora (HH:MM)" value={form.time} onChange={form.setTime} placeholder="09:00" keyboardType="numbers-and-punctuation" />
+          <DateTimePicker
+            label="Fecha y hora"
+            value={form.date && form.time ? `${form.date}T${form.time}` : ""}
+            onChange={(v) => { form.setDate(v.slice(0, 10)); form.setTime(v.slice(11, 16)); }}
+            required
+          />
 
           {form.error && <Text style={styles.errorText}>{form.error}</Text>}
     </Modal>
@@ -486,8 +491,12 @@ function MedicationFormModal({
           <TextField label="Nombre del medicamento" value={form.name} onChange={form.setName} placeholder="Ej: Ibuprofeno 400mg" />
           <TextField label="Dosis" value={form.dosage} onChange={form.setDosage} placeholder="Ej: 1 tableta" />
           <TextField label="Frecuencia (horas)" value={form.frequency} onChange={form.setFrequency} placeholder="8" keyboardType="number-pad" />
-          <TextField label="Fecha de inicio (AAAA-MM-DD)" value={form.startDate} onChange={form.setStartDate} placeholder="2025-01-01" keyboardType="numbers-and-punctuation" />
-          <TextField label="Hora de primera toma (HH:MM)" value={form.firstIntakeTime} onChange={form.setFirstIntakeTime} placeholder="08:00" keyboardType="numbers-and-punctuation" />
+          <DateTimePicker
+            label="Inicio y primera toma"
+            value={form.startDate && form.firstIntakeTime ? `${form.startDate}T${form.firstIntakeTime}` : ""}
+            onChange={(v) => { form.setStartDate(v.slice(0, 10)); form.setFirstIntakeTime(v.slice(11, 16)); }}
+            required
+          />
           <TextField label="Indicaciones (opcional)" value={form.indications} onChange={form.setIndications} placeholder="Ej: Tomar con alimentos" />
 
           {form.error && <Text style={styles.errorText}>{form.error}</Text>}

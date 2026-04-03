@@ -30,3 +30,5 @@ export * from './SearchField.types';
 export * from './SearchField.native';
 export * from './Typography.types';
 export * from './Typography.native';
+export * from './DateTimePicker.types';
+export * from './DateTimePicker.native';

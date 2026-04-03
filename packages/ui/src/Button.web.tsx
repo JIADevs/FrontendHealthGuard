@@ -52,6 +52,7 @@ export function Button({
   loading = false,
   onPress,
   type = 'button',
+  form,
 }: ButtonProps) {
   const [hovered, setHovered] = useState(false);
   const isDisabled = disabled || loading;
@@ -61,6 +62,7 @@ export function Button({
   return (
     <button
       type={type}
+      form={form}
       onClick={onPress}
       disabled={isDisabled}
       onMouseEnter={() => setHovered(true)}

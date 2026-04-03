@@ -70,9 +70,13 @@ export function useMedicationFormCore({
   const [startDate, setStartDate] = useState(
     initial?.startDate ?? new Date().toISOString().split("T")[0]!,
   );
-  const [firstIntakeTime, setFirstIntakeTime] = useState(
-    initial?.firstIntakeTime?.slice(0, 5) ?? "08:00",
-  );
+  const [firstIntakeTime, setFirstIntakeTime] = useState(() => {
+    const raw = initial?.firstIntakeTime;
+    if (!raw) return "08:00";
+    // Backend returns full datetime "2026-04-02T08:00:00" — extract HH:MM
+    const timePart = raw.includes("T") ? raw.split("T")[1]! : raw;
+    return timePart.slice(0, 5);
+  });
   const [indications, setIndications] = useState(initial?.indications ?? "");
   const [error, setError] = useState<string | null>(null);
 
@@ -92,7 +96,7 @@ export function useMedicationFormCore({
       dosage,
       frequency: parseInt(frequency, 10),
       startDate,
-      firstIntakeTime,
+      firstIntakeTime: `${startDate}T${firstIntakeTime}:00`,
       indications: indications || undefined,
       reminderOffsets: [60, 30, 15, 5],
     };
@@ -102,13 +106,27 @@ export function useMedicationFormCore({
         { id: initial!.id, med: payload },
         {
           onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
-          onError: (err) => setError(isApiError(err) ? err.message : "Error actualizando el medicamento."),
+          onError: (err) => {
+          if (isApiError(err) && err.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
+            const details = Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join(" | ");
+            setError(`Error de validación: ${details}`);
+          } else {
+            setError(isApiError(err) ? err.message : "Error actualizando el medicamento.");
+          }
+        },
         },
       );
     } else {
       createMut.mutate(payload, {
         onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
-        onError: (err) => setError(isApiError(err) ? err.message : "Error guardando el medicamento."),
+        onError: (err) => {
+          if (isApiError(err) && err.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
+            const details = Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join(" | ");
+            setError(`Error de validación: ${details}`);
+          } else {
+            setError(isApiError(err) ? err.message : "Error guardando el medicamento.");
+          }
+        },
       });
     }
   }

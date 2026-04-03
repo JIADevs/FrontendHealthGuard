@@ -13,4 +13,6 @@ export interface ButtonProps {
   onPress?: () => void;
   /** Web only — maps to the <button> type attribute */
   type?: 'button' | 'submit' | 'reset';
+  /** Web only — associates button with a form by id (HTML form attribute) */
+  form?: string;
 }

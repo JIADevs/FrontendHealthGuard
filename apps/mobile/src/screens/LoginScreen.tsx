@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuthStore } from "@healthguard/stores";
 import { login, isApiError } from "@healthguard/api";
-import { colors, radii, spacing, fontWeight, Button, TextField, Typography } from "@healthguard/ui";
+import { colors, radii, spacing, fontWeight, useAppTheme, Button, TextField, Typography } from "@healthguard/ui";
+import type { ThemeContextValue } from "@healthguard/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
 export function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,14 +92,16 @@ export function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container:  { flex: 1, backgroundColor: "white" },
-  content:    { flex: 1, padding: spacing[6], justifyContent: "center" },
-  header:     { alignItems: "center", marginBottom: 40, gap: spacing[1] },
-  logo:       { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
-  logoText:   { color: colors.white, fontSize: 28, fontWeight: fontWeight.extrabold },
-  form:       { gap: spacing[4], marginTop: spacing[4] },
-  errorBox:   { backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, marginBottom: spacing[4] },
-  footer:     { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
-  footerLink: { color: colors.sky[500], fontWeight: fontWeight.semibold },
-});
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    container:  { flex: 1, backgroundColor: t.surface.bg },
+    content:    { flex: 1, padding: spacing[6], justifyContent: "center" },
+    header:     { alignItems: "center", marginBottom: 40, gap: spacing[1] },
+    logo:       { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
+    logoText:   { color: colors.white, fontSize: 28, fontWeight: fontWeight.extrabold },
+    form:       { gap: spacing[4], marginTop: spacing[4] },
+    errorBox:   { backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, marginBottom: spacing[4] },
+    footer:     { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
+    footerLink: { color: colors.sky[500], fontWeight: fontWeight.semibold },
+  });
+}

@@ -11,7 +11,7 @@ import { memo, useCallback, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { type Notification } from "@healthguard/api";
 import { useNotificationsScreen } from "../hooks/useNotificationsScreen";
-import { colors, radii, spacing, fontWeight, useAppTheme, Button, Typography } from "@healthguard/ui";
+import { colors, radii, spacing, fontWeight, useAppTheme, Button, Typography, Spinner } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { Bell, Calendar, Pill, Activity, Info, CheckCircle } from "lucide-react-native";
 
@@ -117,7 +117,7 @@ export function NotificationsScreen() {
 
       {screen.isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.sky[500]} />
+          <Spinner size="lg" />
         </View>
       ) : screen.notifications.length === 0 ? (
         <View style={styles.center}>

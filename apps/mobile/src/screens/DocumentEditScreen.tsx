@@ -28,7 +28,7 @@ import {
   type DocumentCreate,
   type Document,
 } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Typography, Spinner } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
@@ -190,7 +190,7 @@ export function DocumentEditScreen() {
 
   if (docQuery.isLoading && !docQuery.isRefetching) {
     return (
-      <View style={styles.center}><ActivityIndicator size="large" color={colors.sky[500]} /></View>
+      <View style={styles.center}><Spinner size="lg" /></View>
     );
   }
 

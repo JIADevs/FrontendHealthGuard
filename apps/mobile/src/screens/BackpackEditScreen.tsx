@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from "react";
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -9,7 +8,7 @@ import {
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { useBackpackForm } from "../hooks/useBackpackForm";
-import { useAppTheme, colors, spacing, Button, TextField, Typography } from "@healthguard/ui";
+import { useAppTheme, colors, spacing, Button, TextField, Typography, Spinner } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id?: string };
@@ -35,7 +34,7 @@ export function BackpackEditScreen() {
   if (form.loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.sky[500]} />
+        <Spinner size="lg" />
       </View>
     );
   }

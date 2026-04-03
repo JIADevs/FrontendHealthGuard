@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useDocumentQuery } from "@healthguard/api/hooks";
 import { ExternalLink } from "lucide-react";
 import { getSignedUrl, type Document } from "@healthguard/api";
-import { formatDate, formatFileSize, Chip, Modal } from "@healthguard/ui";
+import { formatDate, formatFileSize, Chip, Modal,Spinner } from "@healthguard/ui";
 
 export function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
   const doc = useDocumentQuery(id);
@@ -24,7 +24,7 @@ export function DetailModal({ id, onClose }: { id: string; onClose: () => void }
     <Modal title={d?.title ?? "Cargando..."} size="lg" onClose={onClose}>
       {doc.isLoading ? (
         <div className="empty-state">
-          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
+          <Spinner size="lg" />
         </div>
       ) : d ? (
         <>

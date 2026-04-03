@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useBackpacksQuery, useDeleteBackpackMutation } from "@healthguard/api/hooks";
-import { Backpack, Plus, FileText, Trash2 } from "lucide-react";
-import { Button, Card, CardGrid, SearchField, Typography } from "@healthguard/ui";
+import { Backpack, Plus, FileText } from "lucide-react";
+import { Button, Card, CardGrid, SearchField, Typography, ActionButton, Spinner } from "@healthguard/ui";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
 import { type Backpack as BackpackType } from "@healthguard/api";
 import { sileo } from "sileo";
@@ -50,7 +50,7 @@ export default function BackpacksPage() {
 
       {bps.isLoading ? (
         <div className="empty-state">
-          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
+          <Spinner size="lg" />
         </div>
       ) : (bps.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
@@ -71,7 +71,7 @@ export default function BackpacksPage() {
                   <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "var(--text-secondary)" }}>
                     <FileText size={14} /> {bp.documentCount} documentos
                   </span>
-                  <button className="icon-btn" title="Eliminar" onClick={(e) => { e.stopPropagation(); setDeleteTarget(bp); }}><Trash2 size={15} /></button>
+                  <ActionButton action="delete" size="sm" tooltip="Eliminar" onPress={() => setDeleteTarget(bp)} />
                 </div>
               }
             />

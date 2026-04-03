@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Upload, FileText, FileUp, Sparkles, Loader2, Plus, Check, X } from "lucide-react";
-import { Button, Chip, Modal, TextField, Typography, DatePicker } from "@healthguard/ui";
+import { Button, Chip, Modal, TextField, Typography, DatePicker, Spinner } from "@healthguard/ui";
 import { useDocumentForm } from "@/hooks/useDocumentForm";
 
 const TEMPLATE_ICONS: Record<string, string> = {
@@ -262,7 +262,7 @@ export function UploadModal({
                           disabled={!form.newTagValues[cat.id]?.trim() || form.addingTag === cat.id}
                           onClick={() => form.handleAddCustomTag(cat.id).then(() => setOpenTagCat(null))}
                         >
-                          {form.addingTag === cat.id ? <span className="spinner" style={{ width: 12, height: 12 }} /> : "+"}
+                          {form.addingTag === cat.id ? <Spinner size="sm" color="white" /> : "+"}
                         </button>
                         <button
                           type="button"

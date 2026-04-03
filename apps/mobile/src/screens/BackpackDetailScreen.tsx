@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   FlatList,
@@ -19,8 +18,8 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { isApiError, type DocumentPage, type Document } from "@healthguard/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { Camera, FileText, FileUp, Plus, Share2, Trash2, Edit2 } from "lucide-react-native";
-import { DocumentTypeIcon, useAppTheme, colors, useDebounceSearch, formatDate, Button, Modal, SearchField, Typography } from "@healthguard/ui";
+import { Camera, FileText, FileUp, Plus, Share2 } from "lucide-react-native";
+import { DocumentTypeIcon, useAppTheme, colors, useDebounceSearch, formatDate, Button, Modal, SearchField, Typography, ActionButton, Spinner } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { useBackpackDetail } from "../hooks/useBackpackDetail";
 
@@ -105,7 +104,7 @@ export function BackpackDetailScreen() {
   if (backpackQuery.isLoading && !backpackQuery.isRefetching) {
     return (
       <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color={colors.sky[500]} />
+        <Spinner size="lg" />
       </SafeAreaView>
     );
   }
@@ -122,9 +121,7 @@ export function BackpackDetailScreen() {
           </Typography>
         </View>
 
-        <TouchableOpacity style={styles.iconBtn} onPress={handleDeleteBackpack} accessibilityLabel="Eliminar mochila">
-          <Trash2 size={18} color={colors.error[500]} />
-        </TouchableOpacity>
+        <ActionButton action="delete" onPress={handleDeleteBackpack} />
       </View>
 
       <View style={{ margin: 16, marginTop: 10 }}>
@@ -151,7 +148,7 @@ export function BackpackDetailScreen() {
         ListEmptyComponent={
           docsQuery.isLoading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color={colors.sky[500]} />
+              <Spinner size="lg" />
             </View>
           ) : (
             <View style={styles.center}>
@@ -171,18 +168,13 @@ export function BackpackDetailScreen() {
               </Typography>
             </View>
             <View style={styles.actionsRight}>
-              <TouchableOpacity
+              <ActionButton
+                action="delete"
+                size="sm"
                 onPress={() => handleRemove(item)}
-                style={styles.removeBtn}
                 disabled={detail.removingDocId === item.id}
-                accessibilityLabel={`Eliminar ${item.title} del backpack`}
-              >
-                {detail.removingDocId === item.id ? (
-                  <ActivityIndicator size="small" color={t.text.secondary} />
-                ) : (
-                  <Trash2 size={18} color={t.text.secondary} />
-                )}
-              </TouchableOpacity>
+                loading={detail.removingDocId === item.id}
+              />
             </View>
           </TouchableOpacity>
         )}
@@ -192,9 +184,7 @@ export function BackpackDetailScreen() {
         <Button onPress={detail.shareBackpack} disabled={detail.isSharing} loading={detail.isSharing} fullWidth>
           <Share2 size={18} color={colors.white} /> Compartir
         </Button>
-        <Button variant="ghost" onPress={() => navigation.navigate("BackpackEdit", { id })}>
-          <Edit2 size={18} color={colors.sky[500]} />
-        </Button>
+        <ActionButton action="edit" onPress={() => navigation.navigate("BackpackEdit", { id })} />
       </View>
 
       {fabOpen && (

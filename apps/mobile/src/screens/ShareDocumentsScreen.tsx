@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useQuery } from "@tanstack/react-query";
 import { getDocuments, shareDocument, isApiError, type Document } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import { FileText, Share2, Clock } from "lucide-react-native";
 
@@ -162,7 +162,7 @@ export function ShareDocumentsScreen() {
         ListEmptyComponent={
           docs.isLoading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color={colors.sky[500]} />
+              <Spinner size="lg" />
             </View>
           ) : (
             <View style={styles.center}>

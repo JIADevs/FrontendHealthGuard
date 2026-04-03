@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useDocumentsQuery } from "@healthguard/api/hooks";
 import { shareDocument, type Document } from "@healthguard/api";
-import { formatDate, Button, Pagination, Checkbox, Typography } from "@healthguard/ui";
+import { formatDate, Button, Pagination, Checkbox, Typography,Spinner } from "@healthguard/ui";
 
 export default function SharePage() {
   const [page, setPage] = useState(1);
@@ -88,7 +88,7 @@ export default function SharePage() {
       {/* Document selector */}
       {docs.isLoading ? (
         <div className="empty-state">
-          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
+          <Spinner size="lg" />
         </div>
       ) : (docs.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">

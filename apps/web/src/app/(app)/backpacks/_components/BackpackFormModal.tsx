@@ -2,7 +2,7 @@
 
 import { type FormEvent } from "react";
 import { useBackpackForm } from "@/hooks/useBackpackForm";
-import { Button, Modal, TextField } from "@healthguard/ui";
+import { Button, Modal, TextField, Spinner } from "@healthguard/ui";
 
 interface BackpackFormModalProps {
   onClose: () => void;
@@ -23,7 +23,7 @@ export function BackpackFormModal({ onClose, backpackId }: BackpackFormModalProp
     return (
       <Modal title={isEdit ? "Editar Mochila" : "Nueva Mochila"} onClose={onClose}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 120 }}>
-          <div className="spinner spinner--page" style={{ width: 32, height: 32 }} />
+          <Spinner size="lg" />
         </div>
       </Modal>
     );

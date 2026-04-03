@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
 import { getDocuments, addDocToBackpack, isApiError, type BackpackWithDocs } from "@healthguard/api";
-import { formatDate, Button, Modal, Checkbox, Typography } from "@healthguard/ui";
+import { formatDate, Button, Modal, Checkbox, Typography ,Spinner} from "@healthguard/ui";
 import { sileo } from "sileo";
 
 interface AddDocsModalProps {
@@ -68,7 +68,7 @@ export function AddDocsModal({ backpackId, existingIds, onClose }: AddDocsModalP
     >
       {docs.isLoading ? (
         <div className="empty-state">
-          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
+          <Spinner size="lg" />
         </div>
       ) : available.length === 0 ? (
         <div className="empty-state"><Typography variant="bodySm" color="secondary">Todos tus documentos ya están en esta mochila.</Typography></div>

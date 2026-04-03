@@ -19,7 +19,7 @@ import { Plus, Check } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { useAppTheme, colors, useDebounceSearch, formatDate, SearchField, Typography } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, SearchField, Typography, Spinner } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = { id: string };
@@ -122,7 +122,7 @@ export function BackpackAddDocumentsScreen() {
   if (backpackQuery.isLoading && !backpackQuery.isRefetching) {
     return (
       <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color={colors.sky[500]} />
+        <Spinner size="lg" />
       </SafeAreaView>
     );
   }
@@ -159,7 +159,7 @@ export function BackpackAddDocumentsScreen() {
         ListEmptyComponent={
           docsQuery.isLoading ? (
             <View style={styles.center}>
-              <ActivityIndicator size="large" color={colors.sky[500]} />
+              <Spinner size="lg" />
             </View>
           ) : (
             <View style={styles.center}>

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useDocumentsQuery, useDeleteDocumentMutation } from "@healthguard/api/hooks";
 import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card, CardGrid, SearchField, Typography } from "@healthguard/ui";
-import { Upload, FileText, Eye, Share2, Trash2 } from "lucide-react";
+import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card, CardGrid, SearchField, Typography, ActionButton, Spinner } from "@healthguard/ui";
+import { Upload, FileText } from "lucide-react";
 import { isApiError, type Document } from "@healthguard/api";
 import { sileo } from "sileo";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -56,7 +56,7 @@ export default function DocumentsPage() {
       {/* Grid */}
       {docs.isLoading ? (
         <div className="empty-state">
-          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
+          <Spinner size="lg" />
         </div>
       ) : (docs.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
@@ -74,9 +74,9 @@ export default function DocumentsPage() {
               onPress={() => setDetailId(doc.id)}
               footer={
                 <div style={{ display: "flex", gap: 4 }}>
-                  <button className="icon-btn" title="Ver" onClick={(e) => { e.stopPropagation(); setDetailId(doc.id); }}><Eye size={16} /></button>
-                  <button className="icon-btn" title="Compartir" onClick={(e) => { e.stopPropagation(); setShareTarget(doc); }}><Share2 size={16} /></button>
-                  <button className="icon-btn" title="Eliminar" onClick={(e) => { e.stopPropagation(); setDeleteTarget(doc); }}><Trash2 size={16} /></button>
+                  <ActionButton action="view" size="sm" tooltip="Ver" onPress={() => setDetailId(doc.id)} />
+                  <ActionButton action="share" size="sm" tooltip="Compartir" onPress={() => setShareTarget(doc)} />
+                  <ActionButton action="delete" size="sm" tooltip="Eliminar" onPress={() => setDeleteTarget(doc)} />
                 </div>
               }
             >

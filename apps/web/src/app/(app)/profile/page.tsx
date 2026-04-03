@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { useProfileQuery } from "@healthguard/api/hooks";
 import { useProfileForm } from "@/hooks/useProfileForm";
 import { User, Save, Mail, Phone, Heart, Shield } from "lucide-react";
-import { Button, TextField, Select, Typography, DatePicker } from "@healthguard/ui";
+import { Button, TextField, Select, Typography, DatePicker,Spinner } from "@healthguard/ui";
 
 export default function ProfilePage() {
   const profile = useProfileQuery();
@@ -36,7 +36,7 @@ export default function ProfilePage() {
 
       {form.loading ? (
         <div className="empty-state">
-          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
+          <Spinner size="lg" />
         </div>
       ) : (
         <form onSubmit={handleSubmit}>

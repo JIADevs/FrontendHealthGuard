@@ -16,8 +16,6 @@ import {
   Clock,
   MapPin,
   User,
-  Trash2,
-  Edit3,
   Check,
 } from "lucide-react";
 import {
@@ -28,7 +26,7 @@ import {
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField, Select, Typography, DateTimePicker } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField, Select, Typography, DateTimePicker, ActionButton, Spinner } from "@healthguard/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -85,7 +83,7 @@ function AppointmentsTab() {
 
       {appts.isLoading ? (
         <div className="empty-state">
-          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
+          <Spinner size="lg" />
         </div>
       ) : (appts.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
@@ -119,8 +117,8 @@ function AppointmentsTab() {
                     options={(["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"] as const).map((s) => ({ value: s, label: appointmentStatusLabel(s) }))}
                   />
                   <div style={{ display: "flex", gap: 4 }}>
-                    <button className="icon-btn" title="Editar" onClick={() => { setEditTarget(a); setShowForm(true); }}><Edit3 size={15} /></button>
-                    <button className="icon-btn" title="Eliminar" onClick={() => setDeleteTarget(a)}><Trash2 size={15} /></button>
+                    <ActionButton action="edit" size="sm" tooltip="Editar" onPress={() => { setEditTarget(a); setShowForm(true); }} />
+                    <ActionButton action="delete" size="sm" tooltip="Eliminar" onPress={() => setDeleteTarget(a)} />
                   </div>
                 </div>
               }
@@ -231,7 +229,7 @@ function MedicationsTab() {
 
       {meds.isLoading ? (
         <div className="empty-state">
-          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
+          <Spinner size="lg" />
         </div>
       ) : (meds.data?.items.length ?? 0) === 0 ? (
         <div className="empty-state">
@@ -267,8 +265,8 @@ function MedicationsTab() {
                     Tomado
                   </button>
                   <div style={{ display: "flex", gap: 4 }}>
-                    <button className="icon-btn" title="Editar" onClick={() => { setEditTarget(m); setShowForm(true); }}><Edit3 size={15} /></button>
-                    <button className="icon-btn" title="Eliminar" onClick={() => setDeleteTarget(m)}><Trash2 size={15} /></button>
+                    <ActionButton action="edit" size="sm" tooltip="Editar" onPress={() => { setEditTarget(m); setShowForm(true); }} />
+                    <ActionButton action="delete" size="sm" tooltip="Eliminar" onPress={() => setDeleteTarget(m)} />
                   </div>
                 </div>
               }

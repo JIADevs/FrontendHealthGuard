@@ -1,10 +1,10 @@
 import { useLayoutEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { View, Text, StyleSheet, ActivityIndicator, Linking, Alert, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, Linking, Alert, ScrollView, Image } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useDocumentQuery, useTagCategoriesQuery } from "@healthguard/api/hooks";
 import { getSignedUrl, type Document, type TagCategoryOut } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button, Typography } from "@healthguard/ui";
+import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button, Typography, Spinner } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 type RouteParams = {
@@ -73,7 +73,7 @@ export function DocumentDetailScreen() {
   if (doc.isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.sky[500]} />
+        <Spinner size="lg" />
       </View>
     );
   }

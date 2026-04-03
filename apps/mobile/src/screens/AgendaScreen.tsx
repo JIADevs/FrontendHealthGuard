@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
   FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -41,6 +40,8 @@ import {
   TextField,
   Typography,
   DateTimePicker,
+  ActionButton,
+  Spinner,
 } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 import {
@@ -50,8 +51,6 @@ import {
   Clock,
   MapPin,
   User,
-  Trash2,
-  Edit3,
   Check,
 } from "lucide-react-native";
 
@@ -164,7 +163,7 @@ function AppointmentsTab() {
 
       {appts.isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.sky[500]} />
+          <Spinner size="lg" />
         </View>
       ) : items.length === 0 ? (
         <View style={styles.center}>
@@ -197,12 +196,8 @@ function AppointmentsTab() {
               iconBackground={colors.sky[100]}
               actions={
                 <View style={styles.cardActions}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => { setEditTarget(a); setShowForm(true); }}>
-                    <Edit3 size={16} color={t.text.secondary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => setDeleteTarget(a)}>
-                    <Trash2 size={16} color={colors.error[500]} />
-                  </TouchableOpacity>
+                  <ActionButton action="edit" size="sm" onPress={() => { setEditTarget(a); setShowForm(true); }} />
+                  <ActionButton action="delete" size="sm" onPress={() => setDeleteTarget(a)} />
                 </View>
               }
             >
@@ -385,7 +380,7 @@ function MedicationsTab() {
 
       {meds.isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.sky[500]} />
+          <Spinner size="lg" />
         </View>
       ) : items.length === 0 ? (
         <View style={styles.center}>
@@ -405,12 +400,8 @@ function MedicationsTab() {
               iconBackground={colors.warning[50]}
               actions={
                 <View style={styles.cardActions}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => { setEditTarget(m); setShowForm(true); }}>
-                    <Edit3 size={16} color={t.text.secondary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => setDeleteTarget(m)}>
-                    <Trash2 size={16} color={colors.error[500]} />
-                  </TouchableOpacity>
+                  <ActionButton action="edit" size="sm" onPress={() => { setEditTarget(m); setShowForm(true); }} />
+                  <ActionButton action="delete" size="sm" onPress={() => setDeleteTarget(m)} />
                 </View>
               }
             >

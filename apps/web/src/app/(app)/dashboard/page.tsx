@@ -9,7 +9,7 @@ import {
   ArrowRight,
   Clock,
 } from "lucide-react";
-import { formatTime, Typography } from "@healthguard/ui";
+import { formatTime, Typography, Spinner } from "@healthguard/ui";
 
 export default function DashboardPage() {
   const dash = useDashboardCore();
@@ -50,7 +50,7 @@ export default function DashboardPage() {
         <div className="card-body">
           {dash.isApptsLoading ? (
             <div className="empty-state">
-              <div className="spinner spinner--page" style={{ margin: "0 auto" }} />
+              <Spinner size="lg" />
             </div>
           ) : dash.upcomingAppts.length === 0 ? (
             <div className="empty-state">
@@ -91,7 +91,7 @@ export default function DashboardPage() {
         <div className="card-body">
           {dash.isMedsLoading ? (
             <div className="empty-state">
-              <div className="spinner spinner--page" style={{ margin: "0 auto" }} />
+              <Spinner size="lg" />
             </div>
           ) : dash.activeMeds.length === 0 ? (
             <div className="empty-state">

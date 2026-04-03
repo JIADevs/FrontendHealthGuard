@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
+import { View, StyleSheet, FlatList, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDocumentsQuery, useShareDocumentMutation } from "@healthguard/api/hooks";
 import { Camera, Share2, Plus, FileUp } from "lucide-react-native";
@@ -7,7 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@healthguard/ui";
-import { colors, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography } from "@healthguard/ui";
+import { colors, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography, Spinner } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function DocumentsScreen() {
@@ -118,7 +118,7 @@ export function DocumentsScreen() {
       </View>
 
       {docs.isLoading && !docs.isRefetching ? (
-        <View style={styles.center}><ActivityIndicator size="large" color={colors.sky[500]} /></View>
+        <View style={styles.center}><Spinner size="lg" /></View>
       ) : (
         <FlatList
           data={docs.data?.items ?? []}

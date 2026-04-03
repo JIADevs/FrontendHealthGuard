@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -16,7 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
-import { useAppTheme, colors, useDebounceSearch, formatDate, Card, cardContentStyle, SearchField, Typography } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, Card, cardContentStyle, SearchField, Typography, Spinner } from "@healthguard/ui";
 import type { ThemeContextValue } from "@healthguard/ui";
 
 export function BackpacksScreen() {
@@ -69,7 +68,7 @@ export function BackpacksScreen() {
 
       {query.isLoading && !query.isRefetching ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.sky[500]} />
+          <Spinner size="lg" />
         </View>
       ) : (
         <FlatList

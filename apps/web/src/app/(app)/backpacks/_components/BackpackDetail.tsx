@@ -5,7 +5,7 @@ import { useBackpackQuery } from "@healthguard/api/hooks";
 import { useBackpackDetail } from "@/hooks/useBackpackDetail";
 import { type BackpackWithDocs } from "@healthguard/api";
 import { Backpack, FileText, X, Share2, ChevronLeft, Plus, Edit3, Clock, QrCode, Copy } from "lucide-react";
-import { formatDate, Button, Typography } from "@healthguard/ui";
+import { formatDate, Button, Typography, Spinner } from "@healthguard/ui";
 import { AddDocsModal } from "./AddDocsModal";
 import { BackpackFormModal } from "./BackpackFormModal";
 
@@ -39,7 +39,7 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
 
       {bp.isLoading ? (
         <div className="empty-state">
-          <div className="spinner spinner--page" style={{ margin: "0 auto", width: 32, height: 32 }} />
+          <Spinner size="lg" />
         </div>
       ) : bp.data ? (
         <>
@@ -117,7 +117,7 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
                         onClick={() => detail.removeDocument(doc.id, doc.title)}
                       >
                         {detail.removingDocId === doc.id
-                          ? <span className="spinner" style={{ width: 12, height: 12 }} />
+                          ? <Spinner size="sm" />
                           : <X size={14} />}
                       </button>
                     </div>

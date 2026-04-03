@@ -226,6 +226,18 @@ export const fontWeight = {
   extrabold: '800' as const,
 } as const;
 
+export const fontFamily = {
+  inherit: 'inherit',
+  sans:    'Inter, system-ui, sans-serif',
+  mono:    'JetBrains Mono, Menlo, monospace',
+} as const;
+
+// React Native no acepta fallbacks CSS — solo el nombre exacto de la fuente cargada
+export const nativeFontFamily = {
+  sans: 'Inter',
+  mono: 'JetBrainsMono',
+} as const;
+
 // ─── Overlays ────────────────────────────────────────────────────────────────
 
 export const overlay = {
@@ -280,6 +292,7 @@ export const theme = {
   spacing,
   fontSize,
   fontWeight,
+  fontFamily,
   shadows,
 } as const;
 

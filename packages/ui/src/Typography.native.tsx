@@ -1,21 +1,23 @@
 import { Text, StyleSheet } from 'react-native';
-import { colors, fontSize, fontWeight } from './tokens';
+import { colors, fontSize, fontWeight, nativeFontFamily } from './tokens';
 import { useAppTheme } from './ThemeProvider';
 import type { TypographyProps, TypographyVariant, TypographyColor } from './Typography.types';
 
 // ─── Variant → style ─────────────────────────────────────────────────────────
 
+const f = nativeFontFamily.sans;
+
 const variantStyles = StyleSheet.create({
-  h1:      { fontSize: fontSize['4xl'], fontWeight: fontWeight.extrabold, lineHeight: 34 },
-  h2:      { fontSize: fontSize['3xl'], fontWeight: fontWeight.extrabold, lineHeight: 30 },
-  h3:      { fontSize: fontSize.xl,    fontWeight: fontWeight.bold,      lineHeight: 26 },
-  h4:      { fontSize: fontSize.lg,    fontWeight: fontWeight.semibold,  lineHeight: 24 },
-  body:    { fontSize: fontSize.base,  fontWeight: fontWeight.normal,    lineHeight: 22 },
-  bodyLg:  { fontSize: fontSize.md,   fontWeight: fontWeight.normal,    lineHeight: 24 },
-  bodySm:  { fontSize: fontSize.sm,   fontWeight: fontWeight.normal,    lineHeight: 20 },
-  caption: { fontSize: fontSize.xs,   fontWeight: fontWeight.normal,    lineHeight: 16 },
-  label:   { fontSize: fontSize.sm,   fontWeight: fontWeight.semibold,  lineHeight: 20 },
-  overline:{ fontSize: fontSize.xs,   fontWeight: fontWeight.semibold,  lineHeight: 16, textTransform: 'uppercase', letterSpacing: 0.8 },
+  h1:      { fontFamily: f, fontSize: fontSize['4xl'], fontWeight: fontWeight.extrabold, lineHeight: 34 },
+  h2:      { fontFamily: f, fontSize: fontSize['3xl'], fontWeight: fontWeight.extrabold, lineHeight: 30 },
+  h3:      { fontFamily: f, fontSize: fontSize.xl,    fontWeight: fontWeight.bold,      lineHeight: 26 },
+  h4:      { fontFamily: f, fontSize: fontSize.lg,    fontWeight: fontWeight.semibold,  lineHeight: 24 },
+  body:    { fontFamily: f, fontSize: fontSize.base,  fontWeight: fontWeight.normal,    lineHeight: 22 },
+  bodyLg:  { fontFamily: f, fontSize: fontSize.md,    fontWeight: fontWeight.normal,    lineHeight: 24 },
+  bodySm:  { fontFamily: f, fontSize: fontSize.sm,    fontWeight: fontWeight.normal,    lineHeight: 20 },
+  caption: { fontFamily: f, fontSize: fontSize.xs,    fontWeight: fontWeight.normal,    lineHeight: 16 },
+  label:   { fontFamily: f, fontSize: fontSize.sm,    fontWeight: fontWeight.semibold,  lineHeight: 20 },
+  overline:{ fontFamily: f, fontSize: fontSize.xs,    fontWeight: fontWeight.semibold,  lineHeight: 16, textTransform: 'uppercase', letterSpacing: 0.8 },
 });
 
 // ─── Component ────────────────────────────────────────────────────────────────

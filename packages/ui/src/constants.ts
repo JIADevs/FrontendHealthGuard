@@ -1,6 +1,6 @@
 /**
  * Constantes de UI compartidas entre web y mobile.
- * Las constantes de comportamiento de API (retry, upload limits) viven en @healthguard/api.
+ * Las constantes de comportamiento de API (retry, upload limits) viven en @helu/api.
  */
 
 // ─── Pagination ───────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 {
-  "name": "healthguard",
+  "name": "helu",
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "scripts": {
@@ -7,8 +7,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
-    "dev:web": "turbo run dev --filter=@healthguard/web",
-    "dev:mobile": "turbo run start --filter=@healthguard/mobile",
+    "dev:web": "turbo run dev --filter=@helu/web",
+    "dev:mobile": "turbo run start --filter=@helu/mobile",
     "docker:dev": "node docker-up.js"
   },
   "devDependencies": {

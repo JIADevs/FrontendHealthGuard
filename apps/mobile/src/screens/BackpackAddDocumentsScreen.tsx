@@ -12,15 +12,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Toast from "react-native-toast-message";
-import { useBackpackQuery, useAddDocToBackpackMutation } from "@healthguard/api/hooks";
-import { getBackpackDocuments, getDocuments, isApiError, type Document, type DocumentPage } from "@healthguard/api";
-import { DocumentTypeIcon } from "@healthguard/ui";
+import { useBackpackQuery, useAddDocToBackpackMutation } from "@helu/api/hooks";
+import { getBackpackDocuments, getDocuments, isApiError, type Document, type DocumentPage } from "@helu/api";
+import { DocumentTypeIcon } from "@helu/ui";
 import { Plus, Check } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { useAppTheme, colors, useDebounceSearch, formatDate, SearchField, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, SearchField, Typography, Spinner } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 type RouteParams = { id: string };
 

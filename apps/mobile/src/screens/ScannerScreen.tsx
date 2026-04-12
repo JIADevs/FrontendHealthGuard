@@ -17,8 +17,8 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
-import { colors, overlay, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { colors, overlay, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 export function ScannerScreen() {
   const t = useAppTheme();

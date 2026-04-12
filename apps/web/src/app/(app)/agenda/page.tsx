@@ -8,7 +8,7 @@ import {
   useMedicationsQuery,
   useDeleteMedicationMutation,
   useConfirmIntakeMutation,
-} from "@healthguard/api/hooks";
+} from "@helu/api/hooks";
 import {
   CalendarDays,
   Pill,
@@ -22,11 +22,11 @@ import {
   isApiError,
   type Appointment,
   type Medication,
-} from "@healthguard/api";
+} from "@helu/api";
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField, Select, Typography, DateTimePicker, ActionButton, Spinner } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField, Select, Typography, DateTimePicker, ActionButton, Spinner } from "@helu/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 

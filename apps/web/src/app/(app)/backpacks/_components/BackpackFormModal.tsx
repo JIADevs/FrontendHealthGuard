@@ -2,7 +2,7 @@
 
 import { type FormEvent } from "react";
 import { useBackpackForm } from "@/hooks/useBackpackForm";
-import { Button, Modal, TextField, Spinner } from "@healthguard/ui";
+import { Button, Modal, TextField, Spinner } from "@helu/ui";
 
 interface BackpackFormModalProps {
   onClose: () => void;

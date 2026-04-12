@@ -1,6 +1,6 @@
 "use client";
 
-import { useDashboardCore } from "@healthguard/api/hooks";
+import { useDashboardCore } from "@helu/api/hooks";
 import {
   FileText,
   CalendarDays,
@@ -9,7 +9,7 @@ import {
   ArrowRight,
   Clock,
 } from "lucide-react";
-import { formatTime, Typography, Spinner } from "@healthguard/ui";
+import { formatTime, Typography, Spinner } from "@helu/ui";
 
 export default function DashboardPage() {
   const dash = useDashboardCore();

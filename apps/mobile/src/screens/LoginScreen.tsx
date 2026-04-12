@@ -3,10 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useAuthStore } from "@healthguard/stores";
-import { login, isApiError } from "@healthguard/api";
-import { colors, radii, spacing, fontWeight, useAppTheme, Button, TextField, Typography } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { useAuthStore } from "@helu/stores";
+import { login, isApiError } from "@helu/api";
+import { colors, radii, spacing, fontWeight, useAppTheme, Button, TextField, Typography } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
 export function LoginScreen() {
@@ -45,7 +45,7 @@ export function LoginScreen() {
           <View style={styles.logo}>
             <Text style={styles.logoText}>H</Text>
           </View>
-          <Typography variant="h2" align="center">HealthGuard</Typography>
+          <Typography variant="h2" align="center">Helu</Typography>
           <View style={{ marginTop: spacing[1] }}>
             <Typography variant="bodySm" color="secondary" align="center">Inicia sesión para continuar</Typography>
           </View>

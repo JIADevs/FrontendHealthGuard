@@ -4,8 +4,8 @@ import { Platform } from "react-native";
 declare const __DEV__: boolean;
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import { registerDeviceToken } from "@healthguard/api";
-import { colors } from "@healthguard/ui";
+import { registerDeviceToken } from "@helu/api";
+import { colors } from "@helu/ui";
 import { navigateTo } from "../navigation/navigationRef";
 
 export interface PushNotificationState {
@@ -48,7 +48,7 @@ export const usePushNotifications = (authToken?: string | null): PushNotificatio
 
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {
-        name: "HealthGuard",
+        name: "Helu",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: colors.sky[500],

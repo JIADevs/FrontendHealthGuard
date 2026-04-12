@@ -6,8 +6,8 @@ import { AgendaScreen } from "../screens/AgendaScreen";
 import { NotificationsScreen } from "../screens/NotificationsScreen";
 import { LayoutDashboard, FileText, CalendarDays, Bell, Folder } from "lucide-react-native";
 import { BackpacksScreen } from "../screens/BackpacksScreen";
-import { useUnreadCount } from "@healthguard/stores";
-import { colors, radii, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import { useUnreadCount } from "@helu/stores";
+import { colors, radii, fontSize, fontWeight, useAppTheme } from "@helu/ui";
 
 export type TabParamList = {
   Dashboard: undefined;

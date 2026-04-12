@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Upload, FileText, FileUp, Sparkles, Loader2, Plus, Check, X } from "lucide-react";
-import { Button, Chip, Modal, TextField, Typography, DatePicker, Spinner } from "@healthguard/ui";
+import { Button, Chip, Modal, TextField, Typography, DatePicker, Spinner } from "@helu/ui";
 import { useDocumentForm } from "@/hooks/useDocumentForm";
 
 const TEMPLATE_ICONS: Record<string, string> = {

@@ -8,15 +8,15 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useBackpacksQuery } from "@healthguard/api/hooks";
-import { isApiError, type BackpackPage } from "@healthguard/api";
+import { useBackpacksQuery } from "@helu/api/hooks";
+import { isApiError, type BackpackPage } from "@helu/api";
 import { FileText, Plus } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
-import { useAppTheme, colors, useDebounceSearch, formatDate, Card, cardContentStyle, SearchField, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { useAppTheme, colors, useDebounceSearch, formatDate, Card, cardContentStyle, SearchField, Typography, Spinner } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 export function BackpacksScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();

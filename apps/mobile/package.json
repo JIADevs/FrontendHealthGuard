@@ -1,5 +1,5 @@
 {
-  "name": "@healthguard/mobile",
+  "name": "@helu/mobile",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
-    "@healthguard/api": "workspace:*",
-    "@healthguard/config": "workspace:*",
-    "@healthguard/stores": "workspace:*",
-    "@healthguard/ui": "workspace:*",
+    "@helu/api": "workspace:*",
+    "@helu/config": "workspace:*",
+    "@helu/stores": "workspace:*",
+    "@helu/ui": "workspace:*",
     "@react-native-community/datetimepicker": "^9.1.0",
     "@react-native/virtualized-lists": "^0.81.0",
     "@react-navigation/bottom-tabs": "^7.0.0",

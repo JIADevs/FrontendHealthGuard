@@ -1,10 +1,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useDocumentQuery } from "@healthguard/api/hooks";
+import { useDocumentQuery } from "@helu/api/hooks";
 import { ExternalLink } from "lucide-react";
-import { getSignedUrl, type Document } from "@healthguard/api";
-import { formatDate, formatFileSize, Chip, Modal,Spinner } from "@healthguard/ui";
+import { getSignedUrl, type Document } from "@helu/api";
+import { formatDate, formatFileSize, Chip, Modal,Spinner } from "@helu/ui";
 
 export function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
   const doc = useDocumentQuery(id);

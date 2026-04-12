@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useBackpacksQuery, useDeleteBackpackMutation } from "@healthguard/api/hooks";
+import { useBackpacksQuery, useDeleteBackpackMutation } from "@helu/api/hooks";
 import { Backpack, Plus, FileText } from "lucide-react";
-import { Button, Card, CardGrid, SearchField, Typography, ActionButton, Spinner } from "@healthguard/ui";
-import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { type Backpack as BackpackType } from "@healthguard/api";
+import { Button, Card, CardGrid, SearchField, Typography, ActionButton, Spinner } from "@helu/ui";
+import { useDebounceSearch } from "@helu/ui/hooks";
+import { type Backpack as BackpackType } from "@helu/api";
 import { sileo } from "sileo";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { BackpackFormModal } from "./_components/BackpackFormModal";

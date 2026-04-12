@@ -10,8 +10,8 @@ import {
 } from "react-native";
 import { Sparkles } from "lucide-react-native";
 import type { DocumentFormState, DocumentFormActions, FileSource } from "../hooks/useDocumentForm";
-import { useAppTheme, colors, radii, spacing, fontSize, fontWeight, Chip, TextField } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { useAppTheme, colors, radii, spacing, fontSize, fontWeight, Chip, TextField } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 type Props = DocumentFormState &
   DocumentFormActions & {

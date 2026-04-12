@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useProfileQuery } from "@healthguard/api/hooks";
+import { useProfileQuery } from "@helu/api/hooks";
 import { useProfileForm } from "../hooks/useProfileForm";
 import {
   colors,
@@ -22,8 +22,8 @@ import {
   Select,
   Typography,
   DatePicker,
-} from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+} from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 import { User, Phone, Heart, Shield } from "lucide-react-native";
 
 const GENDER_OPTIONS = [

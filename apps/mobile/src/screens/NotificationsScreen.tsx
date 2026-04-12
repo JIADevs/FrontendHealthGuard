@@ -9,10 +9,10 @@ import {
 } from "react-native";
 import { memo, useCallback, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { type Notification } from "@healthguard/api";
+import { type Notification } from "@helu/api";
 import { useNotificationsScreen } from "../hooks/useNotificationsScreen";
-import { colors, radii, spacing, fontWeight, useAppTheme, Button, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { colors, radii, spacing, fontWeight, useAppTheme, Button, Typography, Spinner } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 import { Bell, Calendar, Pill, Activity, Info, CheckCircle } from "lucide-react-native";
 
 const TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {

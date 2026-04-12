@@ -1,14 +1,14 @@
 import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, FlatList, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDocumentsQuery, useShareDocumentMutation } from "@healthguard/api/hooks";
+import { useDocumentsQuery, useShareDocumentMutation } from "@helu/api/hooks";
 import { Camera, Share2, Plus, FileUp } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { DocumentTypeIcon } from "@healthguard/ui";
-import { colors, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { DocumentTypeIcon } from "@helu/ui";
+import { colors, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography, Spinner } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 export function DocumentsScreen() {
   const t = useAppTheme();
@@ -54,7 +54,7 @@ export function DocumentsScreen() {
     try {
       const result = await shareMut.mutateAsync(docId);
       await Share.share({
-        message: `Te comparto este documento de HealthGuard: ${title}\n\n${result.shareUrl}`,
+        message: `Te comparto este documento de Helu: ${title}\n\n${result.shareUrl}`,
         url: result.shareUrl,
         title: title,
       });

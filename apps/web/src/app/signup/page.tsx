@@ -2,10 +2,10 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { signup, login } from "@healthguard/api";
-import { useAuthStore } from "@healthguard/stores";
-import { isApiError } from "@healthguard/api";
-import { Button, TextField, Typography } from "@healthguard/ui";
+import { signup, login } from "@helu/api";
+import { useAuthStore } from "@helu/stores";
+import { isApiError } from "@helu/api";
+import { Button, TextField, Typography } from "@helu/ui";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -49,7 +49,7 @@ export default function SignupPage() {
       <div className="login-card">
         <div className="login-logo">
           <div className="login-logo-icon">H</div>
-          <Typography variant="h2">HealthGuard</Typography>
+          <Typography variant="h2">Helu</Typography>
         </div>
         <Typography variant="bodySm" color="secondary" align="center">
           Crea tu cuenta para gestionar tu información médica de forma segura.

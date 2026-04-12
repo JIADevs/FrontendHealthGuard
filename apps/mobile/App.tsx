@@ -6,12 +6,12 @@ import Toast from "react-native-toast-message";
 import { toastConfig } from "./src/components/ToastConfig";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { navigationRef } from "./src/navigation/navigationRef";
-import { useAuthStore, useNotifStore } from "@healthguard/stores";
+import { useAuthStore, useNotifStore } from "@helu/stores";
 import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
-import { setApiAuthProviders, getNotifications } from "@healthguard/api";
-import { ThemeProvider, colors } from "@healthguard/ui";
+import { setApiAuthProviders, getNotifications } from "@helu/api";
+import { ThemeProvider, colors } from "@helu/ui";
 
 setApiAuthProviders({
   getToken: () => useAuthStore.getState().token,

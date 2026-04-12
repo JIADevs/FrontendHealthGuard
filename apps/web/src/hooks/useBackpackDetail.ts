@@ -3,7 +3,7 @@ import {
   useBackpackDetailCore,
   type BackpackDetailState,
   type BackpackDetailActions,
-} from "@healthguard/api/hooks";
+} from "@helu/api/hooks";
 
 export type { BackpackDetailState, BackpackDetailActions };
 

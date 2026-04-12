@@ -15,12 +15,12 @@ import {
   useMedicationsQuery,
   useDeleteMedicationMutation,
   useConfirmIntakeMutation,
-} from "@healthguard/api/hooks";
+} from "@helu/api/hooks";
 import {
   isApiError,
   type Appointment,
   type Medication,
-} from "@healthguard/api";
+} from "@helu/api";
 import { useMedicationForm } from "../hooks/useMedicationForm";
 import { useAppointmentForm } from "../hooks/useAppointmentForm";
 import {
@@ -42,8 +42,8 @@ import {
   DateTimePicker,
   ActionButton,
   Spinner,
-} from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+} from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 import {
   CalendarDays,
   Pill,

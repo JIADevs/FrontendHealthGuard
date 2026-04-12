@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
-import { getDocuments, addDocToBackpack, isApiError, type BackpackWithDocs } from "@healthguard/api";
-import { formatDate, Button, Modal, Checkbox, Typography ,Spinner} from "@healthguard/ui";
+import { getDocuments, addDocToBackpack, isApiError, type BackpackWithDocs } from "@helu/api";
+import { formatDate, Button, Modal, Checkbox, Typography ,Spinner} from "@helu/ui";
 import { sileo } from "sileo";
 
 interface AddDocsModalProps {

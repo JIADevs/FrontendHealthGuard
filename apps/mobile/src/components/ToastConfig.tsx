@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react-native";
 import type { ToastConfig } from "react-native-toast-message";
-import { colors, toastBg, radii, spacing, fontSize, fontWeight } from "@healthguard/ui";
+import { colors, toastBg, radii, spacing, fontSize, fontWeight } from "@helu/ui";
 
 // ─── Colores por tipo (dark toasts) ──────────────────────────────────────────
 const VARIANTS = {

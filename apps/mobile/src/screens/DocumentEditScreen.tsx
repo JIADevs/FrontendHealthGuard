@@ -13,7 +13,7 @@ import {
 import Toast from "react-native-toast-message";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDocumentQuery } from "@healthguard/api/hooks";
+import { useDocumentQuery } from "@helu/api/hooks";
 import * as DocumentPicker from "expo-document-picker";
 import { FileUp, FileText as FileTextIcon, Check, X as XIcon } from "lucide-react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -27,9 +27,9 @@ import {
   isApiError,
   type DocumentCreate,
   type Document,
-} from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+} from "@helu/api";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Typography, Spinner } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 

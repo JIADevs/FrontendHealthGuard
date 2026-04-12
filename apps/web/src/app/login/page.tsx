@@ -2,10 +2,10 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@healthguard/api";
-import { useAuthStore } from "@healthguard/stores";
-import { isApiError } from "@healthguard/api";
-import { Button, TextField, Typography } from "@healthguard/ui";
+import { login } from "@helu/api";
+import { useAuthStore } from "@helu/stores";
+import { isApiError } from "@helu/api";
+import { Button, TextField, Typography } from "@helu/ui";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function LoginPage() {
       <div className="login-card">
         <div className="login-logo">
           <div className="login-logo-icon">H</div>
-          <Typography variant="h2">HealthGuard</Typography>
+          <Typography variant="h2">Helu</Typography>
         </div>
         <Typography variant="bodySm" color="secondary" align="center">
           Gestión médica inteligente. Inicia sesión para acceder a tus documentos, citas y medicamentos.

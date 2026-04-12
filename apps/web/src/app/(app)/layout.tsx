@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuthStore, useUnreadCount } from "@healthguard/stores";
+import { useAuthStore, useUnreadCount } from "@helu/stores";
 import { useNotificationBell } from "@/hooks/useNotificationBell";
-import { timeAgo } from "@healthguard/ui";
+import { timeAgo } from "@helu/ui";
 import Link from "next/link";
 import { Toaster } from "sileo";
 import {
@@ -49,7 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     user?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() ??
     user?.email?.[0]?.toUpperCase() ?? "U";
 
-  const pageTitle = NAV_ITEMS.find((n) => pathname.startsWith(n.href))?.label ?? "HealthGuard";
+  const pageTitle = NAV_ITEMS.find((n) => pathname.startsWith(n.href))?.label ?? "Helu";
 
   function handleLogout() {
     logout();
@@ -61,7 +61,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-logo">H</div>
-          <span className="sidebar-brand">HealthGuard</span>
+          <span className="sidebar-brand">Helu</span>
         </div>
         <nav className="sidebar-nav">
           {NAV_ITEMS.map((item) => {

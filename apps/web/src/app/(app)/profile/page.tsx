@@ -1,10 +1,10 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useProfileQuery } from "@healthguard/api/hooks";
+import { useProfileQuery } from "@helu/api/hooks";
 import { useProfileForm } from "@/hooks/useProfileForm";
 import { User, Save, Mail, Phone, Heart, Shield } from "lucide-react";
-import { Button, TextField, Select, Typography, DatePicker,Spinner } from "@healthguard/ui";
+import { Button, TextField, Select, Typography, DatePicker,Spinner } from "@helu/ui";
 
 export default function ProfilePage() {
   const profile = useProfileQuery();

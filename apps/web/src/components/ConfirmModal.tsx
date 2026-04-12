@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Modal, Typography } from "@healthguard/ui";
+import { Button, Modal, Typography } from "@helu/ui";
 
 interface ConfirmModalProps {
   title: string;

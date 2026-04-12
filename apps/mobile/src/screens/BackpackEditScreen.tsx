@@ -8,8 +8,8 @@ import {
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { useBackpackForm } from "../hooks/useBackpackForm";
-import { useAppTheme, colors, spacing, Button, TextField, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { useAppTheme, colors, spacing, Button, TextField, Typography, Spinner } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 type RouteParams = { id?: string };
 

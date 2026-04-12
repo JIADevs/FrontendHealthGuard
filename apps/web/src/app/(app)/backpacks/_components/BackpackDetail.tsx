@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useBackpackQuery } from "@healthguard/api/hooks";
+import { useBackpackQuery } from "@helu/api/hooks";
 import { useBackpackDetail } from "@/hooks/useBackpackDetail";
-import { type BackpackWithDocs } from "@healthguard/api";
+import { type BackpackWithDocs } from "@helu/api";
 import { Backpack, FileText, X, Share2, ChevronLeft, Plus, Edit3, Clock, QrCode, Copy } from "lucide-react";
-import { formatDate, Button, Typography, Spinner } from "@healthguard/ui";
+import { formatDate, Button, Typography, Spinner } from "@helu/ui";
 import { AddDocsModal } from "./AddDocsModal";
 import { BackpackFormModal } from "./BackpackFormModal";
 

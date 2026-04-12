@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { env } from "@healthguard/config";
+import { env } from "@helu/config";
 import { parseApiError } from "./errors";
 
 // --- Dependency Injection for Auth ---

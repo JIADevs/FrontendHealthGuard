@@ -10,9 +10,18 @@ const ThemeContext = createContext<ThemeContextValue>({
   mode: "light",
 });
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+type ThemePreference = "light" | "dark" | "system";
+
+interface ThemeProviderProps {
+  children: React.ReactNode;
+  /** Manual override — when "system", follows OS color scheme */
+  preference?: ThemePreference;
+}
+
+export function ThemeProvider({ children, preference = "system" }: ThemeProviderProps) {
   const scheme = useColorScheme();
-  const mode: ThemeMode = scheme === "dark" ? "dark" : "light";
+  const osMode: ThemeMode = scheme === "dark" ? "dark" : "light";
+  const mode: ThemeMode = preference === "system" ? osMode : preference;
   const theme = mode === "dark" ? darkTheme : lightTheme;
   const value: ThemeContextValue = {
     surface: { ...theme.surface },

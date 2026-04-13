@@ -6,7 +6,7 @@ import Toast from "react-native-toast-message";
 import { toastConfig } from "./src/components/ToastConfig";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { navigationRef } from "./src/navigation/navigationRef";
-import { useAuthStore, useNotifStore } from "@helu/stores";
+import { useAuthStore, useNotifStore, useUiStore } from "@helu/stores";
 import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
@@ -56,8 +56,10 @@ export default function App() {
     );
   }
 
+  const themePreference = useUiStore((s) => s.theme);
+
   return (
-    <ThemeProvider>
+    <ThemeProvider preference={themePreference}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <NavigationContainer ref={navigationRef}>

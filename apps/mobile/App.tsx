@@ -1,7 +1,12 @@
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { NavigationContainer } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  DarkTheme as NavDarkTheme,
+  DefaultTheme as NavDefaultTheme,
+} from "@react-navigation/native";
+import type { Theme as NavigationTheme } from "@react-navigation/native";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "./src/components/ToastConfig";
 import { RootNavigator } from "./src/navigation/RootNavigator";
@@ -11,7 +16,7 @@ import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
 import { setApiAuthProviders, getNotifications } from "@healthguard/api";
-import { ThemeProvider, colors } from "@healthguard/ui";
+import { ThemeProvider, colors, useAppTheme } from "@healthguard/ui";
 
 setApiAuthProviders({
   getToken: () => useAuthStore.getState().token,
@@ -22,6 +27,30 @@ setApiAuthProviders({
 });
 
 const queryClient = new QueryClient();
+
+function ThemedNavigationContainer() {
+  const t = useAppTheme();
+  const base = t.mode === "dark" ? NavDarkTheme : NavDefaultTheme;
+  const navigationTheme: NavigationTheme = {
+    ...base,
+    dark: t.mode === "dark",
+    colors: {
+      ...base.colors,
+      primary: colors.sky[500],
+      background: t.surface.bg,
+      card: t.surface.bg,
+      text: t.text.primary,
+      border: t.border.default,
+      notification: colors.primary[500],
+    },
+  };
+
+  return (
+    <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+      <RootNavigator />
+    </NavigationContainer>
+  );
+}
 
 export default function App() {
   const isHydrated = useAuthStore((s) => s.isHydrated);
@@ -60,9 +89,7 @@ export default function App() {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <NavigationContainer ref={navigationRef}>
-            <RootNavigator />
-          </NavigationContainer>
+          <ThemedNavigationContainer />
           <Toast config={toastConfig} position="bottom" bottomOffset={90} visibilityTime={3500} />
           <StatusBar style="auto" />
         </SafeAreaProvider>

@@ -1,54 +1,27 @@
 import { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, FlatList, TouchableOpacity, Share, RefreshControl, Animated, Pressable } from "react-native";
+import { View, StyleSheet, FlatList, TouchableOpacity, Share, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDocumentsQuery, useShareDocumentMutation } from "@helu/api/hooks";
-import { Camera, Share2, Plus, FileUp } from "lucide-react-native";
+import { Camera, Share2, FileUp } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@helu/ui";
 import { colors, palette, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography, Spinner, EmptyState } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
+import { ExpandableFAB } from "../components/ExpandableFAB";
 
 export function DocumentsScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [fabOpen, setFabOpen] = useState(false);
-  const [animation] = useState(() => new Animated.Value(0));
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounceSearch(search);
 
   const docs = useDocumentsQuery(debouncedSearch, 1, PAGE_SIZE_LIST);
   const shareMut = useShareDocumentMutation();
-
-  const toggleFab = useCallback(() => {
-    const toValue = fabOpen ? 0 : 1;
-    Animated.spring(animation, {
-      toValue,
-      friction: 6,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
-    setFabOpen(!fabOpen);
-  }, [fabOpen, animation]);
-
-  const closeFab = useCallback(() => {
-    Animated.spring(animation, {
-      toValue: 0,
-      friction: 6,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
-    setFabOpen(false);
-  }, [animation]);
-
-  function handleNavigate(screen: keyof RootStackParamList) {
-    closeFab();
-    navigation.navigate(screen as any);
-  }
 
   async function handleShare(docId: string, title: string) {
     try {
@@ -63,35 +36,20 @@ export function DocumentsScreen() {
     }
   }
 
-  const rotation = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "45deg"],
-  });
-
-  const backdropOpacity = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-
-  const option1TranslateY = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -80],
-  });
-
-  const option2TranslateY = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -150],
-  });
-
-  const optionScale = animation.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, 0, 1],
-  });
-
-  const optionOpacity = animation.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, 0, 1],
-  });
+  const fabOptions = useMemo(() => [
+    {
+      label: 'Subir archivo',
+      icon: <FileUp color={colors.white} size={22} />,
+      color: colors.violet[500],
+      onPress: () => navigation.navigate('DocumentUpload' as any),
+    },
+    {
+      label: 'Escanear',
+      icon: <Camera color={colors.white} size={22} />,
+      color: palette.brand[500],
+      onPress: () => navigation.navigate('Scanner' as any),
+    },
+  ], [navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -155,61 +113,7 @@ export function DocumentsScreen() {
         />
       )}
 
-      {/* FAB Backdrop */}
-      {fabOpen && (
-        <Pressable style={StyleSheet.absoluteFill} onPress={closeFab}>
-          <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
-        </Pressable>
-      )}
-
-      {/* Upload from device option */}
-      <Animated.View
-        style={[
-          styles.fabOption,
-          {
-            transform: [{ translateY: option2TranslateY }, { scale: optionScale }],
-            opacity: optionOpacity,
-          },
-        ]}
-        pointerEvents={fabOpen ? "auto" : "none"}
-      >
-        <TouchableOpacity style={styles.fabOptionRow} onPress={() => handleNavigate("DocumentUpload")}>
-          <View style={styles.fabOptionLabel}>
-            <Typography variant="label">Subir archivo</Typography>
-          </View>
-          <View style={[styles.fabSmall, { backgroundColor: colors.violet[500] }]}>
-            <FileUp color={colors.white} size={22} />
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
-
-      {/* Scan with camera option */}
-      <Animated.View
-        style={[
-          styles.fabOption,
-          {
-            transform: [{ translateY: option1TranslateY }, { scale: optionScale }],
-            opacity: optionOpacity,
-          },
-        ]}
-        pointerEvents={fabOpen ? "auto" : "none"}
-      >
-        <TouchableOpacity style={styles.fabOptionRow} onPress={() => handleNavigate("Scanner")}>
-          <View style={styles.fabOptionLabel}>
-            <Typography variant="label">Escanear</Typography>
-          </View>
-          <View style={[styles.fabSmall, { backgroundColor: palette.brand[500] }]}>
-            <Camera color={colors.white} size={22} />
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
-
-      {/* Main FAB */}
-      <TouchableOpacity style={styles.fab} onPress={toggleFab} activeOpacity={0.85}>
-        <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-          <Plus color={colors.white} size={28} />
-        </Animated.View>
-      </TouchableOpacity>
+      <ExpandableFAB options={fabOptions} />
     </SafeAreaView>
   );
 }
@@ -221,60 +125,5 @@ function makeStyles(t: ThemeContextValue) {
     titleRow:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     shareAllBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: palette.brand[50], borderWidth: 1, borderColor: palette.brand[200] },
     center:     { flex: 1, alignItems: "center", justifyContent: "center" },
-
-    backdrop: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: overlay.dark,
-    },
-
-    fab: {
-      position: "absolute",
-      bottom: spacing[6],
-      right: spacing[6],
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: palette.brand[500],
-      alignItems: "center",
-      justifyContent: "center",
-      shadowColor: palette.brand[500],
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.3,
-      shadowRadius: 12,
-      elevation: 8,
-      zIndex: 20,
-    },
-
-    fabOption: {
-      position: "absolute",
-      bottom: spacing[6],
-      right: spacing[6],
-      alignItems: "flex-end",
-      zIndex: 15,
-    },
-    fabOptionRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],
-    },
-    fabOptionLabel: {
-      backgroundColor: t.surface.bgCard,
-      paddingHorizontal: 14,
-      paddingVertical: spacing[2],
-      borderRadius: 10,
-      ...shadows.md,
-    },
-    fabSmall: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      alignItems: "center",
-      justifyContent: "center",
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 6,
-      elevation: 6,
-    },
   });
 }

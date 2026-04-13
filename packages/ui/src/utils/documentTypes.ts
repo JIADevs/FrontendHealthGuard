@@ -2,7 +2,7 @@
  * Lógica de tipos de documentos médicos compartida entre web y mobile.
  * Provee colores semánticos por tipo y resolución de formato de archivo.
  */
-import { colors } from "../tokens/tokens";
+import { colors, palette } from "../tokens/tokens";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -23,15 +23,15 @@ export const DOCUMENT_TYPE_VARIANTS: Record<string, DocTypeVariant> = {
   "Tomografía":           { bg: colors.violet[100],  iconColor: colors.violet[600] },
   "Resonancia magnética": { bg: colors.violet[100],  iconColor: colors.violet[600] },
   "Receta":               { bg: colors.green[100],   iconColor: colors.green[600] },
-  "Informe médico":       { bg: colors.sky[100],     iconColor: colors.sky[600] },
+  "Informe médico":       { bg: palette.brand[100],     iconColor: palette.brand[600] },
   "Historia clínica":     { bg: colors.green[50],    iconColor: colors.green[700] },
   "Vacuna":               { bg: colors.pink[100],    iconColor: colors.pink[600] },
   "Odontología":          { bg: colors.orange[50],   iconColor: colors.orange[600] },
 };
 
 const DEFAULT_VARIANT: DocTypeVariant = {
-  bg: colors.sky[100],
-  iconColor: colors.sky[500],
+  bg: palette.brand[100],
+  iconColor: palette.brand[500],
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

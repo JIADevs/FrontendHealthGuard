@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, Pressable, Modal, Platform, StyleSheet } from 'react-native';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 import { Clock } from 'lucide-react-native';
-import { colors, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
+import { colors, palette, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { TimePickerProps } from './TimePicker.types';
 
@@ -106,7 +106,7 @@ export function TimePicker({
                 </Pressable>
                 <Text style={[styles.sheetTitle, { color: t.text.primary }]}>Hora</Text>
                 <Pressable onPress={confirmIOS} hitSlop={8}>
-                  <Text style={[styles.sheetAction, { color: colors.sky[500] }]}>Confirmar</Text>
+                  <Text style={[styles.sheetAction, { color: palette.brand[500] }]}>Confirmar</Text>
                 </Pressable>
               </View>
               <RNDateTimePicker

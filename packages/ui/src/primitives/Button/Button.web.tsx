@@ -1,17 +1,17 @@
 "use client";
 import { useState } from 'react';
-import { colors, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
+import { colors, palette, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
 import type { ButtonProps, ButtonVariant, ButtonSize } from './Button.types';
 
 const bgByVariant: Record<ButtonVariant, string> = {
-  primary:   colors.sky[500],
+  primary:   palette.brand[500],
   secondary: colors.white,
   danger:    colors.error[500],
   ghost:     'transparent',
 };
 
 const bgHoverByVariant: Record<ButtonVariant, string> = {
-  primary:   colors.sky[600],
+  primary:   palette.brand[600],
   secondary: colors.gray[50],
   danger:    colors.error[600],
   ghost:     colors.primary[50], 

@@ -5,7 +5,7 @@ declare const __DEV__: boolean;
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import { registerDeviceToken } from "@helu/api";
-import { colors } from "@helu/ui";
+import { colors, palette } from "@helu/ui";
 import { navigateTo } from "../navigation/navigationRef";
 
 export interface PushNotificationState {
@@ -53,7 +53,7 @@ export const usePushNotifications = (authToken?: string | null): PushNotificatio
         name: "Helu",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: colors.sky[500],
+        lightColor: palette.brand[500],
         sound: "default",
       });
     }

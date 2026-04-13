@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
+import { colors, palette, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { CheckboxProps } from './Checkbox.types';
 
@@ -10,7 +10,7 @@ export function Checkbox({ checked, onChange, label, disabled }: CheckboxProps) 
     <View
       style={[
         styles.box,
-        { borderColor: checked ? colors.sky[500] : t.border.medium },
+        { borderColor: checked ? palette.brand[500] : t.border.medium },
         checked && styles.boxChecked,
         disabled && styles.disabled,
       ]}
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   boxChecked: {
-    backgroundColor: colors.sky[500],
+    backgroundColor: palette.brand[500],
   },
   disabled: {
     opacity: 0.5,

@@ -1,6 +1,6 @@
 "use client";
 
-import { colors, radii, fontSize, fontWeight } from '../../tokens/tokens';
+import { colors, palette, radii, fontSize, fontWeight } from '../../tokens/tokens';
 import type { ChipProps, ChipColor } from './Chip.types';
 
 const unselected: Record<ChipColor, { background: string; color: string }> = {
@@ -10,7 +10,7 @@ const unselected: Record<ChipColor, { background: string; color: string }> = {
 };
 
 const selected: Record<ChipColor, { background: string; color: string }> = {
-  default: { background: colors.sky[500],   color: colors.white },
+  default: { background: palette.brand[500],   color: colors.white },
   green:   { background: colors.green[500], color: colors.white },
   amber:   { background: colors.amber[500], color: colors.white },
 };

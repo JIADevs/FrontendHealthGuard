@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { colors, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
+import { colors, palette, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { SelectProps } from './Select.types';
 
@@ -30,7 +30,7 @@ export function Select({
   const borderColor = error
     ? colors.error[500]
     : open
-    ? colors.sky[500]
+    ? palette.brand[500]
     : t.border.medium;
 
   return (
@@ -82,7 +82,7 @@ export function Select({
                   style={[
                     styles.option,
                     { borderBottomColor: t.border.light },
-                    item.value === value && { backgroundColor: colors.sky[50] },
+                    item.value === value && { backgroundColor: palette.brand[50] },
                   ]}
                   onPress={() => { onChange(item.value); setOpen(false); }}
                   accessibilityRole="radio"
@@ -91,7 +91,7 @@ export function Select({
                   <Text
                     style={[
                       styles.optionText,
-                      { color: item.value === value ? colors.sky[600] : t.text.primary },
+                      { color: item.value === value ? palette.brand[600] : t.text.primary },
                     ]}
                   >
                     {item.label}
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     height: 12,
     borderRightWidth: 2,
     borderBottomWidth: 2,
-    borderColor: colors.sky[500],
+    borderColor: palette.brand[500],
     transform: [{ rotate: '45deg' }],
   },
 });

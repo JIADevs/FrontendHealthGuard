@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentQuery, useTagCategoriesQuery } from "@helu/api/hooks";
 import { getSignedUrl, type Document, type TagCategoryOut } from "@helu/api";
-import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button, Typography, Spinner } from "@helu/ui";
+import { colors, palette, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button, Typography, Spinner } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 type RouteParams = {
@@ -191,7 +191,7 @@ function makeStyles(t: ThemeContextValue) {
     sectionTitle:  { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: t.text.primary, marginBottom: spacing[2] },
     tagsContainer: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
     tag:           { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.full, fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.primary },
-    tagBlue:       { backgroundColor: colors.sky[100] },
+    tagBlue:       { backgroundColor: palette.brand[100] },
     tagAmber:      { backgroundColor: colors.warning[50] },
     tagGreen:      { backgroundColor: colors.success[50] },
 

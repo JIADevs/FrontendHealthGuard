@@ -1,5 +1,5 @@
 "use client";
-import { colors, spacing } from '../../tokens/tokens';
+import { colors, palette, spacing } from '../../tokens/tokens';
 import type { SpinnerProps, SpinnerSize, SpinnerColor } from './Spinner.types';
 
 const sizePx: Record<SpinnerSize, number> = { sm: 16, md: 24, lg: 32 };
@@ -10,7 +10,7 @@ const trackColor: Record<SpinnerColor, string> = {
 };
 
 const fgColor: Record<SpinnerColor, string> = {
-  primary: colors.sky[500],
+  primary: palette.brand[500],
   white:   colors.white,
 };
 

@@ -24,7 +24,7 @@ import {
 import { useMedicationForm } from "../hooks/useMedicationForm";
 import { useAppointmentForm } from "../hooks/useAppointmentForm";
 import {
-  colors,
+  colors, palette,
   radii,
   spacing,
   fontSize,
@@ -79,10 +79,10 @@ export function AgendaScreen() {
         >
           <CalendarDays
             size={14}
-            color={tab === "appointments" ? colors.sky[500] : t.text.secondary}
+            color={tab === "appointments" ? palette.brand[500] : t.text.secondary}
           />
           <Typography variant="label" color={tab === "appointments" ? "inherit" : "secondary"}>
-            <Text style={tab === "appointments" ? { color: colors.sky[500] } : undefined}>Citas</Text>
+            <Text style={tab === "appointments" ? { color: palette.brand[500] } : undefined}>Citas</Text>
           </Typography>
         </TouchableOpacity>
         <TouchableOpacity
@@ -91,10 +91,10 @@ export function AgendaScreen() {
         >
           <Pill
             size={14}
-            color={tab === "medications" ? colors.sky[500] : t.text.secondary}
+            color={tab === "medications" ? palette.brand[500] : t.text.secondary}
           />
           <Typography variant="label" color={tab === "medications" ? "inherit" : "secondary"}>
-            <Text style={tab === "medications" ? { color: colors.sky[500] } : undefined}>Medicamentos</Text>
+            <Text style={tab === "medications" ? { color: palette.brand[500] } : undefined}>Medicamentos</Text>
           </Typography>
         </TouchableOpacity>
       </View>
@@ -193,8 +193,8 @@ function AppointmentsTab() {
                   </View>
                 </View>
               }
-              icon={<CalendarDays size={20} color={colors.sky[500]} />}
-              iconBackground={colors.sky[100]}
+              icon={<CalendarDays size={20} color={palette.brand[500]} />}
+              iconBackground={palette.brand[100]}
               actions={
                 <View style={styles.cardActions}>
                   <ActionButton action="edit" size="sm" onPress={() => { setEditTarget(a); setShowForm(true); }} />
@@ -509,10 +509,10 @@ function makeStyles(t: ThemeContextValue) {
     header:             { padding: spacing[6], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     tabs:               { flexDirection: "row", backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium, paddingHorizontal: spacing[4] },
     tab:                { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], paddingVertical: spacing[3], borderBottomWidth: 2, borderBottomColor: "transparent" },
-    tabActive:          { borderBottomColor: colors.sky[500] },
+    tabActive:          { borderBottomColor: palette.brand[500] },
     tabContent:         { flex: 1 },
     addRow:             { flexDirection: "row", justifyContent: "flex-end", padding: spacing[4] },
-    addBtn:             { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: colors.sky[500], paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md },
+    addBtn:             { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: palette.brand[500], paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md },
     addBtnText:         { color: colors.white, fontWeight: fontWeight.semibold, fontSize: fontSize.sm },
     center:             { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
     cardMeta:           { flexDirection: "row", alignItems: "center", gap: spacing[1] },
@@ -521,7 +521,7 @@ function makeStyles(t: ThemeContextValue) {
     iconBtn:            { width: 34, height: 34, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bg },
     statusRow:          { flexDirection: "row", flexWrap: "wrap", gap: spacing[1], marginTop: spacing[1] },
     statusPill:         { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.full, backgroundColor: t.border.light, borderWidth: 1, borderColor: t.border.medium },
-    statusPillActive:   { backgroundColor: colors.sky[500], borderColor: colors.sky[500] },
+    statusPillActive:   { backgroundColor: palette.brand[500], borderColor: palette.brand[500] },
     statusPillText:     { fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.secondary },
     statusPillTextActive: { color: colors.white },
     intakeBtn:          { flexDirection: "row", alignItems: "center", gap: spacing[1], marginTop: spacing[1], backgroundColor: colors.emerald[500], alignSelf: "flex-start", paddingHorizontal: spacing[3], paddingVertical: 4, borderRadius: radii.full },
@@ -531,7 +531,7 @@ function makeStyles(t: ThemeContextValue) {
     errorText:          { color: colors.error[500], fontSize: fontSize.sm, marginTop: spacing[3], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm },
     typeRow:            { flexDirection: "row", gap: spacing[2] },
     typePill:           { flex: 1, paddingVertical: spacing[2], borderRadius: radii.md, alignItems: "center", backgroundColor: t.surface.bg, borderWidth: 1, borderColor: t.border.medium },
-    typePillActive:     { backgroundColor: colors.sky[500], borderColor: colors.sky[500] },
+    typePillActive:     { backgroundColor: palette.brand[500], borderColor: palette.brand[500] },
     typePillText:       { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.secondary },
     typePillTextActive: { color: colors.white },
   });

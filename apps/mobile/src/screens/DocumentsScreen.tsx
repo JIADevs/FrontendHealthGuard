@@ -7,7 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@helu/ui";
-import { colors, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography, Spinner } from "@helu/ui";
+import { colors, palette, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography, Spinner } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 export function DocumentsScreen() {
@@ -104,7 +104,7 @@ export function DocumentsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Compartir documentos"
           >
-            <Share2 size={18} color={colors.sky[500]} />
+            <Share2 size={18} color={palette.brand[500]} />
           </TouchableOpacity>
         </View>
         <View style={{ marginTop: 14 }}>
@@ -128,8 +128,8 @@ export function DocumentsScreen() {
             <RefreshControl
               refreshing={docs.isRefetching}
               onRefresh={() => docs.refetch()}
-              colors={[colors.sky[500]]}
-              tintColor={colors.sky[500]}
+              colors={[palette.brand[500]]}
+              tintColor={palette.brand[500]}
             />
           }
           renderItem={({ item }) => (
@@ -200,7 +200,7 @@ export function DocumentsScreen() {
           <View style={styles.fabOptionLabel}>
             <Typography variant="label">Escanear</Typography>
           </View>
-          <View style={[styles.fabSmall, { backgroundColor: colors.sky[500] }]}>
+          <View style={[styles.fabSmall, { backgroundColor: palette.brand[500] }]}>
             <Camera color={colors.white} size={22} />
           </View>
         </TouchableOpacity>
@@ -221,7 +221,7 @@ function makeStyles(t: ThemeContextValue) {
     container:   { flex: 1, backgroundColor: t.surface.bg },
     header:      { padding: spacing[6], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     titleRow:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    shareAllBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: colors.sky[50], borderWidth: 1, borderColor: colors.sky[200] },
+    shareAllBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: palette.brand[50], borderWidth: 1, borderColor: palette.brand[200] },
     center:     { flex: 1, alignItems: "center", justifyContent: "center" },
 
     backdrop: {
@@ -236,10 +236,10 @@ function makeStyles(t: ThemeContextValue) {
       width: 64,
       height: 64,
       borderRadius: 32,
-      backgroundColor: colors.sky[500],
+      backgroundColor: palette.brand[500],
       alignItems: "center",
       justifyContent: "center",
-      shadowColor: colors.sky[500],
+      shadowColor: palette.brand[500],
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.3,
       shadowRadius: 12,

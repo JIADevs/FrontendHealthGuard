@@ -19,7 +19,7 @@ import { Plus, Check } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { useAppTheme, colors, useDebounceSearch, formatDate, SearchField, Typography, Spinner } from "@helu/ui";
+import { useAppTheme, colors, palette, useDebounceSearch, formatDate, SearchField, Typography, Spinner } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 type RouteParams = { id: string };
@@ -152,8 +152,8 @@ export function BackpackAddDocumentsScreen() {
           <RefreshControl
             refreshing={docsQuery.isRefetching}
             onRefresh={() => docsQuery.refetch()}
-            colors={[colors.sky[500]]}
-            tintColor={colors.sky[500]}
+            colors={[palette.brand[500]]}
+            tintColor={palette.brand[500]}
           />
         }
         ListEmptyComponent={
@@ -247,7 +247,7 @@ function makeStyles(t: ThemeContextValue) {
     cardInfo: { flex: 1 },
     cardTitle: { fontSize: 14, fontWeight: "800", color: t.text.primary, marginBottom: 2 },
     cardSub: { fontSize: 13, color: t.text.secondary },
-    addBtn: { backgroundColor: colors.sky[500], borderRadius: 16, width: 48, height: 48, alignItems: "center", justifyContent: "center" },
+    addBtn: { backgroundColor: palette.brand[500], borderRadius: 16, width: 48, height: 48, alignItems: "center", justifyContent: "center" },
     addBtnLoading: { opacity: 0.7 },
     addBtnDone: { backgroundColor: colors.green[500] },
     fab: { position: "absolute", bottom: 22, left: 16, right: 16, backgroundColor: t.surface.bgCard, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium, paddingVertical: 14, alignItems: "center", elevation: 2 },

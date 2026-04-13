@@ -1,5 +1,5 @@
 "use client";
-import { colors, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
+import { colors, palette, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
 import type { PaginationProps } from './Pagination.types';
 
 const PAGE_WINDOW = 5;
@@ -39,8 +39,8 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
 
   const activeBtn: React.CSSProperties = {
     ...baseBtn,
-    background: colors.sky[500],
-    borderColor: colors.sky[500],
+    background: palette.brand[500],
+    borderColor: palette.brand[500],
     color: colors.white,
     fontWeight: fontWeight.semibold,
     cursor: 'default',

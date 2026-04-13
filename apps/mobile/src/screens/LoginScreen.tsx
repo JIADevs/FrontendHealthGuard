@@ -5,7 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAuthStore } from "@helu/stores";
 import { login, isApiError } from "@helu/api";
-import { colors, radii, spacing, fontWeight, useAppTheme, Button, TextField, Typography } from "@helu/ui";
+import { colors, palette, radii, spacing, fontWeight, useAppTheme, Button, TextField, Typography } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
@@ -97,11 +97,11 @@ function makeStyles(t: ThemeContextValue) {
     container:  { flex: 1, backgroundColor: t.surface.bg },
     content:    { flex: 1, padding: spacing[6], justifyContent: "center" },
     header:     { alignItems: "center", marginBottom: 40, gap: spacing[1] },
-    logo:       { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
+    logo:       { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: palette.brand[500], alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
     logoText:   { color: colors.white, fontSize: 28, fontWeight: fontWeight.extrabold },
     form:       { gap: spacing[4], marginTop: spacing[4] },
     errorBox:   { backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, marginBottom: spacing[4] },
     footer:     { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
-    footerLink: { color: colors.sky[500], fontWeight: fontWeight.semibold },
+    footerLink: { color: palette.brand[500], fontWeight: fontWeight.semibold },
   });
 }

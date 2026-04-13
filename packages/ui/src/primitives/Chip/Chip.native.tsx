@@ -1,5 +1,5 @@
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
-import { colors, radii, fontSize, fontWeight } from '../../tokens/tokens';
+import { colors, palette, radii, fontSize, fontWeight } from '../../tokens/tokens';
 import type { ChipProps, ChipColor } from './Chip.types';
 
 const unselected: Record<ChipColor, { bg: string; text: string }> = {
@@ -9,7 +9,7 @@ const unselected: Record<ChipColor, { bg: string; text: string }> = {
 };
 
 const selectedPalette: Record<ChipColor, { bg: string; text: string }> = {
-  default: { bg: colors.sky[500],   text: colors.white },
+  default: { bg: palette.brand[500],   text: colors.white },
   green:   { bg: colors.green[500], text: colors.white },
   amber:   { bg: colors.amber[500], text: colors.white },
 };

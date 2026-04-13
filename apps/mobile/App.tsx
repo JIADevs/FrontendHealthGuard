@@ -11,7 +11,7 @@ import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
 import { setApiAuthProviders, getNotifications } from "@helu/api";
-import { ThemeProvider, colors } from "@helu/ui";
+import { ThemeProvider, colors, palette } from "@helu/ui";
 
 setApiAuthProviders({
   getToken: () => useAuthStore.getState().token,
@@ -51,7 +51,7 @@ export default function App() {
   if (!isHydrated) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={colors.sky[500]} />
+        <ActivityIndicator size="large" color={palette.brand[500]} />
       </View>
     );
   }

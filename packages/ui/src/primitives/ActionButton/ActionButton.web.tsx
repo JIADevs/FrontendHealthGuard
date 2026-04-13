@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { Pencil, Plus, Trash2, Copy, Share2, Eye } from 'lucide-react';
-import { colors, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
+import { colors, palette, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
 import type { ActionButtonProps, ActionType, ActionButtonSize } from './ActionButton.types';
 
 const iconByAction: Record<ActionType, React.ElementType> = {
@@ -14,7 +14,7 @@ const iconByAction: Record<ActionType, React.ElementType> = {
 };
 
 const colorByAction: Record<ActionType, { fg: string; bg: string; bgHover: string }> = {
-  edit:   { fg: colors.sky[600],     bg: colors.sky[50],     bgHover: colors.sky[100] },
+  edit:   { fg: palette.brand[600],     bg: palette.brand[50],     bgHover: palette.brand[100] },
   create: { fg: colors.green[600],   bg: colors.green[50],   bgHover: colors.green[100] },
   delete: { fg: colors.error[600],   bg: colors.error[50],   bgHover: colors.error[100] },
   copy:   { fg: colors.slate[600],   bg: colors.slate[50],   bgHover: colors.slate[100] },

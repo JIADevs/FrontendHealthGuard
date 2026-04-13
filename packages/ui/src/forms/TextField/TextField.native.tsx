@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { colors, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
+import { colors, palette, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { TextFieldProps } from './TextField.types';
 
@@ -28,7 +28,7 @@ export function TextField({
   const borderColor = error
     ? colors.error[500]
     : focused
-    ? colors.sky[500]
+    ? palette.brand[500]
     : t.border.medium;
 
   return (

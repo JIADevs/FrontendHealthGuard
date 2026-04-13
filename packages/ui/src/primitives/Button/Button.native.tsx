@@ -1,9 +1,9 @@
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { colors, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
+import { colors, palette, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
 import type { ButtonProps, ButtonVariant, ButtonSize } from './Button.types';
 
 const bgByVariant: Record<ButtonVariant, string> = {
-  primary:   colors.sky[500],
+  primary:   palette.brand[500],
   secondary: colors.white,
   danger:    colors.error[500],
   ghost:     'transparent',

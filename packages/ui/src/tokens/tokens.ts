@@ -300,3 +300,36 @@ export const theme = {
 } as const;
 
 export type Theme = typeof theme;
+
+// ─── Paleta Semántica (3 niveles) ────────────────────────────────────────────
+// Los componentes deben usar `palette.*` en lugar de `colors.*` directamente.
+// Cambiar el color de marca = cambiar 1 línea (brand: colors.sky → colors.violet)
+
+export const palette = {
+  /** Nivel 1 — Brand Identity (CTAs, sidebar, links, focus rings) */
+  brand: colors.sky,
+
+  /** Nivel 2 — Estados Semánticos (significado funcional fijo) */
+  status: {
+    success: colors.success,
+    warning: colors.warning,
+    error:   colors.error,
+    info:    colors.sky,
+  },
+
+  /** Nivel 3 — Acentos por Feature (diferenciación visual) */
+  accent: {
+    ai:           colors.violet,
+    medication:   colors.amber,
+    notification: colors.emerald,
+    document:     colors.green,
+    calendar:     colors.pink,
+    backpack:     colors.orange,
+  },
+
+  /** Neutros */
+  neutral: colors.gray,
+  surface: colors.slate,
+} as const;
+
+export type Palette = typeof palette;

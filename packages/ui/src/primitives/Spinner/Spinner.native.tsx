@@ -1,12 +1,12 @@
 import { ActivityIndicator, View } from 'react-native';
-import { colors, spacing } from '../../tokens/tokens';
+import { colors, palette, spacing } from '../../tokens/tokens';
 import type { SpinnerProps, SpinnerSize, SpinnerColor } from './Spinner.types';
 
 // ActivityIndicator solo acepta 'small' | 'large' como string; lg → large, el resto → small
 const rnSize: Record<SpinnerSize, 'small' | 'large'> = { sm: 'small', md: 'small', lg: 'large' };
 
 const rnColor: Record<SpinnerColor, string> = {
-  primary: colors.sky[500],
+  primary: palette.brand[500],
   white:   colors.white,
 };
 

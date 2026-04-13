@@ -2,14 +2,14 @@ import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react-native";
 import type { ToastConfig } from "react-native-toast-message";
-import { colors, toastBg, radii, spacing, fontSize, fontWeight } from "@helu/ui";
+import { colors, palette, toastBg, radii, spacing, fontSize, fontWeight } from "@helu/ui";
 
 // ─── Colores por tipo (dark toasts) ──────────────────────────────────────────
 const VARIANTS = {
   success: { icon: CheckCircle2,  color: colors.success[500], bg: toastBg.success, border: colors.success[600] },
   error:   { icon: XCircle,       color: colors.error[400],   bg: toastBg.error,   border: colors.error[600] },
   warning: { icon: AlertTriangle, color: colors.warning[500], bg: toastBg.warning, border: colors.amber[600] },
-  info:    { icon: Info,           color: colors.sky[400],     bg: toastBg.info,    border: colors.sky[600] },
+  info:    { icon: Info,           color: palette.brand[400],     bg: toastBg.info,    border: palette.brand[600] },
 } as const;
 
 type VariantKey = keyof typeof VARIANTS;

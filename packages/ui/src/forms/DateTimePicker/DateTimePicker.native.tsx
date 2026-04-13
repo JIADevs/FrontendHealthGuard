@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, Pressable, Modal, Platform, StyleSheet } from 'react-native';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarDays } from 'lucide-react-native';
-import { colors, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
+import { colors, palette, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { DateTimePickerProps } from './DateTimePicker.types';
 
@@ -116,7 +116,7 @@ export function DateTimePicker({
                 </Pressable>
                 <Text style={[styles.sheetTitle, { color: t.text.primary }]}>Fecha y hora</Text>
                 <Pressable onPress={confirmIOS} hitSlop={8}>
-                  <Text style={[styles.sheetAction, { color: colors.sky[500] }]}>Confirmar</Text>
+                  <Text style={[styles.sheetAction, { color: palette.brand[500] }]}>Confirmar</Text>
                 </Pressable>
               </View>
               <RNDateTimePicker

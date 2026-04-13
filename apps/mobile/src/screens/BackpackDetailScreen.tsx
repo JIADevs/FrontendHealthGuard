@@ -19,7 +19,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { isApiError, type DocumentPage, type Document } from "@helu/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { Camera, FileText, FileUp, Plus, Share2 } from "lucide-react-native";
-import { DocumentTypeIcon, useAppTheme, colors, useDebounceSearch, formatDate, Button, Modal, SearchField, Typography, ActionButton, Spinner } from "@helu/ui";
+import { DocumentTypeIcon, useAppTheme, colors, palette, useDebounceSearch, formatDate, Button, Modal, SearchField, Typography, ActionButton, Spinner } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { useBackpackDetail } from "../hooks/useBackpackDetail";
 
@@ -141,8 +141,8 @@ export function BackpackDetailScreen() {
           <RefreshControl
             refreshing={docsQuery.isRefetching}
             onRefresh={() => docsQuery.refetch()}
-            colors={[colors.sky[500]]}
-            tintColor={colors.sky[500]}
+            colors={[palette.brand[500]]}
+            tintColor={palette.brand[500]}
           />
         }
         ListEmptyComponent={
@@ -199,7 +199,7 @@ export function BackpackDetailScreen() {
       >
         <TouchableOpacity style={styles.fabOptionRow} onPress={openAddFromDocs}>
           <View style={styles.fabOptionLabel}><Typography variant="label">Desde mis documentos</Typography></View>
-          <View style={[styles.fabSmall, { backgroundColor: colors.sky[500] }]}><FileText color={colors.white} size={20} /></View>
+          <View style={[styles.fabSmall, { backgroundColor: palette.brand[500] }]}><FileText color={colors.white} size={20} /></View>
         </TouchableOpacity>
       </Animated.View>
 
@@ -290,7 +290,7 @@ function makeStyles(t: ThemeContextValue) {
     bottomActions: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 14, backgroundColor: t.surface.bgCard, borderTopWidth: 1, borderTopColor: t.border.medium, flexDirection: "row", gap: 10, alignItems: "center", paddingRight: 92 },
     ghostBtn: { backgroundColor: t.surface.bgCard, borderWidth: 1, borderColor: t.border.medium },
     backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.3)" },
-    fab: { position: "absolute", bottom: 24, right: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", shadowColor: colors.sky[500], shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8, zIndex: 20 },
+    fab: { position: "absolute", bottom: 24, right: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: palette.brand[500], alignItems: "center", justifyContent: "center", shadowColor: palette.brand[500], shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8, zIndex: 20 },
     fabOption: { position: "absolute", bottom: 24, right: 24, alignItems: "flex-end", zIndex: 15 },
     fabOptionRow: { flexDirection: "row", alignItems: "center", gap: 12 },
     fabOptionLabel: { backgroundColor: t.surface.bgCard, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 },

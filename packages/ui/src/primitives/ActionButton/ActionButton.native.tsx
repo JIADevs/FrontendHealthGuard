@@ -1,6 +1,6 @@
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Pencil, Plus, Trash2, Copy, Share2, Eye } from 'lucide-react-native';
-import { colors, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
+import { colors, palette, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
 import type { ActionButtonProps, ActionType, ActionButtonSize } from './ActionButton.types';
 
 const iconByAction: Record<ActionType, React.ElementType> = {
@@ -13,7 +13,7 @@ const iconByAction: Record<ActionType, React.ElementType> = {
 };
 
 const colorByAction: Record<ActionType, { fg: string; bg: string }> = {
-  edit:   { fg: colors.sky[600],    bg: colors.sky[50] },
+  edit:   { fg: palette.brand[600],    bg: palette.brand[50] },
   create: { fg: colors.green[600],  bg: colors.green[50] },
   delete: { fg: colors.error[600],  bg: colors.error[50] },
   copy:   { fg: colors.slate[600],  bg: colors.slate[50] },

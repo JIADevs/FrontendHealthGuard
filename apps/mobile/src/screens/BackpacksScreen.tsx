@@ -15,7 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
-import { useAppTheme, colors, useDebounceSearch, formatDate, Card, cardContentStyle, SearchField, Typography, Spinner } from "@helu/ui";
+import { useAppTheme, colors, palette, useDebounceSearch, formatDate, Card, cardContentStyle, SearchField, Typography, Spinner } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 export function BackpacksScreen() {
@@ -79,8 +79,8 @@ export function BackpacksScreen() {
             <RefreshControl
               refreshing={query.isRefetching}
               onRefresh={() => query.refetch()}
-              colors={[colors.sky[500]]}
-              tintColor={colors.sky[500]}
+              colors={[palette.brand[500]]}
+              tintColor={palette.brand[500]}
             />
           }
           ListEmptyComponent={
@@ -96,7 +96,7 @@ export function BackpacksScreen() {
             <Card
               title={item.name}
               subtitle={`${item.documentCount} documento${item.documentCount === 1 ? "" : "s"}` + (item.createdAt ? ` • ${formatDate(item.createdAt)}` : "")}
-              icon={<FileText size={22} color={colors.sky[500]} />}
+              icon={<FileText size={22} color={palette.brand[500]} />}
               onPress={() => navigateToDetail(item.id)}
             />
           )}
@@ -112,7 +112,7 @@ function makeStyles(t: ThemeContextValue) {
     header: { padding: 24, paddingBottom: 16, backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     titleRow: { marginBottom: 12 },
     toolbarRow: { flexDirection: "row", gap: 12, alignItems: "center" },
-    createBtn: { backgroundColor: colors.sky[500], borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center" },
+    createBtn: { backgroundColor: palette.brand[500], borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center" },
     createBtnText: { color: colors.white, fontSize: 14, fontWeight: "700" },
     center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   });

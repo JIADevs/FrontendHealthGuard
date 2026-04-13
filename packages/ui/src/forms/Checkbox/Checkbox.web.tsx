@@ -1,5 +1,5 @@
 "use client";
-import { colors, border, text, fontSize } from '../../tokens/tokens';
+import { colors, palette, border, text, fontSize } from '../../tokens/tokens';
 import type { CheckboxProps } from './Checkbox.types';
 
 const BOX = 20;
@@ -16,8 +16,8 @@ export function Checkbox({ checked, onChange, label, disabled }: CheckboxProps) 
     height: BOX,
     minWidth: BOX,
     borderRadius: RADIUS,
-    border: `2px solid ${checked ? colors.sky[500] : border.default}`,
-    backgroundColor: checked ? colors.sky[500] : 'transparent',
+    border: `2px solid ${checked ? palette.brand[500] : border.default}`,
+    backgroundColor: checked ? palette.brand[500] : 'transparent',
     transition: 'background-color 0.15s, border-color 0.15s',
     opacity: disabled ? 0.5 : 1,
     flexShrink: 0,

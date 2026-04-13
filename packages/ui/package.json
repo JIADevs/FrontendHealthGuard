@@ -13,8 +13,8 @@
             "default": "./src/web.ts"
         },
         "./hooks": {
-            "types": "./src/useDebounceSearch.ts",
-            "default": "./src/useDebounceSearch.ts"
+            "types": "./src/utils/useDebounceSearch.ts",
+            "default": "./src/utils/useDebounceSearch.ts"
         }
     },
     "scripts": {}

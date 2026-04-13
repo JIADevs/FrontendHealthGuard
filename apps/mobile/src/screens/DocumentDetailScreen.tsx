@@ -47,6 +47,20 @@ export function DocumentDetailScreen() {
     return map;
   }, [tagCategoriesQuery.data]);
 
+  const hasVisibleTags = useMemo(() => {
+    const typeName = d?.documentType?.name?.trim();
+    if (typeName) return true;
+    if (d?.subtypes.some((s) => s.name?.trim())) return true;
+    if (d?.specialties.some((s) => s.name?.trim())) return true;
+    for (const t of d?.customTags ?? []) {
+      const catId = t.categoryId ?? (t as { category_id?: string }).category_id;
+      const categoryName = catId ? categoryMap[catId]?.trim() : "";
+      const val = (t.value ?? "").trim();
+      if (categoryName || val) return true;
+    }
+    return false;
+  }, [d, categoryMap]);
+
   async function handleOpen() {
     if (!url) return;
     try {
@@ -117,29 +131,35 @@ export function DocumentDetailScreen() {
         ) : null}
       </View>
 
-      {(d.documentType || d.subtypes.length > 0 || d.customTags.length > 0 || d.specialties.length > 0) && (
+      {hasVisibleTags && (
         <View style={styles.tagsSection}>
           <Typography variant="h4">Etiquetas</Typography>
           <View style={styles.tagsContainer}>
-            {d.documentType && (
+            {d.documentType?.name?.trim() ? (
               <Text style={[styles.tag, styles.tagBlue]}>
-                Tipo de documento: {d.documentType.name}
+                Tipo de documento: {d.documentType.name.trim()}
               </Text>
-            )}
-            {d.subtypes.map((s) => (
-              <Text key={s.id} style={[styles.tag, styles.tagBlue]}>
-                Subtipo: {s.name}
-              </Text>
-            ))}
-            {d.specialties.map((s) => (
-              <Text key={s.id} style={[styles.tag, styles.tagAmber]}>
-                Especialidad: {s.name}
-              </Text>
-            ))}
+            ) : null}
+            {d.subtypes
+              .filter((s) => s.name?.trim())
+              .map((s) => (
+                <Text key={s.id} style={[styles.tag, styles.tagBlue]}>
+                  Subtipo: {s.name.trim()}
+                </Text>
+              ))}
+            {d.specialties
+              .filter((s) => s.name?.trim())
+              .map((s) => (
+                <Text key={s.id} style={[styles.tag, styles.tagAmber]}>
+                  Especialidad: {s.name.trim()}
+                </Text>
+              ))}
             {d.customTags.map((t) => {
               const catId = t.categoryId ?? (t as { category_id?: string }).category_id;
-              const categoryName = catId ? categoryMap[catId] : null;
-              const label = categoryName ? `${categoryName}: ${t.value}` : t.value;
+              const categoryName = (catId ? categoryMap[catId] : null)?.trim() ?? "";
+              const val = (t.value ?? "").trim();
+              const label = categoryName ? (val ? `${categoryName}: ${val}` : categoryName) : val;
+              if (!label) return null;
               return (
                 <Text key={t.id} style={[styles.tag, styles.tagGreen]}>
                   {label}
@@ -188,7 +208,8 @@ function makeStyles(t: ThemeContextValue) {
     tagsSection:   { marginBottom: spacing[6] },
     sectionTitle:  { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: t.text.primary, marginBottom: spacing[2] },
     tagsContainer: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
-    tag:           { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.full, fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.primary },
+    // Pastel chip backgrounds are fixed light tints; use dark text in both themes (t.text.primary is light in dark mode).
+    tag:           { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.full, fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: colors.gray[900] },
     tagBlue:       { backgroundColor: colors.sky[100] },
     tagAmber:      { backgroundColor: colors.warning[50] },
     tagGreen:      { backgroundColor: colors.success[50] },

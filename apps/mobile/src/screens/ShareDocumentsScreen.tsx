@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useQuery } from "@tanstack/react-query";
 import { getDocuments, shareDocument, isApiError, type Document } from "@helu/api";
-import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner } from "@helu/ui";
+import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner, EmptyState } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { FileText, Share2, Clock } from "lucide-react-native";
 
@@ -165,10 +165,10 @@ export function ShareDocumentsScreen() {
               <Spinner size="lg" />
             </View>
           ) : (
-            <View style={styles.center}>
-              <FileText size={48} color={t.border.medium} />
-              <Typography variant="body" color="secondary" align="center">No tienes documentos para compartir.</Typography>
-            </View>
+            <EmptyState
+              icon={<FileText size={48} color={t.border.medium} />}
+              message="No tienes documentos para compartir."
+            />
           )
         }
         ListFooterComponent={

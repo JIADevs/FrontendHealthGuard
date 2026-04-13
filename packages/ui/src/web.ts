@@ -28,6 +28,8 @@ export * from './primitives/CardGrid/CardGrid.types';
 export * from './primitives/CardGrid/CardGrid.web';
 export * from './primitives/Typography/Typography.types';
 export * from './primitives/Typography/Typography.web';
+export * from './primitives/EmptyState/EmptyState.types';
+export * from './primitives/EmptyState/EmptyState.web';
 
 // ─── Forms ───────────────────────────────────────────────────────────────────
 export * from './forms/TextField/TextField.types';

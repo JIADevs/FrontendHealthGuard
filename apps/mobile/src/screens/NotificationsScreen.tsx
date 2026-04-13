@@ -11,7 +11,7 @@ import { memo, useCallback, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { type Notification } from "@helu/api";
 import { useNotificationsScreen } from "../hooks/useNotificationsScreen";
-import { colors, palette, radii, spacing, fontWeight, useAppTheme, Button, Typography, Spinner } from "@helu/ui";
+import { colors, palette, radii, spacing, fontWeight, useAppTheme, Button, Typography, Spinner, EmptyState } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { Bell, Calendar, Pill, Activity, Info, CheckCircle } from "lucide-react-native";
 
@@ -120,13 +120,11 @@ export function NotificationsScreen() {
           <Spinner size="lg" />
         </View>
       ) : screen.notifications.length === 0 ? (
-        <View style={styles.center}>
-          <Bell size={48} color={t.border.medium} />
-          <Typography variant="h4">Sin notificaciones</Typography>
-          <Typography variant="bodySm" color="muted" align="center">
-            Aquí aparecerán tus recordatorios de citas, medicamentos y más.
-          </Typography>
-        </View>
+        <EmptyState
+          icon={<Bell size={48} color={t.border.medium} />}
+          message="Sin notificaciones"
+          description="Aquí aparecerán tus recordatorios de citas, medicamentos y más."
+        />
       ) : (
         <FlatList
           data={screen.notifications}

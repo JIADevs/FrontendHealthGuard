@@ -15,7 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
-import { useAppTheme, colors, palette, useDebounceSearch, formatDate, Card, cardContentStyle, SearchField, Typography, Spinner } from "@helu/ui";
+import { useAppTheme, colors, palette, useDebounceSearch, formatDate, Card, cardContentStyle, SearchField, Typography, Spinner, EmptyState } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 export function BackpacksScreen() {
@@ -84,13 +84,11 @@ export function BackpacksScreen() {
             />
           }
           ListEmptyComponent={
-            <View style={styles.center}>
-              <Typography variant="body" color="secondary" align="center">
-                {debouncedSearch.trim()
-                  ? "Sin mochilas para esta búsqueda."
-                  : "Todavía no tenés mochilas. Creá la primera."}
-              </Typography>
-            </View>
+            <EmptyState
+              message={debouncedSearch.trim()
+                ? "Sin mochilas para esta búsqueda."
+                : "Todavía no tenés mochilas. Creá la primera."}
+            />
           }
           renderItem={({ item }) => (
             <Card

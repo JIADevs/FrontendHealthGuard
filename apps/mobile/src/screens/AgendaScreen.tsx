@@ -43,6 +43,7 @@ import {
   ActionButton,
   Spinner,
   ConfirmModal,
+  EmptyState,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import {
@@ -167,10 +168,10 @@ function AppointmentsTab() {
           <Spinner size="lg" />
         </View>
       ) : items.length === 0 ? (
-        <View style={styles.center}>
-          <CalendarDays size={48} color={t.border.medium} />
-          <Typography variant="body" color="secondary" align="center">No tienes citas registradas.</Typography>
-        </View>
+        <EmptyState
+          icon={<CalendarDays size={48} color={t.border.medium} />}
+          message="No tienes citas registradas."
+        />
       ) : (
         <FlatList
           data={items}
@@ -385,10 +386,10 @@ function MedicationsTab() {
           <Spinner size="lg" />
         </View>
       ) : items.length === 0 ? (
-        <View style={styles.center}>
-          <Pill size={48} color={t.border.medium} />
-          <Typography variant="body" color="secondary" align="center">No tienes medicamentos registrados.</Typography>
-        </View>
+        <EmptyState
+          icon={<Pill size={48} color={t.border.medium} />}
+          message="No tienes medicamentos registrados."
+        />
       ) : (
         <FlatList
           data={items}

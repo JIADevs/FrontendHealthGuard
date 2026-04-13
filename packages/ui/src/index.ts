@@ -32,6 +32,8 @@ export * from './primitives/CardGrid/CardGrid.types';
 export * from './primitives/CardGrid/CardGrid.native';
 export * from './primitives/Typography/Typography.types';
 export * from './primitives/Typography/Typography.native';
+export * from './primitives/EmptyState/EmptyState.types';
+export * from './primitives/EmptyState/EmptyState.native';
 
 // ─── Forms ───────────────────────────────────────────────────────────────────
 export * from './forms/TextField/TextField.types';

@@ -7,7 +7,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentTypeIcon } from "@helu/ui";
-import { colors, palette, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography, Spinner } from "@helu/ui";
+import { colors, palette, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography, Spinner, EmptyState } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 export function DocumentsScreen() {
@@ -146,13 +146,11 @@ export function DocumentsScreen() {
             />
           )}
           ListEmptyComponent={
-            <View style={styles.center}>
-              <Typography variant="body" color="secondary" align="center">
-                {debouncedSearch.trim()
-                  ? "Sin resultados para esta búsqueda."
-                  : "No tienes documentos aún."}
-              </Typography>
-            </View>
+            <EmptyState
+              message={debouncedSearch.trim()
+                ? "Sin resultados para esta búsqueda."
+                : "No tienes documentos aún."}
+            />
           }
         />
       )}

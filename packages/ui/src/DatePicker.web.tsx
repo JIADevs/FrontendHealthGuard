@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { colors, spacing, fontSize, fontWeight, radii, border, surface, text } from './tokens';
+import { colors, spacing, fontSize, fontWeight, radii } from './tokens';
 import type { DatePickerProps } from './DatePicker.types';
 
 export function DatePicker({
@@ -20,19 +20,21 @@ export function DatePicker({
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: `${spacing[3]}px ${spacing[4]}px`,
-    border: `1.5px solid ${error ? colors.error[500] : focused ? 'var(--primary-500)' : border.default}`,
+    border: `1.5px solid ${error ? colors.error[500] : focused ? 'var(--primary-500)' : 'var(--border)'}`,
     borderRadius: radii.sm,
     fontSize: fontSize.sm,
     fontFamily: 'inherit',
-    color: value ? text.primary : text.muted,
-    background: disabled ? border.light : surface.bg,
+    color: value ? 'var(--text-primary)' : 'var(--text-muted)',
+    background: disabled
+      ? 'color-mix(in srgb, var(--text-primary) 8%, var(--bg-card))'
+      : 'color-mix(in srgb, var(--text-primary) 4%, var(--bg-card))',
     outline: 'none',
     boxSizing: 'border-box',
     boxShadow: focused ? '0 0 0 3px var(--primary-ring-md)' : undefined,
     transition: 'border-color 0.15s, box-shadow 0.15s',
     opacity: disabled ? 0.6 : 1,
     cursor: disabled ? 'not-allowed' : undefined,
-    colorScheme: 'light',
+    colorScheme: 'light dark',
   };
 
   return (
@@ -43,7 +45,7 @@ export function DatePicker({
           style={{
             fontSize: fontSize.sm,
             fontWeight: fontWeight.semibold,
-            color: text.primary,
+            color: 'var(--text-primary)',
           }}
         >
           {label}
@@ -53,6 +55,7 @@ export function DatePicker({
 
       <input
         id={id}
+        className="hg-native-date-input"
         type="date"
         value={value}
         min={minDate}

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { colors, spacing, fontSize, fontWeight, radii, border, surface, text } from './tokens';
+import { colors, spacing, fontSize, fontWeight, radii } from './tokens';
 import type { TextFieldProps } from './TextField.types';
 
 export function TextField({
@@ -22,12 +22,14 @@ export function TextField({
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: `${spacing[3]}px ${spacing[4]}px`,
-    border: `1.5px solid ${error ? colors.error[500] : focused ? 'var(--primary-500)' : border.default}`,
+    border: `1.5px solid ${error ? colors.error[500] : focused ? 'var(--primary-500)' : 'var(--border)'}`,
     borderRadius: radii.sm,
     fontSize: fontSize.sm,
     fontFamily: 'inherit',
-    color: text.primary,
-    background: disabled ? border.light : surface.bg,
+    color: 'var(--text-primary)',
+    background: disabled
+      ? 'color-mix(in srgb, var(--text-primary) 8%, var(--bg-card))'
+      : 'color-mix(in srgb, var(--text-primary) 4%, var(--bg-card))',
     outline: 'none',
     boxSizing: 'border-box',
     boxShadow: focused ? '0 0 0 3px var(--primary-ring-md)' : undefined,
@@ -58,7 +60,7 @@ export function TextField({
           style={{
             fontSize: fontSize.sm,
             fontWeight: fontWeight.semibold,
-            color: text.primary,
+            color: 'var(--text-primary)',
           }}
         >
           {label}
@@ -68,12 +70,14 @@ export function TextField({
 
       {multiline ? (
         <textarea
+          className="hg-textfield-input"
           rows={4}
           {...(sharedProps as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
           style={{ ...inputStyle, resize: 'vertical', minHeight: 96 }}
         />
       ) : (
         <input
+          className="hg-textfield-input"
           type={type}
           {...(sharedProps as React.InputHTMLAttributes<HTMLInputElement>)}
         />

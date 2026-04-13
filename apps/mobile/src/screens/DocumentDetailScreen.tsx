@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { View, Text, StyleSheet, Linking, Alert, ScrollView, Image } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -37,6 +37,15 @@ export function DocumentDetailScreen() {
   const d = doc.data as Document | undefined;
   const url = signedUrl.data?.url;
   const isImage = d?.format?.toLowerCase().match(/image|jpg|jpeg|png/);
+
+  const [imagePreviewReady, setImagePreviewReady] = useState(false);
+  useEffect(() => {
+    setImagePreviewReady(false);
+  }, [url]);
+
+  const showImagePreview = !!(d && isImage && d.fileUrl);
+  const imagePreviewLoadingUrl = showImagePreview && !url && signedUrl.isFetching;
+  const imagePreviewLoadingContent = showImagePreview && !!url && !imagePreviewReady;
 
   const tagCategoriesQuery = useTagCategoriesQuery();
 
@@ -170,9 +179,25 @@ export function DocumentDetailScreen() {
         </View>
       )}
 
-      {url && isImage && (
+      {showImagePreview && (
         <View style={styles.preview}>
-          <Image source={{ uri: url }} style={styles.image} resizeMode="contain" />
+          {(imagePreviewLoadingUrl || imagePreviewLoadingContent) && (
+            <View style={styles.previewLoadingOverlay}>
+              <Spinner size="lg" />
+              <Text style={styles.previewLoadingCaption}>
+                {imagePreviewLoadingUrl ? "Cargando vista previa…" : "Cargando imagen…"}
+              </Text>
+            </View>
+          )}
+          {url ? (
+            <Image
+              source={{ uri: url }}
+              style={[styles.image, !imagePreviewReady && styles.imageWhileLoading]}
+              resizeMode="contain"
+              onLoadEnd={() => setImagePreviewReady(true)}
+              onError={() => setImagePreviewReady(true)}
+            />
+          ) : null}
         </View>
       )}
 
@@ -215,8 +240,12 @@ function makeStyles(t: ThemeContextValue) {
     tagGreen:      { backgroundColor: colors.success[50] },
 
     actions:         { marginTop: spacing[2], flexDirection: "row", gap: spacing[3] },
-    preview:         { marginBottom: spacing[4], backgroundColor: colors.black, borderRadius: radii.lg, overflow: "hidden", height: 400 },
-    image:           { flex: 1, width: "100%", height: "100%" },
+    preview:                { marginBottom: spacing[4], backgroundColor: colors.black, borderRadius: radii.lg, overflow: "hidden", height: 400, position: "relative" },
+    previewLoadingOverlay:  { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.55)", gap: spacing[2], zIndex: 2 },
+    previewLoadingCaption:  { marginTop: spacing[2], textAlign: "center", paddingHorizontal: spacing[4], fontSize: fontSize.xs, color: t.text.secondary },
+    /* Misma caja 400px siempre; la imagen no mueve el layout al cargar */
+    image:                  { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, width: "100%", height: "100%", zIndex: 1 },
+    imageWhileLoading:      { opacity: 0 },
     error:               { fontSize: fontSize.base, color: colors.error[500] },
   });
 }

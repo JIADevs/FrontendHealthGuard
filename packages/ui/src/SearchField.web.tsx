@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { border, surface, text, spacing, fontSize, radii } from './tokens';
+import { spacing, fontSize, radii } from './tokens';
 import type { SearchFieldProps } from './SearchField.types';
 
 export function SearchField({
@@ -22,8 +22,8 @@ export function SearchField({
         paddingTop: 9,
         paddingBottom: 9,
         borderRadius: radii.md,
-        border: `1.5px solid ${focused ? 'var(--primary-500)' : border.default}`,
-        backgroundColor: surface.bg,
+        border: `1.5px solid ${focused ? 'var(--primary-500)' : 'var(--border)'}`,
+        backgroundColor: 'var(--bg-card)',
         boxShadow: focused ? '0 0 0 3px var(--primary-ring-md)' : undefined,
         transition: 'border-color 0.15s, box-shadow 0.15s',
         boxSizing: 'border-box',
@@ -35,7 +35,7 @@ export function SearchField({
         height="16"
         viewBox="0 0 24 24"
         fill="none"
-        stroke={text.secondary}
+        stroke="var(--text-secondary)"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -48,6 +48,7 @@ export function SearchField({
 
       <input
         type="text"
+        className="hg-search-field-input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -61,7 +62,7 @@ export function SearchField({
           outline: 'none',
           background: 'transparent',
           fontSize: fontSize.sm,
-          color: text.primary,
+          color: 'var(--text-primary)',
           fontFamily: 'inherit',
           minWidth: 0,
         }}
@@ -83,7 +84,7 @@ export function SearchField({
             minWidth: 24,
             borderRadius: '50%',
             border: 'none',
-            background: border.medium,
+            background: 'var(--border)',
             cursor: 'pointer',
             padding: 0,
             flexShrink: 0,
@@ -94,7 +95,7 @@ export function SearchField({
             height="10"
             viewBox="0 0 24 24"
             fill="none"
-            stroke={text.secondary}
+            stroke="var(--text-secondary)"
             strokeWidth="2.5"
             strokeLinecap="round"
             aria-hidden="true"

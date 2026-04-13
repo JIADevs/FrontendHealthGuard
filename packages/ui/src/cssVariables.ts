@@ -1,5 +1,5 @@
 import { colors, surface, border, radii, overlay, fontFamily } from "./tokens";
-import { darkTheme } from "./theme";
+import { darkTheme, lightTheme } from "./theme";
 
 /**
  * Genera el bloque CSS :root (light) + @media dark con todas las variables del sistema de diseño.
@@ -65,7 +65,15 @@ export function generateCssVariables(): string {
   /* Text (light mode) */
   --text-primary:   ${colors.gray[900]};
   --text-secondary: ${colors.gray[500]};
+  --text-muted:     ${lightTheme.text.muted};
   --text-sidebar:   ${colors.slate[200]};
+
+  /* Botón secondary / ghost (light) — los componentes web leen esto en dark mode */
+  --btn-secondary-bg:        ${colors.white};
+  --btn-secondary-bg-hover:    ${colors.gray[50]};
+  --btn-secondary-color:       ${colors.gray[700]};
+  --btn-secondary-border:      ${colors.gray[200]};
+  --btn-ghost-hover-bg:        ${colors.primary[50]};
 
   /* Border (light mode) */
   --border: ${border.default};
@@ -108,9 +116,16 @@ export function generateCssVariables(): string {
     /* Text (dark mode) */
     --text-primary:   ${darkTheme.text.primary};
     --text-secondary: ${darkTheme.text.secondary};
+    --text-muted:     ${darkTheme.text.muted};
 
     /* Border (dark mode) */
     --border: ${darkTheme.border.default};
+
+    --btn-secondary-bg:        ${colors.slate[700]};
+    --btn-secondary-bg-hover:  ${colors.slate[600]};
+    --btn-secondary-color:     ${colors.slate[100]};
+    --btn-secondary-border:    ${colors.slate[600]};
+    --btn-ghost-hover-bg:      rgba(59, 130, 246, 0.18);
 
     /* Shadows more visible on dark */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);

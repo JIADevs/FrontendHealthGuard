@@ -1,5 +1,5 @@
 "use client";
-import { colors, fontSize, fontWeight, text } from './tokens';
+import { colors, fontSize, fontWeight } from './tokens';
 import type { TypographyProps, TypographyVariant, TypographyColor } from './Typography.types';
 
 // ─── Variant → style ─────────────────────────────────────────────────────────
@@ -34,10 +34,11 @@ const variantElement: Record<TypographyVariant, keyof JSX.IntrinsicElements> = {
 
 // ─── Color → CSS value ────────────────────────────────────────────────────────
 
+/** En web respetamos prefers-color-scheme vía variables CSS (layout.tsx → generateCssVariables). */
 const colorValue: Record<TypographyColor, string> = {
-  default:   text.primary,
-  secondary: text.secondary,
-  muted:     text.muted,
+  default:   'var(--text-primary)',
+  secondary: 'var(--text-secondary)',
+  muted:     'var(--text-muted)',
   error:     colors.error[500],
   success:   colors.success[500],
   warning:   colors.warning[500],

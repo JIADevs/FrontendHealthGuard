@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from 'react';
 import { X } from 'lucide-react';
-import { colors, radii, spacing, fontSize, fontWeight, surface, border } from './tokens';
+import { radii, spacing, fontSize, fontWeight } from './tokens';
 import type { ModalProps, ModalSize } from './Modal.types';
 
 const maxWidthBySize: Record<ModalSize, number> = {
@@ -11,14 +12,17 @@ const maxWidthBySize: Record<ModalSize, number> = {
 };
 
 export function Modal({ title, onClose, children, size = 'md', footer }: ModalProps) {
+  const [closeHover, setCloseHover] = useState(false);
+
   return (
     <div
       onClick={onClose}
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0, 0, 0, 0.45)',
+        background: 'var(--overlay-dark)',
         backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -29,13 +33,15 @@ export function Modal({ title, onClose, children, size = 'md', footer }: ModalPr
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: surface.bgCard,
+          background: 'var(--bg-card)',
+          color: 'var(--text-primary)',
           borderRadius: radii.lg,
+          border: '1px solid var(--border)',
           width: '100%',
           maxWidth: maxWidthBySize[size],
           maxHeight: '85vh',
           overflowY: 'auto',
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+          boxShadow: 'var(--shadow-lg)',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -55,7 +61,7 @@ export function Modal({ title, onClose, children, size = 'md', footer }: ModalPr
               margin: 0,
               fontSize: fontSize.lg,
               fontWeight: fontWeight.extrabold,
-              color: colors.gray[900],
+              color: 'var(--text-primary)',
             }}
           >
             {title}
@@ -63,6 +69,8 @@ export function Modal({ title, onClose, children, size = 'md', footer }: ModalPr
           <button
             type="button"
             onClick={onClose}
+            onMouseEnter={() => setCloseHover(true)}
+            onMouseLeave={() => setCloseHover(false)}
             style={{
               width: 32,
               height: 32,
@@ -70,11 +78,14 @@ export function Modal({ title, onClose, children, size = 'md', footer }: ModalPr
               alignItems: 'center',
               justifyContent: 'center',
               border: 'none',
-              background: colors.gray[100],
+              background: closeHover
+                ? 'color-mix(in srgb, var(--text-primary) 14%, transparent)'
+                : 'color-mix(in srgb, var(--text-primary) 8%, transparent)',
               borderRadius: radii.sm,
               cursor: 'pointer',
-              color: colors.gray[500],
+              color: closeHover ? 'var(--text-primary)' : 'var(--text-secondary)',
               flexShrink: 0,
+              transition: 'background 0.15s, color 0.15s',
             }}
           >
             <X size={16} />
@@ -91,7 +102,7 @@ export function Modal({ title, onClose, children, size = 'md', footer }: ModalPr
           <div
             style={{
               padding: `${spacing[4]}px ${spacing[6]}px`,
-              borderTop: `1px solid ${border.default}`,
+              borderTop: '1px solid var(--border)',
               display: 'flex',
               justifyContent: 'flex-end',
               gap: spacing[2],

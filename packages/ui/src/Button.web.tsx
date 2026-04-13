@@ -1,32 +1,33 @@
 "use client";
 import { useState } from 'react';
 import { colors, radii, spacing, fontSize, fontWeight } from './tokens';
+import { Spinner } from './Spinner.web';
 import type { ButtonProps, ButtonVariant, ButtonSize } from './Button.types';
 
 const bgByVariant: Record<ButtonVariant, string> = {
   primary:   colors.sky[500],
-  secondary: colors.white,
+  secondary: 'var(--btn-secondary-bg)',
   danger:    colors.error[500],
   ghost:     'transparent',
 };
 
 const bgHoverByVariant: Record<ButtonVariant, string> = {
   primary:   colors.sky[600],
-  secondary: colors.gray[50],
+  secondary: 'var(--btn-secondary-bg-hover)',
   danger:    colors.error[600],
-  ghost:     colors.primary[50], 
+  ghost:     'var(--btn-ghost-hover-bg)',
 };
 
 const colorByVariant: Record<ButtonVariant, string> = {
   primary:   colors.white,
-  secondary: colors.gray[700],
+  secondary: 'var(--btn-secondary-color)',
   danger:    colors.white,
   ghost:     colors.primary[600],
 };
 
 const borderByVariant: Record<ButtonVariant, string> = {
   primary:   'none',
-  secondary: `1.5px solid ${colors.gray[200]}`,
+  secondary: '1.5px solid var(--btn-secondary-border)',
   danger:    'none',
   ghost:     'none',
 };
@@ -42,6 +43,18 @@ const fontSizeBySize: Record<ButtonSize, number> = {
   md: fontSize.base,
   lg: fontSize.md,
 };
+
+const spinnerSizeByButton: Record<ButtonSize, 'sm' | 'md'> = {
+  sm: 'sm',
+  md: 'md',
+  lg: 'md',
+};
+
+function loadingSpinner(variant: ButtonVariant, buttonSize: ButtonSize) {
+  const spinSize = spinnerSizeByButton[buttonSize];
+  const spinColor = variant === 'primary' || variant === 'danger' ? 'white' : 'primary';
+  return <Spinner size={spinSize} color={spinColor} />;
+}
 
 export function Button({
   children,
@@ -65,6 +78,7 @@ export function Button({
       form={form}
       onClick={onPress}
       disabled={isDisabled}
+      aria-busy={loading || undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -81,14 +95,21 @@ export function Button({
         fontSize: fontSizeBySize[size],
         fontWeight: fontWeight.semibold,
         fontFamily: 'inherit',
-        cursor: isDisabled ? 'not-allowed' : 'pointer',
-        opacity: isDisabled ? 0.6 : 1,
+        cursor: loading ? 'wait' : isDisabled ? 'not-allowed' : 'pointer',
+        opacity: disabled && !loading ? 0.6 : 1,
         transition: 'background 0.15s, opacity 0.15s',
         outline: 'none',
         boxSizing: 'border-box',
       }}
     >
-      {loading ? '...' : children}
+      {loading ? (
+        <>
+          {loadingSpinner(variant, size)}
+          <span className="sr-only">Cargando</span>
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 }

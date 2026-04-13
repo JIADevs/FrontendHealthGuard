@@ -1,10 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDocumentQuery } from "@healthguard/api/hooks";
 import { ExternalLink } from "lucide-react";
 import { getSignedUrl, type Document } from "@healthguard/api";
-import { formatDate, formatFileSize, Chip, Modal,Spinner } from "@healthguard/ui";
+import { formatDate, formatFileSize, Chip, Modal, Spinner, Typography } from "@healthguard/ui";
 
 export function DetailModal({ id, onClose }: { id: string; onClose: () => void }) {
   const doc = useDocumentQuery(id);
@@ -17,8 +18,24 @@ export function DetailModal({ id, onClose }: { id: string; onClose: () => void }
 
   const d = doc.data as Document | undefined;
   const url = signedUrl.data?.url;
-  const isPdf = d?.format?.toLowerCase().includes("pdf");
-  const isImage = d?.format?.toLowerCase().match(/image|jpg|jpeg|png/);
+  const isPdf = !!d?.format?.toLowerCase().includes("pdf");
+  const isImage = !!d?.format?.toLowerCase().match(/image|jpg|jpeg|png|webp/);
+
+  const canPreview = !!d && !!(isPdf || isImage) && !!d.fileUrl;
+  const fetchingSignedUrl = canPreview && !url && signedUrl.isFetching;
+  const signedUrlFailed = canPreview && !url && signedUrl.isError;
+
+  const [embedReady, setEmbedReady] = useState(false);
+  useEffect(() => {
+    setEmbedReady(false);
+  }, [url]);
+
+  // Algunos PDFs no disparan onLoad en iframe; ocultamos el overlay tras un máximo razonable.
+  useEffect(() => {
+    if (!url) return;
+    const t = setTimeout(() => setEmbedReady(true), 14_000);
+    return () => clearTimeout(t);
+  }, [url]);
 
   return (
     <Modal title={d?.title ?? "Cargando..."} size="lg" onClose={onClose}>
@@ -43,14 +60,45 @@ export function DetailModal({ id, onClose }: { id: string; onClose: () => void }
             </div>
           )}
 
-          {url && (
+          {canPreview && (
             <div className="doc-preview">
-              {isPdf ? (
-                <iframe src={url} title={d.title} />
-              ) : isImage ? (
-                <img src={url} alt={d.title} />
-              ) : (
-                <div className="empty-state"><p>Vista previa no disponible para este formato.</p></div>
+              {fetchingSignedUrl && (
+                <div className="doc-preview-loading">
+                  <Spinner size="lg" />
+                  <p className="doc-preview-loading-text">Preparando vista previa…</p>
+                </div>
+              )}
+
+              {signedUrlFailed && (
+                <div className="doc-preview-loading">
+                  <Typography variant="bodySm" color="secondary" align="center">
+                    No se pudo obtener el enlace de vista previa. Usa &quot;Ver completo&quot; si aparece abajo o inténtalo de nuevo.
+                  </Typography>
+                </div>
+              )}
+
+              {url && (
+                <>
+                  {!embedReady && (
+                    <div className="doc-preview-loading doc-preview-loading--overlay" aria-hidden>
+                      <Spinner size="lg" />
+                      <p className="doc-preview-loading-text">Cargando contenido…</p>
+                    </div>
+                  )}
+                  {isPdf ? (
+                    <iframe
+                      src={url}
+                      title={d.title}
+                      onLoad={() => setEmbedReady(true)}
+                    />
+                  ) : (
+                    <img
+                      src={url}
+                      alt={d.title}
+                      onLoad={() => setEmbedReady(true)}
+                    />
+                  )}
+                </>
               )}
             </div>
           )}

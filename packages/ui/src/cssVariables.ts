@@ -102,7 +102,7 @@ export function generateCssVariables(): string {
     /* Surfaces (dark mode) */
     --bg:               ${darkTheme.surface.bg};
     --bg-card:          ${darkTheme.surface.bgCard};
-    --bg-sidebar:       ${darkTheme.surface.bgSidebar ?? "#020617"};
+    --bg-sidebar:       ${darkTheme.surface.bgSidebar};
     --bg-sidebar-hover: ${darkTheme.surface.bgSidebarHover};
 
     /* Text (dark mode) */

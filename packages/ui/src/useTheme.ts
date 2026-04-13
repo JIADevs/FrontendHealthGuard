@@ -12,5 +12,11 @@ export function useTheme(): AppTheme & { mode: "light" | "dark" } {
   const scheme = useColorScheme();
   const mode = scheme === "dark" ? "dark" : "light";
   const theme = mode === "dark" ? darkTheme : lightTheme;
-  return { ...theme, mode };
+  return {
+    surface: { ...theme.surface },
+    text:    { ...theme.text },
+    border:  { ...theme.border },
+    mode,
+  };
 }
+

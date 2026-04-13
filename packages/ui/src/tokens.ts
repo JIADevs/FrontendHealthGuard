@@ -46,6 +46,7 @@ export const colors = {
     700: '#334155',
     800: '#1e293b',
     900: '#0f172a',
+    950: '#020617',
   },
 
   // Sky (color primario de acciones en mobile)
@@ -127,6 +128,7 @@ export const colors = {
   emerald: {
     50:  '#ecfdf5',
     100: '#d1fae5',
+    200: '#a7f3d0',
     500: '#10b981',
     600: '#059669',
     700: '#047857',
@@ -145,6 +147,7 @@ export const colors = {
   },
   error: {
     50:  '#fef2f2',
+    100: '#fee2e2',
     400: '#f87171',
     500: '#ef4444',
     600: '#dc2626',

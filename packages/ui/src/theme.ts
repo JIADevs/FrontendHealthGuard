@@ -27,7 +27,7 @@ export const darkTheme = {
   surface: {
     bg:             colors.slate[900],
     bgCard:         colors.slate[800],
-    bgSidebar:      colors.slate[950] ?? "#020617",
+    bgSidebar:      colors.slate[950],
     bgSidebarHover: colors.slate[700],
   },
   text: {
@@ -42,5 +42,15 @@ export const darkTheme = {
   },
 } as const;
 
-export type AppTheme = typeof lightTheme;
+export type LightTheme = typeof lightTheme;
+export type DarkTheme = typeof darkTheme;
+
+/** Union semántica: cada propiedad puede ser cualquier valor de light o dark */
+export type AppTheme = {
+  surface: { bg: string; bgCard: string; bgSidebar: string; bgSidebarHover: string };
+  text:    { primary: string; secondary: string; muted: string };
+  border:  { default: string; light: string; medium: string };
+};
+
 export type ThemeMode = "light" | "dark";
+

@@ -158,7 +158,7 @@ export function DocumentUploadScreen() {
           <X color={colors.white} size={24} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.circleBtnGreen} onPress={() => form.handleUpload(fileSource)} disabled={form.uploading}>
-          {form.uploading ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={32} />}
+          {form.uploading ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={28} />}
         </TouchableOpacity>
       </View>
     </View>
@@ -198,8 +198,8 @@ function makeStyles(t: ThemeContextValue) {
     fileInfoText:   { flex: 1, fontSize: fontSize.sm, color: t.text.primary, fontWeight: fontWeight.medium },
     changeFileLink: { fontSize: fontSize.sm, color: colors.sky[500], fontWeight: fontWeight.semibold },
 
-    previewControls: { flexDirection: "row", justifyContent: "center", gap: 32, paddingBottom: 48, backgroundColor: t.surface.bgCard, paddingTop: spacing[3] },
-    circleBtnRed:    { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.error[500], alignItems: "center", justifyContent: "center" },
-    circleBtnGreen:  { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.success[500], alignItems: "center", justifyContent: "center" },
+    previewControls: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 32, paddingBottom: 48, backgroundColor: t.surface.bgCard, paddingTop: spacing[3] },
+    circleBtnRed:    { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.error[500], alignItems: "center", justifyContent: "center" },
+    circleBtnGreen:  { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.success[500], alignItems: "center", justifyContent: "center" },
   });
 }

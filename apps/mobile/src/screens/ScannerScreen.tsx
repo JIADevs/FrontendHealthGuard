@@ -148,7 +148,7 @@ export function ScannerScreen() {
             {form.uploading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Check color={colors.white} size={32} />
+              <Check color={colors.white} size={28} />
             )}
           </TouchableOpacity>
         </View>
@@ -245,23 +245,24 @@ function makeStyles(t: ThemeContextValue) {
     previewControls: {
       flexDirection: "row",
       justifyContent: "center",
+      alignItems: "center",
       gap: 32,
       paddingBottom: 48,
       backgroundColor: t.surface.bgCard,
       paddingTop: spacing[3],
     },
     circleBtnRed: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
+      width: 72,
+      height: 72,
+      borderRadius: 36,
       backgroundColor: colors.error[500],
       alignItems: "center",
       justifyContent: "center",
     },
     circleBtnGreen: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
+      width: 72,
+      height: 72,
+      borderRadius: 36,
       backgroundColor: colors.success[500],
       alignItems: "center",
       justifyContent: "center",

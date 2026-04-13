@@ -248,7 +248,7 @@ export function DocumentEditScreen() {
           <XIcon color={colors.white} size={24} />
         </TouchableOpacity>
         <TouchableOpacity style={[styles.circleBtnPrimary, saving && styles.circleBtnPrimaryDisabled]} onPress={handleSave} disabled={saving} accessibilityRole="button" accessibilityLabel="Guardar cambios">
-          {saving ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={32} />}
+          {saving ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={28} />}
         </TouchableOpacity>
       </View>
     </View>
@@ -283,8 +283,8 @@ function makeStyles(t: ThemeContextValue) {
       alignItems: "center",
       gap: spacing[5],
     },
-    circleBtnSecondary:      { width: 64, height: 64, borderRadius: 32, backgroundColor: t.border.medium, alignItems: "center", justifyContent: "center" },
-    circleBtnPrimary:        { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", shadowColor: colors.sky[500], shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
+    circleBtnSecondary:      { width: 72, height: 72, borderRadius: 36, backgroundColor: t.border.medium, alignItems: "center", justifyContent: "center" },
+    circleBtnPrimary:        { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", shadowColor: colors.sky[500], shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
     circleBtnPrimaryDisabled: { opacity: 0.6 },
   });
 }

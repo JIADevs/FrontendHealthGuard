@@ -40,3 +40,5 @@ export * from './DatePicker.types';
 export * from './DatePicker.native';
 export * from './TimePicker.types';
 export * from './TimePicker.native';
+export * from './ConfirmModal.types';
+export * from './ConfirmModal.native';

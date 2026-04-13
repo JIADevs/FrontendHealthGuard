@@ -42,6 +42,7 @@ import {
   DateTimePicker,
   ActionButton,
   Spinner,
+  ConfirmModal,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import {
@@ -233,9 +234,10 @@ function AppointmentsTab() {
       )}
 
       {deleteTarget && (
-        <ConfirmDeleteModal
+        <ConfirmModal
           title="Eliminar Cita"
           message={`¿Eliminar la cita de ${deleteTarget.specialty} el ${formatApptDate(deleteTarget.date)}?`}
+          confirmLabel="Eliminar"
           loading={deleteMut.isPending}
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
@@ -441,9 +443,10 @@ function MedicationsTab() {
       )}
 
       {deleteTarget && (
-        <ConfirmDeleteModal
+        <ConfirmModal
           title="Eliminar Medicamento"
           message={`¿Eliminar "${deleteTarget.name}"? Los recordatorios también se eliminarán.`}
+          confirmLabel="Eliminar"
           loading={deleteMut.isPending}
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
@@ -495,39 +498,8 @@ function MedicationFormModal({
   );
 }
 
-// ─── confirm delete modal ─────────────────────────────────────────────────────
+// ConfirmModal is now available from @helu/ui — use <ConfirmModal /> when needed
 
-function ConfirmDeleteModal({
-  title,
-  message,
-  loading,
-  onConfirm,
-  onCancel,
-}: {
-  title: string;
-  message: string;
-  loading: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-
-  return (
-    <Modal
-      title={title}
-      onClose={onCancel}
-      footer={
-        <>
-          <Button variant="secondary" onPress={onCancel}>Cancelar</Button>
-          <Button variant="danger" onPress={onConfirm} disabled={loading} loading={loading}>Eliminar</Button>
-        </>
-      }
-    >
-      <Typography variant="bodySm" color="secondary">{message}</Typography>
-    </Modal>
-  );
-}
 
 // ─── styles ───────────────────────────────────────────────────────────────────
 

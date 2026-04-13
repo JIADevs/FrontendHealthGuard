@@ -38,3 +38,5 @@ export * from './DatePicker.types';
 export * from './DatePicker.web';
 export * from './TimePicker.types';
 export * from './TimePicker.web';
+export * from './ConfirmModal.types';
+export * from './ConfirmModal.web';

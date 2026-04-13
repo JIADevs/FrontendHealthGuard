@@ -2,6 +2,8 @@ import { useLayoutEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { View, Text, StyleSheet, Linking, Alert, ScrollView, Image } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentQuery, useTagCategoriesQuery } from "@helu/api/hooks";
 import { getSignedUrl, type Document, type TagCategoryOut } from "@helu/api";
 import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button, Typography, Spinner } from "@helu/ui";
@@ -17,7 +19,7 @@ export function DocumentDetailScreen() {
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const route = useRoute();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { id, title } = (route.params ?? {}) as RouteParams;
 
   useLayoutEffect(() => {

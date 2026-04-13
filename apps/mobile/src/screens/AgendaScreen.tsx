@@ -555,7 +555,7 @@ function makeStyles(t: ThemeContextValue) {
     intakeBtn:          { flexDirection: "row", alignItems: "center", gap: spacing[1], marginTop: spacing[1], backgroundColor: colors.emerald[500], alignSelf: "flex-start", paddingHorizontal: spacing[3], paddingVertical: 4, borderRadius: radii.full },
     intakeBtnText:      { color: colors.white, fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
 
-
+    fieldLabel:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: spacing[2] },
     errorText:          { color: colors.error[500], fontSize: fontSize.sm, marginTop: spacing[3], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm },
     typeRow:            { flexDirection: "row", gap: spacing[2] },
     typePill:           { flex: 1, paddingVertical: spacing[2], borderRadius: radii.md, alignItems: "center", backgroundColor: t.surface.bg, borderWidth: 1, borderColor: t.border.medium },

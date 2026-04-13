@@ -17,13 +17,15 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
 export const usePushNotifications = (authToken?: string | null): PushNotificationState => {
-  const notificationRef = useRef<Notifications.Notification>();
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationRef = useRef<Notifications.Notification>(undefined);
+  const notificationListener = useRef<Notifications.Subscription>(undefined);
+  const responseListener = useRef<Notifications.Subscription>(undefined);
   // Evita re-registrar en cada refresh de token — solo registra una vez por sesión
   const hasRegistered = useRef(false);
 

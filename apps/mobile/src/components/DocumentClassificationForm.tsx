@@ -14,7 +14,7 @@ import { useAppTheme, colors, radii, spacing, fontSize, fontWeight, Chip, TextFi
 import type { ThemeContextValue } from "@helu/ui";
 
 type Props = DocumentFormState &
-  DocumentFormActions & {
+  DocumentFormActions<FileSource> & {
     file?: FileSource;
   };
 
@@ -45,7 +45,7 @@ export function DocumentClassificationForm({
 }: Props) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const currentType = catalogs.types.find((tp) => tp.id === selectedType);
+  const currentType = catalogs.types.find((tp: { id: string; name: string; specialties: any[] }) => tp.id === selectedType);
   const canRunAI = !!file;
 
   return (
@@ -87,7 +87,7 @@ export function DocumentClassificationForm({
       <View style={styles.field}>
         <Text style={styles.label}>Tipo de Documento</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
-          {catalogs.types.map((tp) => (
+          {catalogs.types.map((tp: { id: string; name: string }) => (
             <Chip
               key={tp.id}
               label={tp.name}
@@ -102,7 +102,7 @@ export function DocumentClassificationForm({
         <View style={styles.field}>
           <Text style={styles.label}>Especialidad</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
-            {currentType.specialties.map((s) => (
+            {currentType.specialties.map((s: { id: string; name: string }) => (
               <Chip
                 key={s.id}
                 label={s.name}
@@ -114,11 +114,11 @@ export function DocumentClassificationForm({
         </View>
       )}
 
-      {catalogs.tags.map((category) => (
+      {catalogs.tags.map((category: { id: string; name: string; values: { id: string; value: string }[] }) => (
         <View key={category.id} style={styles.field}>
           <Text style={styles.label}>{category.name}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
-            {category.values.map((val) => (
+            {category.values.map((val: { id: string; value: string }) => (
               <Chip
                 key={val.id}
                 label={val.value}

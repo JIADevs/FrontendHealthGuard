@@ -19,7 +19,7 @@ const variantStyles: Record<TypographyVariant, React.CSSProperties> = {
 
 // ─── Variant → HTML element ───────────────────────────────────────────────────
 
-const variantElement: Record<TypographyVariant, keyof JSX.IntrinsicElements> = {
+const variantElement: Record<TypographyVariant, keyof React.JSX.IntrinsicElements> = {
   h1:      'h1',
   h2:      'h2',
   h3:      'h3',
@@ -53,7 +53,7 @@ export function Typography({
   numberOfLines,
   children,
 }: TypographyProps) {
-  const Tag = variantElement[variant];
+  const Tag = variantElement[variant] as React.ElementType;
 
   const style: React.CSSProperties = {
     margin: 0,

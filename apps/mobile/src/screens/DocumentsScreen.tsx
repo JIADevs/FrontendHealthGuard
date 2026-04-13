@@ -45,9 +45,9 @@ export function DocumentsScreen() {
     setFabOpen(false);
   }, [animation]);
 
-  function handleNavigate(screen: string) {
+  function handleNavigate(screen: keyof RootStackParamList) {
     closeFab();
-    navigation.navigate(screen);
+    navigation.navigate(screen as any);
   }
 
   async function handleShare(docId: string, title: string) {

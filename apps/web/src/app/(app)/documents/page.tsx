@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useDocumentsQuery, useDeleteDocumentMutation } from "@helu/api/hooks";
 import { useDebounceSearch } from "@helu/ui/hooks";
-import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card, CardGrid, SearchField, Typography, ActionButton, Spinner } from "@helu/ui";
+import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card, CardGrid, SearchField, Typography, ActionButton, Spinner, EmptyState } from "@helu/ui";
 import { Upload, FileText } from "lucide-react";
 import { isApiError, type Document } from "@helu/api";
 import { sileo } from "sileo";
@@ -59,10 +59,10 @@ export default function DocumentsPage() {
           <Spinner size="lg" />
         </div>
       ) : (docs.data?.items.length ?? 0) === 0 ? (
-        <div className="empty-state">
-          <FileText />
-          <Typography variant="bodySm" color="secondary">{search ? "Sin resultados para esta búsqueda." : "No tienes documentos aún. ¡Sube tu primer documento!"}</Typography>
-        </div>
+        <EmptyState
+          icon={<FileText />}
+          message={search ? "Sin resultados para esta búsqueda." : "No tienes documentos aún. ¡Sube tu primer documento!"}
+        />
       ) : (
         <CardGrid variant="grid">
           {docs.data!.items.map((doc) => (

@@ -19,7 +19,7 @@ import { Plus, Check } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { useAppTheme, colors, palette, useDebounceSearch, formatDate, SearchField, Typography, Spinner } from "@helu/ui";
+import { useAppTheme, colors, palette, useDebounceSearch, formatDate, SearchField, Typography, Spinner, EmptyState } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 type RouteParams = { id: string };
@@ -162,13 +162,11 @@ export function BackpackAddDocumentsScreen() {
               <Spinner size="lg" />
             </View>
           ) : (
-            <View style={styles.center}>
-              <Typography variant="body" color="secondary" align="center">
-                {debouncedSearch.trim()
-                  ? "Sin resultados."
-                  : "No hay documentos disponibles para agregar."}
-              </Typography>
-            </View>
+            <EmptyState
+              message={debouncedSearch.trim()
+                ? "Sin resultados."
+                : "No hay documentos disponibles para agregar."}
+            />
           )
         }
         renderItem={({ item }) => (

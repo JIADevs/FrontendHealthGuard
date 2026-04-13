@@ -19,7 +19,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { isApiError, type DocumentPage, type Document } from "@helu/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { Camera, FileText, FileUp, Plus, Share2 } from "lucide-react-native";
-import { DocumentTypeIcon, useAppTheme, colors, palette, useDebounceSearch, formatDate, Button, Modal, SearchField, Typography, ActionButton, Spinner } from "@helu/ui";
+import { DocumentTypeIcon, useAppTheme, colors, palette, useDebounceSearch, formatDate, Button, Modal, SearchField, Typography, ActionButton, Spinner, EmptyState } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { useBackpackDetail } from "../hooks/useBackpackDetail";
 
@@ -151,11 +151,9 @@ export function BackpackDetailScreen() {
               <Spinner size="lg" />
             </View>
           ) : (
-            <View style={styles.center}>
-              <Typography variant="body" color="secondary" align="center">
-                {debouncedSearch.trim() ? "Sin resultados." : "Todavía no hay documentos en esta mochila."}
-              </Typography>
-            </View>
+            <EmptyState
+              message={debouncedSearch.trim() ? "Sin resultados." : "Todavía no hay documentos en esta mochila."}
+            />
           )
         }
         renderItem={({ item }) => (

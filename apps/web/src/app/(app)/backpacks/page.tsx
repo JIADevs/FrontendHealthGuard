@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useBackpacksQuery, useDeleteBackpackMutation } from "@helu/api/hooks";
 import { Backpack, Plus, FileText } from "lucide-react";
-import { Button, Card, CardGrid, SearchField, Typography, ActionButton, Spinner } from "@helu/ui";
+import { Button, Card, CardGrid, SearchField, Typography, ActionButton, Spinner, EmptyState } from "@helu/ui";
 import { useDebounceSearch } from "@helu/ui/hooks";
 import { type Backpack as BackpackType } from "@helu/api";
 import { sileo } from "sileo";
@@ -53,10 +53,10 @@ export default function BackpacksPage() {
           <Spinner size="lg" />
         </div>
       ) : (bps.data?.items.length ?? 0) === 0 ? (
-        <div className="empty-state">
-          <Backpack />
-          <Typography variant="bodySm" color="secondary">{debouncedSearch ? "Sin mochilas para esta búsqueda." : "No tienes mochilas. Crea una para agrupar documentos."}</Typography>
-        </div>
+        <EmptyState
+          icon={<Backpack />}
+          message={debouncedSearch ? "Sin mochilas para esta búsqueda." : "No tienes mochilas. Crea una para agrupar documentos."}
+        />
       ) : (
         <CardGrid variant="grid">
           {bps.data!.items.map((bp) => (

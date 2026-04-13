@@ -13,6 +13,7 @@ import { BackpackEditScreen } from "../screens/BackpackEditScreen";
 import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
 import { ShareDocumentsScreen } from "../screens/ShareDocumentsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
+import { useAppTheme, palette } from "@helu/ui";
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -34,9 +35,19 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
   const token = useAuthStore((s) => s.token);
+  const t = useAppTheme();
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        headerStyle: { backgroundColor: t.surface.bgCard },
+        headerTintColor: palette.brand[500],
+        headerTitleStyle: { color: t.text.primary },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: t.surface.bg },
+      }}
+    >
       {token ? (
         <>
           <Stack.Screen name="MainTabs" component={TabNavigator} />

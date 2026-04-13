@@ -4,6 +4,7 @@ import Toast from "react-native-toast-message";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { uploadFileFromUri, classifyDocumentFromUri } from "@healthguard/api";
+import { useAuthStore } from "@healthguard/stores";
 import {
   useDocumentFormCore,
   type DocumentFormState,
@@ -39,6 +40,8 @@ export function useDocumentForm(
     Alert.alert(title, message);
   }, []);
 
+  const token = useAuthStore((s) => s.token);
+
   return useDocumentFormCore<FileSource>({
     adapters: {
       classify:        (file) => classifyDocumentFromUri(file.uri, file.name, file.mimeType),
@@ -51,5 +54,6 @@ export function useDocumentForm(
     },
     backpackId:  options?.backpackId,
     backpackName: options?.backpackName,
+    catalogFetchDeps: token,
   });
 }

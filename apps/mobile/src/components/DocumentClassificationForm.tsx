@@ -240,7 +240,8 @@ function makeStyles(t: ThemeContextValue) {
     field: { marginBottom: spacing[5] },
     label: { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.secondary, marginBottom: spacing[2] },
 
-    chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20 },
+    // Altura mínima: un ScrollView horizontal dentro de otro ScrollView suele medir 0 de alto en RN y los chips no se ven.
+    chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20, minHeight: 40 },
 
     addTagContainer: { flexDirection: "row", alignItems: "center", backgroundColor: t.surface.bg, borderRadius: radii.full, paddingLeft: spacing[3], paddingRight: 4, borderWidth: 1, borderColor: t.border.medium, height: 36, marginLeft: 4 },
     addTagInput:     { fontSize: fontSize.sm, color: t.text.primary, width: 80, padding: 0 },

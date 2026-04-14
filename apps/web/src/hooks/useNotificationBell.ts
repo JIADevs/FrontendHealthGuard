@@ -1,4 +1,4 @@
-import { useNotificationsQuery, useNotificationsCore } from "@healthguard/api/hooks";
+import { useNotificationsQuery, useNotificationsCore } from "@helu/api/hooks";
 
 export function useNotificationBell() {
   const query = useNotificationsQuery(1, 20);

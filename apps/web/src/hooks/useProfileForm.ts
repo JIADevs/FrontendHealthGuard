@@ -3,7 +3,7 @@ import {
   useProfileFormCore,
   type ProfileFormState,
   type ProfileFormActions,
-} from "@healthguard/api/hooks";
+} from "@helu/api/hooks";
 
 export type { ProfileFormState, ProfileFormActions };
 

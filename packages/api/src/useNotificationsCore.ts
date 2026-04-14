@@ -13,7 +13,7 @@
 import { useCallback, useEffect } from "react";
 import { useMarkNotificationReadMutation } from "./hooks";
 import { markNotificationAsRead, type Notification } from "./index";
-import { useNotifStore } from "@healthguard/stores";
+import { useNotifStore } from "@helu/stores";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

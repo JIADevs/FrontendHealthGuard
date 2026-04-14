@@ -13,7 +13,7 @@ import {
 import Toast from "react-native-toast-message";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDocumentQuery } from "@healthguard/api/hooks";
+import { useDocumentQuery } from "@helu/api/hooks";
 import * as DocumentPicker from "expo-document-picker";
 import { FileUp, FileText as FileTextIcon, Check, X as XIcon } from "lucide-react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -27,9 +27,9 @@ import {
   isApiError,
   type DocumentCreate,
   type Document,
-} from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+} from "@helu/api";
+import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, Typography, Spinner } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
@@ -205,7 +205,7 @@ export function DocumentEditScreen() {
               <Image source={{ uri: replacementFile.uri }} style={styles.previewImage} resizeMode="contain" />
             ) : (
               <View style={styles.pdfPreview}>
-                <FileTextIcon color={colors.sky[500]} size={64} />
+                <FileTextIcon color={palette.brand[500]} size={64} />
                 <Typography variant="label" numberOfLines={2} align="center">{replacementFile.name}</Typography>
                 {replacementFile.size != null && <Typography variant="caption" color="secondary" align="center">{friendlySize(replacementFile.size)}</Typography>}
               </View>
@@ -215,7 +215,7 @@ export function DocumentEditScreen() {
               <Image source={{ uri: signedUrl }} style={styles.previewImage} resizeMode="contain" />
             ) : (
               <View style={styles.pdfPreview}>
-                <FileTextIcon color={colors.sky[500]} size={64} />
+                <FileTextIcon color={palette.brand[500]} size={64} />
                 <Typography variant="label" numberOfLines={2} align="center">Adjunto actual</Typography>
                 <Typography variant="caption" color="secondary" align="center">{d.format}</Typography>
               </View>
@@ -248,7 +248,7 @@ export function DocumentEditScreen() {
           <XIcon color={colors.white} size={24} />
         </TouchableOpacity>
         <TouchableOpacity style={[styles.circleBtnPrimary, saving && styles.circleBtnPrimaryDisabled]} onPress={handleSave} disabled={saving} accessibilityRole="button" accessibilityLabel="Guardar cambios">
-          {saving ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={28} />}
+          {saving ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={32} />}
         </TouchableOpacity>
       </View>
     </View>
@@ -269,7 +269,7 @@ function makeStyles(t: ThemeContextValue) {
     fileInfoBar:      { flexDirection: "row", alignItems: "center", gap: spacing[3], backgroundColor: t.surface.bgCard, paddingHorizontal: spacing[5], paddingVertical: spacing[3] },
     fileInfoTitle:    { fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: t.text.primary },
     fileInfoSub:      { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2 },
-    changeFileBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], paddingHorizontal: 14, height: 40, borderRadius: radii.md, backgroundColor: colors.sky[500] },
+    changeFileBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], paddingHorizontal: 14, height: 40, borderRadius: radii.md, backgroundColor: palette.brand[500] },
     changeFileBtnText:    { color: colors.white, fontWeight: fontWeight.bold, fontSize: fontSize.sm },
     clearReplacementLink: { paddingHorizontal: spacing[5], paddingBottom: 10 },
     clearReplacementText: { color: t.text.secondary, fontWeight: fontWeight.semibold },
@@ -283,8 +283,8 @@ function makeStyles(t: ThemeContextValue) {
       alignItems: "center",
       gap: spacing[5],
     },
-    circleBtnSecondary:      { width: 72, height: 72, borderRadius: 36, backgroundColor: t.border.medium, alignItems: "center", justifyContent: "center" },
-    circleBtnPrimary:        { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", shadowColor: colors.sky[500], shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
+    circleBtnSecondary:      { width: 64, height: 64, borderRadius: 32, backgroundColor: t.border.medium, alignItems: "center", justifyContent: "center" },
+    circleBtnPrimary:        { width: 80, height: 80, borderRadius: 40, backgroundColor: palette.brand[500], alignItems: "center", justifyContent: "center", shadowColor: palette.brand[500], shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
     circleBtnPrimaryDisabled: { opacity: 0.6 },
   });
 }

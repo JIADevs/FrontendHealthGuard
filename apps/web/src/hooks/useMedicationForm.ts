@@ -1,6 +1,6 @@
-import { useMedicationFormCore } from "@healthguard/api/hooks";
+import { useMedicationFormCore } from "@helu/api/hooks";
 import { sileo } from "sileo";
-import type { Medication } from "@healthguard/api";
+import type { Medication } from "@helu/api";
 
 export function useMedicationForm({
   initial,

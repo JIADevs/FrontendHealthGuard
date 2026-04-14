@@ -1,11 +1,13 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { View, Text, StyleSheet, Linking, Alert, ScrollView, Image } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { useDocumentQuery, useTagCategoriesQuery } from "@healthguard/api/hooks";
-import { getSignedUrl, type Document, type TagCategoryOut } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/RootNavigator";
+import { useDocumentQuery, useTagCategoriesQuery } from "@helu/api/hooks";
+import { getSignedUrl, type Document, type TagCategoryOut } from "@helu/api";
+import { colors, palette, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button, Typography, Spinner } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 type RouteParams = {
   id: string;
@@ -17,7 +19,7 @@ export function DocumentDetailScreen() {
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const route = useRoute();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { id, title } = (route.params ?? {}) as RouteParams;
 
   useLayoutEffect(() => {
@@ -38,15 +40,6 @@ export function DocumentDetailScreen() {
   const url = signedUrl.data?.url;
   const isImage = d?.format?.toLowerCase().match(/image|jpg|jpeg|png/);
 
-  const [imagePreviewReady, setImagePreviewReady] = useState(false);
-  useEffect(() => {
-    setImagePreviewReady(false);
-  }, [url]);
-
-  const showImagePreview = !!(d && isImage && d.fileUrl);
-  const imagePreviewLoadingUrl = showImagePreview && !url && signedUrl.isFetching;
-  const imagePreviewLoadingContent = showImagePreview && !!url && !imagePreviewReady;
-
   const tagCategoriesQuery = useTagCategoriesQuery();
 
   const categoryMap = useMemo(() => {
@@ -55,20 +48,6 @@ export function DocumentDetailScreen() {
     for (const c of cats) map[c.id] = c.name;
     return map;
   }, [tagCategoriesQuery.data]);
-
-  const hasVisibleTags = useMemo(() => {
-    const typeName = d?.documentType?.name?.trim();
-    if (typeName) return true;
-    if (d?.subtypes.some((s) => s.name?.trim())) return true;
-    if (d?.specialties.some((s) => s.name?.trim())) return true;
-    for (const t of d?.customTags ?? []) {
-      const catId = t.categoryId ?? (t as { category_id?: string }).category_id;
-      const categoryName = catId ? categoryMap[catId]?.trim() : "";
-      const val = (t.value ?? "").trim();
-      if (categoryName || val) return true;
-    }
-    return false;
-  }, [d, categoryMap]);
 
   async function handleOpen() {
     if (!url) return;
@@ -140,35 +119,29 @@ export function DocumentDetailScreen() {
         ) : null}
       </View>
 
-      {hasVisibleTags && (
+      {(d.documentType || d.subtypes.length > 0 || d.customTags.length > 0 || d.specialties.length > 0) && (
         <View style={styles.tagsSection}>
           <Typography variant="h4">Etiquetas</Typography>
           <View style={styles.tagsContainer}>
-            {d.documentType?.name?.trim() ? (
+            {d.documentType && (
               <Text style={[styles.tag, styles.tagBlue]}>
-                Tipo de documento: {d.documentType.name.trim()}
+                Tipo de documento: {d.documentType.name}
               </Text>
-            ) : null}
-            {d.subtypes
-              .filter((s) => s.name?.trim())
-              .map((s) => (
-                <Text key={s.id} style={[styles.tag, styles.tagBlue]}>
-                  Subtipo: {s.name.trim()}
-                </Text>
-              ))}
-            {d.specialties
-              .filter((s) => s.name?.trim())
-              .map((s) => (
-                <Text key={s.id} style={[styles.tag, styles.tagAmber]}>
-                  Especialidad: {s.name.trim()}
-                </Text>
-              ))}
+            )}
+            {d.subtypes.map((s) => (
+              <Text key={s.id} style={[styles.tag, styles.tagBlue]}>
+                Subtipo: {s.name}
+              </Text>
+            ))}
+            {d.specialties.map((s) => (
+              <Text key={s.id} style={[styles.tag, styles.tagAmber]}>
+                Especialidad: {s.name}
+              </Text>
+            ))}
             {d.customTags.map((t) => {
               const catId = t.categoryId ?? (t as { category_id?: string }).category_id;
-              const categoryName = (catId ? categoryMap[catId] : null)?.trim() ?? "";
-              const val = (t.value ?? "").trim();
-              const label = categoryName ? (val ? `${categoryName}: ${val}` : categoryName) : val;
-              if (!label) return null;
+              const categoryName = catId ? categoryMap[catId] : null;
+              const label = categoryName ? `${categoryName}: ${t.value}` : t.value;
               return (
                 <Text key={t.id} style={[styles.tag, styles.tagGreen]}>
                   {label}
@@ -179,25 +152,9 @@ export function DocumentDetailScreen() {
         </View>
       )}
 
-      {showImagePreview && (
+      {url && isImage && (
         <View style={styles.preview}>
-          {(imagePreviewLoadingUrl || imagePreviewLoadingContent) && (
-            <View style={styles.previewLoadingOverlay}>
-              <Spinner size="lg" />
-              <Text style={styles.previewLoadingCaption}>
-                {imagePreviewLoadingUrl ? "Cargando vista previa…" : "Cargando imagen…"}
-              </Text>
-            </View>
-          )}
-          {url ? (
-            <Image
-              source={{ uri: url }}
-              style={[styles.image, !imagePreviewReady && styles.imageWhileLoading]}
-              resizeMode="contain"
-              onLoadEnd={() => setImagePreviewReady(true)}
-              onError={() => setImagePreviewReady(true)}
-            />
-          ) : null}
+          <Image source={{ uri: url }} style={styles.image} resizeMode="contain" />
         </View>
       )}
 
@@ -233,19 +190,14 @@ function makeStyles(t: ThemeContextValue) {
     tagsSection:   { marginBottom: spacing[6] },
     sectionTitle:  { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: t.text.primary, marginBottom: spacing[2] },
     tagsContainer: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
-    // Pastel chip backgrounds are fixed light tints; use dark text in both themes (t.text.primary is light in dark mode).
-    tag:           { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.full, fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: colors.gray[900] },
-    tagBlue:       { backgroundColor: colors.sky[100] },
+    tag:           { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.full, fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.primary },
+    tagBlue:       { backgroundColor: palette.brand[100] },
     tagAmber:      { backgroundColor: colors.warning[50] },
     tagGreen:      { backgroundColor: colors.success[50] },
 
     actions:         { marginTop: spacing[2], flexDirection: "row", gap: spacing[3] },
-    preview:                { marginBottom: spacing[4], backgroundColor: colors.black, borderRadius: radii.lg, overflow: "hidden", height: 400, position: "relative" },
-    previewLoadingOverlay:  { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.55)", gap: spacing[2], zIndex: 2 },
-    previewLoadingCaption:  { marginTop: spacing[2], textAlign: "center", paddingHorizontal: spacing[4], fontSize: fontSize.xs, color: t.text.secondary },
-    /* Misma caja 400px siempre; la imagen no mueve el layout al cargar */
-    image:                  { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, width: "100%", height: "100%", zIndex: 1 },
-    imageWhileLoading:      { opacity: 0 },
+    preview:         { marginBottom: spacing[4], backgroundColor: colors.black, borderRadius: radii.lg, overflow: "hidden", height: 400 },
+    image:           { flex: 1, width: "100%", height: "100%" },
     error:               { fontSize: fontSize.base, color: colors.error[500] },
   });
 }

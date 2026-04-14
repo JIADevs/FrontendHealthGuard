@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useDocumentsQuery, useDeleteDocumentMutation } from "@healthguard/api/hooks";
-import { useDebounceSearch } from "@healthguard/ui/hooks";
-import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card, CardGrid, SearchField, Typography, ActionButton, Spinner } from "@healthguard/ui";
+import { useDocumentsQuery, useDeleteDocumentMutation } from "@helu/api/hooks";
+import { useDebounceSearch } from "@helu/ui/hooks";
+import { formatDate, PAGE_SIZE_GRID, Button, Pagination, Chip, Card, CardGrid, SearchField, Typography, ActionButton, Spinner, EmptyState } from "@helu/ui";
 import { Upload, FileText } from "lucide-react";
-import { isApiError, type Document } from "@healthguard/api";
+import { isApiError, type Document } from "@helu/api";
 import { sileo } from "sileo";
 import { ConfirmModal } from "@/components/ConfirmModal";
-import { DocumentTypeIcon } from "@healthguard/ui";
+import { DocumentTypeIcon } from "@helu/ui";
 import { UploadModal } from "./_components/UploadModal";
 import { DetailModal } from "./_components/DetailModal";
 import { ShareModal } from "./_components/ShareModal";
@@ -59,10 +59,10 @@ export default function DocumentsPage() {
           <Spinner size="lg" />
         </div>
       ) : (docs.data?.items.length ?? 0) === 0 ? (
-        <div className="empty-state">
-          <FileText />
-          <Typography variant="bodySm" color="secondary">{search ? "Sin resultados para esta búsqueda." : "No tienes documentos aún. ¡Sube tu primer documento!"}</Typography>
-        </div>
+        <EmptyState
+          icon={<FileText />}
+          message={search ? "Sin resultados para esta búsqueda." : "No tienes documentos aún. ¡Sube tu primer documento!"}
+        />
       ) : (
         <CardGrid variant="grid">
           {docs.data!.items.map((doc) => (

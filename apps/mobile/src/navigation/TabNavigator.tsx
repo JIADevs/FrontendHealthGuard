@@ -6,8 +6,8 @@ import { AgendaScreen } from "../screens/AgendaScreen";
 import { NotificationsScreen } from "../screens/NotificationsScreen";
 import { LayoutDashboard, FileText, CalendarDays, Bell, Folder } from "lucide-react-native";
 import { BackpacksScreen } from "../screens/BackpacksScreen";
-import { useUnreadCount } from "@healthguard/stores";
-import { colors, radii, fontSize, fontWeight, useAppTheme } from "@healthguard/ui";
+import { useUnreadCount } from "@helu/stores";
+import { colors, palette, radii, fontSize, fontWeight, useAppTheme } from "@helu/ui";
 
 export type TabParamList = {
   Dashboard: undefined;
@@ -39,7 +39,7 @@ export function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: colors.sky[500],
+        tabBarActiveTintColor: palette.brand[500],
         tabBarInactiveTintColor: t.text.secondary,
         headerShown: false,
         tabBarStyle: {

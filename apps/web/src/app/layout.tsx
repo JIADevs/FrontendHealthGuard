@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { Providers } from "./providers";
-import { generateCssVariables } from "@healthguard/ui";
+import { generateCssVariables } from "@helu/ui";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "HealthGuard — Gestión Médica Inteligente",
+  title: "Helu — Gestión Médica Inteligente",
   description:
-    "Gestiona tus documentos médicos, citas, medicamentos y más con HealthGuard.",
+    "Gestiona tus documentos médicos, citas, medicamentos y más con Helu.",
 };
 
 export default function RootLayout({

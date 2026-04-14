@@ -1,22 +1,17 @@
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  NavigationContainer,
-  DarkTheme as NavDarkTheme,
-  DefaultTheme as NavDefaultTheme,
-} from "@react-navigation/native";
-import type { Theme as NavigationTheme } from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "./src/components/ToastConfig";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { navigationRef } from "./src/navigation/navigationRef";
-import { useAuthStore, useNotifStore } from "@healthguard/stores";
+import { useAuthStore, useNotifStore, useUiStore } from "@helu/stores";
 import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
-import { setApiAuthProviders, getNotifications } from "@healthguard/api";
-import { ThemeProvider, colors, useAppTheme } from "@healthguard/ui";
+import { setApiAuthProviders, getNotifications } from "@helu/api";
+import { ThemeProvider, colors, palette } from "@helu/ui";
 
 setApiAuthProviders({
   getToken: () => useAuthStore.getState().token,
@@ -27,30 +22,6 @@ setApiAuthProviders({
 });
 
 const queryClient = new QueryClient();
-
-function ThemedNavigationContainer() {
-  const t = useAppTheme();
-  const base = t.mode === "dark" ? NavDarkTheme : NavDefaultTheme;
-  const navigationTheme: NavigationTheme = {
-    ...base,
-    dark: t.mode === "dark",
-    colors: {
-      ...base.colors,
-      primary: colors.sky[500],
-      background: t.surface.bg,
-      card: t.surface.bg,
-      text: t.text.primary,
-      border: t.border.default,
-      notification: colors.primary[500],
-    },
-  };
-
-  return (
-    <NavigationContainer ref={navigationRef} theme={navigationTheme}>
-      <RootNavigator />
-    </NavigationContainer>
-  );
-}
 
 export default function App() {
   const isHydrated = useAuthStore((s) => s.isHydrated);
@@ -80,16 +51,20 @@ export default function App() {
   if (!isHydrated) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={colors.sky[500]} />
+        <ActivityIndicator size="large" color={palette.brand[500]} />
       </View>
     );
   }
 
+  const themePreference = useUiStore((s) => s.theme);
+
   return (
-    <ThemeProvider>
+    <ThemeProvider preference={themePreference}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
-          <ThemedNavigationContainer />
+          <NavigationContainer ref={navigationRef}>
+            <RootNavigator />
+          </NavigationContainer>
           <Toast config={toastConfig} position="bottom" bottomOffset={90} visibilityTime={3500} />
           <StatusBar style="auto" />
         </SafeAreaProvider>

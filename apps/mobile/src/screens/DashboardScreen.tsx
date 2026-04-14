@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDashboardCore } from "@healthguard/api/hooks";
-import { useAuthStore } from "@healthguard/stores";
+import { useDashboardCore } from "@helu/api/hooks";
+import { useAuthStore } from "@helu/stores";
 import {
   colors,
   radii,
@@ -13,8 +13,8 @@ import {
   useAppTheme,
   formatDateLocal,
   Typography,
-} from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+} from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 import { LogOut, Calendar, Pill, FileText, Upload, UserCircle } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";

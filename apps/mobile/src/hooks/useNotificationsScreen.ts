@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { getNotifications } from "@healthguard/api";
-import { useNotificationsCore } from "@healthguard/api/hooks";
-import type { Notification } from "@healthguard/api";
+import { getNotifications } from "@helu/api";
+import { useNotificationsCore } from "@helu/api/hooks";
+import type { Notification } from "@helu/api";
 
 const LIMIT = 20;
 

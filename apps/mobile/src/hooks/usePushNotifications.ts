@@ -4,8 +4,8 @@ import { Platform } from "react-native";
 declare const __DEV__: boolean;
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import { registerDeviceToken } from "@healthguard/api";
-import { colors } from "@healthguard/ui";
+import { registerDeviceToken } from "@helu/api";
+import { colors, palette } from "@helu/ui";
 import { navigateTo } from "../navigation/navigationRef";
 
 export interface PushNotificationState {
@@ -17,13 +17,15 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
 export const usePushNotifications = (authToken?: string | null): PushNotificationState => {
-  const notificationRef = useRef<Notifications.Notification>();
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationRef = useRef<Notifications.Notification>(undefined);
+  const notificationListener = useRef<Notifications.Subscription>(undefined);
+  const responseListener = useRef<Notifications.Subscription>(undefined);
   // Evita re-registrar en cada refresh de token — solo registra una vez por sesión
   const hasRegistered = useRef(false);
 
@@ -48,10 +50,10 @@ export const usePushNotifications = (authToken?: string | null): PushNotificatio
 
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {
-        name: "HealthGuard",
+        name: "Helu",
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: colors.sky[500],
+        lightColor: palette.brand[500],
         sound: "default",
       });
     }

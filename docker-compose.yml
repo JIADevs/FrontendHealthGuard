@@ -5,8 +5,8 @@ services:
       dockerfile: Dockerfile
       target: web-dev
       args:
-        - APP_NAME=@healthguard/web
-    container_name: healthguard_frontend_web
+        - APP_NAME=@helu/web
+    container_name: helu_frontend_web
     tty: true
     stdin_open: true
     working_dir: /app/apps/web
@@ -27,7 +27,7 @@ services:
       - /app/apps/web/.next
       - /app/node_modules
     networks:
-      - healthguard_network
+      - helu_network
 
   mobile:
     build:
@@ -35,9 +35,9 @@ services:
       dockerfile: Dockerfile
       target: mobile-runner
       args:
-        - APP_NAME=@healthguard/mobile
+        - APP_NAME=@helu/mobile
         - HOISTED_LINKER=true
-    container_name: healthguard_frontend_mobile
+    container_name: helu_frontend_mobile
     working_dir: /app/apps/mobile
     tty: true
     stdin_open: true
@@ -60,8 +60,9 @@ services:
       - /app/node_modules
 
     networks:
-      - healthguard_network
+      - helu_network
 
 networks:
-  healthguard_network:
+  helu_network:
     external: false
+

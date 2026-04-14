@@ -13,8 +13,8 @@ import {
   useAppointmentsQuery,
   useMedicationsQuery,
 } from "./hooks";
-import { useAuthStore } from "@healthguard/stores";
-import { todayISODate } from "@healthguard/ui";
+import { useAuthStore } from "@helu/stores";
+import { todayISODate } from "@helu/ui";
 import type { Appointment, Medication } from "./schemas";
 
 // ─── Types ───────────────────────────────────────────────────────────────────

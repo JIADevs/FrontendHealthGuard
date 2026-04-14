@@ -1,5 +1,5 @@
 {
-  "name": "@healthguard/web",
+  "name": "@helu/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,10 +8,10 @@
     "start": "next start"
   },
   "dependencies": {
-    "@healthguard/api": "workspace:*",
-    "@healthguard/config": "workspace:*",
-    "@healthguard/stores": "workspace:*",
-    "@healthguard/ui": "workspace:*",
+    "@helu/api": "workspace:*",
+    "@helu/config": "workspace:*",
+    "@helu/stores": "workspace:*",
+    "@helu/ui": "workspace:*",
     "@tanstack/react-query": "^5.75.0",
     "lucide-react": "^0.475.0",
     "next": "16.1.6",

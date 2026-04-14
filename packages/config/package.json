@@ -1,5 +1,5 @@
 {
-    "name": "@healthguard/config",
+    "name": "@helu/config",
     "version": "0.0.1",
     "private": true,
     "main": "./src/index.ts",

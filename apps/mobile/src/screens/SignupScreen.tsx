@@ -11,9 +11,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useAuthStore } from "@healthguard/stores";
-import { signup, login, isApiError } from "@healthguard/api";
-import { colors, radii, spacing, fontWeight, Button, TextField, Typography } from "@healthguard/ui";
+import { useAuthStore } from "@helu/stores";
+import { signup, login, isApiError } from "@helu/api";
+import { colors, palette, radii, spacing, fontWeight, Button, TextField, Typography } from "@helu/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
 export function SignupScreen() {
@@ -60,7 +60,7 @@ export function SignupScreen() {
             <View style={styles.logo}>
               <Text style={styles.logoText}>H</Text>
             </View>
-            <Typography variant="h2" align="center">HealthGuard</Typography>
+            <Typography variant="h2" align="center">Helu</Typography>
             <View style={{ marginTop: spacing[1] }}>
               <Typography variant="bodySm" color="secondary" align="center">
                 Crea tu cuenta para gestionar tu información médica de forma segura.
@@ -115,10 +115,10 @@ const styles = StyleSheet.create({
   container:  { flex: 1, backgroundColor: "white" },
   content:    { flexGrow: 1, padding: spacing[6], justifyContent: "center" },
   header:     { alignItems: "center", marginBottom: 40, gap: spacing[1] },
-  logo:       { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
+  logo:       { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: palette.brand[500], alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
   logoText:   { color: colors.white, fontSize: 28, fontWeight: fontWeight.extrabold },
   form:       { gap: spacing[3], marginTop: spacing[2] },
   errorBox:   { backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, marginBottom: spacing[4] },
   footer:     { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
-  footerLink: { color: colors.sky[500], fontWeight: fontWeight.semibold },
+  footerLink: { color: palette.brand[500], fontWeight: fontWeight.semibold },
 });

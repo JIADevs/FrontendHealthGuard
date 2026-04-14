@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, FileText, FileUp, Sparkles, Plus, Check, X } from "lucide-react";
-import { Button, Chip, Modal, TextField, Typography, DatePicker, Spinner } from "@healthguard/ui";
+import { Upload, FileText, FileUp, Sparkles, Loader2, Plus, Check, X } from "lucide-react";
+import { Button, Chip, Modal, TextField, Typography, DatePicker, Spinner } from "@helu/ui";
 import { useDocumentForm } from "@/hooks/useDocumentForm";
 
 const TEMPLATE_ICONS: Record<string, string> = {
@@ -10,6 +10,16 @@ const TEMPLATE_ICONS: Record<string, string> = {
   "Examen de Laboratorio": "🔬",
   "Imagen Diagnóstica": "🩻",
   "Fórmula Médica": "💊",
+};
+
+const FILE_INFO_STYLE: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  padding: 12,
+  background: "var(--success-50)",
+  borderRadius: "var(--radius-sm)",
+  marginBottom: 20,
 };
 
 export function UploadModal({
@@ -107,10 +117,10 @@ export function UploadModal({
             </div>
           ) : (
             <>
-              <div className="upload-file-info">
-                <FileText size={20} style={{ color: "var(--success-600)", flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="upload-file-name">{file.name}</div>
+              <div style={FILE_INFO_STYLE}>
+                <FileText size={20} style={{ color: "var(--success-600)" }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{file.name}</div>
                   <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                     {(file.size / 1024 / 1024).toFixed(2)} MB
                   </div>
@@ -126,7 +136,7 @@ export function UploadModal({
                   disabled={form.classifying}
                   loading={form.classifying}
                 >
-                  <><Sparkles size={15} /> Clasificar con IA</>
+                  {form.classifying ? <><Loader2 size={15} /> Clasificando...</> : <><Sparkles size={15} /> Clasificar con IA</>}
                 </Button>
                 {form.classificationResult && (
                   <span style={{ fontSize: 12, color: "var(--success-600)" }}>
@@ -151,10 +161,10 @@ export function UploadModal({
       {step === "details" && file && (
         <>
           {/* File info bar */}
-          <div className="upload-file-info">
-            <FileText size={20} style={{ color: "var(--success-600)", flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="upload-file-name">{file.name}</div>
+          <div style={FILE_INFO_STYLE}>
+            <FileText size={20} style={{ color: "var(--success-600)" }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: 13 }}>{file.name}</div>
               <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                 {(file.size / 1024 / 1024).toFixed(2)} MB
                 {form.classificationResult && " · Clasificado con IA"}
@@ -168,11 +178,7 @@ export function UploadModal({
               disabled={form.classifying}
               loading={form.classifying}
             >
-              {form.classificationResult ? (
-                <><Sparkles size={13} /> Re-clasificar</>
-              ) : (
-                <><Sparkles size={13} /> Clasificar con IA</>
-              )}
+              {form.classifying ? "..." : <><Sparkles size={13} /> Re-clasificar</>}
             </Button>
           </div>
 

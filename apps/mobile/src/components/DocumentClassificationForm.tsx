@@ -115,8 +115,6 @@ export function DocumentClassificationForm({
       {classificationResult && (
         <ClassificationResultCard
           result={classificationResult}
-          catalogs={catalogs}
-          selectedTags={selectedTags}
           t={t}
         />
       )}
@@ -250,22 +248,15 @@ export function DocumentClassificationForm({
 
 function ClassificationResultCard({
   result,
-  catalogs,
-  selectedTags,
   t,
 }: Readonly<{
   result: NonNullable<DocumentFormState["classificationResult"]>;
-  catalogs: DocumentFormState["catalogs"];
-  selectedTags: readonly string[];
   t: ThemeContextValue;
 }>) {
   const styles = useMemo(() => makeStyles(t), [t]);
-  const appliedNames = catalogs.tags.flatMap((c) =>
-    c.values.filter((v) => selectedTags.includes(v.id)).map((v) => `${c.name}: ${v.value}`)
-  );
   const tagLabels = (result.customTags ?? []).map((ct) => ct.tagValueName ?? ct.tagValueId).filter(Boolean);
   const newTagLabels = (result.newTags ?? []).map((nt) => `${nt.categoryName ?? ""}: ${nt.value}`);
-  const hasAnyTags = tagLabels.length > 0 || newTagLabels.length > 0 || appliedNames.length > 0;
+  const hasAnyTags = tagLabels.length > 0 || newTagLabels.length > 0;
 
   return (
     <View style={styles.classificationResult}>
@@ -280,7 +271,6 @@ function ClassificationResultCard({
         <>
           {tagLabels.length > 0 && <Text style={styles.resultLine}><Text style={styles.resultLabel}>Etiquetas: </Text>{tagLabels.join(", ")}</Text>}
           {newTagLabels.length > 0 && <Text style={styles.resultLine}><Text style={styles.resultLabel}>Nuevas sugeridas: </Text>{newTagLabels.join(", ")}</Text>}
-          {appliedNames.length > 0 && <Text style={styles.resultLine}><Text style={styles.resultLabel}>Aplicadas: </Text>{appliedNames.join(", ")}</Text>}
         </>
       )}
     </View>

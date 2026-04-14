@@ -1,14 +1,15 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   Animated,
   Pressable,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { Plus } from 'lucide-react-native';
-import { colors, palette, radii, spacing } from '@helu/ui';
-import { Typography } from '@helu/ui';
+import { colors, palette, radii, spacing, useAppTheme } from '@helu/ui';
+import type { ThemeContextValue } from '@helu/ui';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -29,6 +30,8 @@ export interface ExpandableFABProps {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function ExpandableFAB({ options, accessibilityLabel = 'Abrir menú' }: ExpandableFABProps) {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
   const [open, setOpen] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
 
@@ -110,7 +113,7 @@ export function ExpandableFAB({ options, accessibilityLabel = 'Abrir menú' }: E
               }}
             >
               <View style={styles.fabOptionLabel}>
-                <Typography variant="label">{opt.label}</Typography>
+                <Text style={styles.fabOptionLabelText}>{opt.label}</Text>
               </View>
               <View style={[styles.fabSmall, { backgroundColor: opt.color }]}>
                 {opt.icon}
@@ -137,58 +140,67 @@ export function ExpandableFAB({ options, accessibilityLabel = 'Abrir menú' }: E
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.black,
-  },
-  fab: {
-    position: 'absolute',
-    right: spacing[5],
-    bottom: spacing[6],
-    width: 56,
-    height: 56,
-    borderRadius: radii.full,
-    backgroundColor: palette.brand[500],
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 8,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    zIndex: 90,
-  },
-  fabOption: {
-    position: 'absolute',
-    right: spacing[5],
-    bottom: spacing[6],
-    zIndex: 91,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  fabOptionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[2],
-  },
-  fabOptionLabel: {
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: radii.sm,
-    elevation: 2,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  fabSmall: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-  },
-});
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: colors.black,
+    },
+    fab: {
+      position: 'absolute',
+      right: spacing[5],
+      bottom: spacing[6],
+      width: 56,
+      height: 56,
+      borderRadius: radii.full,
+      backgroundColor: palette.brand[500],
+      alignItems: 'center',
+      justifyContent: 'center',
+      elevation: 8,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      zIndex: 90,
+    },
+    fabOption: {
+      position: 'absolute',
+      right: spacing[5],
+      bottom: spacing[6],
+      zIndex: 91,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    fabOptionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing[2],
+    },
+    fabOptionLabel: {
+      backgroundColor: t.surface.bgCard,
+      borderWidth: 1,
+      borderColor: t.border.medium,
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[2],
+      borderRadius: radii.sm,
+      elevation: 2,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    fabOptionLabelText: {
+      color: t.text.primary,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    fabSmall: {
+      width: 44,
+      height: 44,
+      borderRadius: radii.full,
+      alignItems: 'center',
+      justifyContent: 'center',
+      elevation: 4,
+    },
+  });
+}

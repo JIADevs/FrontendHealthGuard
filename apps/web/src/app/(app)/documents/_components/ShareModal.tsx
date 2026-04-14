@@ -1,9 +1,9 @@
 "use client";
 
-import { useShareDocumentMutation } from "@healthguard/api/hooks";
-import type { Document } from "@healthguard/api";
+import { useShareDocumentMutation } from "@helu/api/hooks";
+import type { Document } from "@helu/api";
 import { ShareResult } from "@/components/ShareResult";
-import { Modal, Typography,Spinner } from "@healthguard/ui";
+import { Modal, Typography,Spinner } from "@helu/ui";
 
 export function ShareModal({ doc, onClose }: { doc: Document; onClose: () => void }) {
   const shareMut = useShareDocumentMutation();

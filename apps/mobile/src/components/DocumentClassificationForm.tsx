@@ -10,11 +10,11 @@ import {
 } from "react-native";
 import { Sparkles } from "lucide-react-native";
 import type { DocumentFormState, DocumentFormActions, FileSource } from "../hooks/useDocumentForm";
-import { useAppTheme, colors, radii, spacing, fontSize, fontWeight, Chip, TextField } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { useAppTheme, colors, palette, radii, spacing, fontSize, fontWeight, Chip, TextField } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 type Props = DocumentFormState &
-  DocumentFormActions & {
+  DocumentFormActions<FileSource> & {
     file?: FileSource;
   };
 
@@ -45,7 +45,7 @@ export function DocumentClassificationForm({
 }: Props) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const currentType = catalogs.types.find((tp) => tp.id === selectedType);
+  const currentType = catalogs.types.find((tp: { id: string; name: string; specialties: any[] }) => tp.id === selectedType);
   const canRunAI = !!file;
 
   return (
@@ -87,7 +87,7 @@ export function DocumentClassificationForm({
       <View style={styles.field}>
         <Text style={styles.label}>Tipo de Documento</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
-          {catalogs.types.map((tp) => (
+          {catalogs.types.map((tp: { id: string; name: string }) => (
             <Chip
               key={tp.id}
               label={tp.name}
@@ -102,7 +102,7 @@ export function DocumentClassificationForm({
         <View style={styles.field}>
           <Text style={styles.label}>Especialidad</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
-            {currentType.specialties.map((s) => (
+            {currentType.specialties.map((s: { id: string; name: string }) => (
               <Chip
                 key={s.id}
                 label={s.name}
@@ -114,11 +114,11 @@ export function DocumentClassificationForm({
         </View>
       )}
 
-      {catalogs.tags.map((category) => (
+      {catalogs.tags.map((category: { id: string; name: string; values: { id: string; value: string }[] }) => (
         <View key={category.id} style={styles.field}>
           <Text style={styles.label}>{category.name}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
-            {category.values.map((val) => (
+            {category.values.map((val: { id: string; value: string }) => (
               <Chip
                 key={val.id}
                 label={val.value}
@@ -142,7 +142,7 @@ export function DocumentClassificationForm({
                 disabled={addingTag === category.id}
               >
                 {addingTag === category.id ? (
-                  <ActivityIndicator size="small" color={colors.sky[500]} />
+                  <ActivityIndicator size="small" color={palette.brand[500]} />
                 ) : (
                   <Text style={styles.addTagBtnText}>+</Text>
                 )}
@@ -232,22 +232,23 @@ function makeStyles(t: ThemeContextValue) {
     aiBtnDisabled: { opacity: 0.7 },
     aiBtnText:     { color: colors.white, fontWeight: fontWeight.bold, fontSize: 14 },
 
-    classificationResult:      { backgroundColor: colors.sky[50], padding: 14, borderRadius: radii.md, marginBottom: spacing[5], borderWidth: 1, borderColor: colors.sky[200] },
-    classificationResultTitle: { fontSize: 14, fontWeight: fontWeight.bold, color: colors.sky[700], marginBottom: spacing[2] },
-    resultLine:                { fontSize: fontSize.sm, color: colors.sky[900], marginBottom: 4 },
+    classificationResult:      { backgroundColor: palette.brand[50], padding: 14, borderRadius: radii.md, marginBottom: spacing[5], borderWidth: 1, borderColor: palette.brand[200] },
+    classificationResultTitle: { fontSize: 14, fontWeight: fontWeight.bold, color: palette.brand[700], marginBottom: spacing[2] },
+    resultLine:                { fontSize: fontSize.sm, color: palette.brand[900], marginBottom: 4 },
     resultLabel:               { fontWeight: fontWeight.semibold },
 
     field: { marginBottom: spacing[5] },
     label: { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.secondary, marginBottom: spacing[2] },
 
-    chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20 },
+    // Altura mínima: un ScrollView horizontal dentro de otro ScrollView suele medir 0 de alto en RN y los chips no se ven.
+    chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20, minHeight: 40 },
 
     addTagContainer: { flexDirection: "row", alignItems: "center", backgroundColor: t.surface.bg, borderRadius: radii.full, paddingLeft: spacing[3], paddingRight: 4, borderWidth: 1, borderColor: t.border.medium, height: 36, marginLeft: 4 },
     addTagInput:     { fontSize: fontSize.sm, color: t.text.primary, width: 80, padding: 0 },
     addTagBtn:       { width: 28, height: 28, borderRadius: 14, backgroundColor: t.surface.bgCard, alignItems: "center", justifyContent: "center", marginLeft: 4 },
-    addTagBtnText:   { color: colors.sky[500], fontSize: 18, fontWeight: fontWeight.bold },
+    addTagBtnText:   { color: palette.brand[500], fontSize: 18, fontWeight: fontWeight.bold },
 
-    newTagSubmitBtn: { backgroundColor: colors.sky[500], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radii.md, justifyContent: "center", alignSelf: "flex-start" },
+    newTagSubmitBtn: { backgroundColor: palette.brand[500], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radii.md, justifyContent: "center", alignSelf: "flex-start" },
     newTagSubmitText: { color: colors.white, fontWeight: fontWeight.semibold, fontSize: 14 },
   });
 }

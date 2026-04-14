@@ -1,6 +1,6 @@
-import { useAppointmentFormCore } from "@healthguard/api/hooks";
+import { useAppointmentFormCore } from "@helu/api/hooks";
 import Toast from "react-native-toast-message";
-import type { Appointment } from "@healthguard/api";
+import type { Appointment } from "@helu/api";
 
 export function useAppointmentForm({
   initial,

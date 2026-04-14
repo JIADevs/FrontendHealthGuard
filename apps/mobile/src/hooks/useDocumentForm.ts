@@ -3,12 +3,12 @@ import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { uploadFileFromUri, classifyDocumentFromUri } from "@healthguard/api";
+import { uploadFileFromUri, classifyDocumentFromUri } from "@helu/api";
 import {
   useDocumentFormCore,
   type DocumentFormState,
   type DocumentFormActions,
-} from "@healthguard/api/hooks";
+} from "@helu/api/hooks";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
 export type { DocumentFormState, DocumentFormActions };

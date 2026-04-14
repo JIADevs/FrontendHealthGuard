@@ -2,10 +2,12 @@ import { useLayoutEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { View, Text, StyleSheet, Linking, Alert, ScrollView, Image } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { useDocumentQuery, useTagCategoriesQuery } from "@healthguard/api/hooks";
-import { getSignedUrl, type Document, type TagCategoryOut } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/RootNavigator";
+import { useDocumentQuery, useTagCategoriesQuery } from "@helu/api/hooks";
+import { getSignedUrl, type Document, type TagCategoryOut } from "@helu/api";
+import { colors, palette, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button, Typography, Spinner } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 type RouteParams = {
   id: string;
@@ -17,7 +19,7 @@ export function DocumentDetailScreen() {
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const route = useRoute();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { id, title } = (route.params ?? {}) as RouteParams;
 
   useLayoutEffect(() => {
@@ -189,7 +191,7 @@ function makeStyles(t: ThemeContextValue) {
     sectionTitle:  { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: t.text.primary, marginBottom: spacing[2] },
     tagsContainer: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
     tag:           { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.full, fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.primary },
-    tagBlue:       { backgroundColor: colors.sky[100] },
+    tagBlue:       { backgroundColor: palette.brand[100] },
     tagAmber:      { backgroundColor: colors.warning[50] },
     tagGreen:      { backgroundColor: colors.success[50] },
 

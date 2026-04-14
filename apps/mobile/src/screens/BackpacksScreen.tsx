@@ -8,15 +8,15 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useBackpacksQuery } from "@healthguard/api/hooks";
-import { isApiError, type BackpackPage } from "@healthguard/api";
+import { useBackpacksQuery } from "@helu/api/hooks";
+import { isApiError, type BackpackPage } from "@helu/api";
 import { FileText, Plus } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
-import { useAppTheme, colors, useDebounceSearch, formatDate, Card, cardContentStyle, SearchField, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { useAppTheme, colors, palette, useDebounceSearch, formatDate, Card, cardContentStyle, SearchField, Typography, Spinner, EmptyState } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 export function BackpacksScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -79,24 +79,22 @@ export function BackpacksScreen() {
             <RefreshControl
               refreshing={query.isRefetching}
               onRefresh={() => query.refetch()}
-              colors={[colors.sky[500]]}
-              tintColor={colors.sky[500]}
+              colors={[palette.brand[500]]}
+              tintColor={palette.brand[500]}
             />
           }
           ListEmptyComponent={
-            <View style={styles.center}>
-              <Typography variant="body" color="secondary" align="center">
-                {debouncedSearch.trim()
-                  ? "Sin mochilas para esta búsqueda."
-                  : "Todavía no tenés mochilas. Creá la primera."}
-              </Typography>
-            </View>
+            <EmptyState
+              message={debouncedSearch.trim()
+                ? "Sin mochilas para esta búsqueda."
+                : "Todavía no tenés mochilas. Creá la primera."}
+            />
           }
           renderItem={({ item }) => (
             <Card
               title={item.name}
               subtitle={`${item.documentCount} documento${item.documentCount === 1 ? "" : "s"}` + (item.createdAt ? ` • ${formatDate(item.createdAt)}` : "")}
-              icon={<FileText size={22} color={colors.sky[500]} />}
+              icon={<FileText size={22} color={palette.brand[500]} />}
               onPress={() => navigateToDetail(item.id)}
             />
           )}
@@ -112,7 +110,7 @@ function makeStyles(t: ThemeContextValue) {
     header: { padding: 24, paddingBottom: 16, backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     titleRow: { marginBottom: 12 },
     toolbarRow: { flexDirection: "row", gap: 12, alignItems: "center" },
-    createBtn: { backgroundColor: colors.sky[500], borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center" },
+    createBtn: { backgroundColor: palette.brand[500], borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center" },
     createBtnText: { color: colors.white, fontSize: 14, fontWeight: "700" },
     center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   });

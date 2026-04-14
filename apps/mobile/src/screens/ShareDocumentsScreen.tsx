@@ -14,9 +14,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useQuery } from "@tanstack/react-query";
-import { getDocuments, shareDocument, isApiError, type Document } from "@healthguard/api";
-import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { getDocuments, shareDocument, isApiError, type Document } from "@helu/api";
+import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner, EmptyState } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 import { FileText, Share2, Clock } from "lucide-react-native";
 
 type ShareResult = { shareUrl: string; qrCodeUrl: string; expiresAt: string };
@@ -118,14 +118,14 @@ export function ShareDocumentsScreen() {
           <RefreshControl
             refreshing={docs.isRefetching}
             onRefresh={() => docs.refetch()}
-            tintColor={colors.sky[500]}
+            tintColor={palette.brand[500]}
           />
         }
         ListHeaderComponent={
           sharedDocs.length > 0 ? (
             <View style={styles.resultsCard}>
               <View style={styles.resultsHeader}>
-                <Share2 size={16} color={colors.sky[500]} />
+                <Share2 size={16} color={palette.brand[500]} />
                 <Typography variant="label">
                   {shareResults.size} enlace{shareResults.size > 1 ? "s" : ""} generado{shareResults.size > 1 ? "s" : ""}
                 </Typography>
@@ -146,10 +146,10 @@ export function ShareDocumentsScreen() {
                       </View>
                       <View style={styles.resultActions}>
                         <Button variant="secondary" size="sm" onPress={() => handleCopyLink(res.shareUrl)}>
-                          <Share2 size={13} color={colors.sky[500]} /> Copiar
+                          <Share2 size={13} color={palette.brand[500]} /> Copiar
                         </Button>
                         <Button variant="secondary" size="sm" onPress={() => handleSystemShare(res.shareUrl, doc.title)}>
-                          <Share2 size={13} color={colors.sky[500]} /> Compartir
+                          <Share2 size={13} color={palette.brand[500]} /> Compartir
                         </Button>
                       </View>
                     </View>
@@ -165,10 +165,10 @@ export function ShareDocumentsScreen() {
               <Spinner size="lg" />
             </View>
           ) : (
-            <View style={styles.center}>
-              <FileText size={48} color={t.border.medium} />
-              <Typography variant="body" color="secondary" align="center">No tienes documentos para compartir.</Typography>
-            </View>
+            <EmptyState
+              icon={<FileText size={48} color={t.border.medium} />}
+              message="No tienes documentos para compartir."
+            />
           )
         }
         ListFooterComponent={
@@ -226,7 +226,7 @@ function makeStyles(t: ThemeContextValue) {
 
     // doc list
     docItem:          { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: spacing[4], backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium },
-    docItemSelected:  { borderColor: colors.sky[400], backgroundColor: colors.sky[50] },
+    docItemSelected:  { borderColor: palette.brand[400], backgroundColor: palette.brand[50] },
     docInfo:          { flex: 1 },
     docTitle:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary },
     docMeta:          { fontSize: fontSize.xs, color: t.text.secondary, marginTop: 2 },

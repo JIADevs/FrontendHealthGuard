@@ -8,9 +8,9 @@ import {
   QrCode,
   Clock,
 } from "lucide-react";
-import { useDocumentsQuery } from "@healthguard/api/hooks";
-import { shareDocument, type Document } from "@healthguard/api";
-import { formatDate, Button, Pagination, Checkbox, Typography,Spinner } from "@healthguard/ui";
+import { useDocumentsQuery } from "@helu/api/hooks";
+import { shareDocument, type Document } from "@helu/api";
+import { formatDate, Button, Pagination, Checkbox, Typography,Spinner } from "@helu/ui";
 
 export default function SharePage() {
   const [page, setPage] = useState(1);

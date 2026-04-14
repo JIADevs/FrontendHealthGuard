@@ -1,11 +1,11 @@
 import { useCallback } from "react";
 import { sileo } from "sileo";
-import { uploadFile, classifyDocument } from "@healthguard/api";
+import { uploadFile, classifyDocument } from "@helu/api";
 import {
   useDocumentFormCore,
   type DocumentFormState,
   type DocumentFormActions,
-} from "@healthguard/api/hooks";
+} from "@helu/api/hooks";
 
 export type { DocumentFormState, DocumentFormActions };
 

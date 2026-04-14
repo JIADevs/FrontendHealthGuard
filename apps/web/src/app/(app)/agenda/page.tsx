@@ -8,7 +8,7 @@ import {
   useMedicationsQuery,
   useDeleteMedicationMutation,
   useConfirmIntakeMutation,
-} from "@healthguard/api/hooks";
+} from "@helu/api/hooks";
 import {
   CalendarDays,
   Pill,
@@ -22,11 +22,11 @@ import {
   isApiError,
   type Appointment,
   type Medication,
-} from "@healthguard/api";
+} from "@helu/api";
 import { useMedicationForm } from "@/hooks/useMedicationForm";
 import { useAppointmentForm } from "@/hooks/useAppointmentForm";
 
-import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField, Select, Typography, DateTimePicker, ActionButton, Spinner } from "@healthguard/ui";
+import { appointmentStatusLabel, formatApptDate, Button, Pagination, Modal, Card, CardGrid, TextField, Select, Typography, DateTimePicker, ActionButton, Spinner, EmptyState } from "@helu/ui";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import "./agenda.css";
 
@@ -86,10 +86,10 @@ function AppointmentsTab() {
           <Spinner size="lg" />
         </div>
       ) : (appts.data?.items.length ?? 0) === 0 ? (
-        <div className="empty-state">
-          <CalendarDays />
-          <Typography variant="bodySm" color="secondary">No tienes citas registradas.</Typography>
-        </div>
+        <EmptyState
+          icon={<CalendarDays />}
+          message="No tienes citas registradas."
+        />
       ) : (
         <CardGrid variant="list">
           {appts.data!.items.map((a) => (
@@ -232,10 +232,10 @@ function MedicationsTab() {
           <Spinner size="lg" />
         </div>
       ) : (meds.data?.items.length ?? 0) === 0 ? (
-        <div className="empty-state">
-          <Pill />
-          <Typography variant="bodySm" color="secondary">No tienes medicamentos registrados.</Typography>
-        </div>
+        <EmptyState
+          icon={<Pill />}
+          message="No tienes medicamentos registrados."
+        />
       ) : (
         <CardGrid variant="list">
           {meds.data!.items.map((m) => (

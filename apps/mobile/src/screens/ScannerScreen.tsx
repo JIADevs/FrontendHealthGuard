@@ -17,8 +17,8 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
-import { colors, overlay, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { colors, palette, overlay, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 export function ScannerScreen() {
   const t = useAppTheme();
@@ -84,7 +84,7 @@ export function ScannerScreen() {
   if (!permission) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={colors.sky[500]} />
+        <ActivityIndicator color={palette.brand[500]} />
       </View>
     );
   }
@@ -148,7 +148,7 @@ export function ScannerScreen() {
             {form.uploading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Check color={colors.white} size={32} />
+              <Check color={colors.white} size={28} />
             )}
           </TouchableOpacity>
         </View>
@@ -192,7 +192,7 @@ function makeStyles(t: ThemeContextValue) {
       padding: spacing[6],
     },
     text:    { fontSize: fontSize.md, color: t.text.primary, textAlign: "center", marginBottom: spacing[4] },
-    btn:     { backgroundColor: colors.sky[500], paddingHorizontal: spacing[5], paddingVertical: spacing[3], borderRadius: radii.md },
+    btn:     { backgroundColor: palette.brand[500], paddingHorizontal: spacing[5], paddingVertical: spacing[3], borderRadius: radii.md },
     btnText: { color: colors.white, fontWeight: fontWeight.semibold },
     helper:  { marginTop: spacing[4], fontSize: fontSize.sm, color: t.text.secondary, textAlign: "center", lineHeight: 18 },
 
@@ -245,23 +245,24 @@ function makeStyles(t: ThemeContextValue) {
     previewControls: {
       flexDirection: "row",
       justifyContent: "center",
+      alignItems: "center",
       gap: 32,
       paddingBottom: 48,
       backgroundColor: t.surface.bgCard,
       paddingTop: spacing[3],
     },
     circleBtnRed: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
+      width: 72,
+      height: 72,
+      borderRadius: 36,
       backgroundColor: colors.error[500],
       alignItems: "center",
       justifyContent: "center",
     },
     circleBtnGreen: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
+      width: 72,
+      height: 72,
+      borderRadius: 36,
       backgroundColor: colors.success[500],
       alignItems: "center",
       justifyContent: "center",

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Copy } from "lucide-react";
-import { formatDate, Button, Typography } from "@healthguard/ui";
+import { formatDate, Button, Typography } from "@helu/ui";
 
 interface ShareResultProps {
   shareUrl: string;

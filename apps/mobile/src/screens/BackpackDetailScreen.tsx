@@ -1,10 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   Alert,
-  Animated,
   FlatList,
   Image,
-  Pressable,
   RefreshControl,
   Share,
   StyleSheet,
@@ -13,15 +11,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { useBackpackDocumentsQuery, useBackpackQuery, useDeleteBackpackMutation } from "@healthguard/api/hooks";
+import { useBackpackDocumentsQuery, useBackpackQuery, useDeleteBackpackMutation } from "@helu/api/hooks";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { isApiError, type DocumentPage, type Document } from "@healthguard/api";
+import { isApiError, type DocumentPage, type Document } from "@helu/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { Camera, FileText, FileUp, Plus, Share2 } from "lucide-react-native";
-import { DocumentTypeIcon, useAppTheme, colors, useDebounceSearch, formatDate, Button, Modal, SearchField, Typography, ActionButton, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { Camera, FileText, FileUp, Share2 } from "lucide-react-native";
+import { DocumentTypeIcon, useAppTheme, colors, palette, useDebounceSearch, formatDate, Button, Modal, SearchField, Typography, ActionButton, Spinner, EmptyState } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 import { useBackpackDetail } from "../hooks/useBackpackDetail";
+import { ExpandableFAB } from "../components/ExpandableFAB";
 
 type RouteParams = { id: string };
 
@@ -34,8 +33,6 @@ export function BackpackDetailScreen() {
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounceSearch(search);
-  const [fabOpen, setFabOpen] = useState(false);
-  const [animation] = useState(() => new Animated.Value(0));
   const [deleteDocTarget, setDeleteDocTarget] = useState<Document | null>(null);
 
   const backpackQuery = useBackpackQuery(id);
@@ -61,31 +58,26 @@ export function BackpackDetailScreen() {
     ]);
   }, [deleteMut, id, navigation]);
 
-  const toggleFab = useCallback(() => {
-    const toValue = fabOpen ? 0 : 1;
-    Animated.spring(animation, { toValue, friction: 6, tension: 40, useNativeDriver: true }).start();
-    setFabOpen(!fabOpen);
-  }, [fabOpen, animation]);
-
-  const closeFab = useCallback(() => {
-    Animated.spring(animation, { toValue: 0, friction: 6, tension: 40, useNativeDriver: true }).start();
-    setFabOpen(false);
-  }, [animation]);
-
-  const openAddFromDocs = useCallback(() => {
-    closeFab();
-    navigation.navigate("BackpackAddDocuments", { id });
-  }, [closeFab, navigation, id]);
-
-  const openUploadNew = useCallback(() => {
-    closeFab();
-    navigation.navigate("DocumentUpload", { backpackId: id, backpackName: backpackQuery.data?.name });
-  }, [closeFab, navigation, id, backpackQuery.data?.name]);
-
-  const openScanner = useCallback(() => {
-    closeFab();
-    navigation.navigate("Scanner", { backpackId: id, backpackName: backpackQuery.data?.name });
-  }, [closeFab, navigation, id, backpackQuery.data?.name]);
+  const fabOptions = useMemo(() => [
+    {
+      label: 'Desde mis documentos',
+      icon: <FileText color={colors.white} size={20} />,
+      color: palette.brand[500],
+      onPress: () => navigation.navigate('BackpackAddDocuments' as any, { id }),
+    },
+    {
+      label: 'Nuevo documento',
+      icon: <FileUp color={colors.white} size={20} />,
+      color: colors.violet[500],
+      onPress: () => navigation.navigate('DocumentUpload' as any, { backpackId: id, backpackName: backpackQuery.data?.name }),
+    },
+    {
+      label: 'Escanear',
+      icon: <Camera color={colors.white} size={20} />,
+      color: colors.emerald[500],
+      onPress: () => navigation.navigate('Scanner' as any, { backpackId: id, backpackName: backpackQuery.data?.name }),
+    },
+  ], [navigation, id, backpackQuery.data?.name]);
 
   const openDocument = useCallback(
     (docId: string) => navigation.navigate("DocumentDetail", { id: docId }),
@@ -93,13 +85,6 @@ export function BackpackDetailScreen() {
   );
 
   const shareLink = detail.shareData?.shareUrl ?? "";
-  const rotation = animation.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "45deg"] });
-  const backdropOpacity = animation.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
-  const option1TranslateY = animation.interpolate({ inputRange: [0, 1], outputRange: [0, -80] });
-  const option2TranslateY = animation.interpolate({ inputRange: [0, 1], outputRange: [0, -150] });
-  const option3TranslateY = animation.interpolate({ inputRange: [0, 1], outputRange: [0, -220] });
-  const optionScale = animation.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0, 1] });
-  const optionOpacity = animation.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0, 1] });
 
   if (backpackQuery.isLoading && !backpackQuery.isRefetching) {
     return (
@@ -141,8 +126,8 @@ export function BackpackDetailScreen() {
           <RefreshControl
             refreshing={docsQuery.isRefetching}
             onRefresh={() => docsQuery.refetch()}
-            colors={[colors.sky[500]]}
-            tintColor={colors.sky[500]}
+            colors={[palette.brand[500]]}
+            tintColor={palette.brand[500]}
           />
         }
         ListEmptyComponent={
@@ -151,11 +136,9 @@ export function BackpackDetailScreen() {
               <Spinner size="lg" />
             </View>
           ) : (
-            <View style={styles.center}>
-              <Typography variant="body" color="secondary" align="center">
-                {debouncedSearch.trim() ? "Sin resultados." : "Todavía no hay documentos en esta mochila."}
-              </Typography>
-            </View>
+            <EmptyState
+              message={debouncedSearch.trim() ? "Sin resultados." : "Todavía no hay documentos en esta mochila."}
+            />
           )
         }
         renderItem={({ item }) => (
@@ -187,47 +170,7 @@ export function BackpackDetailScreen() {
         <ActionButton action="edit" onPress={() => navigation.navigate("BackpackEdit", { id })} />
       </View>
 
-      {fabOpen && (
-        <Pressable style={StyleSheet.absoluteFill} onPress={closeFab}>
-          <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]} />
-        </Pressable>
-      )}
-
-      <Animated.View
-        style={[styles.fabOption, { transform: [{ translateY: option3TranslateY }, { scale: optionScale }], opacity: optionOpacity }]}
-        pointerEvents={fabOpen ? "auto" : "none"}
-      >
-        <TouchableOpacity style={styles.fabOptionRow} onPress={openAddFromDocs}>
-          <View style={styles.fabOptionLabel}><Typography variant="label">Desde mis documentos</Typography></View>
-          <View style={[styles.fabSmall, { backgroundColor: colors.sky[500] }]}><FileText color={colors.white} size={20} /></View>
-        </TouchableOpacity>
-      </Animated.View>
-
-      <Animated.View
-        style={[styles.fabOption, { transform: [{ translateY: option2TranslateY }, { scale: optionScale }], opacity: optionOpacity }]}
-        pointerEvents={fabOpen ? "auto" : "none"}
-      >
-        <TouchableOpacity style={styles.fabOptionRow} onPress={openUploadNew}>
-          <View style={styles.fabOptionLabel}><Typography variant="label">Nuevo documento</Typography></View>
-          <View style={[styles.fabSmall, { backgroundColor: colors.violet[500] }]}><FileUp color={colors.white} size={20} /></View>
-        </TouchableOpacity>
-      </Animated.View>
-
-      <Animated.View
-        style={[styles.fabOption, { transform: [{ translateY: option1TranslateY }, { scale: optionScale }], opacity: optionOpacity }]}
-        pointerEvents={fabOpen ? "auto" : "none"}
-      >
-        <TouchableOpacity style={styles.fabOptionRow} onPress={openScanner}>
-          <View style={styles.fabOptionLabel}><Typography variant="label">Escanear</Typography></View>
-          <View style={[styles.fabSmall, { backgroundColor: colors.emerald[500] }]}><Camera color={colors.white} size={20} /></View>
-        </TouchableOpacity>
-      </Animated.View>
-
-      <TouchableOpacity style={styles.fab} onPress={toggleFab} activeOpacity={0.85} accessibilityLabel="Agregar documento a la mochila">
-        <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-          <Plus color={colors.white} size={28} />
-        </Animated.View>
-      </TouchableOpacity>
+      <ExpandableFAB options={fabOptions} accessibilityLabel="Agregar documento a la mochila" />
 
       {detail.shareData && (
         <Modal
@@ -289,12 +232,6 @@ function makeStyles(t: ThemeContextValue) {
     removeBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bg, borderWidth: 1, borderColor: t.border.medium },
     bottomActions: { position: "absolute", left: 0, right: 0, bottom: 0, padding: 14, backgroundColor: t.surface.bgCard, borderTopWidth: 1, borderTopColor: t.border.medium, flexDirection: "row", gap: 10, alignItems: "center", paddingRight: 92 },
     ghostBtn: { backgroundColor: t.surface.bgCard, borderWidth: 1, borderColor: t.border.medium },
-    backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.3)" },
-    fab: { position: "absolute", bottom: 24, right: 24, width: 64, height: 64, borderRadius: 32, backgroundColor: colors.sky[500], alignItems: "center", justifyContent: "center", shadowColor: colors.sky[500], shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8, zIndex: 20 },
-    fabOption: { position: "absolute", bottom: 24, right: 24, alignItems: "flex-end", zIndex: 15 },
-    fabOptionRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-    fabOptionLabel: { backgroundColor: t.surface.bgCard, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 4 },
-    fabSmall: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 6 },
     qrWrap: { alignItems: "center", justifyContent: "center", marginVertical: 8, padding: 10, backgroundColor: t.surface.bg, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium },
     qrImg: { width: 170, height: 170 },
   });

@@ -6,12 +6,12 @@ import Toast from "react-native-toast-message";
 import { toastConfig } from "./src/components/ToastConfig";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { navigationRef } from "./src/navigation/navigationRef";
-import { useAuthStore, useNotifStore } from "@healthguard/stores";
+import { useAuthStore, useNotifStore, useUiStore } from "@helu/stores";
 import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
-import { setApiAuthProviders, getNotifications } from "@healthguard/api";
-import { ThemeProvider, colors } from "@healthguard/ui";
+import { setApiAuthProviders, getNotifications } from "@helu/api";
+import { ThemeProvider, colors, palette } from "@helu/ui";
 
 setApiAuthProviders({
   getToken: () => useAuthStore.getState().token,
@@ -51,13 +51,15 @@ export default function App() {
   if (!isHydrated) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={colors.sky[500]} />
+        <ActivityIndicator size="large" color={palette.brand[500]} />
       </View>
     );
   }
 
+  const themePreference = useUiStore((s) => s.theme);
+
   return (
-    <ThemeProvider>
+    <ThemeProvider preference={themePreference}>
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <NavigationContainer ref={navigationRef}>

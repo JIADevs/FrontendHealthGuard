@@ -9,14 +9,14 @@ import {
 } from "react-native";
 import { memo, useCallback, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { type Notification } from "@healthguard/api";
+import { type Notification } from "@helu/api";
 import { useNotificationsScreen } from "../hooks/useNotificationsScreen";
-import { colors, radii, spacing, fontWeight, useAppTheme, Button, Typography, Spinner } from "@healthguard/ui";
-import type { ThemeContextValue } from "@healthguard/ui";
+import { colors, palette, radii, spacing, fontWeight, useAppTheme, Button, Typography, Spinner, EmptyState } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 import { Bell, Calendar, Pill, Activity, Info, CheckCircle } from "lucide-react-native";
 
 const TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
-  APPOINTMENT: { icon: Calendar, color: colors.sky[500],     bg: colors.sky[100] },
+  APPOINTMENT: { icon: Calendar, color: palette.brand[500],     bg: palette.brand[100] },
   MEDICATION:  { icon: Pill,     color: colors.warning[500], bg: colors.warning[50] },
   CHECKIN:     { icon: Activity, color: colors.emerald[500],  bg: colors.emerald[100] },
   SYSTEM:      { icon: Bell,     color: colors.violet[500],  bg: colors.violet[100] },
@@ -120,13 +120,11 @@ export function NotificationsScreen() {
           <Spinner size="lg" />
         </View>
       ) : screen.notifications.length === 0 ? (
-        <View style={styles.center}>
-          <Bell size={48} color={t.border.medium} />
-          <Typography variant="h4">Sin notificaciones</Typography>
-          <Typography variant="bodySm" color="muted" align="center">
-            Aquí aparecerán tus recordatorios de citas, medicamentos y más.
-          </Typography>
-        </View>
+        <EmptyState
+          icon={<Bell size={48} color={t.border.medium} />}
+          message="Sin notificaciones"
+          description="Aquí aparecerán tus recordatorios de citas, medicamentos y más."
+        />
       ) : (
         <FlatList
           data={screen.notifications}
@@ -136,14 +134,14 @@ export function NotificationsScreen() {
             <RefreshControl
               refreshing={screen.isRefetching}
               onRefresh={screen.refetch}
-              tintColor={colors.sky[500]}
+              tintColor={palette.brand[500]}
             />
           }
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.3}
           ListFooterComponent={
             screen.isFetchingNextPage ? (
-              <ActivityIndicator style={styles.loadingFooter} color={colors.sky[500]} />
+              <ActivityIndicator style={styles.loadingFooter} color={palette.brand[500]} />
             ) : null
           }
           contentContainerStyle={styles.list}
@@ -183,7 +181,7 @@ function makeItemStyles(t: ThemeContextValue) {
       backgroundColor: t.surface.bgCard,
       gap: spacing[3],
     },
-    itemUnread:    { backgroundColor: colors.sky[50] },
+    itemUnread:    { backgroundColor: palette.brand[50] },
     iconWrap: {
       width: 36,
       height: 36,
@@ -200,7 +198,7 @@ function makeItemStyles(t: ThemeContextValue) {
       width: 8,
       height: 8,
       borderRadius: 4,
-      backgroundColor: colors.sky[500],
+      backgroundColor: palette.brand[500],
       alignSelf: "center",
     },
   });

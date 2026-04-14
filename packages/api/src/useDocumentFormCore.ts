@@ -29,6 +29,7 @@ import { retryAsync, RETRY_MAX_ATTEMPTS, RETRY_BASE_DELAY_MS, UPLOAD_MAX_FILE_SI
 
 export interface DocumentFormState {
     catalogs: { types: DocumentTypeOut[]; tags: TagCategoryOut[] };
+    catalogsLoading: boolean;
     selectedType: string | undefined;
     selectedSpecialty: string | undefined;
     selectedTags: string[];
@@ -97,6 +98,7 @@ export function useDocumentFormCore<TFile>(
         types: [],
         tags: [],
     });
+    const [catalogsLoading, setCatalogsLoading] = useState(true);
     const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
     const [selectedSpecialty, setSelectedSpecialty] = useState<string | undefined>(undefined);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -114,10 +116,13 @@ export function useDocumentFormCore<TFile>(
         let cancelled = false;
         async function fetchCatalogs() {
             try {
+                setCatalogsLoading(true);
                 const [types, tags] = await Promise.all([getDocumentTypes(), getTagCategories()]);
                 if (!cancelled) setCatalogs({ types, tags });
             } catch (err) {
                 console.warn("Error fetching catalogs", err);
+            } finally {
+                if (!cancelled) setCatalogsLoading(false);
             }
         }
         fetchCatalogs();
@@ -302,6 +307,7 @@ export function useDocumentFormCore<TFile>(
 
     return {
         catalogs,
+        catalogsLoading,
         selectedType,
         selectedSpecialty,
         selectedTags,

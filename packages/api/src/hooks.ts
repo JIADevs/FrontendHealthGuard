@@ -64,7 +64,7 @@ import type {
 // ─── Query keys ────────────────────────────────────────
 // Centralized so invalidation is always consistent.
 export const QK = {
-    documents:        (search = "", page = 1) => ["documents", page, search] as const,
+    documents:        (search = "", page = 1, limit = 20) => ["documents", page, search, limit] as const,
     document:         (id: string)            => ["document", id] as const,
     documentTypes:    ()                      => ["document-types"] as const,
     tagCategories:    ()                      => ["tag-categories"] as const,
@@ -88,7 +88,7 @@ export const QK = {
 
 export function useDocumentsQuery(search = "", page = 1, limit = 20) {
     return useQuery({
-        queryKey: QK.documents(search, page),
+        queryKey: QK.documents(search, page, limit),
         queryFn: () => getDocuments({ page, limit, searchQuery: search || undefined }),
         staleTime: 5_000,
         placeholderData: keepPreviousData,

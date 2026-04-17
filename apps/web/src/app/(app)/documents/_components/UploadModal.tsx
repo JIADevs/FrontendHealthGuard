@@ -49,6 +49,7 @@ export function UploadModal({
 
   const selectedTypeObj = form.catalogs.types.find((t) => t.id === form.selectedType);
   const availableSpecialties = selectedTypeObj?.specialties ?? [];
+  const hasClassificationResult = Boolean(form.classificationResult);
 
   const title = step === "template"
     ? "Tipo de Documento"
@@ -134,9 +135,8 @@ export function UploadModal({
                   variant="ghost"
                   onPress={() => form.handleAIClassify(file)}
                   disabled={form.classifying}
-                  loading={form.classifying}
                 >
-                  {form.classifying ? <><Loader2 size={15} /> Clasificando...</> : <><Sparkles size={15} /> Clasificar con IA</>}
+                  {form.classifying ? <Spinner size="sm" /> : <><Sparkles size={15} /> Clasificar con IA</>}
                 </Button>
                 {form.classificationResult && (
                   <span style={{ fontSize: 12, color: "var(--success-600)" }}>
@@ -148,6 +148,14 @@ export function UploadModal({
                   Continuar →
                 </Button>
               </div>
+              {form.classifying && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                  <Spinner size="sm" />
+                  <Typography variant="caption" color="secondary">
+                    Clasificando documento...
+                  </Typography>
+                </div>
+              )}
             </>
           )}
 
@@ -176,9 +184,12 @@ export function UploadModal({
               size="sm"
               onPress={() => form.handleAIClassify(file)}
               disabled={form.classifying}
-              loading={form.classifying}
             >
-              {form.classifying ? "..." : <><Sparkles size={13} /> Re-clasificar</>}
+              {form.classifying ? <Spinner size="sm" /> : (
+                <>
+                  <Sparkles size={13} /> {hasClassificationResult ? "Re-clasificar" : "Clasificar con IA"}
+                </>
+              )}
             </Button>
           </div>
 

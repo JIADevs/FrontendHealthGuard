@@ -1,11 +1,14 @@
 import { useLayoutEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { View, Text, StyleSheet, Linking, Alert, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, Linking, Alert, ScrollView, Image, Share } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { useDocumentQuery, useTagCategoriesQuery } from "@helu/api/hooks";
-import { getSignedUrl, type Document, type TagCategoryOut } from "@helu/api";
+import Toast from "react-native-toast-message";
+import { useDocumentQuery, useTagCategoriesQuery, useShareDocumentMutation } from "@helu/api/hooks";
+import { getSignedUrl, isApiError, type Document, type TagCategoryOut } from "@helu/api";
+import { Share2 } from "lucide-react-native";
+import { resolveExpoReachableUrl } from "../utils/shareLinks";
 import { colors, palette, radii, spacing, fontSize, fontWeight, shadows, useAppTheme, formatDate, formatFileSize, Button, Typography, Spinner } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
@@ -29,6 +32,7 @@ export function DocumentDetailScreen() {
   }, [navigation, title]);
 
   const doc = useDocumentQuery(id);
+  const shareMut = useShareDocumentMutation();
 
   const signedUrl = useQuery({
     queryKey: ["signed-url", (doc.data as Document | undefined)?.fileUrl],
@@ -49,15 +53,40 @@ export function DocumentDetailScreen() {
     return map;
   }, [tagCategoriesQuery.data]);
 
+  async function handleShareLink() {
+    if (!d) return;
+    try {
+      const result = await shareMut.mutateAsync(d.id);
+      const link = resolveExpoReachableUrl(result.shareUrl);
+      Toast.show({
+        type: "success",
+        text1: "Enlace generado",
+        text2: "Elegí cómo compartirlo en el siguiente paso.",
+      });
+      await Share.share({
+        message: `Te comparto este documento de Helu: ${d.title}\n\n${link}`,
+        url: link,
+        title: d.title,
+      });
+    } catch (err) {
+      Toast.show({
+        type: "error",
+        text1: "No se pudo generar el enlace",
+        text2: isApiError(err) ? err.message : "Intentá de nuevo.",
+      });
+    }
+  }
+
   async function handleOpen() {
     if (!url) return;
+    const openUrl = resolveExpoReachableUrl(url);
     try {
-      const supported = await Linking.canOpenURL(url);
+      const supported = await Linking.canOpenURL(openUrl);
       if (!supported) {
         Alert.alert("No se puede abrir el documento", "Tu dispositivo no puede abrir este enlace.");
         return;
       }
-      await Linking.openURL(url);
+      await Linking.openURL(openUrl);
     } catch (err) {
       console.warn("Error abriendo documento", err);
       Alert.alert("Error", "No se pudo abrir el documento.");
@@ -154,13 +183,22 @@ export function DocumentDetailScreen() {
 
       {url && isImage && (
         <View style={styles.preview}>
-          <Image source={{ uri: url }} style={styles.image} resizeMode="contain" />
+          <Image source={{ uri: resolveExpoReachableUrl(url) }} style={styles.image} resizeMode="contain" />
         </View>
       )}
 
       <View style={styles.actions}>
         <Button onPress={handleOpen} disabled={!url || signedUrl.isLoading} loading={signedUrl.isLoading} fullWidth>
           Ver documento
+        </Button>
+        <Button
+          variant="secondary"
+          onPress={handleShareLink}
+          disabled={shareMut.isPending}
+          loading={shareMut.isPending}
+          fullWidth
+        >
+          <Share2 size={18} color={palette.brand[500]} /> Compartir enlace
         </Button>
         <Button variant="secondary" onPress={() => navigation.navigate("DocumentEdit", { id: d.id })} disabled={doc.isLoading} fullWidth>
           Editar
@@ -205,7 +243,7 @@ function makeStyles(t: ThemeContextValue) {
     tagAmber:      { backgroundColor: colors.warning[50], color: colors.amber[800] },
     tagGreen:      { backgroundColor: colors.success[50], color: colors.green[800] },
 
-    actions:         { marginTop: spacing[2], flexDirection: "row", gap: spacing[3] },
+    actions:         { marginTop: spacing[2], flexDirection: "column", gap: spacing[3] },
     preview:         { marginBottom: spacing[4], backgroundColor: colors.black, borderRadius: radii.lg, overflow: "hidden", height: 400 },
     image:           { flex: 1, width: "100%", height: "100%" },
     error:               { fontSize: fontSize.base, color: colors.error[500] },

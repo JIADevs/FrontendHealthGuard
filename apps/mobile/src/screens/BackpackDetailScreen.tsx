@@ -21,6 +21,7 @@ import { DocumentTypeIcon, useAppTheme, colors, palette, useDebounceSearch, form
 import type { ThemeContextValue } from "@helu/ui";
 import { useBackpackDetail } from "../hooks/useBackpackDetail";
 import { ExpandableFAB } from "../components/ExpandableFAB";
+import { qrCodeImageUriForShareUrl, resolveExpoReachableUrl } from "../utils/shareLinks";
 
 type RouteParams = { id: string };
 
@@ -84,7 +85,10 @@ export function BackpackDetailScreen() {
     [navigation],
   );
 
-  const shareLink = detail.shareData?.shareUrl ?? "";
+  const shareLink = resolveExpoReachableUrl(detail.shareData?.shareUrl ?? "");
+  const shareQrUri = detail.shareData?.shareUrl
+    ? qrCodeImageUriForShareUrl(detail.shareData.shareUrl)
+    : "";
 
   if (backpackQuery.isLoading && !backpackQuery.isRefetching) {
     return (
@@ -190,7 +194,7 @@ export function BackpackDetailScreen() {
             <Typography variant="bodySm" numberOfLines={2}>{shareLink}</Typography>
           </View>
           <View style={styles.qrWrap}>
-            <Image source={{ uri: detail.shareData.qrCodeUrl }} style={styles.qrImg} />
+            <Image source={{ uri: shareQrUri }} style={styles.qrImg} />
           </View>
         </Modal>
       )}

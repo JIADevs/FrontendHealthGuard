@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, FlatList, TouchableOpacity, Share, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import { useDocumentsQuery, useShareDocumentMutation } from "@helu/api/hooks";
 import { Camera, Share2, FileUp } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -10,6 +11,8 @@ import { DocumentTypeIcon } from "@helu/ui";
 import { colors, palette, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography, Spinner, EmptyState } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { ExpandableFAB } from "../components/ExpandableFAB";
+import { isApiError } from "@helu/api";
+import { resolveExpoReachableUrl } from "../utils/shareLinks";
 
 export function DocumentsScreen() {
   const t = useAppTheme();
@@ -26,13 +29,23 @@ export function DocumentsScreen() {
   async function handleShare(docId: string, title: string) {
     try {
       const result = await shareMut.mutateAsync(docId);
+      const link = resolveExpoReachableUrl(result.shareUrl);
+      Toast.show({
+        type: "success",
+        text1: "Enlace listo",
+        text2: "Elegí con quién compartirlo.",
+      });
       await Share.share({
-        message: `Te comparto este documento de Helu: ${title}\n\n${result.shareUrl}`,
-        url: result.shareUrl,
+        message: `Te comparto este documento de Helu: ${title}\n\n${link}`,
+        url: link,
         title: title,
       });
     } catch (err) {
-      console.warn("Error compartiendo documento", err);
+      Toast.show({
+        type: "error",
+        text1: "No se pudo compartir",
+        text2: isApiError(err) ? err.message : "Intentá de nuevo.",
+      });
     }
   }
 

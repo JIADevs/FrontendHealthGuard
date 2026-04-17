@@ -5,19 +5,19 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Share,
   Image,
   RefreshControl,
-  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { useQuery } from "@tanstack/react-query";
-import { getDocuments, shareDocument, isApiError, type Document } from "@helu/api";
+import * as Clipboard from "expo-clipboard";
+import { useDocumentsQuery } from "@helu/api/hooks";
+import { shareDocument, isApiError, type Document } from "@helu/api";
 import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner, EmptyState } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { FileText, Share2, Clock } from "lucide-react-native";
+import { FileText, Share2, Clock, Copy } from "lucide-react-native";
+import { qrCodeImageUriForShareUrl, resolveExpoReachableUrl } from "../utils/shareLinks";
 
 type ShareResult = { shareUrl: string; qrCodeUrl: string; expiresAt: string };
 
@@ -29,13 +29,8 @@ export function ShareDocumentsScreen() {
   const [selected, setSelected] = useState<string[]>([]);
   const [shareResults, setShareResults] = useState<Map<string, ShareResult>>(new Map());
   const [sharing, setSharing] = useState(false);
-  const [resultDoc, setResultDoc] = useState<Document | null>(null);
-  const [resultData, setResultData] = useState<ShareResult | null>(null);
 
-  const docs = useQuery({
-    queryKey: ["documents", "share", page],
-    queryFn: () => getDocuments({ page, limit: 12 }),
-  });
+  const docs = useDocumentsQuery("", page, 12);
 
   const totalPages = docs.data?.totalPages ?? 1;
 
@@ -48,21 +43,14 @@ export function ShareDocumentsScreen() {
   const handleShare = useCallback(async () => {
     if (selected.length === 0) return;
     setSharing(true);
-    const results = new Map(shareResults);
-    const items = docs.data?.items ?? [];
-    let lastDoc: Document | null = null;
-    let lastResult: ShareResult | null = null;
+    const updates = new Map<string, ShareResult>();
+    let errorCount = 0;
 
     for (const docId of selected) {
       try {
-        const result = await shareDocument(docId);
-        results.set(docId, result);
-        const doc = items.find((d) => d.id === docId);
-        if (doc) {
-          lastDoc = doc;
-          lastResult = result;
-        }
+        updates.set(docId, await shareDocument(docId));
       } catch (err) {
+        errorCount += 1;
         Toast.show({
           type: "error",
           text1: "Error al compartir",
@@ -71,23 +59,50 @@ export function ShareDocumentsScreen() {
       }
     }
 
-    setShareResults(results);
+    setShareResults((prev) => {
+      const next = new Map(prev);
+      updates.forEach((value, key) => next.set(key, value));
+      return next;
+    });
     setSharing(false);
 
-    if (lastDoc && lastResult) {
-      setResultDoc(lastDoc);
-      setResultData(lastResult);
+    const ok = selected.length - errorCount;
+    if (ok > 0) {
+      Toast.show({
+        type: "success",
+        text1: ok === 1 ? "Enlace generado" : `${ok} enlaces generados`,
+        text2: "Podés copiar o compartir cada enlace abajo.",
+      });
     }
-  }, [selected, shareResults, docs.data]);
+  }, [selected]);
 
-  const handleCopyLink = useCallback((url: string) => {
-    Share.share({ message: url, url });
+  const handleCopyLink = useCallback(async (url: string) => {
+    try {
+      await Clipboard.setStringAsync(resolveExpoReachableUrl(url));
+      Toast.show({ type: "success", text1: "Copiado", text2: "El enlace quedó en el portapapeles." });
+    } catch {
+      Toast.show({ type: "error", text1: "No se pudo copiar", text2: "Probá de nuevo." });
+    }
   }, []);
 
+  const handleCopyAll = useCallback(async () => {
+    const urls = Array.from(shareResults.values())
+      .map((r) => resolveExpoReachableUrl(r.shareUrl))
+      .join("\n");
+    if (!urls) return;
+    try {
+      await Clipboard.setStringAsync(urls);
+      Toast.show({ type: "success", text1: "Copiados", text2: `${shareResults.size} enlace(s) en el portapapeles.` });
+    } catch {
+      Toast.show({ type: "error", text1: "No se pudo copiar" });
+    }
+  }, [shareResults]);
+
   const handleSystemShare = useCallback((url: string, title: string) => {
+    const resolved = resolveExpoReachableUrl(url);
     Share.share({
-      url,
-      message: `Comparto el documento "${title}": ${url}`,
+      url: resolved,
+      message: `Comparto el documento "${title}": ${resolved}`,
     });
   }, []);
 
@@ -97,10 +112,9 @@ export function ShareDocumentsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
-        <View>
-          <Typography variant="h3">Compartir Documentos</Typography>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Typography variant="bodySm" color="secondary">
-            Selecciona documentos y genera enlaces con código QR.
+            Seleccioná documentos y generá enlaces con código QR para compartirlos.
           </Typography>
         </View>
         {selected.length > 0 && (
@@ -125,17 +139,22 @@ export function ShareDocumentsScreen() {
           sharedDocs.length > 0 ? (
             <View style={styles.resultsCard}>
               <View style={styles.resultsHeader}>
-                <Share2 size={16} color={palette.brand[500]} />
-                <Typography variant="label">
-                  {shareResults.size} enlace{shareResults.size > 1 ? "s" : ""} generado{shareResults.size > 1 ? "s" : ""}
-                </Typography>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1 }}>
+                  <Share2 size={16} color={palette.brand[500]} />
+                  <Typography variant="label">
+                    {shareResults.size} enlace{shareResults.size > 1 ? "s" : ""} generado{shareResults.size > 1 ? "s" : ""}
+                  </Typography>
+                </View>
+                <Button variant="ghost" size="sm" onPress={handleCopyAll}>
+                  <Copy size={14} color={palette.brand[500]} /> Copiar todos
+                </Button>
               </View>
               {sharedDocs.map((doc) => {
                 const res = shareResults.get(doc.id)!;
                 return (
                   <View key={doc.id} style={styles.resultRow}>
                     <Image
-                      source={{ uri: res.qrCodeUrl }}
+                      source={{ uri: qrCodeImageUriForShareUrl(res.shareUrl) }}
                       style={styles.qrThumb}
                     />
                     <View style={styles.resultInfo}>
@@ -146,7 +165,7 @@ export function ShareDocumentsScreen() {
                       </View>
                       <View style={styles.resultActions}>
                         <Button variant="secondary" size="sm" onPress={() => handleCopyLink(res.shareUrl)}>
-                          <Share2 size={13} color={palette.brand[500]} /> Copiar
+                          <Copy size={13} color={palette.brand[500]} /> Copiar
                         </Button>
                         <Button variant="secondary" size="sm" onPress={() => handleSystemShare(res.shareUrl, doc.title)}>
                           <Share2 size={13} color={palette.brand[500]} /> Compartir
@@ -214,7 +233,7 @@ function makeStyles(t: ThemeContextValue) {
 
     // results card
     resultsCard:      { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium, padding: spacing[4], marginBottom: spacing[3], gap: spacing[3] },
-    resultsHeader:    { flexDirection: "row", alignItems: "center", gap: spacing[2] },
+    resultsHeader:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing[2] },
     resultsTitle:     { fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: t.text.primary },
     resultRow:        { flexDirection: "row", gap: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: t.border.light },
     qrThumb:          { width: 56, height: 56, borderRadius: radii.sm, flexShrink: 0 },

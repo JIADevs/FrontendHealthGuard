@@ -1,5 +1,8 @@
 "use client";
 
+import "../backpacks/backpacks.css";
+import "../documents/documents.css";
+
 import { useState } from "react";
 import {
   FileText,

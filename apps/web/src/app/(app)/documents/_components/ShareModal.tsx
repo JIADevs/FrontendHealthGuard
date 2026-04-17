@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useShareDocumentMutation } from "@helu/api/hooks";
 import type { Document } from "@helu/api";
 import { ShareResult } from "@/components/ShareResult";
@@ -7,11 +8,13 @@ import { Modal, Typography,Spinner } from "@helu/ui";
 
 export function ShareModal({ doc, onClose }: { doc: Document; onClose: () => void }) {
   const shareMut = useShareDocumentMutation();
+  const requestedForId = useRef<string | null>(null);
 
-  // Auto-trigger share on mount
-  if (!shareMut.data && !shareMut.isPending && !shareMut.isError) {
+  useEffect(() => {
+    if (requestedForId.current === doc.id) return;
+    requestedForId.current = doc.id;
     shareMut.mutate(doc.id);
-  }
+  }, [doc.id, shareMut.mutate]);
 
   return (
     <Modal title="Compartir Documento" onClose={onClose}>

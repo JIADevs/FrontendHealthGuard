@@ -126,6 +126,20 @@ export async function shareDocument(id: string) {
     return data as { shareUrl: string; qrCodeUrl: string; expiresAt: string };
 }
 
+/** Load document metadata for a public share link (no auth required; token is the capability). */
+export async function consumeSharedDocument(token: string) {
+    const { data } = await apiClient.get("/documents/shared/consume", { params: { token } });
+    return DocumentSchema.parse(data);
+}
+
+/** Signed URL to preview/download the file for a share link (no auth required). */
+export async function getSharedDocumentSignedUrl(token: string, expiresInSeconds = 3600) {
+    const { data } = await apiClient.get("/documents/shared/signed-url", {
+        params: { token, expires_in: expiresInSeconds },
+    });
+    return data as { url: string };
+}
+
 // ─── Files ─────────────────────────────────────────────
 
 export async function uploadFile(file: File) {

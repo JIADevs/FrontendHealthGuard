@@ -41,11 +41,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isHydrated, token, router, pathname]);
 
-  if (!isHydrated) return null; // Render nothing until hydrated
-
-  if (!token) return null;
-
   // Sync theme to <html data-theme="..."> for CSS variable resolution
+  // Must run before any early return — same hook order on every render.
   const theme = useTheme();
   useEffect(() => {
     const html = document.documentElement;
@@ -55,6 +52,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       html.setAttribute("data-theme", theme);
     }
   }, [theme]);
+
+  if (!isHydrated) return null; // Render nothing until hydrated
+
+  if (!token) return null;
 
   const initials =
     user?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() ??

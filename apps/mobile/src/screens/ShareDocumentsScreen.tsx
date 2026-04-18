@@ -4,11 +4,12 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   Share,
   Image,
   RefreshControl,
-  Alert,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -16,14 +17,23 @@ import * as Clipboard from "expo-clipboard";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDocumentsQuery, useActiveDocumentSharesQuery, useRevokeDocumentShareMutation, QK } from "@helu/api/hooks";
 import { shareDocument, isApiError } from "@helu/api";
-import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner, EmptyState, Chip } from "@helu/ui";
+import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner, EmptyState, Chip, ConfirmModal } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { FileText, Share2, Clock, Copy, Link2, ChevronDown, ChevronUp, Ban } from "lucide-react-native";
 import { resolveExpoReachableUrl } from "../utils/shareLinks";
 
+type RevokeModalState =
+  | { mode: "single"; linkId: string; title: string }
+  | { mode: "bulk"; rows: { linkId: string; documentTitle: string }[] };
+
 export function ShareDocumentsScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const { height: windowHeight } = useWindowDimensions();
+  const activeSharesScrollMaxHeight = useMemo(
+    () => Math.min(Math.round(windowHeight * 0.42), 400),
+    [windowHeight],
+  );
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
@@ -32,6 +42,7 @@ export function ShareDocumentsScreen() {
   const [activeSharesOpen, setActiveSharesOpen] = useState(false);
   const [selectedLinkIds, setSelectedLinkIds] = useState<Set<string>>(() => new Set());
   const [bulkRevoking, setBulkRevoking] = useState(false);
+  const [revokeModal, setRevokeModal] = useState<RevokeModalState | null>(null);
 
   const docs = useDocumentsQuery("", page, 12);
   const activeShares = useActiveDocumentSharesQuery();
@@ -189,95 +200,84 @@ export function ShareDocumentsScreen() {
   );
 
   const promptRevokeSelection = useCallback(() => {
-    const rows = (activeShares.data ?? []).filter((r) => selectedLinkIds.has(r.linkId));
+    const rows = (activeShares.data ?? [])
+      .filter((r) => selectedLinkIds.has(r.linkId))
+      .map((r) => ({ linkId: r.linkId, documentTitle: r.documentTitle }));
     if (rows.length === 0) return;
-    const count = rows.length;
-    const title = count === 1 ? "Revocar enlace" : "Revocar varios enlaces";
-    const message =
-      count === 1
-        ? `¿Quieres dejar de compartir «${rows[0].documentTitle}»? El código QR y el enlace dejarán de funcionar.`
-        : `¿Revocar ${count} enlaces? Los códigos QR y las URL dejarán de funcionar.`;
-    const confirmLabel = count === 1 ? "Revocar acceso" : "Revocar todos";
-    Alert.alert(title, message, [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: confirmLabel,
-        style: "destructive",
-        onPress: () => {
-          setSelectedLinkIds(new Set());
-          void (async () => {
-            setBulkRevoking(true);
-            let ok = 0;
-            let fail = 0;
-            for (const row of rows) {
-              try {
-                await revokeShare.mutateAsync(row.linkId);
-                ok += 1;
-              } catch {
-                fail += 1;
-              }
-            }
-            await queryClient.refetchQueries({ queryKey: QK.documentSharesActive() });
-            setBulkRevoking(false);
-            if (fail === 0) {
-              Toast.show({
-                type: "success",
-                text1: count === 1 ? "Acceso revocado" : `${ok} accesos revocados`,
-                text2: "Los enlaces y códigos QR ya no funcionan.",
-              });
-            } else if (ok === 0) {
-              Toast.show({
-                type: "error",
-                text1: "No se pudo revocar",
-                text2: "Prueba de nuevo en unos segundos.",
-              });
-            } else {
-              Toast.show({
-                type: "warning",
-                text1: "Revocación parcial",
-                text2: `Se revocaron ${ok} de ${count} enlaces. Puedes intentar de nuevo con el resto.`,
-              });
-            }
-          })();
-        },
-      },
-    ]);
-  }, [activeShares.data, selectedLinkIds, revokeShare, queryClient]);
+    setRevokeModal({ mode: "bulk", rows });
+  }, [activeShares.data, selectedLinkIds]);
 
-  const confirmRevokeSingle = useCallback(
-    (linkId: string, title: string) => {
-      Alert.alert(
-        "Revocar enlace",
-        `¿Quieres dejar de compartir «${title}»? El código QR y el enlace dejarán de funcionar.`,
-        [
-          { text: "Cancelar", style: "cancel" },
-          {
-            text: "Revocar",
-            style: "destructive",
-            onPress: () => {
-              revokeShare.mutate(linkId, {
-                onSuccess: () => {
-                  Toast.show({
-                    type: "success",
-                    text1: "Acceso revocado",
-                    text2: "El enlace y el QR ya no funcionan.",
-                  });
-                },
-                onError: (err: unknown) => {
-                  Toast.show({
-                    type: "error",
-                    text1: "No se pudo revocar",
-                    text2: isApiError(err) ? err.message : "Prueba de nuevo.",
-                  });
-                },
-              });
-            },
-          },
-        ]
-      );
-    },
-    [revokeShare]
-  );
+  const confirmRevokeSingle = useCallback((linkId: string, title: string) => {
+    setRevokeModal({ mode: "single", linkId, title });
+  }, []);
+
+  const handleRevokeModalConfirm = useCallback(() => {
+    if (!revokeModal) return;
+    if (revokeModal.mode === "single") {
+      const { linkId } = revokeModal;
+      revokeShare.mutate(linkId, {
+        onSuccess: () => {
+          Toast.show({
+            type: "success",
+            text1: "Acceso revocado",
+            text2: "El enlace y el QR ya no funcionan.",
+          });
+          setRevokeModal(null);
+        },
+        onError: (err: unknown) => {
+          Toast.show({
+            type: "error",
+            text1: "No se pudo revocar",
+            text2: isApiError(err) ? err.message : "Prueba de nuevo.",
+          });
+          setRevokeModal(null);
+        },
+      });
+      return;
+    }
+
+    const rows = [...revokeModal.rows];
+    const count = rows.length;
+    setSelectedLinkIds(new Set());
+    setBulkRevoking(true);
+    void (async () => {
+      let ok = 0;
+      let fail = 0;
+      try {
+        for (const row of rows) {
+          try {
+            await revokeShare.mutateAsync(row.linkId);
+            ok += 1;
+          } catch {
+            fail += 1;
+          }
+        }
+        await queryClient.refetchQueries({ queryKey: QK.documentSharesActive() });
+        if (fail === 0) {
+          Toast.show({
+            type: "success",
+            text1: count === 1 ? "Acceso revocado" : `${ok} accesos revocados`,
+            text2: "Los enlaces y códigos QR ya no funcionan.",
+          });
+        } else if (ok === 0) {
+          Toast.show({
+            type: "error",
+            text1: "No se pudo revocar",
+            text2: "Prueba de nuevo en unos segundos.",
+          });
+        } else {
+          Toast.show({
+            type: "warning",
+            text1: "Revocación parcial",
+            text2: `Se revocaron ${ok} de ${count} enlaces. Puedes intentar de nuevo con el resto.`,
+          });
+        }
+      } finally {
+        setBulkRevoking(false);
+        setRevokeModal(null);
+      }
+    })();
+  }, [revokeModal, revokeShare, queryClient]);
 
   const items = docs.data?.items ?? [];
   const activeShareRows = activeShares.data ?? [];
@@ -287,6 +287,10 @@ export function ShareDocumentsScreen() {
   const showRevokingBanner = panelActionBusy;
   const showListUpdatingBanner =
     activeShares.isFetching && !activeShares.isLoading && !showRevokingBanner;
+
+  const revokeModalLoading =
+    (revokeModal?.mode === "single" && revokeShare.isPending) ||
+    (revokeModal?.mode === "bulk" && bulkRevoking);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -298,7 +302,10 @@ export function ShareDocumentsScreen() {
         </View>
         {selected.length > 0 && (
           <Button onPress={handleShare} disabled={sharing} loading={sharing}>
-            <Share2 size={16} color={colors.white} /> Compartir ({selected.length})
+            <View style={styles.btnRow}>
+              <Share2 size={16} color={colors.white} />
+              <Text style={styles.btnLabelPrimary}>Compartir ({selected.length})</Text>
+            </View>
           </Button>
         )}
       </View>
@@ -370,59 +377,75 @@ export function ShareDocumentsScreen() {
             ) : (
               <>
                 <View style={styles.activeSharesBulkBar}>
-                  <Checkbox
-                    checked={allLinkRowsSelected}
-                    disabled={panelActionBusy}
-                    onChange={toggleSelectAll}
-                    label="Seleccionar todos"
-                  />
-                  {selectedLinkCount > 0 ? (
-                    <View style={styles.activeSharesBulkActions}>
-                      <Button variant="danger" size="sm" onPress={promptRevokeSelection} disabled={panelActionBusy}>
-                        <Text style={styles.bulkRevokeBtnText}>Revocar selección ({selectedLinkCount})</Text>
-                      </Button>
+                  <View style={styles.activeSharesBulkLeft}>
+                    <Checkbox
+                      checked={allLinkRowsSelected}
+                      disabled={panelActionBusy}
+                      onChange={toggleSelectAll}
+                      label="Seleccionar todos"
+                    />
+                    {selectedLinkCount > 0 ? (
                       <Button variant="ghost" size="sm" onPress={() => setSelectedLinkIds(new Set())} disabled={panelActionBusy}>
                         <Text style={styles.activeSharesBtnText}>Limpiar</Text>
                       </Button>
-                    </View>
+                    ) : null}
+                  </View>
+                  {selectedLinkCount > 0 ? (
+                    <Button variant="danger" size="sm" onPress={promptRevokeSelection} disabled={panelActionBusy}>
+                      <Text style={styles.bulkRevokeBtnText}>Revocar acceso</Text>
+                    </Button>
                   ) : null}
                 </View>
-                {activeShareRows.map((row) => (
-                  <View key={row.linkId} style={styles.activeShareRow}>
-                    <View style={styles.activeShareCheck}>
-                      <Checkbox
-                        checked={selectedLinkIds.has(row.linkId)}
-                        onChange={() => toggleSelectOne(row.linkId)}
-                        disabled={panelActionBusy}
-                      />
-                    </View>
-                    <Image source={{ uri: row.qrCodeUrl }} style={styles.qrThumb} />
-                    <View style={styles.activeShareInfo}>
-                      <Typography variant="label" numberOfLines={2}>{row.documentTitle}</Typography>
-                      <View style={styles.resultMeta}>
-                        <Clock size={12} color={t.text.secondary} />
-                        <Typography variant="caption" color="secondary">Expira {formatDate(row.expiresAt)}</Typography>
-                      </View>
-                      <View style={styles.resultActions}>
-                        <Button variant="secondary" size="sm" onPress={() => handleCopyLink(row.shareUrl)} disabled={panelActionBusy}>
-                          <Copy size={13} color={palette.brand[500]} /> Copiar
-                        </Button>
-                        <Button variant="secondary" size="sm" onPress={() => handleSystemShare(row.shareUrl, row.documentTitle)} disabled={panelActionBusy}>
-                          <Share2 size={13} color={palette.brand[500]} /> Compartir
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onPress={() => confirmRevokeSingle(row.linkId, row.documentTitle)}
+                <ScrollView
+                  style={[styles.activeSharesScroll, { maxHeight: activeSharesScrollMaxHeight }]}
+                  contentContainerStyle={styles.activeSharesScrollContent}
+                  nestedScrollEnabled
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator
+                >
+                  {activeShareRows.map((row) => (
+                    <View key={row.linkId} style={styles.activeShareRow}>
+                      <View style={styles.activeShareCheck}>
+                        <Checkbox
+                          checked={selectedLinkIds.has(row.linkId)}
+                          onChange={() => toggleSelectOne(row.linkId)}
                           disabled={panelActionBusy}
-                          loading={revokeShare.isPending && !bulkRevoking && revokeShare.variables === row.linkId}
-                        >
-                          <Ban size={14} color={colors.error[600]} />
-                        </Button>
+                        />
+                      </View>
+                      <Image source={{ uri: row.qrCodeUrl }} style={styles.qrThumb} />
+                      <View style={styles.activeShareInfo}>
+                        <Typography variant="label" numberOfLines={2}>{row.documentTitle}</Typography>
+                        <View style={styles.resultMeta}>
+                          <Clock size={12} color={t.text.secondary} />
+                          <Typography variant="caption" color="secondary">Expira {formatDate(row.expiresAt)}</Typography>
+                        </View>
+                        <View style={styles.resultActions}>
+                          <Button variant="secondary" size="sm" onPress={() => handleCopyLink(row.shareUrl)} disabled={panelActionBusy}>
+                            <View style={styles.btnRowSm}>
+                              <Copy size={13} color={palette.brand[500]} />
+                              <Text style={styles.btnLabelSecondary}>Copiar</Text>
+                            </View>
+                          </Button>
+                          <Button variant="secondary" size="sm" onPress={() => handleSystemShare(row.shareUrl, row.documentTitle)} disabled={panelActionBusy}>
+                            <View style={styles.btnRowSm}>
+                              <Share2 size={13} color={palette.brand[500]} />
+                              <Text style={styles.btnLabelSecondary}>Compartir</Text>
+                            </View>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onPress={() => confirmRevokeSingle(row.linkId, row.documentTitle)}
+                            disabled={panelActionBusy}
+                            loading={revokeShare.isPending && !bulkRevoking && revokeShare.variables === row.linkId}
+                          >
+                            <Ban size={14} color={colors.error[600]} />
+                          </Button>
+                        </View>
                       </View>
                     </View>
-                  </View>
-                ))}
+                  ))}
+                </ScrollView>
               </>
             )}
           </View>
@@ -430,6 +453,7 @@ export function ShareDocumentsScreen() {
       </View>
 
       <FlatList
+        style={styles.documentsList}
         data={items}
         keyExtractor={(d) => d.id}
         contentContainerStyle={styles.list}
@@ -488,6 +512,32 @@ export function ShareDocumentsScreen() {
           );
         }}
       />
+
+      {revokeModal ? (
+        <ConfirmModal
+          title={
+            revokeModal.mode === "bulk" && revokeModal.rows.length > 1
+              ? "Revocar varios enlaces"
+              : "Revocar enlace"
+          }
+          message={
+            revokeModal.mode === "single"
+              ? `¿Quieres dejar de compartir «${revokeModal.title}»? El código QR y el enlace dejarán de funcionar.`
+              : revokeModal.rows.length === 1
+                ? `¿Quieres dejar de compartir «${revokeModal.rows[0].documentTitle}»? El código QR y el enlace dejarán de funcionar.`
+                : `¿Revocar ${revokeModal.rows.length} enlaces? Los códigos QR y las URL dejarán de funcionar.`
+          }
+          confirmLabel={
+            revokeModal.mode === "single" || (revokeModal.mode === "bulk" && revokeModal.rows.length === 1)
+              ? "Revocar acceso"
+              : "Revocar todos"
+          }
+          confirmVariant="danger"
+          loading={revokeModalLoading}
+          onConfirm={handleRevokeModalConfirm}
+          onCancel={() => setRevokeModal(null)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -513,8 +563,8 @@ function makeStyles(t: ThemeContextValue) {
     },
     activeSharesBulkBar: {
       flexDirection: "row",
-      flexWrap: "wrap",
-      alignItems: "center",
+      flexWrap: "nowrap",
+      alignItems: "flex-start",
       justifyContent: "space-between",
       gap: spacing[3],
       marginBottom: spacing[3],
@@ -522,13 +572,25 @@ function makeStyles(t: ThemeContextValue) {
       borderBottomWidth: 1,
       borderBottomColor: t.border.light,
     },
-    activeSharesBulkActions: { flexDirection: "row", alignItems: "center", gap: spacing[2], flexWrap: "wrap" },
+    activeSharesBulkLeft: {
+      flex: 1,
+      minWidth: 0,
+      alignItems: "flex-start",
+      gap: spacing[1],
+    },
+    activeSharesScroll: {
+      flexGrow: 0,
+    },
+    activeSharesScrollContent: {
+      paddingBottom: spacing[2],
+    },
     bulkRevokeBtnText: { color: colors.white, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
     activeShareRow:   { flexDirection: "row", alignItems: "flex-start", gap: spacing[2], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: t.border.light },
     activeShareCheck: { paddingTop: 2 },
     activeShareInfo:  { flex: 1, minWidth: 0 },
     title:            { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary },
     subtitle:         { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2, maxWidth: 200 },
+    documentsList:  { flex: 1 },
     list:             { padding: spacing[4], gap: spacing[2], paddingBottom: spacing[8] },
     center:           { alignItems: "center", justifyContent: "center", gap: spacing[3], paddingVertical: spacing[10] },
     emptyText:        { color: t.text.secondary, fontSize: fontSize.md, textAlign: "center" },
@@ -537,9 +599,17 @@ function makeStyles(t: ThemeContextValue) {
     resultMeta:       { flexDirection: "row", alignItems: "center", gap: spacing[1] },
     resultActions:    { flexDirection: "row", gap: spacing[2], marginTop: spacing[2] },
 
+    btnRow:           { flexDirection: "row", alignItems: "center", gap: spacing[2] },
+    btnRowSm:         { flexDirection: "row", alignItems: "center", gap: spacing[1] },
+    btnLabelPrimary:  { color: colors.white, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+    btnLabelSecondary: { color: colors.gray[700], fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+
     // doc list
     docItem:          { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: spacing[4], backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium },
-    docItemSelected:  { borderColor: palette.brand[400], backgroundColor: palette.brand[50] },
+    docItemSelected:  {
+      borderColor: palette.brand[400],
+      backgroundColor: t.mode === "dark" ? colors.slate[700] : palette.brand[50],
+    },
     docItemLocked:    { opacity: 0.75 },
     docInfo:          { flex: 1 },
     docTitle:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary },

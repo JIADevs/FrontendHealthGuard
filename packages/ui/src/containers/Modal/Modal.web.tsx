@@ -94,8 +94,11 @@ export function Modal({ title, onClose, children, size = 'md', footer }: ModalPr
               borderTop: `1px solid ${border.default}`,
               display: 'flex',
               justifyContent: 'flex-end',
+              alignItems: 'center',
               gap: spacing[2],
               flexShrink: 0,
+              flexWrap: 'nowrap',
+              minWidth: 0,
             }}
           >
             {footer}

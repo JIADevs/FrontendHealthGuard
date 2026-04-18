@@ -57,6 +57,7 @@ import {
 } from "./endpoints";
 import type {
     DocumentCreate,
+    DocumentActiveShare,
     AppointmentCreate,
     MedicationCreate,
     BackpackCreate,
@@ -173,8 +174,10 @@ export function useRevokeDocumentShareMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (linkId: string) => revokeDocumentShare(linkId),
-        onSettled: () => {
-            qc.invalidateQueries({ queryKey: QK.documentSharesActive() });
+        onSuccess: (_, linkId) => {
+            qc.setQueryData<DocumentActiveShare[]>(QK.documentSharesActive(), (old) =>
+                old ? old.filter((r) => r.linkId !== linkId) : old,
+            );
         },
     });
 }

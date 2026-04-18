@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -15,13 +15,11 @@ import Toast from "react-native-toast-message";
 import * as Clipboard from "expo-clipboard";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDocumentsQuery, useActiveDocumentSharesQuery, useRevokeDocumentShareMutation, QK } from "@helu/api/hooks";
-import { shareDocument, isApiError, type Document } from "@helu/api";
+import { shareDocument, isApiError } from "@helu/api";
 import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner, EmptyState, Chip } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { FileText, Share2, Clock, Copy, Link2, ChevronDown, ChevronUp, Ban } from "lucide-react-native";
-import { qrCodeImageUriForShareUrl, resolveExpoReachableUrl } from "../utils/shareLinks";
-
-type ShareResult = { shareUrl: string; qrCodeUrl: string; expiresAt: string };
+import { resolveExpoReachableUrl } from "../utils/shareLinks";
 
 export function ShareDocumentsScreen() {
   const t = useAppTheme();
@@ -30,9 +28,10 @@ export function ShareDocumentsScreen() {
 
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string[]>([]);
-  const [shareResults, setShareResults] = useState<Map<string, ShareResult>>(new Map());
   const [sharing, setSharing] = useState(false);
   const [activeSharesOpen, setActiveSharesOpen] = useState(false);
+  const [selectedLinkIds, setSelectedLinkIds] = useState<Set<string>>(() => new Set());
+  const [bulkRevoking, setBulkRevoking] = useState(false);
 
   const docs = useDocumentsQuery("", page, 12);
   const activeShares = useActiveDocumentSharesQuery();
@@ -40,23 +39,62 @@ export function ShareDocumentsScreen() {
 
   const totalPages = docs.data?.totalPages ?? 1;
 
-  const toggle = useCallback((id: string) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  }, []);
+  const documentIdsWithActiveShare = useMemo(
+    () => new Set((activeShares.data ?? []).map((s) => s.documentId)),
+    [activeShares.data],
+  );
+
+  const itemLinkKey = useMemo(
+    () => (activeShares.data ?? []).map((i) => i.linkId).join("|"),
+    [activeShares.data],
+  );
+
+  useEffect(() => {
+    const valid = new Set(itemLinkKey === "" ? [] : itemLinkKey.split("|"));
+    setSelectedLinkIds((prev) => {
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (valid.has(id)) next.add(id);
+      }
+      if (next.size === prev.size && [...prev].every((id) => next.has(id))) return prev;
+      return next;
+    });
+  }, [itemLinkKey]);
+
+  useEffect(() => {
+    const locked = new Set((activeShares.data ?? []).map((s) => s.documentId));
+    setSelected((prev) => {
+      const next = prev.filter((id) => !locked.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [activeShares.data]);
+
+  const toggle = useCallback(
+    (id: string) => {
+      if (documentIdsWithActiveShare.has(id)) return;
+      setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    },
+    [documentIdsWithActiveShare],
+  );
 
   const handleShare = useCallback(async () => {
     if (selected.length === 0) return;
     setSharing(true);
-    const updates = new Map<string, ShareResult>();
-    let errorCount = 0;
+    const items = docs.data?.items ?? [];
+    const successes: { title: string; shareUrl: string }[] = [];
+    let failed = 0;
 
     for (const docId of selected) {
+      if (documentIdsWithActiveShare.has(docId)) continue;
       try {
-        updates.set(docId, await shareDocument(docId));
+        const result = await shareDocument(docId);
+        const doc = items.find((d) => d.id === docId);
+        successes.push({
+          title: doc?.title ?? "Documento",
+          shareUrl: result.shareUrl,
+        });
       } catch (err) {
-        errorCount += 1;
+        failed += 1;
         Toast.show({
           type: "error",
           text1: "Error al compartir",
@@ -65,59 +103,152 @@ export function ShareDocumentsScreen() {
       }
     }
 
-    setShareResults((prev) => {
-      const next = new Map(prev);
-      updates.forEach((value, key) => next.set(key, value));
-      return next;
-    });
     setSharing(false);
-    await queryClient.invalidateQueries({ queryKey: QK.documentSharesActive() });
 
-    const ok = selected.length - errorCount;
-    if (ok > 0) {
+    if (successes.length === 0) {
+      if (failed > 0) {
+        Toast.show({
+          type: "error",
+          text1: "No se pudieron generar enlaces",
+          text2: "Inténtalo de nuevo en unos segundos.",
+        });
+      }
+      void queryClient.invalidateQueries({ queryKey: QK.documentSharesActive() });
+      return;
+    }
+
+    setSelected([]);
+
+    try {
+      if (successes.length === 1) {
+        await Clipboard.setStringAsync(resolveExpoReachableUrl(successes[0].shareUrl));
+        Toast.show({
+          type: "success",
+          text1: "Enlace listo",
+          text2: successes[0].title,
+        });
+      } else {
+        const all = successes.map((s) => resolveExpoReachableUrl(s.shareUrl)).join("\n");
+        await Clipboard.setStringAsync(all);
+        Toast.show({
+          type: "success",
+          text1: `${successes.length} enlaces generados`,
+          text2:
+            failed > 0
+              ? `No se pudieron compartir ${failed} documento(s). Los demás están en el portapapeles.`
+              : "Los enlaces están en el portapapeles (uno por línea).",
+        });
+      }
+    } catch {
       Toast.show({
         type: "success",
-        text1: ok === 1 ? "Enlace generado" : `${ok} enlaces generados`,
-        text2: "Podés copiar o compartir cada enlace abajo.",
+        text1: successes.length === 1 ? "Enlace listo" : `${successes.length} enlaces generados`,
+        text2: "Copia el enlace desde Enlaces activos.",
       });
     }
-  }, [selected, queryClient]);
+
+    void queryClient.invalidateQueries({ queryKey: QK.documentSharesActive() });
+  }, [selected, queryClient, documentIdsWithActiveShare, docs.data?.items]);
 
   const handleCopyLink = useCallback(async (url: string) => {
     try {
       await Clipboard.setStringAsync(resolveExpoReachableUrl(url));
       Toast.show({ type: "success", text1: "Copiado", text2: "El enlace quedó en el portapapeles." });
     } catch {
-      Toast.show({ type: "error", text1: "No se pudo copiar", text2: "Probá de nuevo." });
+      Toast.show({ type: "error", text1: "No se pudo copiar", text2: "Prueba de nuevo." });
     }
   }, []);
-
-  const handleCopyAll = useCallback(async () => {
-    const urls = Array.from(shareResults.values())
-      .map((r) => resolveExpoReachableUrl(r.shareUrl))
-      .join("\n");
-    if (!urls) return;
-    try {
-      await Clipboard.setStringAsync(urls);
-      Toast.show({ type: "success", text1: "Copiados", text2: `${shareResults.size} enlace(s) en el portapapeles.` });
-    } catch {
-      Toast.show({ type: "error", text1: "No se pudo copiar" });
-    }
-  }, [shareResults]);
 
   const handleSystemShare = useCallback((url: string, title: string) => {
     const resolved = resolveExpoReachableUrl(url);
     Share.share({
       url: resolved,
-      message: `Comparto el documento "${title}": ${resolved}`,
+      message: `Documento «${title}». Enlace: ${resolved}`,
     });
   }, []);
 
-  const confirmRevoke = useCallback(
+  const toggleSelectOne = useCallback((linkId: string) => {
+    setSelectedLinkIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(linkId)) next.delete(linkId);
+      else next.add(linkId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(
+    (nextChecked: boolean) => {
+      const rows = activeShares.data ?? [];
+      if (nextChecked) {
+        setSelectedLinkIds(new Set(rows.map((r) => r.linkId)));
+      } else {
+        setSelectedLinkIds(new Set());
+      }
+    },
+    [activeShares.data],
+  );
+
+  const promptRevokeSelection = useCallback(() => {
+    const rows = (activeShares.data ?? []).filter((r) => selectedLinkIds.has(r.linkId));
+    if (rows.length === 0) return;
+    const count = rows.length;
+    const title = count === 1 ? "Revocar enlace" : "Revocar varios enlaces";
+    const message =
+      count === 1
+        ? `¿Quieres dejar de compartir «${rows[0].documentTitle}»? El código QR y el enlace dejarán de funcionar.`
+        : `¿Revocar ${count} enlaces? Los códigos QR y las URL dejarán de funcionar.`;
+    const confirmLabel = count === 1 ? "Revocar acceso" : "Revocar todos";
+    Alert.alert(title, message, [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: confirmLabel,
+        style: "destructive",
+        onPress: () => {
+          setSelectedLinkIds(new Set());
+          void (async () => {
+            setBulkRevoking(true);
+            let ok = 0;
+            let fail = 0;
+            for (const row of rows) {
+              try {
+                await revokeShare.mutateAsync(row.linkId);
+                ok += 1;
+              } catch {
+                fail += 1;
+              }
+            }
+            await queryClient.refetchQueries({ queryKey: QK.documentSharesActive() });
+            setBulkRevoking(false);
+            if (fail === 0) {
+              Toast.show({
+                type: "success",
+                text1: count === 1 ? "Acceso revocado" : `${ok} accesos revocados`,
+                text2: "Los enlaces y códigos QR ya no funcionan.",
+              });
+            } else if (ok === 0) {
+              Toast.show({
+                type: "error",
+                text1: "No se pudo revocar",
+                text2: "Prueba de nuevo en unos segundos.",
+              });
+            } else {
+              Toast.show({
+                type: "warning",
+                text1: "Revocación parcial",
+                text2: `Se revocaron ${ok} de ${count} enlaces. Puedes intentar de nuevo con el resto.`,
+              });
+            }
+          })();
+        },
+      },
+    ]);
+  }, [activeShares.data, selectedLinkIds, revokeShare, queryClient]);
+
+  const confirmRevokeSingle = useCallback(
     (linkId: string, title: string) => {
       Alert.alert(
         "Revocar enlace",
-        `¿Querés dejar de compartir "${title}"? El QR y el enlace dejarán de funcionar.`,
+        `¿Quieres dejar de compartir «${title}»? El código QR y el enlace dejarán de funcionar.`,
         [
           { text: "Cancelar", style: "cancel" },
           {
@@ -136,7 +267,7 @@ export function ShareDocumentsScreen() {
                   Toast.show({
                     type: "error",
                     text1: "No se pudo revocar",
-                    text2: isApiError(err) ? err.message : "Probá de nuevo.",
+                    text2: isApiError(err) ? err.message : "Prueba de nuevo.",
                   });
                 },
               });
@@ -150,20 +281,19 @@ export function ShareDocumentsScreen() {
 
   const items = docs.data?.items ?? [];
   const activeShareRows = activeShares.data ?? [];
-  const sharedDocs = items.filter((d) => shareResults.has(d.id));
-  const showRevokingBanner = activeSharesOpen && revokeShare.isPending;
+  const allLinkRowsSelected = activeShareRows.length > 0 && selectedLinkIds.size === activeShareRows.length;
+  const selectedLinkCount = selectedLinkIds.size;
+  const panelActionBusy = revokeShare.isPending || bulkRevoking;
+  const showRevokingBanner = panelActionBusy;
   const showListUpdatingBanner =
-    activeSharesOpen &&
-    activeShares.isRefetching &&
-    !activeShares.isLoading &&
-    !showRevokingBanner;
+    activeShares.isFetching && !activeShares.isLoading && !showRevokingBanner;
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Typography variant="bodySm" color="secondary">
-            Seleccioná documentos y generá enlaces con código QR para compartirlos.
+            Elige los documentos y comparte. Si hay un enlace activo, revócalo en la lista superior.
           </Typography>
         </View>
         {selected.length > 0 && (
@@ -181,6 +311,14 @@ export function ShareDocumentsScreen() {
               <Typography variant="label">Enlaces activos</Typography>
               {!activeShares.isLoading && activeShareRows.length > 0 && (
                 <Chip label={`${activeShareRows.length} activo${activeShareRows.length > 1 ? "s" : ""}`} color="green" />
+              )}
+              {(showRevokingBanner || showListUpdatingBanner) && (
+                <>
+                  <Spinner size="sm" />
+                  <Typography variant="caption" color="secondary" accessibilityLiveRegion="polite">
+                    {showRevokingBanner ? "Revocando acceso…" : "Actualizando enlaces…"}
+                  </Typography>
+                </>
               )}
             </View>
             <Button variant="secondary" size="sm" onPress={() => setActiveSharesOpen(true)}>
@@ -213,7 +351,7 @@ export function ShareDocumentsScreen() {
                 <Spinner size="sm" />
                 <View style={{ flex: 1 }}>
                   <Typography variant="caption" color="secondary">
-                    {showRevokingBanner ? "Revocando acceso…" : "Actualizando la lista de enlaces…"}
+                    {showRevokingBanner ? "Revocando acceso…" : "Actualizando enlaces…"}
                   </Typography>
                 </View>
               </View>
@@ -227,38 +365,65 @@ export function ShareDocumentsScreen() {
             ) : activeShareRows.length === 0 ? (
               <EmptyState
                 icon={<Share2 size={40} color={t.border.medium} />}
-                message="No tenés enlaces vigentes. Generá uno seleccionando documentos abajo."
+                message="No tienes enlaces activos. Genera uno seleccionando documentos abajo."
               />
             ) : (
-              activeShareRows.map((row) => (
-                <View key={row.linkId} style={styles.activeShareRow}>
-                  <Image source={{ uri: row.qrCodeUrl }} style={styles.qrThumb} />
-                  <View style={styles.activeShareInfo}>
-                    <Typography variant="label" numberOfLines={2}>{row.documentTitle}</Typography>
-                    <View style={styles.resultMeta}>
-                      <Clock size={12} color={t.text.secondary} />
-                      <Typography variant="caption" color="secondary">Expira {formatDate(row.expiresAt)}</Typography>
+              <>
+                <View style={styles.activeSharesBulkBar}>
+                  <Checkbox
+                    checked={allLinkRowsSelected}
+                    disabled={panelActionBusy}
+                    onChange={toggleSelectAll}
+                    label="Seleccionar todos"
+                  />
+                  {selectedLinkCount > 0 ? (
+                    <View style={styles.activeSharesBulkActions}>
+                      <Button variant="danger" size="sm" onPress={promptRevokeSelection} disabled={panelActionBusy}>
+                        <Text style={styles.bulkRevokeBtnText}>Revocar selección ({selectedLinkCount})</Text>
+                      </Button>
+                      <Button variant="ghost" size="sm" onPress={() => setSelectedLinkIds(new Set())} disabled={panelActionBusy}>
+                        <Text style={styles.activeSharesBtnText}>Limpiar</Text>
+                      </Button>
                     </View>
-                    <View style={styles.resultActions}>
-                      <Button variant="secondary" size="sm" onPress={() => handleCopyLink(row.shareUrl)}>
-                        <Copy size={13} color={palette.brand[500]} /> Copiar
-                      </Button>
-                      <Button variant="secondary" size="sm" onPress={() => handleSystemShare(row.shareUrl, row.documentTitle)}>
-                        <Share2 size={13} color={palette.brand[500]} /> Compartir
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onPress={() => confirmRevoke(row.linkId, row.documentTitle)}
-                        disabled={revokeShare.isPending}
-                        loading={revokeShare.isPending && revokeShare.variables === row.linkId}
-                      >
-                        <Ban size={14} color={colors.error[600]} />
-                      </Button>
+                  ) : null}
+                </View>
+                {activeShareRows.map((row) => (
+                  <View key={row.linkId} style={styles.activeShareRow}>
+                    <View style={styles.activeShareCheck}>
+                      <Checkbox
+                        checked={selectedLinkIds.has(row.linkId)}
+                        onChange={() => toggleSelectOne(row.linkId)}
+                        disabled={panelActionBusy}
+                      />
+                    </View>
+                    <Image source={{ uri: row.qrCodeUrl }} style={styles.qrThumb} />
+                    <View style={styles.activeShareInfo}>
+                      <Typography variant="label" numberOfLines={2}>{row.documentTitle}</Typography>
+                      <View style={styles.resultMeta}>
+                        <Clock size={12} color={t.text.secondary} />
+                        <Typography variant="caption" color="secondary">Expira {formatDate(row.expiresAt)}</Typography>
+                      </View>
+                      <View style={styles.resultActions}>
+                        <Button variant="secondary" size="sm" onPress={() => handleCopyLink(row.shareUrl)} disabled={panelActionBusy}>
+                          <Copy size={13} color={palette.brand[500]} /> Copiar
+                        </Button>
+                        <Button variant="secondary" size="sm" onPress={() => handleSystemShare(row.shareUrl, row.documentTitle)} disabled={panelActionBusy}>
+                          <Share2 size={13} color={palette.brand[500]} /> Compartir
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onPress={() => confirmRevokeSingle(row.linkId, row.documentTitle)}
+                          disabled={panelActionBusy}
+                          loading={revokeShare.isPending && !bulkRevoking && revokeShare.variables === row.linkId}
+                        >
+                          <Ban size={14} color={colors.error[600]} />
+                        </Button>
+                      </View>
                     </View>
                   </View>
-                </View>
-              ))
+                ))}
+              </>
             )}
           </View>
         )}
@@ -274,49 +439,6 @@ export function ShareDocumentsScreen() {
             onRefresh={() => docs.refetch()}
             tintColor={palette.brand[500]}
           />
-        }
-        ListHeaderComponent={
-          sharedDocs.length > 0 ? (
-            <View style={styles.resultsCard}>
-              <View style={styles.resultsHeader}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1 }}>
-                  <Share2 size={16} color={palette.brand[500]} />
-                  <Typography variant="label">
-                    {shareResults.size} enlace{shareResults.size > 1 ? "s" : ""} generado{shareResults.size > 1 ? "s" : ""}
-                  </Typography>
-                </View>
-                <Button variant="ghost" size="sm" onPress={handleCopyAll}>
-                  <Copy size={14} color={palette.brand[500]} /> Copiar todos
-                </Button>
-              </View>
-              {sharedDocs.map((doc) => {
-                const res = shareResults.get(doc.id)!;
-                return (
-                  <View key={doc.id} style={styles.resultRow}>
-                    <Image
-                      source={{ uri: qrCodeImageUriForShareUrl(res.shareUrl) }}
-                      style={styles.qrThumb}
-                    />
-                    <View style={styles.resultInfo}>
-                      <Typography variant="label" numberOfLines={1}>{doc.title}</Typography>
-                      <View style={styles.resultMeta}>
-                        <Clock size={12} color={t.text.secondary} />
-                        <Typography variant="caption" color="secondary">Expira {formatDate(res.expiresAt)}</Typography>
-                      </View>
-                      <View style={styles.resultActions}>
-                        <Button variant="secondary" size="sm" onPress={() => handleCopyLink(res.shareUrl)}>
-                          <Copy size={13} color={palette.brand[500]} /> Copiar
-                        </Button>
-                        <Button variant="secondary" size="sm" onPress={() => handleSystemShare(res.shareUrl, doc.title)}>
-                          <Share2 size={13} color={palette.brand[500]} /> Compartir
-                        </Button>
-                      </View>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          ) : null
         }
         ListEmptyComponent={
           docs.isLoading ? (
@@ -335,24 +457,33 @@ export function ShareDocumentsScreen() {
         }
         renderItem={({ item: doc }) => {
           const isSelected = selected.includes(doc.id);
-          const isShared = shareResults.has(doc.id);
+          const hasActiveLink = documentIdsWithActiveShare.has(doc.id);
           return (
             <TouchableOpacity
-              style={[styles.docItem, isSelected && styles.docItemSelected]}
-              onPress={() => toggle(doc.id)}
-              activeOpacity={0.7}
+              style={[
+                styles.docItem,
+                isSelected && styles.docItemSelected,
+                hasActiveLink && styles.docItemLocked,
+              ]}
+              onPress={() => !hasActiveLink && toggle(doc.id)}
+              activeOpacity={hasActiveLink ? 1 : 0.7}
+              disabled={hasActiveLink}
             >
-              <Checkbox checked={isSelected} />
-              <FileText size={16} color={isShared ? colors.emerald[500] : t.text.secondary} />
+              <Checkbox checked={isSelected} disabled={hasActiveLink} />
+              <FileText
+                size={16}
+                color={t.text.secondary}
+                style={hasActiveLink ? { opacity: 0.5 } : undefined}
+              />
               <View style={styles.docInfo}>
                 <Typography variant="label" numberOfLines={1}>{doc.title}</Typography>
                 <Typography variant="caption" color="secondary">{doc.format} · {formatDate(doc.uploadedAt)}</Typography>
               </View>
-              {isShared && (
-                <View style={styles.sharedBadge}>
-                  <Text style={styles.sharedBadgeText}>Compartido</Text>
+              {hasActiveLink ? (
+                <View style={styles.lockedBadge}>
+                  <Text style={styles.lockedBadgeText}>Enlace activo</Text>
                 </View>
-              )}
+              ) : null}
             </TouchableOpacity>
           );
         }}
@@ -380,7 +511,21 @@ function makeStyles(t: ThemeContextValue) {
       borderWidth: 1,
       borderColor: t.border.light,
     },
-    activeShareRow:   { flexDirection: "row", gap: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: t.border.light },
+    activeSharesBulkBar: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing[3],
+      marginBottom: spacing[3],
+      paddingBottom: spacing[3],
+      borderBottomWidth: 1,
+      borderBottomColor: t.border.light,
+    },
+    activeSharesBulkActions: { flexDirection: "row", alignItems: "center", gap: spacing[2], flexWrap: "wrap" },
+    bulkRevokeBtnText: { color: colors.white, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+    activeShareRow:   { flexDirection: "row", alignItems: "flex-start", gap: spacing[2], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: t.border.light },
+    activeShareCheck: { paddingTop: 2 },
     activeShareInfo:  { flex: 1, minWidth: 0 },
     title:            { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary },
     subtitle:         { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2, maxWidth: 200 },
@@ -388,26 +533,19 @@ function makeStyles(t: ThemeContextValue) {
     center:           { alignItems: "center", justifyContent: "center", gap: spacing[3], paddingVertical: spacing[10] },
     emptyText:        { color: t.text.secondary, fontSize: fontSize.md, textAlign: "center" },
 
-    // results card
-    resultsCard:      { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium, padding: spacing[4], marginBottom: spacing[3], gap: spacing[3] },
-    resultsHeader:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing[2] },
-    resultsTitle:     { fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: t.text.primary },
-    resultRow:        { flexDirection: "row", gap: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: t.border.light },
     qrThumb:          { width: 56, height: 56, borderRadius: radii.sm, flexShrink: 0 },
-    resultInfo:       { flex: 1 },
-    resultTitle:      { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: 2 },
     resultMeta:       { flexDirection: "row", alignItems: "center", gap: spacing[1] },
-    resultMetaText:   { fontSize: fontSize.xs, color: t.text.secondary },
     resultActions:    { flexDirection: "row", gap: spacing[2], marginTop: spacing[2] },
 
     // doc list
     docItem:          { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: spacing[4], backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium },
     docItemSelected:  { borderColor: palette.brand[400], backgroundColor: palette.brand[50] },
+    docItemLocked:    { opacity: 0.75 },
     docInfo:          { flex: 1 },
     docTitle:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary },
     docMeta:          { fontSize: fontSize.xs, color: t.text.secondary, marginTop: 2 },
-    sharedBadge:      { paddingHorizontal: spacing[2], paddingVertical: 3, backgroundColor: colors.emerald[50], borderRadius: radii.full, borderWidth: 1, borderColor: colors.emerald[200] },
-    sharedBadgeText:  { fontSize: fontSize.xs, color: colors.emerald[700], fontWeight: fontWeight.semibold },
+    lockedBadge:      { paddingHorizontal: spacing[2], paddingVertical: 3, backgroundColor: t.surface.bg, borderRadius: radii.full, borderWidth: 1, borderColor: t.border.medium },
+    lockedBadgeText:  { fontSize: fontSize.xs, color: t.text.secondary, fontWeight: fontWeight.semibold },
     activeSharesBtnText: { fontSize: fontSize.xs, color: palette.brand[600], fontWeight: fontWeight.semibold },
 
   });

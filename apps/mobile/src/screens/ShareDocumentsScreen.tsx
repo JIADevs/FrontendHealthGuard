@@ -8,15 +8,17 @@ import {
   Share,
   Image,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import * as Clipboard from "expo-clipboard";
-import { useDocumentsQuery } from "@helu/api/hooks";
+import { useQueryClient } from "@tanstack/react-query";
+import { useDocumentsQuery, useActiveDocumentSharesQuery, useRevokeDocumentShareMutation, QK } from "@helu/api/hooks";
 import { shareDocument, isApiError, type Document } from "@helu/api";
-import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner, EmptyState } from "@helu/ui";
+import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner, EmptyState, Chip } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { FileText, Share2, Clock, Copy } from "lucide-react-native";
+import { FileText, Share2, Clock, Copy, Link2, ChevronDown, ChevronUp, Ban } from "lucide-react-native";
 import { qrCodeImageUriForShareUrl, resolveExpoReachableUrl } from "../utils/shareLinks";
 
 type ShareResult = { shareUrl: string; qrCodeUrl: string; expiresAt: string };
@@ -24,13 +26,17 @@ type ShareResult = { shareUrl: string; qrCodeUrl: string; expiresAt: string };
 export function ShareDocumentsScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string[]>([]);
   const [shareResults, setShareResults] = useState<Map<string, ShareResult>>(new Map());
   const [sharing, setSharing] = useState(false);
+  const [activeSharesOpen, setActiveSharesOpen] = useState(false);
 
   const docs = useDocumentsQuery("", page, 12);
+  const activeShares = useActiveDocumentSharesQuery();
+  const revokeShare = useRevokeDocumentShareMutation();
 
   const totalPages = docs.data?.totalPages ?? 1;
 
@@ -65,6 +71,7 @@ export function ShareDocumentsScreen() {
       return next;
     });
     setSharing(false);
+    await queryClient.invalidateQueries({ queryKey: QK.documentSharesActive() });
 
     const ok = selected.length - errorCount;
     if (ok > 0) {
@@ -74,7 +81,7 @@ export function ShareDocumentsScreen() {
         text2: "Podés copiar o compartir cada enlace abajo.",
       });
     }
-  }, [selected]);
+  }, [selected, queryClient]);
 
   const handleCopyLink = useCallback(async (url: string) => {
     try {
@@ -106,8 +113,50 @@ export function ShareDocumentsScreen() {
     });
   }, []);
 
+  const confirmRevoke = useCallback(
+    (linkId: string, title: string) => {
+      Alert.alert(
+        "Revocar enlace",
+        `¿Querés dejar de compartir "${title}"? El QR y el enlace dejarán de funcionar.`,
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Revocar",
+            style: "destructive",
+            onPress: () => {
+              revokeShare.mutate(linkId, {
+                onSuccess: () => {
+                  Toast.show({
+                    type: "success",
+                    text1: "Acceso revocado",
+                    text2: "El enlace y el QR ya no funcionan.",
+                  });
+                },
+                onError: (err: unknown) => {
+                  Toast.show({
+                    type: "error",
+                    text1: "No se pudo revocar",
+                    text2: isApiError(err) ? err.message : "Probá de nuevo.",
+                  });
+                },
+              });
+            },
+          },
+        ]
+      );
+    },
+    [revokeShare]
+  );
+
   const items = docs.data?.items ?? [];
+  const activeShareRows = activeShares.data ?? [];
   const sharedDocs = items.filter((d) => shareResults.has(d.id));
+  const showRevokingBanner = activeSharesOpen && revokeShare.isPending;
+  const showListUpdatingBanner =
+    activeSharesOpen &&
+    activeShares.isRefetching &&
+    !activeShares.isLoading &&
+    !showRevokingBanner;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -121,6 +170,97 @@ export function ShareDocumentsScreen() {
           <Button onPress={handleShare} disabled={sharing} loading={sharing}>
             <Share2 size={16} color={colors.white} /> Compartir ({selected.length})
           </Button>
+        )}
+      </View>
+
+      <View style={styles.activeSharesOuter}>
+        {!activeSharesOpen ? (
+          <View style={styles.activeSharesCollapsed}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1, flexWrap: "wrap" }}>
+              <Link2 size={16} color={palette.brand[500]} />
+              <Typography variant="label">Enlaces activos</Typography>
+              {!activeShares.isLoading && activeShareRows.length > 0 && (
+                <Chip label={`${activeShareRows.length} activo${activeShareRows.length > 1 ? "s" : ""}`} color="green" />
+              )}
+            </View>
+            <Button variant="secondary" size="sm" onPress={() => setActiveSharesOpen(true)}>
+              <Text style={styles.activeSharesBtnText}>Ver</Text>
+              <ChevronDown size={14} color={palette.brand[500]} />
+            </Button>
+          </View>
+        ) : (
+          <View style={styles.activeSharesCard}>
+            <View style={styles.activeSharesHeader}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1, flexWrap: "wrap" }}>
+                <Link2 size={16} color={palette.brand[500]} />
+                <Typography variant="label">Enlaces activos</Typography>
+                {!activeShares.isLoading && activeShareRows.length > 0 && (
+                  <Chip label={`${activeShareRows.length} activo${activeShareRows.length > 1 ? "s" : ""}`} color="green" />
+                )}
+              </View>
+              <View style={{ flexDirection: "row", gap: spacing[2] }}>
+                <Button variant="ghost" size="sm" onPress={() => setActiveSharesOpen(false)}>
+                  <ChevronUp size={14} color={palette.brand[500]} />
+                  <Text style={styles.activeSharesBtnText}>Ocultar</Text>
+                </Button>
+                <Button variant="ghost" size="sm" onPress={() => activeShares.refetch()} disabled={activeShares.isFetching} loading={activeShares.isFetching}>
+                  <Text style={styles.activeSharesBtnText}>Actualizar</Text>
+                </Button>
+              </View>
+            </View>
+            {(showRevokingBanner || showListUpdatingBanner) && (
+              <View style={styles.activeSharesStatusBanner} accessibilityRole="text" accessibilityLiveRegion="polite">
+                <Spinner size="sm" />
+                <View style={{ flex: 1 }}>
+                  <Typography variant="caption" color="secondary">
+                    {showRevokingBanner ? "Revocando acceso…" : "Actualizando la lista de enlaces…"}
+                  </Typography>
+                </View>
+              </View>
+            )}
+            {activeShares.isLoading ? (
+              <View style={styles.center}>
+                <Spinner size="lg" />
+              </View>
+            ) : activeShares.isError ? (
+              <Typography variant="caption" color="error">No se pudieron cargar los enlaces activos.</Typography>
+            ) : activeShareRows.length === 0 ? (
+              <EmptyState
+                icon={<Share2 size={40} color={t.border.medium} />}
+                message="No tenés enlaces vigentes. Generá uno seleccionando documentos abajo."
+              />
+            ) : (
+              activeShareRows.map((row) => (
+                <View key={row.linkId} style={styles.activeShareRow}>
+                  <Image source={{ uri: row.qrCodeUrl }} style={styles.qrThumb} />
+                  <View style={styles.activeShareInfo}>
+                    <Typography variant="label" numberOfLines={2}>{row.documentTitle}</Typography>
+                    <View style={styles.resultMeta}>
+                      <Clock size={12} color={t.text.secondary} />
+                      <Typography variant="caption" color="secondary">Expira {formatDate(row.expiresAt)}</Typography>
+                    </View>
+                    <View style={styles.resultActions}>
+                      <Button variant="secondary" size="sm" onPress={() => handleCopyLink(row.shareUrl)}>
+                        <Copy size={13} color={palette.brand[500]} /> Copiar
+                      </Button>
+                      <Button variant="secondary" size="sm" onPress={() => handleSystemShare(row.shareUrl, row.documentTitle)}>
+                        <Share2 size={13} color={palette.brand[500]} /> Compartir
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => confirmRevoke(row.linkId, row.documentTitle)}
+                        disabled={revokeShare.isPending}
+                        loading={revokeShare.isPending && revokeShare.variables === row.linkId}
+                      >
+                        <Ban size={14} color={colors.error[600]} />
+                      </Button>
+                    </View>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
         )}
       </View>
 
@@ -225,6 +365,23 @@ function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container:        { flex: 1, backgroundColor: t.surface.bg },
     topBar:           { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing[3], padding: spacing[5], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
+    activeSharesOuter: { paddingHorizontal: spacing[4], paddingTop: spacing[2], paddingBottom: spacing[2] },
+    activeSharesCollapsed: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing[3], padding: spacing[4], backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium },
+    activeSharesCard: { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium, padding: spacing[4], gap: spacing[3] },
+    activeSharesHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing[2] },
+    activeSharesStatusBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing[2],
+      paddingVertical: spacing[2],
+      paddingHorizontal: spacing[3],
+      backgroundColor: t.surface.bg,
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: t.border.light,
+    },
+    activeShareRow:   { flexDirection: "row", gap: spacing[3], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: t.border.light },
+    activeShareInfo:  { flex: 1, minWidth: 0 },
     title:            { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary },
     subtitle:         { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2, maxWidth: 200 },
     list:             { padding: spacing[4], gap: spacing[2], paddingBottom: spacing[8] },
@@ -251,6 +408,7 @@ function makeStyles(t: ThemeContextValue) {
     docMeta:          { fontSize: fontSize.xs, color: t.text.secondary, marginTop: 2 },
     sharedBadge:      { paddingHorizontal: spacing[2], paddingVertical: 3, backgroundColor: colors.emerald[50], borderRadius: radii.full, borderWidth: 1, borderColor: colors.emerald[200] },
     sharedBadgeText:  { fontSize: fontSize.xs, color: colors.emerald[700], fontWeight: fontWeight.semibold },
+    activeSharesBtnText: { fontSize: fontSize.xs, color: palette.brand[600], fontWeight: fontWeight.semibold },
 
   });
 }

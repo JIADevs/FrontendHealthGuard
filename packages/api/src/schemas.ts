@@ -119,6 +119,19 @@ export const DocumentSchema = z.object({
 
 export const DocumentPageSchema = createPageSchema(DocumentSchema);
 
+/** Enlace de compartir documento aún vigente (lista desde API). */
+export const DocumentActiveShareSchema = z.object({
+    linkId: z.string().uuid(),
+    documentId: z.string().uuid(),
+    documentTitle: z.string(),
+    shareUrl: z.string(),
+    qrCodeUrl: z.string(),
+    expiresAt: z.string(),
+    createdAt: z.string(),
+});
+
+export type DocumentActiveShare = z.infer<typeof DocumentActiveShareSchema>;
+
 export const DocumentCreateSchema = z.object({
     title: z.string().min(1, "El título es obligatorio"),
     description: z.string().optional(),

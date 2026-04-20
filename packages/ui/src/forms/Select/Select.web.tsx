@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { colors, spacing, fontSize, fontWeight, radii, border, surface, text } from '../../tokens/tokens';
+import { colors, palette, spacing, fontSize, fontWeight, radii, border, surface, text } from '../../tokens/tokens';
 import type { SelectProps } from './Select.types';
 
 export function Select({
@@ -17,7 +17,7 @@ export function Select({
   const selectStyle: React.CSSProperties = {
     width: '100%',
     padding: `${spacing[3]}px ${spacing[8]}px ${spacing[3]}px ${spacing[4]}px`,
-    border: `1.5px solid ${error ? colors.error[500] : focused ? 'var(--primary-500)' : border.default}`,
+    border: `1.5px solid ${error ? palette.status.error[500] : focused ? 'var(--brand-500)' : border.default}`,
     borderRadius: radii.sm,
     fontSize: fontSize.sm,
     fontFamily: 'inherit',
@@ -27,7 +27,7 @@ export function Select({
     WebkitAppearance: 'none',
     outline: 'none',
     boxSizing: 'border-box',
-    boxShadow: focused ? '0 0 0 3px var(--primary-ring-md)' : undefined,
+    boxShadow: focused ? '0 0 0 3px var(--brand-ring-md)' : undefined,
     transition: 'border-color 0.15s, box-shadow 0.15s',
     opacity: disabled ? 0.6 : 1,
     cursor: disabled ? 'not-allowed' : 'pointer',
@@ -73,7 +73,7 @@ export function Select({
       </div>
 
       {error && (
-        <span style={{ fontSize: fontSize.xs, color: colors.error[500] }}>{error}</span>
+        <span style={{ fontSize: fontSize.xs, color: palette.status.error[500] }}>{error}</span>
       )}
     </div>
   );

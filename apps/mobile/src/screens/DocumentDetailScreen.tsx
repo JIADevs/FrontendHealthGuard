@@ -192,12 +192,12 @@ function makeStyles(t: ThemeContextValue) {
     tagsContainer: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
     tag:           { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radii.full, fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.primary },
     tagBlue:       { backgroundColor: palette.brand[100] },
-    tagAmber:      { backgroundColor: colors.warning[50] },
-    tagGreen:      { backgroundColor: colors.success[50] },
+    tagAmber:      { backgroundColor: palette.status.warning[50] },
+    tagGreen:      { backgroundColor: palette.status.success[50] },
 
     actions:         { marginTop: spacing[2], flexDirection: "row", gap: spacing[3] },
     preview:         { marginBottom: spacing[4], backgroundColor: colors.black, borderRadius: radii.lg, overflow: "hidden", height: 400 },
     image:           { flex: 1, width: "100%", height: "100%" },
-    error:               { fontSize: fontSize.base, color: colors.error[500] },
+    error:               { fontSize: fontSize.base, color: palette.status.error[500] },
   });
 }

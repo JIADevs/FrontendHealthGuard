@@ -223,7 +223,7 @@ function AppearanceSection({ styles }: { styles: ReturnType<typeof makeStyles> }
               onPress={() => setTheme(opt.value)}
               activeOpacity={0.7}
             >
-              <opt.Icon size={22} color={active ? palette.brand[500] : colors.gray[400]} />
+              <opt.Icon size={22} color={active ? palette.brand[500] : palette.neutral[400]} />
               <Text style={[styles.themeBtnLabel, active && styles.themeBtnLabelAct]}>
                 {opt.label}
               </Text>

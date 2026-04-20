@@ -68,13 +68,13 @@ export function BackpackDetailScreen() {
     {
       label: 'Nuevo documento',
       icon: <FileUp color={colors.white} size={20} />,
-      color: colors.violet[500],
+      color: palette.accent.ai[500],
       onPress: () => navigation.navigate('DocumentUpload' as any, { backpackId: id, backpackName: backpackQuery.data?.name }),
     },
     {
       label: 'Escanear',
       icon: <Camera color={colors.white} size={20} />,
-      color: colors.emerald[500],
+      color: palette.accent.notification[500],
       onPress: () => navigation.navigate('Scanner' as any, { backpackId: id, backpackName: backpackQuery.data?.name }),
     },
   ], [navigation, id, backpackQuery.data?.name]);

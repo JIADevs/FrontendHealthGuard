@@ -247,7 +247,7 @@ function makeStyles(t: ThemeContextValue) {
     cardSub: { fontSize: 13, color: t.text.secondary },
     addBtn: { backgroundColor: palette.brand[500], borderRadius: 16, width: 48, height: 48, alignItems: "center", justifyContent: "center" },
     addBtnLoading: { opacity: 0.7 },
-    addBtnDone: { backgroundColor: colors.green[500] },
+    addBtnDone: { backgroundColor: palette.accent.document[500] },
     fab: { position: "absolute", bottom: 22, left: 16, right: 16, backgroundColor: t.surface.bgCard, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium, paddingVertical: 14, alignItems: "center", elevation: 2 },
     fabText: { color: t.text.primary, fontWeight: "900" },
   });

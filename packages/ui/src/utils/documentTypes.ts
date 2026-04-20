@@ -16,17 +16,17 @@ export type DocFormat = "pdf" | "image" | "other";
 // ─── Mapa de colores por tipo de documento médico ────────────────────────────
 
 export const DOCUMENT_TYPE_VARIANTS: Record<string, DocTypeVariant> = {
-  "Análisis de sangre":   { bg: colors.error[50],    iconColor: colors.error[600] },
-  "Análisis de orina":    { bg: colors.amber[100],   iconColor: colors.amber[600] },
-  "Radiografía":          { bg: colors.yellow[100],  iconColor: colors.yellow[600] },
-  "Ecografía":            { bg: colors.primary[100], iconColor: colors.primary[600] },
-  "Tomografía":           { bg: colors.violet[100],  iconColor: colors.violet[600] },
-  "Resonancia magnética": { bg: colors.violet[100],  iconColor: colors.violet[600] },
-  "Receta":               { bg: colors.green[100],   iconColor: colors.green[600] },
+  "Análisis de sangre":   { bg: palette.status.error[50],    iconColor: palette.status.error[600] },
+  "Análisis de orina":    { bg: palette.accent.medication[100],   iconColor: palette.accent.medication[600] },
+  "Radiografía":          { bg: palette.status.warning[50],  iconColor: palette.status.warning[600] },
+  "Ecografía":            { bg: palette.brand[100], iconColor: palette.brand[600] },
+  "Tomografía":           { bg: palette.accent.ai[100],  iconColor: palette.accent.ai[600] },
+  "Resonancia magnética": { bg: palette.accent.ai[100],  iconColor: palette.accent.ai[600] },
+  "Receta":               { bg: palette.accent.document[100],   iconColor: palette.accent.document[600] },
   "Informe médico":       { bg: palette.brand[100],     iconColor: palette.brand[600] },
-  "Historia clínica":     { bg: colors.green[50],    iconColor: colors.green[700] },
-  "Vacuna":               { bg: colors.pink[100],    iconColor: colors.pink[600] },
-  "Odontología":          { bg: colors.orange[50],   iconColor: colors.orange[600] },
+  "Historia clínica":     { bg: palette.accent.document[50],    iconColor: palette.accent.document[700] },
+  "Vacuna":               { bg: palette.accent.calendar[100],    iconColor: palette.accent.calendar[600] },
+  "Odontología":          { bg: palette.accent.backpack[50],   iconColor: palette.accent.backpack[600] },
 };
 
 const DEFAULT_VARIANT: DocTypeVariant = {

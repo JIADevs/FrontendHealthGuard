@@ -5,7 +5,7 @@ import type { SpinnerProps, SpinnerSize, SpinnerColor } from './Spinner.types';
 const sizePx: Record<SpinnerSize, number> = { sm: 16, md: 24, lg: 32 };
 
 const trackColor: Record<SpinnerColor, string> = {
-  primary: colors.gray[200],
+  primary: palette.neutral[200],
   white:   'rgba(255,255,255,0.3)',
 };
 

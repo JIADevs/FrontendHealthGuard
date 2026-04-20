@@ -17,7 +17,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
         onPress={() => onPageChange(page - 1)}
         accessibilityLabel="Página anterior"
       >
-        <ChevronLeft size={18} color={canPrev ? palette.brand[500] : colors.gray[300]} />
+        <ChevronLeft size={18} color={canPrev ? palette.brand[500] : palette.neutral[300]} />
       </TouchableOpacity>
 
       <Text style={styles.label}>{page} / {totalPages}</Text>
@@ -28,7 +28,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
         onPress={() => onPageChange(page + 1)}
         accessibilityLabel="Página siguiente"
       >
-        <ChevronRight size={18} color={canNext ? palette.brand[500] : colors.gray[300]} />
+        <ChevronRight size={18} color={canNext ? palette.brand[500] : palette.neutral[300]} />
       </TouchableOpacity>
     </View>
   );
@@ -36,7 +36,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
 
 const styles = StyleSheet.create({
   container:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing[4], paddingVertical: spacing[4] },
-  btn:         { width: 36, height: 36, borderRadius: radii.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, borderWidth: 1, borderColor: colors.gray[200] },
+  btn:         { width: 36, height: 36, borderRadius: radii.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, borderWidth: 1, borderColor: palette.neutral[200] },
   btnDisabled: { opacity: 0.4 },
-  label:       { fontSize: fontSize.sm, color: colors.gray[500], fontWeight: fontWeight.semibold, minWidth: 48, textAlign: 'center' },
+  label:       { fontSize: fontSize.sm, color: palette.neutral[500], fontWeight: fontWeight.semibold, minWidth: 48, textAlign: 'center' },
 });

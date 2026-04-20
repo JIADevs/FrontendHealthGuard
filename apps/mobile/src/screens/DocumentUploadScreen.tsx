@@ -199,7 +199,7 @@ function makeStyles(t: ThemeContextValue) {
     changeFileLink: { fontSize: fontSize.sm, color: palette.brand[500], fontWeight: fontWeight.semibold },
 
     previewControls: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 32, paddingBottom: 48, backgroundColor: t.surface.bgCard, paddingTop: spacing[3] },
-    circleBtnRed:    { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.error[500], alignItems: "center", justifyContent: "center" },
-    circleBtnGreen:  { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.success[500], alignItems: "center", justifyContent: "center" },
+    circleBtnRed:    { width: 72, height: 72, borderRadius: 36, backgroundColor: palette.status.error[500], alignItems: "center", justifyContent: "center" },
+    circleBtnGreen:  { width: 72, height: 72, borderRadius: 36, backgroundColor: palette.status.success[500], alignItems: "center", justifyContent: "center" },
   });
 }

@@ -40,7 +40,7 @@ export function DocumentsScreen() {
     {
       label: 'Subir archivo',
       icon: <FileUp color={colors.white} size={22} />,
-      color: colors.violet[500],
+      color: palette.accent.ai[500],
       onPress: () => navigation.navigate('DocumentUpload' as any),
     },
     {

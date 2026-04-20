@@ -184,7 +184,7 @@ export function ShareDocumentsScreen() {
               activeOpacity={0.7}
             >
               <Checkbox checked={isSelected} />
-              <FileText size={16} color={isShared ? colors.emerald[500] : t.text.secondary} />
+              <FileText size={16} color={isShared ? palette.accent.notification[500] : t.text.secondary} />
               <View style={styles.docInfo}>
                 <Typography variant="label" numberOfLines={1}>{doc.title}</Typography>
                 <Typography variant="caption" color="secondary">{doc.format} · {formatDate(doc.uploadedAt)}</Typography>
@@ -230,8 +230,8 @@ function makeStyles(t: ThemeContextValue) {
     docInfo:          { flex: 1 },
     docTitle:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary },
     docMeta:          { fontSize: fontSize.xs, color: t.text.secondary, marginTop: 2 },
-    sharedBadge:      { paddingHorizontal: spacing[2], paddingVertical: 3, backgroundColor: colors.emerald[50], borderRadius: radii.full, borderWidth: 1, borderColor: colors.emerald[200] },
-    sharedBadgeText:  { fontSize: fontSize.xs, color: colors.emerald[700], fontWeight: fontWeight.semibold },
+    sharedBadge:      { paddingHorizontal: spacing[2], paddingVertical: 3, backgroundColor: palette.accent.notification[50], borderRadius: radii.full, borderWidth: 1, borderColor: palette.accent.notification[200] },
+    sharedBadgeText:  { fontSize: fontSize.xs, color: palette.accent.notification[700], fontWeight: fontWeight.semibold },
 
   });
 }

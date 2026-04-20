@@ -228,7 +228,7 @@ function makeStyles(t: ThemeContextValue) {
     form:      { padding: spacing[5], backgroundColor: t.surface.bgCard, flex: 1 },
     formTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[4] },
 
-    aiBtn:         { backgroundColor: colors.violet[500], flexDirection: "row", alignItems: "center", justifyContent: "center", padding: spacing[3], borderRadius: radii.md, marginBottom: spacing[6], gap: spacing[2] },
+    aiBtn:         { backgroundColor: palette.accent.ai[500], flexDirection: "row", alignItems: "center", justifyContent: "center", padding: spacing[3], borderRadius: radii.md, marginBottom: spacing[6], gap: spacing[2] },
     aiBtnDisabled: { opacity: 0.7 },
     aiBtnText:     { color: colors.white, fontWeight: fontWeight.bold, fontSize: 14 },
 

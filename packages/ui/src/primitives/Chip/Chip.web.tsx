@@ -4,15 +4,15 @@ import { colors, palette, radii, fontSize, fontWeight } from '../../tokens/token
 import type { ChipProps, ChipColor } from './Chip.types';
 
 const unselected: Record<ChipColor, { background: string; color: string }> = {
-  default: { background: colors.primary[50],  color: colors.primary[700] },
-  green:   { background: colors.success[50],  color: colors.green[700]   },
-  amber:   { background: colors.amber[50],    color: colors.amber[800]   },
+  default: { background: palette.brand[50],  color: palette.brand[700] },
+  green:   { background: palette.status.success[50],  color: palette.accent.document[700]   },
+  amber:   { background: palette.accent.medication[50],    color: palette.accent.medication[800]   },
 };
 
 const selected: Record<ChipColor, { background: string; color: string }> = {
   default: { background: palette.brand[500],   color: colors.white },
-  green:   { background: colors.green[500], color: colors.white },
-  amber:   { background: colors.amber[500], color: colors.white },
+  green:   { background: palette.accent.document[500], color: colors.white },
+  amber:   { background: palette.accent.medication[500], color: colors.white },
 };
 
 export function Chip({ label, color = 'default', selected: isSelected = false, onPress }: ChipProps) {

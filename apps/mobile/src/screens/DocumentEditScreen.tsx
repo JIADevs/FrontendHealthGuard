@@ -259,7 +259,7 @@ function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container:        { flex: 1, backgroundColor: t.surface.bgCard },
     center:           { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing[6], backgroundColor: t.surface.bgCard },
-    error:            { color: colors.error[500], fontSize: fontSize.md, fontWeight: fontWeight.bold },
+    error:            { color: palette.status.error[500], fontSize: fontSize.md, fontWeight: fontWeight.bold },
     content:          { paddingBottom: 96 },
     previewContainer: { height: 360, backgroundColor: t.surface.bg, justifyContent: "center", alignItems: "center" },
     previewImage:     { width: "100%", height: "100%" },

@@ -6,9 +6,9 @@ import { colors, palette, toastBg, radii, spacing, fontSize, fontWeight } from "
 
 // ─── Colores por tipo (dark toasts) ──────────────────────────────────────────
 const VARIANTS = {
-  success: { icon: CheckCircle2,  color: colors.success[500], bg: toastBg.success, border: colors.success[600] },
-  error:   { icon: XCircle,       color: colors.error[400],   bg: toastBg.error,   border: colors.error[600] },
-  warning: { icon: AlertTriangle, color: colors.warning[500], bg: toastBg.warning, border: colors.amber[600] },
+  success: { icon: CheckCircle2,  color: palette.status.success[500], bg: toastBg.success, border: palette.status.success[600] },
+  error:   { icon: XCircle,       color: palette.status.error[400],   bg: toastBg.error,   border: palette.status.error[600] },
+  warning: { icon: AlertTriangle, color: palette.status.warning[500], bg: toastBg.warning, border: palette.accent.medication[600] },
   info:    { icon: Info,           color: palette.brand[400],     bg: toastBg.info,    border: palette.brand[600] },
 } as const;
 
@@ -92,6 +92,6 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   textWrap: { flex: 1, gap: 2 },
-  title:    { color: colors.slate[100], fontSize: 14, fontWeight: fontWeight.bold, letterSpacing: 0.1 },
-  subtitle: { color: colors.slate[400], fontSize: fontSize.xs, lineHeight: 17 },
+  title:    { color: palette.surface[100], fontSize: 14, fontWeight: fontWeight.bold, letterSpacing: 0.1 },
+  subtitle: { color: palette.surface[400], fontSize: fontSize.xs, lineHeight: 17 },
 });

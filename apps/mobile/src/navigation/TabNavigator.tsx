@@ -24,7 +24,7 @@ import {
 
 export type TabParamList = {
   Documents: undefined;
-  Agenda: undefined;
+  Agenda: { initialTab?: "appointments" | "medications" } | undefined;
   Dashboard: undefined;
   Backpacks: undefined;
   Profile: undefined;

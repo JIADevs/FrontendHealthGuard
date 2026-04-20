@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -66,6 +66,15 @@ export function AgendaScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const [tab, setTab] = useState<"appointments" | "medications">("appointments");
+
+  // Allow navigating with initialTab param (e.g. from Dashboard → Medicamentos)
+  const route = require("@react-navigation/native").useRoute();
+  useEffect(() => {
+    const initialTab = route.params?.initialTab;
+    if (initialTab === "medications" || initialTab === "appointments") {
+      setTab(initialTab);
+    }
+  }, [route.params?.initialTab]);
 
   return (
     <SafeAreaView style={styles.container}>

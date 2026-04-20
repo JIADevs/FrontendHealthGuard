@@ -137,29 +137,49 @@ export function DashboardScreen() {
 
         {/* ── Content area (overlaps header with rounded top) ── */}
         <View style={styles.contentArea}>
-          {/* ── Metric Cards ── */}
-          <View style={styles.metricRow}>
-            <MetricCard
-              icon={<FileText size={20} color={t.accent.docFg} />}
-              iconBg={t.accent.docBg}
-              value={dash.docTotal}
-              label="Documentos"
-              t={t}
-            />
-            <MetricCard
-              icon={<Calendar size={20} color={t.accent.calFg} />}
-              iconBg={t.accent.calBg}
-              value={dash.apptTotal}
-              label="Citas"
-              t={t}
-            />
-            <MetricCard
-              icon={<Pill size={20} color={t.accent.medFg} />}
-              iconBg={t.accent.medBg}
-              value={dash.medTotal}
-              label="Medicamentos"
-              t={t}
-            />
+          {/* ── Tu día — summary card ── */}
+          <View style={styles.dayCard}>
+            <TouchableOpacity
+              style={styles.dayItem}
+              onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "appointments" } } as any)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.dayIconWrap, { backgroundColor: t.accent.calBg }]}>
+                <Calendar size={16} color={t.accent.calFg} />
+              </View>
+              <Text style={[styles.dayValue, { color: t.text.primary }]}>{dash.todayApptCount}</Text>
+              <Text style={[styles.dayLabel, { color: t.text.secondary }]}>
+                {dash.todayApptCount === 1 ? 'Cita hoy' : 'Citas hoy'}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={[styles.daySeparator, { backgroundColor: t.border.light }]} />
+
+            <TouchableOpacity
+              style={styles.dayItem}
+              onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "medications" } } as any)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.dayIconWrap, { backgroundColor: t.accent.medBg }]}>
+                <Pill size={16} color={t.accent.medFg} />
+              </View>
+              <Text style={[styles.dayValue, { color: t.text.primary }]}>{dash.activeMeds.length}</Text>
+              <Text style={[styles.dayLabel, { color: t.text.secondary }]}>Medicamentos</Text>
+            </TouchableOpacity>
+
+            <View style={[styles.daySeparator, { backgroundColor: t.border.light }]} />
+
+            <TouchableOpacity
+              style={styles.dayItem}
+              onPress={() => navigation.navigate("MainTabs", { screen: "Documents" } as any)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.dayIconWrap, { backgroundColor: t.accent.docBg }]}>
+                <FileText size={16} color={t.accent.docFg} />
+              </View>
+              <Text style={[styles.dayValue, { color: t.text.primary }]}>{dash.docTotal}</Text>
+              <Text style={[styles.dayLabel, { color: t.text.secondary }]}>Documentos</Text>
+            </TouchableOpacity>
           </View>
 
           {/* ── Featured Next Appointment ── */}
@@ -168,7 +188,7 @@ export function DashboardScreen() {
               <Typography variant="h4">Próxima Cita</Typography>
               <TouchableOpacity
                 style={styles.seeAllBtn}
-                onPress={() => navigation.navigate("MainTabs", { screen: "Agenda" } as any)}
+                onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "appointments" } } as any)}
               >
                 <Typography variant="caption" color="secondary">Ver todas</Typography>
                 <ChevronRight size={14} color={t.text.secondary} />
@@ -188,7 +208,7 @@ export function DashboardScreen() {
                 <TouchableOpacity
                   style={styles.featuredApptCard}
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate("MainTabs", { screen: "Agenda" } as any)}
+                  onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "appointments" } } as any)}
                 >
                   {/* Left accent border */}
                   <View style={[styles.featuredAccent, { backgroundColor: t.accent.calFg }]} />
@@ -238,7 +258,7 @@ export function DashboardScreen() {
               <Typography variant="h4">Medicamentos</Typography>
               <TouchableOpacity
                 style={styles.seeAllBtn}
-                onPress={() => navigation.navigate("MainTabs", { screen: "Agenda" } as any)}
+                onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "medications" } } as any)}
               >
                 <Typography variant="caption" color="secondary">Gestionar</Typography>
                 <ChevronRight size={14} color={t.text.secondary} />
@@ -354,66 +374,7 @@ export function DashboardScreen() {
   );
 }
 
-// ─── Metric Card Sub-component ───────────────────────────────────────────────
 
-function MetricCard({
-  icon,
-  iconBg,
-  value,
-  label,
-  t,
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  value: number | string;
-  label: string;
-  t: ThemeContextValue;
-}) {
-  return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: t.surface.bgCard,
-        padding: spacing[4],
-        borderRadius: radii.lg,
-        alignItems: "center",
-        gap: spacing[2],
-        ...shadows.sm,
-      }}
-    >
-      <View
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: radii.md,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: iconBg,
-        }}
-      >
-        {icon}
-      </View>
-      <Text
-        style={{
-          fontSize: fontSize["2xl"],
-          fontWeight: fontWeight.extrabold,
-          color: t.text.primary,
-        }}
-      >
-        {value}
-      </Text>
-      <Text
-        style={{
-          fontSize: fontSize.xs,
-          fontWeight: fontWeight.medium,
-          color: t.text.secondary,
-        }}
-      >
-        {label}
-      </Text>
-    </View>
-  );
-}
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -511,9 +472,40 @@ function makeStyles(t: ThemeContextValue) {
       padding: spacing[5],
       gap: spacing[5],
     },
-    metricRow: {
+    // ── Tu día card ──
+    dayCard: {
       flexDirection: "row",
-      gap: spacing[3],
+      backgroundColor: t.surface.bgCard,
+      borderRadius: radii.lg,
+      padding: spacing[4],
+      alignItems: "center",
+      ...shadows.sm,
+    },
+    dayItem: {
+      flex: 1,
+      alignItems: "center",
+      gap: spacing[1],
+    },
+    dayIconWrap: {
+      width: 32,
+      height: 32,
+      borderRadius: radii.md,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 2,
+    },
+    dayValue: {
+      fontSize: fontSize.xl,
+      fontWeight: fontWeight.extrabold,
+    },
+    dayLabel: {
+      fontSize: 11,
+      fontWeight: fontWeight.medium,
+    },
+    daySeparator: {
+      width: 1,
+      height: 40,
+      marginHorizontal: spacing[2],
     },
 
     // ── Sections (carded) ──

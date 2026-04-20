@@ -100,7 +100,7 @@ export default function SharePage() {
           <div className="card-header">
             <span className="card-title">Tus Documentos</span>
             {selected.length > 0 && (
-              <span style={{ fontSize: 12, color: "var(--primary-600)", fontWeight: 600 }}>
+              <span style={{ fontSize: 12, color: "var(--brand-600)", fontWeight: 600 }}>
                 {selected.length} seleccionado{selected.length > 1 ? "s" : ""}
               </span>
             )}

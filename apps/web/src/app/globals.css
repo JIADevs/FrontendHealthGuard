@@ -40,7 +40,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-800) 50%, var(--bg-sidebar) 100%);
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-800) 50%, var(--bg-sidebar) 100%);
   padding: 24px;
   position: relative;
   overflow: hidden;
@@ -85,7 +85,7 @@ a {
 .login-logo-icon {
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -98,7 +98,7 @@ a {
 .login-logo h1 {
   font-size: 22px;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary-700), var(--gray-800));
+  background: linear-gradient(135deg, var(--brand-700), var(--gray-800));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -137,8 +137,8 @@ a {
 }
 
 .form-input:focus {
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px var(--primary-ring-md);
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-ring-md);
   background: var(--bg-card);
 }
 
@@ -178,13 +178,13 @@ a {
 
 .btn-primary {
   width: 100%;
-  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-600));
   color: white;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  background: linear-gradient(135deg, var(--brand-600), var(--brand-700));
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
   transform: translateY(-1px);
 }
@@ -209,12 +209,12 @@ a {
 
 .btn-ghost {
   background: transparent;
-  color: var(--primary-600);
+  color: var(--brand-600);
   padding: 8px 16px;
 }
 
 .btn-ghost:hover {
-  background: var(--primary-50);
+  background: var(--brand-50);
 }
 
 .login-divider {
@@ -244,13 +244,13 @@ a {
 }
 
 .login-footer a {
-  color: var(--primary-600);
+  color: var(--brand-600);
   font-weight: 600;
   transition: color var(--transition);
 }
 
 .login-footer a:hover {
-  color: var(--primary-700);
+  color: var(--brand-700);
 }
 
 /* ---------- App Layout ---------- */
@@ -284,7 +284,7 @@ a {
 .sidebar-logo {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+  background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -334,7 +334,7 @@ a {
 
 .nav-link.active {
   background: rgba(59, 130, 246, 0.15);
-  color: var(--primary-300);
+  color: var(--brand-300);
   font-weight: 600;
 }
 
@@ -420,7 +420,7 @@ a {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+  background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
   color: white;
   display: flex;
   align-items: center;
@@ -501,7 +501,7 @@ a {
   flex-shrink: 0;
 }
 
-.metric-icon.blue { background: var(--primary-50); color: var(--primary-600); }
+.metric-icon.blue { background: var(--brand-50); color: var(--brand-600); }
 .metric-icon.green { background: var(--success-50); color: var(--success-600); }
 .metric-icon.amber { background: var(--warning-50); color: var(--warning-500); }
 
@@ -536,7 +536,7 @@ a {
 /* Page-level spinner: uses theme-aware border so it works in dark mode */
 .spinner--page {
   border-color: var(--border);
-  border-top-color: var(--primary-500);
+  border-top-color: var(--brand-500);
 }
 
 @keyframes spin {
@@ -573,7 +573,7 @@ a {
 
 /* ---------- Dashboard Greeting ---------- */
 .dash-greeting {
-  background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
   border-radius: var(--radius);
   padding: 32px;
   margin-bottom: 28px;
@@ -687,7 +687,7 @@ a {
   flex-shrink: 0;
 }
 
-.dash-item-icon.calendar { background: var(--primary-50); color: var(--primary-600); }
+.dash-item-icon.calendar { background: var(--brand-50); color: var(--brand-600); }
 .dash-item-icon.medication { background: var(--warning-50); color: var(--warning-500); }
 
 .dash-item-info {
@@ -732,8 +732,8 @@ a {
 }
 
 .status-badge.today {
-  background: var(--primary-50);
-  color: var(--primary-700);
+  background: var(--brand-50);
+  color: var(--brand-700);
 }
 
 .status-badge.upcoming {
@@ -765,13 +765,13 @@ a {
 .quick-link-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
-  border-color: var(--primary-200);
+  border-color: var(--brand-200);
 }
 
 .quick-link-card svg {
   width: 20px;
   height: 20px;
-  color: var(--primary-500);
+  color: var(--brand-500);
   flex-shrink: 0;
 }
 

@@ -60,7 +60,7 @@ export function ProfileScreen() {
   if (form.loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color={colors.primary[500]} style={{ marginTop: 48 }} />
+        <ActivityIndicator size="large" color={palette.brand[500]} style={{ marginTop: 48 }} />
       </SafeAreaView>
     );
   }
@@ -188,7 +188,7 @@ function makeStyles(t: ThemeContextValue) {
     container:        { flex: 1, backgroundColor: t.surface.bg },
     content:          { padding: spacing[4], gap: spacing[3] },
     avatarCard:       { flexDirection: "row", alignItems: "center", gap: spacing[4], backgroundColor: t.surface.bgCard, padding: spacing[4], borderRadius: radii.lg, ...shadows.sm },
-    avatar:           { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary[500], alignItems: "center", justifyContent: "center" },
+    avatar:           { width: 56, height: 56, borderRadius: 28, backgroundColor: palette.brand[500], alignItems: "center", justifyContent: "center" },
     avatarText:       { color: colors.white, fontSize: fontSize.xl, fontWeight: fontWeight.bold },
     card:             { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, ...shadows.sm, overflow: "hidden" },
     fieldRow:         { paddingHorizontal: spacing[4], paddingTop: spacing[3], paddingBottom: spacing[3], borderBottomWidth: 1, borderBottomColor: t.border.light },

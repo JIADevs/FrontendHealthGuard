@@ -26,8 +26,8 @@
 }
 
 .agenda-tab.active {
-  color: var(--primary-600);
-  border-bottom-color: var(--primary-600);
+  color: var(--brand-600);
+  border-bottom-color: var(--brand-600);
 }
 
 /* ---------- Appointment / Medication list ---------- */
@@ -63,7 +63,7 @@
   flex-shrink: 0;
 }
 
-.agenda-item-icon.blue { background: var(--primary-50); color: var(--primary-600); }
+.agenda-item-icon.blue { background: var(--brand-50); color: var(--brand-600); }
 .agenda-item-icon.amber { background: var(--warning-50); color: var(--warning-500); }
 .agenda-item-icon.green { background: var(--success-50); color: var(--success-600); }
 
@@ -112,7 +112,7 @@
 .status-badge.pending { background: var(--warning-50); color: var(--amber-800); }
 .status-badge.completed { background: var(--success-50); color: var(--green-700); }
 .status-badge.cancelled { background: var(--error-50); color: var(--error-800); }
-.status-badge.rescheduled { background: var(--primary-50); color: var(--primary-700); }
+.status-badge.rescheduled { background: var(--brand-50); color: var(--brand-700); }
 
 /* ---------- Status selector ---------- */
 .status-select {
@@ -129,7 +129,7 @@
 }
 
 .status-select:focus {
-  border-color: var(--primary-500);
+  border-color: var(--brand-500);
 }
 
 /* ---------- Form grid ---------- */
@@ -210,18 +210,18 @@
 }
 
 .notif-item.unread {
-  background: var(--primary-50);
+  background: var(--brand-50);
 }
 
 .notif-item.unread:hover {
-  background: var(--primary-100);
+  background: var(--brand-100);
 }
 
 .notif-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--primary-500);
+  background: var(--brand-500);
   flex-shrink: 0;
   margin-top: 6px;
 }

@@ -46,7 +46,7 @@ export function BackpackDetail({ id, onBack }: BackpackDetailProps) {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Backpack size={22} style={{ color: "var(--primary-500)", flexShrink: 0 }} />
+                <Backpack size={22} style={{ color: "var(--brand-500)", flexShrink: 0 }} />
                 <Typography variant="h2">{bp.data.name}</Typography>
               </div>
               {bp.data.description && (

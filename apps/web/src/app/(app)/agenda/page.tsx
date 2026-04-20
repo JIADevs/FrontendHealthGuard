@@ -104,7 +104,7 @@ function AppointmentsTab() {
                 </span>
               }
               icon={<CalendarDays size={20} />}
-              iconBackground="var(--primary-50)"
+              iconBackground="var(--brand-50)"
               actions={
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>

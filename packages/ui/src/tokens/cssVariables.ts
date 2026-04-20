@@ -1,6 +1,6 @@
 import { colors, surface, border, radii, overlay, fontFamily } from "./tokens";
 import { palette } from "./tokens";
-import { darkTheme } from "./theme";
+import { lightTheme, darkTheme } from "./theme";
 
 /**
  * Helper: convierte hex a RGB para usar en rgba() del dark mode.
@@ -26,7 +26,7 @@ export function generateCssVariables(): string {
   const brandRgb = hexToRgb(palette.brand[500]);
 
   const darkBlock = `
-    /* Surfaces (dark mode) */
+    /* Surfaces (dark mode — rich navy) */
     --bg:               ${darkTheme.surface.bg};
     --bg-card:          ${darkTheme.surface.bgCard};
     --bg-sidebar:       ${darkTheme.surface.bgSidebar};
@@ -36,8 +36,28 @@ export function generateCssVariables(): string {
     --text-primary:   ${darkTheme.text.primary};
     --text-secondary: ${darkTheme.text.secondary};
 
-    /* Border (dark mode) */
+    /* Border (dark mode — subtle glow) */
     --border: ${darkTheme.border.default};
+    --border-light: ${darkTheme.border.light};
+
+    /* Brand solid (dark mode — deeper shade for headers) */
+    --brand-header:     ${darkTheme.brand.solid};
+    --brand-header-alt: ${darkTheme.brand.solidAlt};
+    --brand-header-sub: ${darkTheme.brand.onSolid};
+
+    /* Brand tints (semi-transparent on dark bg) */
+    --brand-50:  ${darkTheme.brand.tint};
+    --brand-100: ${darkTheme.brand.tintMed};
+    --brand-200: ${darkTheme.brand.tintBorder};
+    --brand-300: rgba(${brandRgb}, 0.35);
+
+    /* Brand foreground (slightly brighter on dark) */
+    --brand-400: ${palette.brand[300]};
+    --brand-500: ${palette.brand[400]};
+    --brand-600: ${palette.brand[500]};
+    --brand-700: ${darkTheme.brand.tintText};
+    --brand-800: ${palette.brand[700]};
+    --brand-900: ${palette.brand[600]};
 
     /* Gray scale (dark overrides — inverted to slate) */
     --gray-50:  ${colors.slate[800]};
@@ -51,16 +71,33 @@ export function generateCssVariables(): string {
     --gray-800: ${colors.slate[50]};
     --gray-900: ${colors.white};
 
-    /* Brand tints (semi-transparent on dark bg) */
-    --brand-50:  rgba(${brandRgb}, 0.12);
-    --brand-100: rgba(${brandRgb}, 0.18);
-    --brand-200: rgba(${brandRgb}, 0.25);
-    --brand-300: rgba(${brandRgb}, 0.35);
-
     /* Status tints (semi-transparent on dark bg) */
-    --error-50:    rgba(239, 68, 68, 0.12);
-    --success-50:  rgba(34, 197, 94, 0.12);
-    --warning-50:  rgba(234, 179, 8, 0.12);
+    --error-50:    ${darkTheme.status.errorBg};
+    --error-500:   ${darkTheme.status.errorFg};
+    --error-600:   ${darkTheme.status.errorBorder};
+    --error-800:   ${palette.status.error[400]};
+    --success-50:  ${darkTheme.status.successBg};
+    --success-500: ${darkTheme.status.successFg};
+    --success-600: ${palette.status.success[500]};
+    --warning-50:  ${darkTheme.status.warningBg};
+    --warning-500: ${darkTheme.status.warningFg};
+    --warning-600: ${palette.status.warning[600]};
+
+    /* Accent tokens (semantic, dark mode) */
+    --accent-doc-bg:   ${darkTheme.accent.docBg};
+    --accent-doc-fg:   ${darkTheme.accent.docFg};
+    --accent-cal-bg:   ${darkTheme.accent.calBg};
+    --accent-cal-fg:   ${darkTheme.accent.calFg};
+    --accent-med-bg:   ${darkTheme.accent.medBg};
+    --accent-med-fg:   ${darkTheme.accent.medFg};
+    --accent-ai-bg:    ${darkTheme.accent.aiBg};
+    --accent-ai-fg:    ${darkTheme.accent.aiFg};
+    --accent-notif-bg: ${darkTheme.accent.notifBg};
+    --accent-notif-fg: ${darkTheme.accent.notifFg};
+
+    /* Extended palette (dark overrides) */
+    --amber-800:   ${colors.amber[500]};
+    --green-700:   ${colors.green[500]};
 
     /* Focus rings (more visible on dark) */
     --brand-ring-sm: rgba(${brandRgb}, 0.25);
@@ -85,6 +122,11 @@ export function generateCssVariables(): string {
   --brand-700: ${palette.brand[700]};
   --brand-800: ${palette.brand[800]};
   --brand-900: ${palette.brand[900]};
+
+  /* Brand header (light mode defaults) */
+  --brand-header:     ${lightTheme.brand.solid};
+  --brand-header-alt: ${lightTheme.brand.solidAlt};
+  --brand-header-sub: ${lightTheme.brand.onSolid};
 
   /* Gray */
   --gray-50:  ${colors.gray[50]};
@@ -117,6 +159,18 @@ export function generateCssVariables(): string {
   /* Extended palette */
   --amber-800:   ${colors.amber[800]};
   --green-700:   ${colors.green[700]};
+
+  /* Accent tokens (semantic, light mode) */
+  --accent-doc-bg:   ${lightTheme.accent.docBg};
+  --accent-doc-fg:   ${lightTheme.accent.docFg};
+  --accent-cal-bg:   ${lightTheme.accent.calBg};
+  --accent-cal-fg:   ${lightTheme.accent.calFg};
+  --accent-med-bg:   ${lightTheme.accent.medBg};
+  --accent-med-fg:   ${lightTheme.accent.medFg};
+  --accent-ai-bg:    ${lightTheme.accent.aiBg};
+  --accent-ai-fg:    ${lightTheme.accent.aiFg};
+  --accent-notif-bg: ${lightTheme.accent.notifBg};
+  --accent-notif-fg: ${lightTheme.accent.notifFg};
 
   /* Surfaces (light mode) */
   --bg:               ${surface.bg};

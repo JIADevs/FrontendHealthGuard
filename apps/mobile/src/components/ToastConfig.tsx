@@ -5,11 +5,13 @@ import type { ToastConfig } from "react-native-toast-message";
 import { colors, palette, toastBg, radii, spacing, fontSize, fontWeight } from "@helu/ui";
 
 // ─── Colores por tipo (dark toasts) ──────────────────────────────────────────
+// NOTE: Static config — can't use useAppTheme(). Uses palette directly.
+// Toast backgrounds (toastBg) are already dark, so light palette values work.
 const VARIANTS = {
   success: { icon: CheckCircle2,  color: palette.status.success[500], bg: toastBg.success, border: palette.status.success[600] },
-  error:   { icon: XCircle,       color: palette.status.error[400],   bg: toastBg.error,   border: palette.status.error[600] },
+  error:   { icon: XCircle,       color: palette.status.error[500],   bg: toastBg.error,   border: palette.status.error[600] },
   warning: { icon: AlertTriangle, color: palette.status.warning[500], bg: toastBg.warning, border: palette.accent.medication[600] },
-  info:    { icon: Info,           color: palette.brand[400],     bg: toastBg.info,    border: palette.brand[600] },
+  info:    { icon: Info,           color: palette.brand[400],          bg: toastBg.info,    border: palette.brand[600] },
 } as const;
 
 type VariantKey = keyof typeof VARIANTS;

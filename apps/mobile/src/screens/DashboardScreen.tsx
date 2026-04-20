@@ -7,8 +7,9 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
+  StatusBar,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDashboardCore } from "@helu/api/hooks";
 import { useAuthStore } from "@helu/stores";
 import {
@@ -59,9 +60,13 @@ export function DashboardScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const logout = useAuthStore((s) => s.logout);
   const dash = useDashboardCore();
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <View style={styles.container}>
+      {/* Status bar strip — brand color behind clock/signal */}
+      <View style={[styles.statusBarBg, { height: insets.top }]} />
+      <StatusBar barStyle="light-content" translucent={false} />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -97,6 +102,7 @@ export function DashboardScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={styles.chipsScroll}
             contentContainerStyle={styles.chipsRow}
           >
             {QUICK_ACTIONS.map((action) => {
@@ -108,7 +114,7 @@ export function DashboardScreen() {
                   onPress={() => navigation.navigate(action.route as any)}
                   activeOpacity={0.7}
                 >
-                  <Icon size={14} color={palette.brand[700]} />
+                  <Icon size={14} color={t.brand.tintText} />
                   <Text style={styles.chipText}>{action.label}</Text>
                 </TouchableOpacity>
               );
@@ -121,22 +127,22 @@ export function DashboardScreen() {
           {/* ── Metric Cards ── */}
           <View style={styles.metricRow}>
             <MetricCard
-              icon={<FileText size={20} color={palette.accent.document[600]} />}
-              iconBg={palette.accent.document[50]}
+              icon={<FileText size={20} color={t.accent.docFg} />}
+              iconBg={t.accent.docBg}
               value={dash.docTotal}
               label="Documentos"
               t={t}
             />
             <MetricCard
-              icon={<Calendar size={20} color={palette.accent.calendar[600]} />}
-              iconBg={palette.accent.calendar[50]}
+              icon={<Calendar size={20} color={t.accent.calFg} />}
+              iconBg={t.accent.calBg}
               value={dash.apptTotal}
               label="Citas"
               t={t}
             />
             <MetricCard
-              icon={<Pill size={20} color={palette.accent.medication[600]} />}
-              iconBg={palette.accent.medication[50]}
+              icon={<Pill size={20} color={t.accent.medFg} />}
+              iconBg={t.accent.medBg}
               value={dash.medTotal}
               label="Medicamentos"
               t={t}
@@ -157,7 +163,7 @@ export function DashboardScreen() {
             </View>
             <View style={styles.sectionBody}>
               {dash.isApptsLoading ? (
-                <ActivityIndicator color={palette.brand[500]} style={{ padding: spacing[6] }} />
+                <ActivityIndicator color={t.brand.fg} style={{ padding: spacing[6] }} />
               ) : dash.upcomingAppts.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Calendar size={32} color={t.text.muted} />
@@ -174,8 +180,8 @@ export function DashboardScreen() {
                       i > 0 && { borderTopWidth: 1, borderTopColor: t.border.light },
                     ]}
                   >
-                    <View style={[styles.apptIconContainer, { backgroundColor: palette.accent.calendar[50] }]}>
-                      <Calendar size={16} color={palette.accent.calendar[600]} />
+                    <View style={[styles.apptIconContainer, { backgroundColor: t.accent.calBg }]}>
+                      <Calendar size={16} color={t.accent.calFg} />
                     </View>
                     <View style={styles.apptInfo}>
                       <Typography variant="label">{a.specialty}</Typography>
@@ -206,7 +212,7 @@ export function DashboardScreen() {
             </View>
             <View style={styles.sectionBody}>
               {dash.isMedsLoading ? (
-                <ActivityIndicator color={palette.accent.medication[500]} style={{ padding: spacing[6] }} />
+                <ActivityIndicator color={t.accent.medFg} style={{ padding: spacing[6] }} />
               ) : dash.activeMeds.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Pill size={32} color={t.text.muted} />
@@ -223,8 +229,8 @@ export function DashboardScreen() {
                       i > 0 && { borderTopWidth: 1, borderTopColor: t.border.light },
                     ]}
                   >
-                    <View style={[styles.apptIconContainer, { backgroundColor: palette.accent.medication[50] }]}>
-                      <Pill size={16} color={palette.accent.medication[600]} />
+                    <View style={[styles.apptIconContainer, { backgroundColor: t.accent.medBg }]}>
+                      <Pill size={16} color={t.accent.medFg} />
                     </View>
                     <View style={styles.apptInfo}>
                       <Typography variant="label">{m.name}</Typography>
@@ -234,8 +240,8 @@ export function DashboardScreen() {
                     </View>
                     {m.nextIntakeTime && (
                       <View style={styles.apptTime}>
-                        <Clock size={12} color={palette.accent.medication[600]} />
-                        <Text style={[styles.apptTimeText, { color: palette.accent.medication[600] }]}>
+                        <Clock size={12} color={t.accent.medFg} />
+                        <Text style={[styles.apptTimeText, { color: t.accent.medFg }]}>
                           {m.nextIntakeTime.slice(0, 5)}
                         </Text>
                       </View>
@@ -247,7 +253,7 @@ export function DashboardScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -318,7 +324,10 @@ function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: palette.brand[500],
+      backgroundColor: t.surface.bg,
+    },
+    statusBarBg: {
+      backgroundColor: t.brand.solid,
     },
     scrollView: {
       flex: 1,
@@ -329,7 +338,7 @@ function makeStyles(t: ThemeContextValue) {
 
     // ── Header ──
     header: {
-      backgroundColor: palette.brand[500],
+      backgroundColor: t.brand.solid,
       paddingHorizontal: spacing[6],
       paddingTop: spacing[4],
       paddingBottom: spacing[8],
@@ -357,7 +366,7 @@ function makeStyles(t: ThemeContextValue) {
     subtitleText: {
       fontSize: fontSize.sm,
       fontWeight: fontWeight.normal,
-      color: palette.brand[100],
+      color: t.brand.onSolid,
       marginTop: spacing[1],
     },
     headerActions: {
@@ -374,9 +383,13 @@ function makeStyles(t: ThemeContextValue) {
     },
 
     // ── Chips ──
+    chipsScroll: {
+      marginHorizontal: -spacing[6],
+    },
     chipsRow: {
       flexDirection: "row",
       gap: spacing[2],
+      paddingHorizontal: spacing[6],
       paddingBottom: spacing[2],
     },
     chip: {
@@ -392,7 +405,7 @@ function makeStyles(t: ThemeContextValue) {
     chipText: {
       fontSize: fontSize.sm,
       fontWeight: fontWeight.medium,
-      color: palette.brand[700],
+      color: t.brand.tintText,
     },
 
     // ── Content ──

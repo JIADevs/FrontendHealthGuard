@@ -97,11 +97,11 @@ function makeStyles(t: ThemeContextValue) {
     container:  { flex: 1, backgroundColor: t.surface.bg },
     content:    { flex: 1, padding: spacing[6], justifyContent: "center" },
     header:     { alignItems: "center", marginBottom: 40, gap: spacing[1] },
-    logo:       { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: palette.brand[500], alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
+    logo:       { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: t.brand.fg, alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
     logoText:   { color: colors.white, fontSize: 28, fontWeight: fontWeight.extrabold },
     form:       { gap: spacing[4], marginTop: spacing[4] },
-    errorBox:   { backgroundColor: palette.status.error[50], padding: spacing[3], borderRadius: radii.sm, marginBottom: spacing[4] },
+    errorBox:   { backgroundColor: t.status.errorBg, padding: spacing[3], borderRadius: radii.sm, marginBottom: spacing[4] },
     footer:     { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
-    footerLink: { color: palette.brand[500], fontWeight: fontWeight.semibold },
+    footerLink: { color: t.brand.fg, fontWeight: fontWeight.semibold },
   });
 }

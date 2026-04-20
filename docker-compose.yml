@@ -65,4 +65,3 @@ services:
 networks:
   helu_network:
     external: false
-

@@ -35,12 +35,14 @@ const Tab = createBottomTabNavigator<TabParamList>();
 // ─── Center Tab (Inicio) — elevated FAB-like icon ───────────────────────────
 
 function CenterTabIcon({ focused }: { focused: boolean }) {
+  const t = useAppTheme();
   return (
     <View
       style={[
         styles.centerTab,
         {
-          backgroundColor: focused ? palette.brand[500] : palette.brand[400],
+          backgroundColor: focused ? t.brand.fg : t.brand.tintText,
+          shadowColor: t.brand.fg,
         },
       ]}
     >
@@ -70,8 +72,8 @@ function ProfileTabIcon({ focused }: { focused: boolean }) {
       style={[
         styles.profileAvatar,
         {
-          backgroundColor: focused ? palette.brand[500] : t.text.muted,
-          borderColor: focused ? palette.brand[400] : colors.transparent,
+          backgroundColor: focused ? t.brand.fg : t.text.muted,
+          borderColor: focused ? t.brand.tintBorder : colors.transparent,
         },
       ]}
     >
@@ -89,7 +91,7 @@ export function TabNavigator() {
     <Tab.Navigator
       initialRouteName="Dashboard"
       screenOptions={{
-        tabBarActiveTintColor: palette.brand[500],
+        tabBarActiveTintColor: t.brand.fg,
         tabBarInactiveTintColor: t.text.muted,
         headerShown: false,
         tabBarLabelStyle: {
@@ -145,7 +147,7 @@ export function TabNavigator() {
             fontSize: fontSize.xs,
             fontWeight: fontWeight.bold,
             marginTop: spacing[1],
-            color: palette.brand[500],
+            color: t.brand.fg,
           },
         }}
       />
@@ -179,8 +181,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: -20,
-    // Glow shadow
-    shadowColor: palette.brand[500],
+    // Glow shadow (color set inline via theme)
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

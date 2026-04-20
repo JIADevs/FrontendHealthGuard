@@ -99,7 +99,7 @@ export function DocumentUploadScreen() {
 
         <View style={styles.pickerContent}>
           <View style={styles.pickerIconBg}>
-            <FileUp color={palette.brand[500]} size={48} />
+            <FileUp color={t.brand.fg} size={48} />
           </View>
           <Typography variant="h2">Subir Documento</Typography>
           <Typography variant="body" color="secondary" align="center">
@@ -129,7 +129,7 @@ export function DocumentUploadScreen() {
             <Image source={{ uri: pickerAsset.uri }} style={styles.previewImage} resizeMode="contain" />
           ) : (
             <View style={styles.pdfPreview}>
-              <FileTextIcon color={palette.brand[500]} size={64} />
+              <FileTextIcon color={t.brand.fg} size={64} />
               <Typography variant="label" numberOfLines={2} align="center">{pickerAsset.name}</Typography>
               {pickerAsset.size != null && (
                 <Typography variant="caption" color="secondary">{friendlySize(pickerAsset.size)}</Typography>
@@ -181,10 +181,10 @@ function makeStyles(t: ThemeContextValue) {
       zIndex: 10,
     },
     pickerContent:  { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 32 },
-    pickerIconBg:   { width: 96, height: 96, borderRadius: 24, backgroundColor: palette.brand[100], alignItems: "center", justifyContent: "center", marginBottom: spacing[6] },
+    pickerIconBg:   { width: 96, height: 96, borderRadius: 24, backgroundColor: t.brand.tintMed, alignItems: "center", justifyContent: "center", marginBottom: spacing[6] },
     pickerTitle:    { fontSize: fontSize["3xl"], fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[2] },
     pickerSubtitle: { fontSize: fontSize.base, color: t.text.secondary, textAlign: "center", marginBottom: 32, lineHeight: 22 },
-    pickerBtn:      { backgroundColor: palette.brand[500], paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14 },
+    pickerBtn:      { backgroundColor: t.brand.fg, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14 },
     pickerBtnText:  { color: colors.white, fontWeight: fontWeight.bold, fontSize: fontSize.md },
 
     container:        { flex: 1, backgroundColor: colors.black },
@@ -196,10 +196,10 @@ function makeStyles(t: ThemeContextValue) {
 
     fileInfoBar:    { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: t.surface.bgCard, paddingHorizontal: spacing[5], paddingVertical: spacing[3] },
     fileInfoText:   { flex: 1, fontSize: fontSize.sm, color: t.text.primary, fontWeight: fontWeight.medium },
-    changeFileLink: { fontSize: fontSize.sm, color: palette.brand[500], fontWeight: fontWeight.semibold },
+    changeFileLink: { fontSize: fontSize.sm, color: t.brand.fg, fontWeight: fontWeight.semibold },
 
     previewControls: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 32, paddingBottom: 48, backgroundColor: t.surface.bgCard, paddingTop: spacing[3] },
-    circleBtnRed:    { width: 72, height: 72, borderRadius: 36, backgroundColor: palette.status.error[500], alignItems: "center", justifyContent: "center" },
-    circleBtnGreen:  { width: 72, height: 72, borderRadius: 36, backgroundColor: palette.status.success[500], alignItems: "center", justifyContent: "center" },
+    circleBtnRed:    { width: 72, height: 72, borderRadius: 36, backgroundColor: t.status.errorFg, alignItems: "center", justifyContent: "center" },
+    circleBtnGreen:  { width: 72, height: 72, borderRadius: 36, backgroundColor: t.status.successFg, alignItems: "center", justifyContent: "center" },
   });
 }

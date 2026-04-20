@@ -84,7 +84,7 @@ export function ScannerScreen() {
   if (!permission) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={palette.brand[500]} />
+        <ActivityIndicator color={t.brand.fg} />
       </View>
     );
   }
@@ -192,7 +192,7 @@ function makeStyles(t: ThemeContextValue) {
       padding: spacing[6],
     },
     text:    { fontSize: fontSize.md, color: t.text.primary, textAlign: "center", marginBottom: spacing[4] },
-    btn:     { backgroundColor: palette.brand[500], paddingHorizontal: spacing[5], paddingVertical: spacing[3], borderRadius: radii.md },
+    btn:     { backgroundColor: t.brand.fg, paddingHorizontal: spacing[5], paddingVertical: spacing[3], borderRadius: radii.md },
     btnText: { color: colors.white, fontWeight: fontWeight.semibold },
     helper:  { marginTop: spacing[4], fontSize: fontSize.sm, color: t.text.secondary, textAlign: "center", lineHeight: 18 },
 
@@ -255,7 +255,7 @@ function makeStyles(t: ThemeContextValue) {
       width: 72,
       height: 72,
       borderRadius: 36,
-      backgroundColor: palette.status.error[500],
+      backgroundColor: t.status.errorFg,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -263,7 +263,7 @@ function makeStyles(t: ThemeContextValue) {
       width: 72,
       height: 72,
       borderRadius: 36,
-      backgroundColor: palette.status.success[500],
+      backgroundColor: t.status.successFg,
       alignItems: "center",
       justifyContent: "center",
     },

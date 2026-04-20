@@ -63,9 +63,9 @@ export function useDashboardCore(): DashboardData {
   const setUser = useAuthStore((s) => s.setUser);
 
   const profile = useProfileQuery();
-  const docs    = useDocumentsQuery("", 1, 1);
-  const appts   = useAppointmentsQuery("", 1, 3, todayISODate());
-  const meds    = useMedicationsQuery(1, 3);
+  const docs = useDocumentsQuery("", 1, 1);
+  const appts = useAppointmentsQuery("", 1, 3, todayISODate());
+  const meds = useMedicationsQuery(1, 3);
 
   // Mantiene el objeto de usuario del store sincronizado con el perfil real.
   useEffect(() => {
@@ -102,17 +102,17 @@ export function useDashboardCore(): DashboardData {
     greeting,
     apptSubtitle,
 
-    docTotal:  docs.isLoading  ? "—" : (docs.data?.total  ?? "—"),
+    docTotal: docs.isLoading ? "—" : (docs.data?.total ?? "—"),
     apptTotal: appts.isLoading ? "—" : (appts.data?.total ?? "—"),
-    medTotal:  meds.isLoading  ? "—" : (meds.data?.total  ?? "—"),
+    medTotal: meds.isLoading ? "—" : (meds.data?.total ?? "—"),
 
     upcomingAppts: appts.data?.items ?? [],
-    activeMeds:    meds.data?.items  ?? [],
+    activeMeds: meds.data?.items ?? [],
 
     todayApptCount,
 
     isApptsLoading: appts.isLoading,
-    isMedsLoading:  meds.isLoading,
-    isDocsLoading:  docs.isLoading,
+    isMedsLoading: meds.isLoading,
+    isDocsLoading: docs.isLoading,
   };
 }

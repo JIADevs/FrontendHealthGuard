@@ -573,7 +573,7 @@ a {
 
 /* ---------- Dashboard Greeting ---------- */
 .dash-greeting {
-  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  background: linear-gradient(135deg, var(--brand-header), var(--brand-header-alt));
   border-radius: var(--radius);
   padding: 32px;
   margin-bottom: 28px;

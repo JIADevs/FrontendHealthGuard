@@ -16,6 +16,9 @@ export function useTheme(): AppTheme & { mode: "light" | "dark" } {
     surface: { ...theme.surface },
     text:    { ...theme.text },
     border:  { ...theme.border },
+    brand:   { ...theme.brand },
+    status:  { ...theme.status },
+    accent:  { ...theme.accent },
     mode,
   };
 }

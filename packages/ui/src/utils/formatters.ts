@@ -85,3 +85,21 @@ const APPOINTMENT_STATUS_LABELS: Record<string, string> = {
 export function appointmentStatusLabel(status: string): string {
   return APPOINTMENT_STATUS_LABELS[status] ?? status;
 }
+
+// ─── Dashboard helpers ───────────────────────────────────────────────────────
+
+/** Splits "2026-04-27" → { day: "27", month: "abr" } for date badges. */
+export function splitDate(dateStr: string): { day: string; month: string } {
+  const d = new Date(dateStr + "T12:00:00");
+  const day = d.getDate().toString();
+  const month = d.toLocaleDateString("es", { month: "short" }).replace(".", "");
+  return { day, month };
+}
+
+/** Formats a file extension string into a friendly label for document cards. */
+export function formatFileKind(format: string): string {
+  const f = format.toLowerCase();
+  if (f.includes("pdf")) return "PDF";
+  if (f.includes("png") || f.includes("jpg") || f.includes("jpeg") || f.includes("webp")) return "Imagen";
+  return format.toUpperCase();
+}

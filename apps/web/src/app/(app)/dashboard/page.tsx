@@ -8,11 +8,18 @@ import {
   Upload,
   ArrowRight,
   Clock,
-  Camera,
+  MapPin,
   Share2,
   Folder,
+  ChevronRight,
 } from "lucide-react";
-import { formatTime, Typography, Spinner } from "@helu/ui";
+import {
+  formatDateLocal,
+  splitDate,
+  formatFileKind,
+  Typography,
+  Spinner,
+} from "@helu/ui";
 
 // ─── Quick Links (sidebar) ───────────────────────────────────────────────────
 
@@ -33,7 +40,7 @@ export default function DashboardPage() {
       {/* ── Branded Greeting ── */}
       <div className="dash-greeting">
         <h2>
-          {dash.greeting}, {dash.userFirstName ?? ""}
+          <span className="brand-name">Helu</span>, {dash.userFirstName ?? ""}
         </h2>
         <div className="dash-subtitle">{dash.apptSubtitle}</div>
         <div className="dash-greeting-actions">
@@ -52,38 +59,45 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Metrics ── */}
-      <div className="metric-grid">
-        <MetricCard
-          icon={<FileText size={24} />}
-          color="blue"
-          label="Documentos"
-          value={dash.docTotal}
-        />
-        <MetricCard
-          icon={<CalendarDays size={24} />}
-          color="green"
-          label="Citas Totales"
-          value={dash.apptTotal}
-        />
-        <MetricCard
-          icon={<Pill size={24} />}
-          color="amber"
-          label="Medicamentos Activos"
-          value={dash.medTotal}
-        />
+      {/* ── Tu día — summary card ── */}
+      <div className="day-card">
+        <a href="/agenda" className="day-item">
+          <div className="day-icon calendar">
+            <CalendarDays size={18} />
+          </div>
+          <div className="day-value">{dash.todayApptCount}</div>
+          <div className="day-label">
+            {dash.todayApptCount === 1 ? "Cita hoy" : "Citas hoy"}
+          </div>
+        </a>
+        <div className="day-separator" />
+        <a href="/agenda?tab=medications" className="day-item">
+          <div className="day-icon medication">
+            <Pill size={18} />
+          </div>
+          <div className="day-value">{dash.activeMeds.length}</div>
+          <div className="day-label">Medicamentos</div>
+        </a>
+        <div className="day-separator" />
+        <a href="/documents" className="day-item">
+          <div className="day-icon document">
+            <FileText size={18} />
+          </div>
+          <div className="day-value">{dash.docTotal}</div>
+          <div className="day-label">Documentos</div>
+        </a>
       </div>
 
       {/* ── Content grid: main + sidebar ── */}
       <div className="dash-content-grid">
-        {/* Left column: appointments + medications */}
+        {/* Left column */}
         <div>
-          {/* Upcoming Appointments */}
+          {/* ── Featured Next Appointment ── */}
           <div className="card dash-section" style={{ marginBottom: 24 }}>
             <div className="card-header">
-              <span className="card-title">Próximas Citas</span>
-              <a href="/agenda" className="btn btn-ghost" style={{ fontSize: 13 }}>
-                Ver todas
+              <span className="card-title">Próxima Cita</span>
+              <a href="/agenda" className="see-all-link">
+                Ver todas <ChevronRight size={14} />
               </a>
             </div>
             <div className="card-body">
@@ -91,7 +105,7 @@ export default function DashboardPage() {
                 <div className="empty-state">
                   <Spinner size="lg" />
                 </div>
-              ) : dash.upcomingAppts.length === 0 ? (
+              ) : !dash.nextAppt ? (
                 <div className="empty-state">
                   <CalendarDays />
                   <Typography variant="bodySm" color="secondary">
@@ -99,74 +113,128 @@ export default function DashboardPage() {
                   </Typography>
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  {dash.upcomingAppts.map((a) => (
-                    <div key={a.id} className="dash-item">
-                      <div className="dash-item-icon calendar">
-                        <CalendarDays size={18} />
+                <a href="/agenda" className="featured-appt">
+                  <div className="featured-accent" />
+                  <div className="featured-icon calendar">
+                    <CalendarDays size={18} />
+                  </div>
+                  <div className="featured-info">
+                    <div className="featured-title">{dash.nextAppt.specialty}</div>
+                    <div className="featured-sub">{dash.nextAppt.doctor}</div>
+                    {dash.nextAppt.location && (
+                      <div className="featured-location">
+                        <MapPin size={11} />
+                        {dash.nextAppt.location}
                       </div>
-                      <div className="dash-item-info">
-                        <div className="dash-item-title">{a.specialty}</div>
-                        <div className="dash-item-subtitle">
-                          {a.doctor}
-                          {a.location ? ` — ${a.location}` : ""}
-                        </div>
-                      </div>
-                      <div className="dash-item-time">
-                        <Clock size={14} />
-                        {a.date} {a.time?.slice(0, 5)}
-                      </div>
+                    )}
+                  </div>
+                  <div className="date-badge">
+                    <div className="date-badge-day">
+                      {splitDate(dash.nextAppt.date).day}
                     </div>
-                  ))}
-                </div>
+                    <div className="date-badge-month">
+                      {splitDate(dash.nextAppt.date).month}
+                    </div>
+                    {dash.nextAppt.time && (
+                      <div className="date-badge-time">
+                        {dash.nextAppt.time.slice(0, 5)}
+                      </div>
+                    )}
+                  </div>
+                </a>
               )}
             </div>
           </div>
 
-          {/* Active Medications */}
-          <div className="card dash-section">
-            <div className="card-header">
-              <span className="card-title">Medicamentos Activos</span>
-              <a href="/agenda" className="btn btn-ghost" style={{ fontSize: 13 }}>
-                Gestionar
+          {/* ── Medications Grid ── */}
+          <div className="dash-section" style={{ marginBottom: 24 }}>
+            <div className="section-header-flat">
+              <span className="card-title">Medicamentos</span>
+              <a href="/agenda?tab=medications" className="see-all-link">
+                Gestionar <ChevronRight size={14} />
               </a>
             </div>
-            <div className="card-body">
-              {dash.isMedsLoading ? (
-                <div className="empty-state">
-                  <Spinner size="lg" />
-                </div>
-              ) : dash.activeMeds.length === 0 ? (
+            {dash.isMedsLoading ? (
+              <div className="empty-state">
+                <Spinner size="lg" />
+              </div>
+            ) : dash.activeMeds.length === 0 ? (
+              <div className="card" style={{ padding: 24 }}>
                 <div className="empty-state">
                   <Pill />
                   <Typography variant="bodySm" color="secondary">
                     Sin medicamentos activos.
                   </Typography>
                 </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  {dash.activeMeds.map((m) => (
-                    <div key={m.id} className="dash-item">
-                      <div className="dash-item-icon medication">
-                        <Pill size={18} />
-                      </div>
-                      <div className="dash-item-info">
-                        <div className="dash-item-title">{m.name}</div>
-                        <div className="dash-item-subtitle">
-                          {m.dosage} — cada {m.frequency}h
-                        </div>
-                      </div>
-                      {m.nextIntakeTime && (
-                        <div className="dash-item-time">
-                          <Clock size={14} />
-                          {formatTime(m.nextIntakeTime)}
-                        </div>
-                      )}
+              </div>
+            ) : (
+              <div className="med-grid">
+                {dash.activeMeds.map((m) => (
+                  <div key={m.id} className="med-card">
+                    <div className="med-icon">
+                      <Pill size={16} />
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className="med-name">{m.name}</div>
+                    <div className="med-dosage">{m.dosage}</div>
+                    {m.nextIntakeTime ? (
+                      <div className="med-time-badge">
+                        <Clock size={10} />
+                        {m.nextIntakeTime.slice(0, 5)}
+                      </div>
+                    ) : (
+                      <div className="med-freq">Cada {m.frequency}h</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Recent Documents Grid ── */}
+          <div className="dash-section">
+            <div className="section-header-flat">
+              <span className="card-title">Documentos Recientes</span>
+              <a href="/documents" className="see-all-link">
+                Ver todos <ChevronRight size={14} />
+              </a>
             </div>
+            {dash.isDocsLoading ? (
+              <div className="empty-state">
+                <Spinner size="lg" />
+              </div>
+            ) : dash.recentDocs.length === 0 ? (
+              <div className="card" style={{ padding: 24 }}>
+                <div className="empty-state">
+                  <FileText />
+                  <Typography variant="bodySm" color="secondary">
+                    Aún no has subido documentos.
+                  </Typography>
+                </div>
+              </div>
+            ) : (
+              <div className="doc-grid">
+                {dash.recentDocs.map((doc) => (
+                  <a
+                    key={doc.id}
+                    href={`/documents/${doc.id}`}
+                    className="doc-card"
+                  >
+                    <div className="doc-icon">
+                      <FileText size={18} />
+                    </div>
+                    <div className="doc-title">{doc.title}</div>
+                    <div className="doc-footer">
+                      <span className="doc-kind-badge">
+                        {formatFileKind(doc.format)}
+                      </span>
+                      <span className="doc-date">
+                        {formatDateLocal(doc.uploadedAt)}
+                      </span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -193,29 +261,5 @@ export default function DashboardPage() {
         </div>
       </div>
     </>
-  );
-}
-
-// ─── MetricCard ──────────────────────────────────────────────────────────────
-
-function MetricCard({
-  icon,
-  color,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  color: "blue" | "green" | "amber";
-  label: string;
-  value: number | string;
-}) {
-  return (
-    <div className="metric-card">
-      <div className={`metric-icon ${color}`}>{icon}</div>
-      <div className="metric-info">
-        <div className="metric-label">{label}</div>
-        <div className="metric-value">{value}</div>
-      </div>
-    </div>
   );
 }

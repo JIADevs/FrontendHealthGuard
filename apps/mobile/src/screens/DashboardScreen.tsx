@@ -21,6 +21,8 @@ import {
   overlay,
   useAppTheme,
   formatDateLocal,
+  splitDate,
+  formatFileKind,
   Typography,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
@@ -51,21 +53,7 @@ const QUICK_ACTIONS = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Formats "2026-04-27" → { day: "27", month: "abr" } */
-function splitDate(dateStr: string): { day: string; month: string } {
-  const d = new Date(dateStr + "T12:00:00");
-  const day = d.getDate().toString();
-  const month = d.toLocaleDateString("es", { month: "short" }).replace(".", "");
-  return { day, month };
-}
 
-/** Formats file extension to friendly label */
-function formatKind(format: string): string {
-  const f = format.toLowerCase();
-  if (f.includes("pdf")) return "PDF";
-  if (f.includes("png") || f.includes("jpg") || f.includes("jpeg") || f.includes("webp")) return "Imagen";
-  return format.toUpperCase();
-}
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -96,8 +84,8 @@ export function DashboardScreen() {
               ) : (
                 <>
                   <Text style={styles.greetingText}>
-                    {dash.greeting},{" "}
-                    <Text style={styles.greetingName}>{dash.userFirstName ?? ""}</Text>
+                    <Text style={styles.brandName}>Helu</Text>
+                    <Text style={styles.greetingName}>, {dash.userFirstName ?? ""}</Text>
                   </Text>
                   <Text style={styles.subtitleText}>{dash.apptSubtitle}</Text>
                 </>
@@ -354,7 +342,7 @@ export function DashboardScreen() {
                     </Text>
                     <View style={styles.docFooter}>
                       <Text style={[styles.docKind, { color: t.accent.docFg, backgroundColor: t.accent.docBg }]}>
-                        {formatKind(doc.format)}
+                        {formatFileKind(doc.format)}
                       </Text>
                       <Text style={[styles.docDate, { color: t.text.muted }]}>
                         {formatDateLocal(doc.uploadedAt)}
@@ -416,9 +404,15 @@ function makeStyles(t: ThemeContextValue) {
       fontWeight: fontWeight.normal,
       color: colors.white,
     },
+    brandName: {
+      fontSize: fontSize["2xl"],
+      fontWeight: fontWeight.extrabold,
+      color: colors.white,
+      letterSpacing: 0.5,
+    },
     greetingName: {
       fontSize: fontSize.xl,
-      fontWeight: fontWeight.bold,
+      fontWeight: fontWeight.normal,
       color: colors.white,
     },
     subtitleText: {

@@ -15,7 +15,7 @@ import {
 } from "./hooks";
 import { useAuthStore } from "@helu/stores";
 import { todayISODate } from "@helu/ui";
-import type { Appointment, Medication } from "./schemas";
+import type { Appointment, Medication, Document } from "./schemas";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -45,9 +45,15 @@ export interface DashboardData {
   apptTotal: number | string;
   medTotal: number | string;
 
+  /** Cita más próxima (featured). */
+  nextAppt: Appointment | null;
+
   /** Listas para las secciones de detalle (máx. 3 ítems). */
   upcomingAppts: Appointment[];
   activeMeds: Medication[];
+
+  /** Últimos 3 documentos subidos. */
+  recentDocs: Document[];
 
   /** Citas de hoy (filtro separado para badges "HOY"). */
   todayApptCount: number;
@@ -63,7 +69,7 @@ export function useDashboardCore(): DashboardData {
   const setUser = useAuthStore((s) => s.setUser);
 
   const profile = useProfileQuery();
-  const docs = useDocumentsQuery("", 1, 1);
+  const docs = useDocumentsQuery("", 1, 3);
   const appts = useAppointmentsQuery("", 1, 3, todayISODate());
   const meds = useMedicationsQuery(1, 3);
 
@@ -107,7 +113,9 @@ export function useDashboardCore(): DashboardData {
     medTotal: meds.isLoading ? "—" : (meds.data?.total ?? "—"),
 
     upcomingAppts: appts.data?.items ?? [],
+    nextAppt: appts.data?.items?.[0] ?? null,
     activeMeds: meds.data?.items ?? [],
+    recentDocs: docs.data?.items ?? [],
 
     todayApptCount,
 

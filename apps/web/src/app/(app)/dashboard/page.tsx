@@ -33,7 +33,7 @@ export default function DashboardPage() {
       {/* ── Branded Greeting ── */}
       <div className="dash-greeting">
         <h2>
-          {dash.greeting}, {dash.userFirstName ?? ""}  👋
+          {dash.greeting}, {dash.userFirstName ?? ""}
         </h2>
         <div className="dash-subtitle">{dash.apptSubtitle}</div>
         <div className="dash-greeting-actions">

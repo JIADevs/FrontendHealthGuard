@@ -127,7 +127,7 @@ export function DashboardScreen() {
                   onPress={() => navigation.navigate(action.route as any)}
                   activeOpacity={0.7}
                 >
-                  <Icon size={14} color={t.brand.tintText} />
+                  <Icon size={14} color={t.brand.solid} />
                   <Text style={styles.chipText}>{action.label}</Text>
                 </TouchableOpacity>
               );
@@ -459,7 +459,7 @@ function makeStyles(t: ThemeContextValue) {
     chipText: {
       fontSize: fontSize.sm,
       fontWeight: fontWeight.medium,
-      color: t.brand.tintText,
+      color: t.brand.solid,
     },
 
     // ── Content ──

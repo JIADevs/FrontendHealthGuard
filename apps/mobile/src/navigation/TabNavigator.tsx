@@ -87,6 +87,7 @@ export function TabNavigator() {
 
   return (
     <Tab.Navigator
+      initialRouteName="Dashboard"
       screenOptions={{
         tabBarActiveTintColor: palette.brand[500],
         tabBarInactiveTintColor: t.text.muted,
@@ -101,10 +102,6 @@ export function TabNavigator() {
           gap: 2,
         },
         tabBarStyle: {
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
           backgroundColor: t.surface.bgCard,
           borderTopWidth: 0,
           borderTopLeftRadius: radii.xl,

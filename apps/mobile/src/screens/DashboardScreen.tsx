@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDashboardCore } from "@helu/api/hooks";
@@ -76,7 +77,7 @@ export function DashboardScreen() {
                 <>
                   <Text style={styles.greetingText}>
                     {dash.greeting},{" "}
-                    <Text style={styles.greetingName}>{dash.userFirstName ?? ""}  👋</Text>
+                    <Text style={styles.greetingName}>{dash.userFirstName ?? ""}</Text>
                   </Text>
                   <Text style={styles.subtitleText}>{dash.apptSubtitle}</Text>
                 </>
@@ -88,12 +89,6 @@ export function DashboardScreen() {
                 onPress={() => navigation.navigate("Notifications")}
               >
                 <Bell size={20} color={colors.white} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.headerIconBtn}
-                onPress={() => navigation.navigate("Profile")}
-              >
-                <UserCircle size={20} color={colors.white} />
               </TouchableOpacity>
             </View>
           </View>
@@ -362,7 +357,7 @@ function makeStyles(t: ThemeContextValue) {
     subtitleText: {
       fontSize: fontSize.sm,
       fontWeight: fontWeight.normal,
-      color: overlay.light,
+      color: palette.brand[100],
       marginTop: spacing[1],
     },
     headerActions: {

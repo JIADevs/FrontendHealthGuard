@@ -9,8 +9,6 @@ import {
   ArrowRight,
   Clock,
   MapPin,
-  Share2,
-  Folder,
   ChevronRight,
 } from "lucide-react";
 import {
@@ -88,10 +86,8 @@ export default function DashboardPage() {
         </a>
       </div>
 
-      {/* ── Content grid: main + sidebar ── */}
-      <div className="dash-content-grid">
-        {/* Left column */}
-        <div>
+      {/* ── Content ── */}
+      <div>
           {/* ── Featured Next Appointment ── */}
           <div className="card dash-section" style={{ marginBottom: 24 }}>
             <div className="card-header">
@@ -236,29 +232,6 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Right column: quick links */}
-        <div className="dash-section">
-          <div className="card">
-            <div className="card-header">
-              <span className="card-title">Accesos Rápidos</span>
-            </div>
-            <div className="card-body">
-              <div className="quick-links">
-                {QUICK_LINKS.map((link) => {
-                  const Icon = link.icon;
-                  return (
-                    <a key={link.href} href={link.href} className="quick-link-card">
-                      <Icon />
-                      <span className="quick-link-label">{link.label}</span>
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </>
   );

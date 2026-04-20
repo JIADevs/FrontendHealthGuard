@@ -22,6 +22,29 @@ import type { ThemeContextValue } from "@helu/ui";
 import { FileText, Share2, Clock, Copy, Link2, ChevronDown, ChevronUp, Ban } from "lucide-react-native";
 import { resolveExpoReachableUrl } from "../utils/shareLinks";
 
+/** Line heights alineados con `Typography.native` (variantes label / caption). */
+const TYPO_LABEL_LH = 20;
+const TYPO_CAPTION_LH = 16;
+const QR_THUMB_SIZE = 56;
+
+/**
+ * Altura total por fila de enlace activo (padding + contenido + borde superior).
+ * Encaja con tokens de espaciado y tipografía; evita recortar la fila de acciones.
+ */
+const ACTIVE_SHARE_ROW_TOTAL =
+  spacing[3] +
+  Math.max(
+    QR_THUMB_SIZE,
+    2 * TYPO_LABEL_LH +
+      TYPO_CAPTION_LH +
+      spacing[2] +
+      (spacing[2] * 2 + fontSize.sm + 12),
+  ) +
+  1;
+
+const ACTIVE_SHARES_PANEL_BUDGET_MAX = 460;
+const ACTIVE_SHARES_VISIBLE_ROWS_MAX = 4;
+
 type RevokeModalState =
   | { mode: "single"; linkId: string; title: string }
   | { mode: "bulk"; rows: { linkId: string; documentTitle: string }[] };
@@ -30,10 +53,6 @@ export function ShareDocumentsScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const { height: windowHeight } = useWindowDimensions();
-  const activeSharesScrollMaxHeight = useMemo(
-    () => Math.min(Math.round(windowHeight * 0.42), 400),
-    [windowHeight],
-  );
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
@@ -288,230 +307,266 @@ export function ShareDocumentsScreen() {
   const showListUpdatingBanner =
     activeShares.isFetching && !activeShares.isLoading && !showRevokingBanner;
 
+  const activeSharesLayout = useMemo(() => {
+    const row = ACTIVE_SHARE_ROW_TOTAL;
+    const panelBudget = Math.min(Math.round(windowHeight * 0.52), ACTIVE_SHARES_PANEL_BUDGET_MAX);
+    const statusBannerH =
+      showRevokingBanner || showListUpdatingBanner
+        ? spacing[2] * 2 + spacing[3] + TYPO_CAPTION_LH + spacing[2]
+        : 0;
+    /** Cabecera + relleno tarjeta + huecos + barra masiva + banner opcional (sin lista). */
+    const chrome =
+      spacing[4] * 2 +
+      spacing[3] +
+      Math.round(TYPO_LABEL_LH * 2.2 + spacing[4]) +
+      (statusBannerH > 0 ? spacing[3] + statusBannerH : 0) +
+      spacing[3] +
+      spacing[2] * 2 +
+      TYPO_LABEL_LH +
+      spacing[2];
+
+    const rawN = Math.floor((panelBudget - chrome) / row);
+    let visibleRows = Math.min(ACTIVE_SHARES_VISIBLE_ROWS_MAX, Math.max(1, rawN));
+    while (visibleRows > 1 && chrome + visibleRows * row > panelBudget) {
+      visibleRows -= 1;
+    }
+    while (
+      visibleRows < ACTIVE_SHARES_VISIBLE_ROWS_MAX &&
+      chrome + (visibleRows + 1) * row <= panelBudget
+    ) {
+      visibleRows += 1;
+    }
+    const listViewportHeight = visibleRows * row;
+    const panelMaxHeight = Math.min(panelBudget, chrome + listViewportHeight);
+    return { listViewportHeight, panelMaxHeight };
+  }, [windowHeight, showRevokingBanner, showListUpdatingBanner]);
+
   const revokeModalLoading =
     (revokeModal?.mode === "single" && revokeShare.isPending) ||
     (revokeModal?.mode === "bulk" && bulkRevoking);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.topBar}>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="bodySm" color="secondary">
-            Elige los documentos y comparte. Si hay un enlace activo, revócalo en la lista superior.
-          </Typography>
-        </View>
-        {selected.length > 0 && (
-          <Button onPress={handleShare} disabled={sharing} loading={sharing}>
-            <View style={styles.btnRow}>
-              <Share2 size={16} color={colors.white} />
-              <Text style={styles.btnLabelPrimary}>Compartir ({selected.length})</Text>
-            </View>
-          </Button>
-        )}
-      </View>
-
-      <View style={styles.activeSharesOuter}>
-        {!activeSharesOpen ? (
-          <View style={styles.activeSharesCollapsed}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1, flexWrap: "wrap" }}>
-              <Link2 size={16} color={palette.brand[500]} />
-              <Typography variant="label">Enlaces activos</Typography>
-              {!activeShares.isLoading && activeShareRows.length > 0 && (
-                <Chip label={`${activeShareRows.length} activo${activeShareRows.length > 1 ? "s" : ""}`} color="green" />
-              )}
-              {(showRevokingBanner || showListUpdatingBanner) && (
-                <>
-                  <Spinner size="sm" />
-                  <Typography variant="caption" color="secondary" accessibilityLiveRegion="polite">
-                    {showRevokingBanner ? "Revocando acceso…" : "Actualizando enlaces…"}
-                  </Typography>
-                </>
-              )}
-            </View>
-            <Button variant="secondary" size="sm" onPress={() => setActiveSharesOpen(true)}>
-              <Text style={styles.activeSharesBtnText}>Ver</Text>
-              <ChevronDown size={14} color={palette.brand[500]} />
-            </Button>
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <View style={styles.screenBody}>
+        <View style={styles.topBar}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="bodySm" color="secondary">
+              Elige los documentos y comparte. Si hay un enlace activo, revócalo en la lista superior.
+            </Typography>
           </View>
-        ) : (
-          <View style={styles.activeSharesCard}>
-            <View style={styles.activeSharesHeader}>
+          {selected.length > 0 && (
+            <Button onPress={handleShare} disabled={sharing} loading={sharing}>
+              <View style={styles.btnRow}>
+                <Share2 size={16} color={colors.white} />
+                <Text style={styles.btnLabelPrimary}>Compartir ({selected.length})</Text>
+              </View>
+            </Button>
+          )}
+        </View>
+
+        <View style={styles.activeSharesOuter}>
+          {!activeSharesOpen ? (
+            <View style={styles.activeSharesCollapsed}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1, flexWrap: "wrap" }}>
                 <Link2 size={16} color={palette.brand[500]} />
                 <Typography variant="label">Enlaces activos</Typography>
                 {!activeShares.isLoading && activeShareRows.length > 0 && (
                   <Chip label={`${activeShareRows.length} activo${activeShareRows.length > 1 ? "s" : ""}`} color="green" />
                 )}
+                {(showRevokingBanner || showListUpdatingBanner) && (
+                  <>
+                    <Spinner size="sm" />
+                    <Typography variant="caption" color="secondary" accessibilityLiveRegion="polite">
+                      {showRevokingBanner ? "Revocando acceso…" : "Actualizando enlaces…"}
+                    </Typography>
+                  </>
+                )}
               </View>
-              <View style={{ flexDirection: "row", gap: spacing[2] }}>
-                <Button variant="ghost" size="sm" onPress={() => setActiveSharesOpen(false)}>
-                  <ChevronUp size={14} color={palette.brand[500]} />
-                  <Text style={styles.activeSharesBtnText}>Ocultar</Text>
-                </Button>
-                <Button variant="ghost" size="sm" onPress={() => activeShares.refetch()} disabled={activeShares.isFetching} loading={activeShares.isFetching}>
-                  <Text style={styles.activeSharesBtnText}>Actualizar</Text>
-                </Button>
-              </View>
+              <Button variant="secondary" size="sm" onPress={() => setActiveSharesOpen(true)}>
+                <Text style={styles.activeSharesBtnText}>Ver</Text>
+                <ChevronDown size={14} color={palette.brand[500]} />
+              </Button>
             </View>
-            {(showRevokingBanner || showListUpdatingBanner) && (
-              <View style={styles.activeSharesStatusBanner} accessibilityRole="text" accessibilityLiveRegion="polite">
-                <Spinner size="sm" />
-                <View style={{ flex: 1 }}>
-                  <Typography variant="caption" color="secondary">
-                    {showRevokingBanner ? "Revocando acceso…" : "Actualizando enlaces…"}
-                  </Typography>
+          ) : (
+            <View style={[styles.activeSharesCard, { maxHeight: activeSharesLayout.panelMaxHeight }]}>
+              <View style={styles.activeSharesHeader}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1, flexWrap: "wrap" }}>
+                  <Link2 size={16} color={palette.brand[500]} />
+                  <Typography variant="label">Enlaces activos</Typography>
+                  {!activeShares.isLoading && activeShareRows.length > 0 && (
+                    <Chip label={`${activeShareRows.length} activo${activeShareRows.length > 1 ? "s" : ""}`} color="green" />
+                  )}
+                </View>
+                <View style={{ flexDirection: "row", gap: spacing[2] }}>
+                  <Button variant="ghost" size="sm" onPress={() => setActiveSharesOpen(false)}>
+                    <ChevronUp size={14} color={palette.brand[500]} />
+                    <Text style={styles.activeSharesBtnText}>Ocultar</Text>
+                  </Button>
+                  <Button variant="ghost" size="sm" onPress={() => activeShares.refetch()} disabled={activeShares.isFetching} loading={activeShares.isFetching}>
+                    <Text style={styles.activeSharesBtnText}>Actualizar</Text>
+                  </Button>
                 </View>
               </View>
-            )}
-            {activeShares.isLoading ? (
-              <View style={styles.center}>
-                <Spinner size="lg" />
-              </View>
-            ) : activeShares.isError ? (
-              <Typography variant="caption" color="error">No se pudieron cargar los enlaces activos.</Typography>
-            ) : activeShareRows.length === 0 ? (
-              <EmptyState
-                icon={<Share2 size={40} color={t.border.medium} />}
-                message="No tienes enlaces activos. Genera uno seleccionando documentos abajo."
-              />
-            ) : (
-              <>
-                <View style={styles.activeSharesBulkBar}>
-                  <View style={styles.activeSharesBulkLeft}>
-                    <Checkbox
-                      checked={allLinkRowsSelected}
-                      disabled={panelActionBusy}
-                      onChange={toggleSelectAll}
-                      label="Seleccionar todos"
-                    />
+              {(showRevokingBanner || showListUpdatingBanner) && (
+                <View style={styles.activeSharesStatusBanner} accessibilityRole="text" accessibilityLiveRegion="polite">
+                  <Spinner size="sm" />
+                  <View style={{ flex: 1 }}>
+                    <Typography variant="caption" color="secondary">
+                      {showRevokingBanner ? "Revocando acceso…" : "Actualizando enlaces…"}
+                    </Typography>
+                  </View>
+                </View>
+              )}
+              {activeShares.isLoading ? (
+                <View style={styles.center}>
+                  <Spinner size="lg" />
+                </View>
+              ) : activeShares.isError ? (
+                <Typography variant="caption" color="error">No se pudieron cargar los enlaces activos.</Typography>
+              ) : activeShareRows.length === 0 ? (
+                <EmptyState
+                  icon={<Share2 size={40} color={t.border.medium} />}
+                  message="No tienes enlaces activos. Genera uno seleccionando documentos abajo."
+                />
+              ) : (
+                <View style={styles.activeSharesListSection}>
+                  <View style={styles.activeSharesBulkBar}>
+                    <View style={styles.activeSharesBulkLeft}>
+                      <Checkbox
+                        checked={allLinkRowsSelected}
+                        disabled={panelActionBusy}
+                        onChange={toggleSelectAll}
+                        label="Seleccionar todos"
+                      />
+                      {selectedLinkCount > 0 ? (
+                        <Button variant="ghost" size="sm" onPress={() => setSelectedLinkIds(new Set())} disabled={panelActionBusy}>
+                          <Text style={styles.activeSharesBtnText}>Limpiar</Text>
+                        </Button>
+                      ) : null}
+                    </View>
                     {selectedLinkCount > 0 ? (
-                      <Button variant="ghost" size="sm" onPress={() => setSelectedLinkIds(new Set())} disabled={panelActionBusy}>
-                        <Text style={styles.activeSharesBtnText}>Limpiar</Text>
+                      <Button variant="danger" size="sm" onPress={promptRevokeSelection} disabled={panelActionBusy}>
+                        <Text style={styles.bulkRevokeBtnText}>Revocar acceso</Text>
                       </Button>
                     ) : null}
                   </View>
-                  {selectedLinkCount > 0 ? (
-                    <Button variant="danger" size="sm" onPress={promptRevokeSelection} disabled={panelActionBusy}>
-                      <Text style={styles.bulkRevokeBtnText}>Revocar acceso</Text>
-                    </Button>
-                  ) : null}
-                </View>
-                <ScrollView
-                  style={[styles.activeSharesScroll, { maxHeight: activeSharesScrollMaxHeight }]}
-                  contentContainerStyle={styles.activeSharesScrollContent}
-                  nestedScrollEnabled
-                  keyboardShouldPersistTaps="handled"
-                  showsVerticalScrollIndicator
-                >
-                  {activeShareRows.map((row) => (
-                    <View key={row.linkId} style={styles.activeShareRow}>
-                      <View style={styles.activeShareCheck}>
-                        <Checkbox
-                          checked={selectedLinkIds.has(row.linkId)}
-                          onChange={() => toggleSelectOne(row.linkId)}
-                          disabled={panelActionBusy}
-                        />
-                      </View>
-                      <Image source={{ uri: row.qrCodeUrl }} style={styles.qrThumb} />
-                      <View style={styles.activeShareInfo}>
-                        <Typography variant="label" numberOfLines={2}>{row.documentTitle}</Typography>
-                        <View style={styles.resultMeta}>
-                          <Clock size={12} color={t.text.secondary} />
-                          <Typography variant="caption" color="secondary">Expira {formatDate(row.expiresAt)}</Typography>
-                        </View>
-                        <View style={styles.resultActions}>
-                          <Button variant="secondary" size="sm" onPress={() => handleCopyLink(row.shareUrl)} disabled={panelActionBusy}>
-                            <View style={styles.btnRowSm}>
-                              <Copy size={13} color={palette.brand[500]} />
-                              <Text style={styles.btnLabelSecondary}>Copiar</Text>
-                            </View>
-                          </Button>
-                          <Button variant="secondary" size="sm" onPress={() => handleSystemShare(row.shareUrl, row.documentTitle)} disabled={panelActionBusy}>
-                            <View style={styles.btnRowSm}>
-                              <Share2 size={13} color={palette.brand[500]} />
-                              <Text style={styles.btnLabelSecondary}>Compartir</Text>
-                            </View>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onPress={() => confirmRevokeSingle(row.linkId, row.documentTitle)}
+                  <ScrollView
+                    style={{ height: activeSharesLayout.listViewportHeight }}
+                    contentContainerStyle={styles.activeSharesScrollContent}
+                    nestedScrollEnabled
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator
+                  >
+                    {activeShareRows.map((row) => (
+                      <View key={row.linkId} style={styles.activeShareRow}>
+                        <View style={styles.activeShareCheck}>
+                          <Checkbox
+                            checked={selectedLinkIds.has(row.linkId)}
+                            onChange={() => toggleSelectOne(row.linkId)}
                             disabled={panelActionBusy}
-                            loading={revokeShare.isPending && !bulkRevoking && revokeShare.variables === row.linkId}
-                          >
-                            <Ban size={14} color={colors.error[600]} />
-                          </Button>
+                          />
+                        </View>
+                        <Image source={{ uri: row.qrCodeUrl }} style={styles.qrThumb} />
+                        <View style={styles.activeShareInfo}>
+                          <Typography variant="label" numberOfLines={2}>{row.documentTitle}</Typography>
+                          <View style={styles.resultMeta}>
+                            <Clock size={12} color={t.text.secondary} />
+                            <Typography variant="caption" color="secondary">Expira {formatDate(row.expiresAt)}</Typography>
+                          </View>
+                          <View style={styles.resultActions}>
+                            <Button variant="secondary" size="sm" onPress={() => handleCopyLink(row.shareUrl)} disabled={panelActionBusy}>
+                              <View style={styles.btnRowSm}>
+                                <Copy size={13} color={palette.brand[500]} />
+                                <Text style={styles.btnLabelSecondary}>Copiar</Text>
+                              </View>
+                            </Button>
+                            <Button variant="secondary" size="sm" onPress={() => handleSystemShare(row.shareUrl, row.documentTitle)} disabled={panelActionBusy}>
+                              <View style={styles.btnRowSm}>
+                                <Share2 size={13} color={palette.brand[500]} />
+                                <Text style={styles.btnLabelSecondary}>Compartir</Text>
+                              </View>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onPress={() => confirmRevokeSingle(row.linkId, row.documentTitle)}
+                              disabled={panelActionBusy}
+                              loading={revokeShare.isPending && !bulkRevoking && revokeShare.variables === row.linkId}
+                            >
+                              <Ban size={14} color={colors.error[600]} />
+                            </Button>
+                          </View>
                         </View>
                       </View>
-                    </View>
-                  ))}
-                </ScrollView>
-              </>
-            )}
-          </View>
-        )}
-      </View>
-
-      <FlatList
-        style={styles.documentsList}
-        data={items}
-        keyExtractor={(d) => d.id}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl
-            refreshing={docs.isRefetching}
-            onRefresh={() => docs.refetch()}
-            tintColor={palette.brand[500]}
-          />
-        }
-        ListEmptyComponent={
-          docs.isLoading ? (
-            <View style={styles.center}>
-              <Spinner size="lg" />
-            </View>
-          ) : (
-            <EmptyState
-              icon={<FileText size={48} color={t.border.medium} />}
-              message="No tienes documentos para compartir."
-            />
-          )
-        }
-        ListFooterComponent={
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-        }
-        renderItem={({ item: doc }) => {
-          const isSelected = selected.includes(doc.id);
-          const hasActiveLink = documentIdsWithActiveShare.has(doc.id);
-          return (
-            <TouchableOpacity
-              style={[
-                styles.docItem,
-                isSelected && styles.docItemSelected,
-                hasActiveLink && styles.docItemLocked,
-              ]}
-              onPress={() => !hasActiveLink && toggle(doc.id)}
-              activeOpacity={hasActiveLink ? 1 : 0.7}
-              disabled={hasActiveLink}
-            >
-              <Checkbox checked={isSelected} disabled={hasActiveLink} />
-              <FileText
-                size={16}
-                color={t.text.secondary}
-                style={hasActiveLink ? { opacity: 0.5 } : undefined}
-              />
-              <View style={styles.docInfo}>
-                <Typography variant="label" numberOfLines={1}>{doc.title}</Typography>
-                <Typography variant="caption" color="secondary">{doc.format} · {formatDate(doc.uploadedAt)}</Typography>
-              </View>
-              {hasActiveLink ? (
-                <View style={styles.lockedBadge}>
-                  <Text style={styles.lockedBadgeText}>Enlace activo</Text>
+                    ))}
+                  </ScrollView>
                 </View>
-              ) : null}
-            </TouchableOpacity>
-          );
-        }}
-      />
+              )}
+            </View>
+          )}
+        </View>
+
+        <FlatList
+          style={styles.documentsList}
+          data={items}
+          keyExtractor={(d) => d.id}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={docs.isRefetching}
+              onRefresh={() => docs.refetch()}
+              tintColor={palette.brand[500]}
+            />
+          }
+          ListEmptyComponent={
+            docs.isLoading ? (
+              <View style={styles.center}>
+                <Spinner size="lg" />
+              </View>
+            ) : (
+              <EmptyState
+                icon={<FileText size={48} color={t.border.medium} />}
+                message="No tienes documentos para compartir."
+              />
+            )
+          }
+          ListFooterComponent={
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          }
+          renderItem={({ item: doc }) => {
+            const isSelected = selected.includes(doc.id);
+            const hasActiveLink = documentIdsWithActiveShare.has(doc.id);
+            return (
+              <TouchableOpacity
+                style={[
+                  styles.docItem,
+                  isSelected && styles.docItemSelected,
+                  hasActiveLink && styles.docItemLocked,
+                ]}
+                onPress={() => !hasActiveLink && toggle(doc.id)}
+                activeOpacity={hasActiveLink ? 1 : 0.7}
+                disabled={hasActiveLink}
+              >
+                <Checkbox checked={isSelected} disabled={hasActiveLink} />
+                <FileText
+                  size={16}
+                  color={t.text.secondary}
+                  style={hasActiveLink ? { opacity: 0.5 } : undefined}
+                />
+                <View style={styles.docInfo}>
+                  <Typography variant="label" numberOfLines={1}>{doc.title}</Typography>
+                  <Typography variant="caption" color="secondary">{doc.format} · {formatDate(doc.uploadedAt)}</Typography>
+                </View>
+                {hasActiveLink ? (
+                  <View style={styles.lockedBadge}>
+                    <Text style={styles.lockedBadgeText}>Enlace activo</Text>
+                  </View>
+                ) : null}
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
 
       {revokeModal ? (
         <ConfirmModal
@@ -545,10 +600,22 @@ export function ShareDocumentsScreen() {
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container:        { flex: 1, backgroundColor: t.surface.bg },
-    topBar:           { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing[3], padding: spacing[5], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
-    activeSharesOuter: { paddingHorizontal: spacing[4], paddingTop: spacing[2], paddingBottom: spacing[2] },
+    /** Columna principal: permite que el FlatList encoja y no se superponga al panel superior. */
+    screenBody:       { flex: 1, minHeight: 0 },
+    topBar:           { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing[3], paddingHorizontal: spacing[5], paddingTop: spacing[3], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
+    activeSharesOuter: { paddingHorizontal: spacing[4], paddingTop: spacing[2], paddingBottom: spacing[2], flexShrink: 0 },
     activeSharesCollapsed: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing[3], padding: spacing[4], backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium },
-    activeSharesCard: { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium, padding: spacing[4], gap: spacing[3] },
+    activeSharesCard: {
+      backgroundColor: t.surface.bgCard,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: t.border.medium,
+      padding: spacing[4],
+      gap: spacing[3],
+      overflow: "hidden",
+      flexDirection: "column",
+      flexShrink: 0,
+    },
     activeSharesHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing[2] },
     activeSharesStatusBanner: {
       flexDirection: "row",
@@ -561,14 +628,18 @@ function makeStyles(t: ThemeContextValue) {
       borderWidth: 1,
       borderColor: t.border.light,
     },
+    /** Sin hueco extra respecto al `ScrollView` de filas (el `gap` de la tarjeta ya separa cabecera). */
+    activeSharesListSection: {
+      gap: 0,
+    },
     activeSharesBulkBar: {
       flexDirection: "row",
       flexWrap: "nowrap",
       alignItems: "flex-start",
       justifyContent: "space-between",
       gap: spacing[3],
-      marginBottom: spacing[3],
-      paddingBottom: spacing[3],
+      marginBottom: 0,
+      paddingBottom: spacing[2],
       borderBottomWidth: 1,
       borderBottomColor: t.border.light,
     },
@@ -578,24 +649,29 @@ function makeStyles(t: ThemeContextValue) {
       alignItems: "flex-start",
       gap: spacing[1],
     },
-    activeSharesScroll: {
-      flexGrow: 0,
-    },
     activeSharesScrollContent: {
       paddingBottom: spacing[2],
     },
     bulkRevokeBtnText: { color: colors.white, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
-    activeShareRow:   { flexDirection: "row", alignItems: "flex-start", gap: spacing[2], paddingTop: spacing[3], borderTopWidth: 1, borderTopColor: t.border.light },
+    activeShareRow:   {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing[2],
+      paddingTop: spacing[3],
+      borderTopWidth: 1,
+      borderTopColor: t.border.light,
+      minHeight: ACTIVE_SHARE_ROW_TOTAL,
+    },
     activeShareCheck: { paddingTop: 2 },
     activeShareInfo:  { flex: 1, minWidth: 0 },
     title:            { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary },
     subtitle:         { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2, maxWidth: 200 },
-    documentsList:  { flex: 1 },
+    documentsList:  { flex: 1, flexShrink: 1, minHeight: 0 },
     list:             { padding: spacing[4], gap: spacing[2], paddingBottom: spacing[8] },
     center:           { alignItems: "center", justifyContent: "center", gap: spacing[3], paddingVertical: spacing[10] },
     emptyText:        { color: t.text.secondary, fontSize: fontSize.md, textAlign: "center" },
 
-    qrThumb:          { width: 56, height: 56, borderRadius: radii.sm, flexShrink: 0 },
+    qrThumb:          { width: QR_THUMB_SIZE, height: QR_THUMB_SIZE, borderRadius: radii.sm, flexShrink: 0 },
     resultMeta:       { flexDirection: "row", alignItems: "center", gap: spacing[1] },
     resultActions:    { flexDirection: "row", gap: spacing[2], marginTop: spacing[2] },
 

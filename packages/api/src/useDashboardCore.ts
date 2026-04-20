@@ -84,13 +84,18 @@ export function useDashboardCore(): DashboardData {
     }
   }, [profile.data, setUser]);
 
+  const today = todayISODate();
   const todayApptCount =
-    appts.data?.items.filter((a) => a.status === "PENDING").length ?? 0;
+    appts.data?.items.filter((a) => a.date === today && a.status === "PENDING").length ?? 0;
+
+  const totalUpcoming = appts.data?.items.filter((a) => a.status === "PENDING").length ?? 0;
 
   const apptSubtitle =
     todayApptCount > 0
       ? `Tienes ${todayApptCount} cita${todayApptCount > 1 ? "s" : ""} pendiente${todayApptCount > 1 ? "s" : ""} hoy.`
-      : "No tienes citas pendientes hoy.";
+      : totalUpcoming > 0
+        ? `Tienes ${totalUpcoming} cita${totalUpcoming > 1 ? "s" : ""} próxima${totalUpcoming > 1 ? "s" : ""}.`
+        : "No tienes citas pendientes.";
 
   const greeting = useMemo(() => getGreeting(), []);
 
@@ -112,8 +117,12 @@ export function useDashboardCore(): DashboardData {
     apptTotal: appts.isLoading ? "—" : (appts.data?.total ?? "—"),
     medTotal: meds.isLoading ? "—" : (meds.data?.total ?? "—"),
 
-    upcomingAppts: appts.data?.items ?? [],
-    nextAppt: appts.data?.items?.[0] ?? null,
+    upcomingAppts: [...(appts.data?.items ?? [])].sort(
+      (a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`),
+    ),
+    nextAppt: [...(appts.data?.items ?? [])].sort(
+      (a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`),
+    )[0] ?? null,
     activeMeds: meds.data?.items ?? [],
     recentDocs: docs.data?.items ?? [],
 

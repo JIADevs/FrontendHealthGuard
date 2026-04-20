@@ -100,20 +100,16 @@ export function NotificationsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Typography variant="h2">Notificaciones</Typography>
-          {screen.unreadCount > 0 && (
-            <Typography variant="bodySm" color="secondary">{screen.unreadCount} sin leer</Typography>
-          )}
-        </View>
-        {screen.unreadCount > 0 && (
+    <View style={styles.container}>
+      {screen.unreadCount > 0 && (
+        <View style={styles.header}>
+          <Typography variant="bodySm" color="secondary">{screen.unreadCount} sin leer</Typography>
+          <View style={{ flex: 1 }} />
           <Button variant="ghost" size="sm" onPress={screen.markAllRead}>
             Marcar todo leído
           </Button>
-        )}
-      </View>
+        </View>
+      )}
 
       {screen.isLoading ? (
         <View style={styles.center}>
@@ -148,7 +144,7 @@ export function NotificationsScreen() {
           ItemSeparatorComponent={Separator}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

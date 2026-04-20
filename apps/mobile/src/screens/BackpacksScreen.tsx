@@ -79,8 +79,8 @@ export function BackpacksScreen() {
             <RefreshControl
               refreshing={query.isRefetching}
               onRefresh={() => query.refetch()}
-              colors={[palette.brand[500]]}
-              tintColor={palette.brand[500]}
+              colors={[t.brand.fg]}
+              tintColor={t.brand.fg}
             />
           }
           ListEmptyComponent={
@@ -94,7 +94,7 @@ export function BackpacksScreen() {
             <Card
               title={item.name}
               subtitle={`${item.documentCount} documento${item.documentCount === 1 ? "" : "s"}` + (item.createdAt ? ` • ${formatDate(item.createdAt)}` : "")}
-              icon={<FileText size={22} color={palette.brand[500]} />}
+              icon={<FileText size={22} color={t.brand.fg} />}
               onPress={() => navigateToDetail(item.id)}
             />
           )}
@@ -110,7 +110,7 @@ function makeStyles(t: ThemeContextValue) {
     header: { padding: 24, paddingBottom: 16, backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     titleRow: { marginBottom: 12 },
     toolbarRow: { flexDirection: "row", gap: 12, alignItems: "center" },
-    createBtn: { backgroundColor: palette.brand[500], borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center" },
+    createBtn: { backgroundColor: t.brand.fg, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", gap: 8, alignItems: "center" },
     createBtnText: { color: colors.white, fontSize: 14, fontWeight: "700" },
     center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   });

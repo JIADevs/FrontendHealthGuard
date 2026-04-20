@@ -118,14 +118,14 @@ export function ShareDocumentsScreen() {
           <RefreshControl
             refreshing={docs.isRefetching}
             onRefresh={() => docs.refetch()}
-            tintColor={palette.brand[500]}
+            tintColor={t.brand.fg}
           />
         }
         ListHeaderComponent={
           sharedDocs.length > 0 ? (
             <View style={styles.resultsCard}>
               <View style={styles.resultsHeader}>
-                <Share2 size={16} color={palette.brand[500]} />
+                <Share2 size={16} color={t.brand.fg} />
                 <Typography variant="label">
                   {shareResults.size} enlace{shareResults.size > 1 ? "s" : ""} generado{shareResults.size > 1 ? "s" : ""}
                 </Typography>
@@ -146,10 +146,10 @@ export function ShareDocumentsScreen() {
                       </View>
                       <View style={styles.resultActions}>
                         <Button variant="secondary" size="sm" onPress={() => handleCopyLink(res.shareUrl)}>
-                          <Share2 size={13} color={palette.brand[500]} /> Copiar
+                          <Share2 size={13} color={t.brand.fg} /> Copiar
                         </Button>
                         <Button variant="secondary" size="sm" onPress={() => handleSystemShare(res.shareUrl, doc.title)}>
-                          <Share2 size={13} color={palette.brand[500]} /> Compartir
+                          <Share2 size={13} color={t.brand.fg} /> Compartir
                         </Button>
                       </View>
                     </View>
@@ -184,7 +184,7 @@ export function ShareDocumentsScreen() {
               activeOpacity={0.7}
             >
               <Checkbox checked={isSelected} />
-              <FileText size={16} color={isShared ? colors.emerald[500] : t.text.secondary} />
+              <FileText size={16} color={isShared ? t.accent.notifFg : t.text.secondary} />
               <View style={styles.docInfo}>
                 <Typography variant="label" numberOfLines={1}>{doc.title}</Typography>
                 <Typography variant="caption" color="secondary">{doc.format} · {formatDate(doc.uploadedAt)}</Typography>
@@ -226,12 +226,12 @@ function makeStyles(t: ThemeContextValue) {
 
     // doc list
     docItem:          { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: spacing[4], backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium },
-    docItemSelected:  { borderColor: palette.brand[400], backgroundColor: palette.brand[50] },
+    docItemSelected:  { borderColor: t.brand.fg, backgroundColor: t.brand.tint },
     docInfo:          { flex: 1 },
     docTitle:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary },
     docMeta:          { fontSize: fontSize.xs, color: t.text.secondary, marginTop: 2 },
-    sharedBadge:      { paddingHorizontal: spacing[2], paddingVertical: 3, backgroundColor: colors.emerald[50], borderRadius: radii.full, borderWidth: 1, borderColor: colors.emerald[200] },
-    sharedBadgeText:  { fontSize: fontSize.xs, color: colors.emerald[700], fontWeight: fontWeight.semibold },
+    sharedBadge:      { paddingHorizontal: spacing[2], paddingVertical: 3, backgroundColor: t.accent.notifBg, borderRadius: radii.full, borderWidth: 1, borderColor: palette.accent.notification[200] },
+    sharedBadgeText:  { fontSize: fontSize.xs, color: t.accent.notifFg, fontWeight: fontWeight.semibold },
 
   });
 }

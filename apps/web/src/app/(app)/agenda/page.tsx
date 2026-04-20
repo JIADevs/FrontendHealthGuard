@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   useAppointmentsQuery,
   useDeleteAppointmentMutation,
@@ -35,6 +36,15 @@ import "./agenda.css";
 // ══════════════════════════════════════════════════════
 export default function AgendaPage() {
   const [tab, setTab] = useState<"appointments" | "medications">("appointments");
+  const searchParams = useSearchParams();
+
+  // Read ?tab=medications from URL
+  useEffect(() => {
+    const urlTab = searchParams.get("tab");
+    if (urlTab === "medications" || urlTab === "appointments") {
+      setTab(urlTab);
+    }
+  }, [searchParams]);
 
   return (
     <>
@@ -104,7 +114,7 @@ function AppointmentsTab() {
                 </span>
               }
               icon={<CalendarDays size={20} />}
-              iconBackground="var(--primary-50)"
+              iconBackground="var(--brand-50)"
               actions={
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>

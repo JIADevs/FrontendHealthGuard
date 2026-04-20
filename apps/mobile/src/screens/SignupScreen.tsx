@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   logo:       { width: 60, height: 60, borderRadius: radii.lg, backgroundColor: palette.brand[500], alignItems: "center", justifyContent: "center", marginBottom: spacing[4] },
   logoText:   { color: colors.white, fontSize: 28, fontWeight: fontWeight.extrabold },
   form:       { gap: spacing[3], marginTop: spacing[2] },
-  errorBox:   { backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm, marginBottom: spacing[4] },
+  errorBox:   { backgroundColor: palette.status.error[50], padding: spacing[3], borderRadius: radii.sm, marginBottom: spacing[4] },
   footer:     { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: spacing[8] },
   footerLink: { color: palette.brand[500], fontWeight: fontWeight.semibold },
 });

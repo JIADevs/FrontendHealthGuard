@@ -62,19 +62,19 @@ export function BackpackDetailScreen() {
     {
       label: 'Desde mis documentos',
       icon: <FileText color={colors.white} size={20} />,
-      color: palette.brand[500],
+      color: t.brand.fg,
       onPress: () => navigation.navigate('BackpackAddDocuments' as any, { id }),
     },
     {
       label: 'Nuevo documento',
       icon: <FileUp color={colors.white} size={20} />,
-      color: colors.violet[500],
+      color: t.accent.aiFg,
       onPress: () => navigation.navigate('DocumentUpload' as any, { backpackId: id, backpackName: backpackQuery.data?.name }),
     },
     {
       label: 'Escanear',
       icon: <Camera color={colors.white} size={20} />,
-      color: colors.emerald[500],
+      color: t.accent.notifFg,
       onPress: () => navigation.navigate('Scanner' as any, { backpackId: id, backpackName: backpackQuery.data?.name }),
     },
   ], [navigation, id, backpackQuery.data?.name]);
@@ -126,8 +126,8 @@ export function BackpackDetailScreen() {
           <RefreshControl
             refreshing={docsQuery.isRefetching}
             onRefresh={() => docsQuery.refetch()}
-            colors={[palette.brand[500]]}
-            tintColor={palette.brand[500]}
+            colors={[t.brand.fg]}
+            tintColor={t.brand.fg}
           />
         }
         ListEmptyComponent={

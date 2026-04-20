@@ -26,7 +26,7 @@ export function TextField({
   const isPassword = type === 'password';
 
   const borderColor = error
-    ? colors.error[500]
+    ? palette.status.error[500]
     : focused
     ? palette.brand[500]
     : t.border.medium;
@@ -36,7 +36,7 @@ export function TextField({
       {label && (
         <Text style={[styles.label, { color: t.text.primary }]}>
           {label}
-          {required ? <Text style={{ color: colors.error[500] }}> *</Text> : null}
+          {required ? <Text style={{ color: palette.status.error[500] }}> *</Text> : null}
         </Text>
       )}
 
@@ -99,8 +99,8 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: fontSize.xs,
-    color: colors.error[500],
-    backgroundColor: colors.error[50],
+    color: palette.status.error[500],
+    backgroundColor: palette.status.error[50],
     paddingHorizontal: spacing[2],
     paddingVertical: spacing[1],
     borderRadius: radii.xs,

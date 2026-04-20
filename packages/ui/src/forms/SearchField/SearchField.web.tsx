@@ -22,9 +22,9 @@ export function SearchField({
         paddingTop: 9,
         paddingBottom: 9,
         borderRadius: radii.md,
-        border: `1.5px solid ${focused ? 'var(--primary-500)' : border.default}`,
+        border: `1.5px solid ${focused ? 'var(--brand-500)' : border.default}`,
         backgroundColor: surface.bg,
-        boxShadow: focused ? '0 0 0 3px var(--primary-ring-md)' : undefined,
+        boxShadow: focused ? '0 0 0 3px var(--brand-ring-md)' : undefined,
         transition: 'border-color 0.15s, box-shadow 0.15s',
         boxSizing: 'border-box',
       }}

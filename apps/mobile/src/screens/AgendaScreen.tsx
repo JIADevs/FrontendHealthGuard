@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -67,6 +67,15 @@ export function AgendaScreen() {
   const styles = useMemo(() => makeStyles(t), [t]);
   const [tab, setTab] = useState<"appointments" | "medications">("appointments");
 
+  // Allow navigating with initialTab param (e.g. from Dashboard → Medicamentos)
+  const route = require("@react-navigation/native").useRoute();
+  useEffect(() => {
+    const initialTab = route.params?.initialTab;
+    if (initialTab === "medications" || initialTab === "appointments") {
+      setTab(initialTab);
+    }
+  }, [route.params?.initialTab]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -80,10 +89,10 @@ export function AgendaScreen() {
         >
           <CalendarDays
             size={14}
-            color={tab === "appointments" ? palette.brand[500] : t.text.secondary}
+            color={tab === "appointments" ? t.brand.fg : t.text.secondary}
           />
           <Typography variant="label" color={tab === "appointments" ? "inherit" : "secondary"}>
-            <Text style={tab === "appointments" ? { color: palette.brand[500] } : undefined}>Citas</Text>
+            <Text style={tab === "appointments" ? { color: t.brand.fg } : undefined}>Citas</Text>
           </Typography>
         </TouchableOpacity>
         <TouchableOpacity
@@ -92,10 +101,10 @@ export function AgendaScreen() {
         >
           <Pill
             size={14}
-            color={tab === "medications" ? palette.brand[500] : t.text.secondary}
+            color={tab === "medications" ? t.brand.fg : t.text.secondary}
           />
           <Typography variant="label" color={tab === "medications" ? "inherit" : "secondary"}>
-            <Text style={tab === "medications" ? { color: palette.brand[500] } : undefined}>Medicamentos</Text>
+            <Text style={tab === "medications" ? { color: t.brand.fg } : undefined}>Medicamentos</Text>
           </Typography>
         </TouchableOpacity>
       </View>
@@ -194,8 +203,8 @@ function AppointmentsTab() {
                   </View>
                 </View>
               }
-              icon={<CalendarDays size={20} color={palette.brand[500]} />}
-              iconBackground={palette.brand[100]}
+              icon={<CalendarDays size={20} color={t.brand.fg} />}
+              iconBackground={t.brand.tintMed}
               actions={
                 <View style={styles.cardActions}>
                   <ActionButton action="edit" size="sm" onPress={() => { setEditTarget(a); setShowForm(true); }} />
@@ -399,8 +408,8 @@ function MedicationsTab() {
             <Card
               title={m.name}
               subtitle={`${m.dosage} — cada ${m.frequency}h`}
-              icon={<Pill size={20} color={colors.warning[500]} />}
-              iconBackground={colors.warning[50]}
+              icon={<Pill size={20} color={t.status.warningFg} />}
+              iconBackground={t.status.warningBg}
               actions={
                 <View style={styles.cardActions}>
                   <ActionButton action="edit" size="sm" onPress={() => { setEditTarget(m); setShowForm(true); }} />
@@ -510,10 +519,10 @@ function makeStyles(t: ThemeContextValue) {
     header:             { padding: spacing[6], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     tabs:               { flexDirection: "row", backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium, paddingHorizontal: spacing[4] },
     tab:                { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], paddingVertical: spacing[3], borderBottomWidth: 2, borderBottomColor: "transparent" },
-    tabActive:          { borderBottomColor: palette.brand[500] },
+    tabActive:          { borderBottomColor: t.brand.fg },
     tabContent:         { flex: 1 },
     addRow:             { flexDirection: "row", justifyContent: "flex-end", padding: spacing[4] },
-    addBtn:             { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: palette.brand[500], paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md },
+    addBtn:             { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: t.brand.fg, paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md },
     addBtnText:         { color: colors.white, fontWeight: fontWeight.semibold, fontSize: fontSize.sm },
     center:             { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
     cardMeta:           { flexDirection: "row", alignItems: "center", gap: spacing[1] },
@@ -522,17 +531,17 @@ function makeStyles(t: ThemeContextValue) {
     iconBtn:            { width: 34, height: 34, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bg },
     statusRow:          { flexDirection: "row", flexWrap: "wrap", gap: spacing[1], marginTop: spacing[1] },
     statusPill:         { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.full, backgroundColor: t.border.light, borderWidth: 1, borderColor: t.border.medium },
-    statusPillActive:   { backgroundColor: palette.brand[500], borderColor: palette.brand[500] },
+    statusPillActive:   { backgroundColor: t.brand.fg, borderColor: t.brand.fg },
     statusPillText:     { fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.secondary },
     statusPillTextActive: { color: colors.white },
-    intakeBtn:          { flexDirection: "row", alignItems: "center", gap: spacing[1], marginTop: spacing[1], backgroundColor: colors.emerald[500], alignSelf: "flex-start", paddingHorizontal: spacing[3], paddingVertical: 4, borderRadius: radii.full },
+    intakeBtn:          { flexDirection: "row", alignItems: "center", gap: spacing[1], marginTop: spacing[1], backgroundColor: t.accent.notifFg, alignSelf: "flex-start", paddingHorizontal: spacing[3], paddingVertical: 4, borderRadius: radii.full },
     intakeBtnText:      { color: colors.white, fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
 
     fieldLabel:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: spacing[2] },
-    errorText:          { color: colors.error[500], fontSize: fontSize.sm, marginTop: spacing[3], backgroundColor: colors.error[50], padding: spacing[3], borderRadius: radii.sm },
+    errorText:          { color: t.status.errorFg, fontSize: fontSize.sm, marginTop: spacing[3], backgroundColor: t.status.errorBg, padding: spacing[3], borderRadius: radii.sm },
     typeRow:            { flexDirection: "row", gap: spacing[2] },
     typePill:           { flex: 1, paddingVertical: spacing[2], borderRadius: radii.md, alignItems: "center", backgroundColor: t.surface.bg, borderWidth: 1, borderColor: t.border.medium },
-    typePillActive:     { backgroundColor: palette.brand[500], borderColor: palette.brand[500] },
+    typePillActive:     { backgroundColor: t.brand.fg, borderColor: t.brand.fg },
     typePillText:       { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.secondary },
     typePillTextActive: { color: colors.white },
   });

@@ -152,8 +152,8 @@ export function BackpackAddDocumentsScreen() {
           <RefreshControl
             refreshing={docsQuery.isRefetching}
             onRefresh={() => docsQuery.refetch()}
-            colors={[palette.brand[500]]}
-            tintColor={palette.brand[500]}
+            colors={[t.brand.fg]}
+            tintColor={t.brand.fg}
           />
         }
         ListEmptyComponent={
@@ -245,9 +245,9 @@ function makeStyles(t: ThemeContextValue) {
     cardInfo: { flex: 1 },
     cardTitle: { fontSize: 14, fontWeight: "800", color: t.text.primary, marginBottom: 2 },
     cardSub: { fontSize: 13, color: t.text.secondary },
-    addBtn: { backgroundColor: palette.brand[500], borderRadius: 16, width: 48, height: 48, alignItems: "center", justifyContent: "center" },
+    addBtn: { backgroundColor: t.brand.fg, borderRadius: 16, width: 48, height: 48, alignItems: "center", justifyContent: "center" },
     addBtnLoading: { opacity: 0.7 },
-    addBtnDone: { backgroundColor: colors.green[500] },
+    addBtnDone: { backgroundColor: t.accent.docFg },
     fab: { position: "absolute", bottom: 22, left: 16, right: 16, backgroundColor: t.surface.bgCard, borderRadius: 16, borderWidth: 1, borderColor: t.border.medium, paddingVertical: 14, alignItems: "center", elevation: 2 },
     fabText: { color: t.text.primary, fontWeight: "900" },
   });

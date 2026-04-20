@@ -28,7 +28,7 @@ export function Select({
   const selectedLabel = options.find((o) => o.value === value)?.label;
 
   const borderColor = error
-    ? colors.error[500]
+    ? palette.status.error[500]
     : open
     ? palette.brand[500]
     : t.border.medium;
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRightWidth: 1.5,
     borderBottomWidth: 1.5,
-    borderColor: colors.slate[400],
+    borderColor: palette.surface[400],
     transform: [{ rotate: '45deg' }],
     marginTop: -4,
   },
@@ -146,8 +146,8 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: fontSize.xs,
-    color: colors.error[500],
-    backgroundColor: colors.error[50],
+    color: palette.status.error[500],
+    backgroundColor: palette.status.error[50],
     paddingHorizontal: spacing[2],
     paddingVertical: spacing[1],
     borderRadius: radii.xs,
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[5],
     paddingBottom: spacing[3],
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.slate[200],
+    borderBottomColor: palette.surface[200],
   },
   option: {
     flexDirection: 'row',

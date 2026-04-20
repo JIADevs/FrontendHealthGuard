@@ -40,13 +40,13 @@ export function DocumentsScreen() {
     {
       label: 'Subir archivo',
       icon: <FileUp color={colors.white} size={22} />,
-      color: colors.violet[500],
+      color: t.accent.aiFg,
       onPress: () => navigation.navigate('DocumentUpload' as any),
     },
     {
       label: 'Escanear',
       icon: <Camera color={colors.white} size={22} />,
-      color: palette.brand[500],
+      color: t.brand.fg,
       onPress: () => navigation.navigate('Scanner' as any),
     },
   ], [navigation]);
@@ -62,7 +62,7 @@ export function DocumentsScreen() {
             accessibilityRole="button"
             accessibilityLabel="Compartir documentos"
           >
-            <Share2 size={18} color={palette.brand[500]} />
+            <Share2 size={18} color={t.brand.fg} />
           </TouchableOpacity>
         </View>
         <View style={{ marginTop: 14 }}>
@@ -86,8 +86,8 @@ export function DocumentsScreen() {
             <RefreshControl
               refreshing={docs.isRefetching}
               onRefresh={() => docs.refetch()}
-              colors={[palette.brand[500]]}
-              tintColor={palette.brand[500]}
+              colors={[t.brand.fg]}
+              tintColor={t.brand.fg}
             />
           }
           renderItem={({ item }) => (
@@ -123,7 +123,7 @@ function makeStyles(t: ThemeContextValue) {
     container:   { flex: 1, backgroundColor: t.surface.bg },
     header:      { padding: spacing[6], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
     titleRow:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    shareAllBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: palette.brand[50], borderWidth: 1, borderColor: palette.brand[200] },
+    shareAllBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: t.brand.tint, borderWidth: 1, borderColor: t.brand.tintBorder },
     center:     { flex: 1, alignItems: "center", justifyContent: "center" },
   });
 }

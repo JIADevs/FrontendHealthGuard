@@ -1,5 +1,5 @@
 "use client";
-import { colors, fontSize, fontWeight, text } from '../../tokens/tokens';
+import { colors, palette, fontSize, fontWeight, text } from '../../tokens/tokens';
 import type { TypographyProps, TypographyVariant, TypographyColor } from './Typography.types';
 
 // ─── Variant → style ─────────────────────────────────────────────────────────
@@ -38,9 +38,9 @@ const colorValue: Record<TypographyColor, string> = {
   default:   text.primary,
   secondary: text.secondary,
   muted:     text.muted,
-  error:     colors.error[500],
-  success:   colors.success[500],
-  warning:   colors.warning[500],
+  error:     palette.status.error[500],
+  success:   palette.status.success[500],
+  warning:   palette.status.warning[500],
   inherit:   'inherit',
 };
 

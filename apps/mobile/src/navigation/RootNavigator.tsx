@@ -1,4 +1,5 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { StatusBar } from "react-native";
 import { useAuthStore } from "@helu/stores";
 import { TabNavigator } from "./TabNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
@@ -38,11 +39,13 @@ export function RootNavigator() {
   const t = useAppTheme();
 
   return (
-    <Stack.Navigator
+    <>
+      <StatusBar barStyle={t.mode === 'dark' ? 'light-content' : 'dark-content'} />
+      <Stack.Navigator
       screenOptions={{
         headerShown: false,
         headerStyle: { backgroundColor: t.surface.bgCard },
-        headerTintColor: palette.brand[500],
+        headerTintColor: t.brand.fg,
         headerTitleStyle: { color: t.text.primary },
         headerShadowVisible: false,
         contentStyle: { backgroundColor: t.surface.bg },
@@ -113,5 +116,6 @@ export function RootNavigator() {
         </>
       )}
     </Stack.Navigator>
+    </>
   );
 }

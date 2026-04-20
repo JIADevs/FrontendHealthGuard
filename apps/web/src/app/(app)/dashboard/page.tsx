@@ -19,14 +19,7 @@ import {
   Spinner,
 } from "@helu/ui";
 
-// ─── Quick Links (sidebar) ───────────────────────────────────────────────────
 
-const QUICK_LINKS = [
-  { href: "/documents", label: "Documentos", icon: FileText },
-  { href: "/backpacks", label: "Mochilas", icon: Folder },
-  { href: "/share", label: "Compartir", icon: Share2 },
-  { href: "/agenda", label: "Ver Agenda", icon: CalendarDays },
-] as const;
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 

@@ -6,7 +6,7 @@
  * que necesitan web y mobile.
  */
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   useProfileQuery,
   useDocumentsQuery,
@@ -17,13 +17,26 @@ import { useAuthStore } from "@helu/stores";
 import { todayISODate } from "@helu/ui";
 import type { Appointment, Medication } from "./schemas";
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Buenos días";
+  if (hour < 18) return "Buenas tardes";
+  return "Buenas noches";
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface DashboardData {
   /** Nombre o email del usuario autenticado. */
   userName: string | null;
+  /** Solo el primer nombre (para saludo corto). */
+  userFirstName: string | null;
   isProfileLoading: boolean;
 
+  /** "Buenos días" / "Buenas tardes" / "Buenas noches" */
+  greeting: string;
   /** "Tienes N citas pendientes hoy." o "No tienes citas pendientes hoy." */
   apptSubtitle: string;
 
@@ -35,6 +48,9 @@ export interface DashboardData {
   /** Listas para las secciones de detalle (máx. 3 ítems). */
   upcomingAppts: Appointment[];
   activeMeds: Medication[];
+
+  /** Citas de hoy (filtro separado para badges "HOY"). */
+  todayApptCount: number;
 
   isApptsLoading: boolean;
   isMedsLoading: boolean;
@@ -70,10 +86,20 @@ export function useDashboardCore(): DashboardData {
       ? `Tienes ${todayApptCount} cita${todayApptCount > 1 ? "s" : ""} pendiente${todayApptCount > 1 ? "s" : ""} hoy.`
       : "No tienes citas pendientes hoy.";
 
+  const greeting = useMemo(() => getGreeting(), []);
+
+  const userFirstName = useMemo(() => {
+    const name = profile.data?.name;
+    if (!name) return null;
+    return name.split(" ")[0];
+  }, [profile.data?.name]);
+
   return {
     userName: profile.data?.name ?? profile.data?.email ?? null,
+    userFirstName: userFirstName ?? null,
     isProfileLoading: profile.isLoading,
 
+    greeting,
     apptSubtitle,
 
     docTotal:  docs.isLoading  ? "—" : (docs.data?.total  ?? "—"),
@@ -82,6 +108,8 @@ export function useDashboardCore(): DashboardData {
 
     upcomingAppts: appts.data?.items ?? [],
     activeMeds:    meds.data?.items  ?? [],
+
+    todayApptCount,
 
     isApptsLoading: appts.isLoading,
     isMedsLoading:  meds.isLoading,

@@ -32,6 +32,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { token, isHydrated, user, logout } = useAuthStore();
 
+  // Sync theme to <html data-theme="..."> for CSS variable resolution
+  const theme = useTheme();
+  useEffect(() => {
+    const html = document.documentElement;
+    if (theme === "system") {
+      html.removeAttribute("data-theme");
+    } else {
+      html.setAttribute("data-theme", theme);
+    }
+  }, [theme]);
+
   // Auth guard
   useEffect(() => {
     console.log("[AppLayout] state:", { isHydrated, token: !!token, pathname });
@@ -44,17 +55,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!isHydrated) return null; // Render nothing until hydrated
 
   if (!token) return null;
-
-  // Sync theme to <html data-theme="..."> for CSS variable resolution
-  const theme = useTheme();
-  useEffect(() => {
-    const html = document.documentElement;
-    if (theme === "system") {
-      html.removeAttribute("data-theme");
-    } else {
-      html.setAttribute("data-theme", theme);
-    }
-  }, [theme]);
 
   const initials =
     user?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() ??

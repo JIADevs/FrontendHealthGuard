@@ -54,6 +54,8 @@ services:
       # Se usa la variable de entorno HOST_IP detectada por el script de arranque
       - REACT_NATIVE_PACKAGER_HOSTNAME=${HOST_IP:-localhost}
       - EXPO_PUBLIC_API_URL=http://${HOST_IP:-localhost}:8000
+      # Misma IP que la API: el teléfono no puede abrir localhost:3000 de tu PC; reescribe enlaces de compartir en la app.
+      - EXPO_PUBLIC_WEB_APP_URL=http://${HOST_IP:-127.0.0.1}:3000
     volumes:
       - .:/app
       - /app/apps/mobile/node_modules

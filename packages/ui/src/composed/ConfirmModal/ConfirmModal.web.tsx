@@ -19,12 +19,23 @@ export function ConfirmModal({
       size="sm"
       onClose={onCancel}
       footer={
-        <>
-          <Button variant="secondary" onPress={onCancel} disabled={loading}>Cancelar</Button>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            flexWrap: 'nowrap',
+            gap: 8,
+            width: '100%',
+          }}
+        >
+          <Button variant="secondary" onPress={onCancel} disabled={loading}>
+            Cancelar
+          </Button>
           <Button variant={confirmVariant} onPress={onConfirm} disabled={loading} loading={loading}>
             {confirmLabel}
           </Button>
-        </>
+        </div>
       }
     >
       <Typography variant="body" color="secondary">{message}</Typography>

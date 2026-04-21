@@ -20,6 +20,8 @@ import {
     updateDocument,
     deleteDocument,
     shareDocument,
+    getActiveDocumentShares,
+    revokeDocumentShare,
     getDocumentTypes,
     getTagCategories,
     // Backpacks
@@ -55,6 +57,7 @@ import {
 } from "./endpoints";
 import type {
     DocumentCreate,
+    DocumentActiveShare,
     AppointmentCreate,
     MedicationCreate,
     BackpackCreate,
@@ -85,6 +88,8 @@ export const QK = {
     calendar:         (start: string, end: string) => ["calendar", start, end] as const,
 
     profile:          ()                      => ["me"] as const,
+
+    documentSharesActive: () => ["document-shares-active"] as const,
 } as const;
 
 // ─── Documents ─────────────────────────────────────────
@@ -95,6 +100,14 @@ export function useDocumentsQuery(search = "", page = 1, limit = 20) {
         queryFn: () => getDocuments({ page, limit, searchQuery: search || undefined }),
         staleTime: 5_000,
         placeholderData: keepPreviousData,
+    });
+}
+
+export function useActiveDocumentSharesQuery() {
+    return useQuery({
+        queryKey: QK.documentSharesActive(),
+        queryFn: () => getActiveDocumentShares(),
+        staleTime: 30_000,
     });
 }
 
@@ -151,8 +164,24 @@ export function useDeleteDocumentMutation() {
 }
 
 export function useShareDocumentMutation() {
+    const qc = useQueryClient();
     return useMutation({
         mutationFn: (id: string) => shareDocument(id),
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: QK.documentSharesActive() });
+        },
+    });
+}
+
+export function useRevokeDocumentShareMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (linkId: string) => revokeDocumentShare(linkId),
+        onSuccess: (_, linkId) => {
+            qc.setQueryData<DocumentActiveShare[]>(QK.documentSharesActive(), (old) =>
+                old ? old.filter((r) => r.linkId !== linkId) : old,
+            );
+        },
     });
 }
 

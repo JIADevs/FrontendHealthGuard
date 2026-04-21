@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { colors, palette, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
 import type { ButtonProps, ButtonVariant, ButtonSize } from './Button.types';
 
@@ -42,6 +43,20 @@ const fontSizeBySize: Record<ButtonSize, number> = {
   md: fontSize.base,
   lg: fontSize.md,
 };
+
+const loaderSizeBySize: Record<ButtonSize, number> = {
+  sm: 14,
+  md: 16,
+  lg: 18,
+};
+
+/* Keyframes injected once for loading indicator (works without app globals.css). */
+if (typeof document !== 'undefined' && !document.getElementById('helu-ui-btn-spin-kf')) {
+  const el = document.createElement('style');
+  el.id = 'helu-ui-btn-spin-kf';
+  el.textContent = '@keyframes helu-ui-btn-spin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(el);
+}
 
 export function Button({
   children,
@@ -88,7 +103,19 @@ export function Button({
         boxSizing: 'border-box',
       }}
     >
-      {loading ? '...' : children}
+      {loading ? (
+        <Loader2
+          size={loaderSizeBySize[size]}
+          strokeWidth={2.5}
+          aria-hidden
+          style={{
+            color: colorByVariant[variant],
+            animation: 'helu-ui-btn-spin 0.65s linear infinite',
+          }}
+        />
+      ) : (
+        children
+      )}
     </button>
   );
 }

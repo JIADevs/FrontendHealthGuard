@@ -1,9 +1,11 @@
 import { apiClient } from "./client";
+import { z } from "zod";
 import {
     TokenResponseSchema,
     UserProfileSchema,
     DocumentPageSchema,
     DocumentSchema,
+    DocumentActiveShareSchema,
     AppointmentPageSchema,
     MedicationPageSchema,
     NotificationPageSchema,
@@ -124,6 +126,30 @@ export async function addTagValue(categoryId: string, value: string) {
 export async function shareDocument(id: string) {
     const { data } = await apiClient.post(`/documents/${id}/share`);
     return data as { shareUrl: string; qrCodeUrl: string; expiresAt: string };
+}
+
+export async function getActiveDocumentShares() {
+    const { data } = await apiClient.get("/documents/shares/active");
+    return z.array(DocumentActiveShareSchema).parse(data);
+}
+
+/** Revoca un enlace activo (solo el dueño del documento). */
+export async function revokeDocumentShare(linkId: string) {
+    await apiClient.delete(`/documents/shares/${linkId}`);
+}
+
+/** Load document metadata for a public share link (no auth required; token is the capability). */
+export async function consumeSharedDocument(token: string) {
+    const { data } = await apiClient.get("/documents/shared/consume", { params: { token } });
+    return DocumentSchema.parse(data);
+}
+
+/** Signed URL to preview/download the file for a share link (no auth required). */
+export async function getSharedDocumentSignedUrl(token: string, expiresInSeconds = 3600) {
+    const { data } = await apiClient.get("/documents/shared/signed-url", {
+        params: { token, expires_in: expiresInSeconds },
+    });
+    return data as { url: string };
 }
 
 // ─── Files ─────────────────────────────────────────────

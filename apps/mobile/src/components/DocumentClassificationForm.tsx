@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   ScrollView,
   TextInput,
+  Animated,
+  Easing,
 } from "react-native";
 import { Sparkles } from "lucide-react-native";
 import type { DocumentFormState, DocumentFormActions, FileSource } from "../hooks/useDocumentForm";
@@ -21,6 +23,7 @@ type Props = DocumentFormState &
 export function DocumentClassificationForm({
   file,
   catalogs,
+  catalogsLoading,
   selectedType,
   selectedSpecialty,
   selectedTags,
@@ -45,8 +48,51 @@ export function DocumentClassificationForm({
 }: Props) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const catalogContentOpacity = useRef(new Animated.Value(0)).current;
+  const skeletonOpacity = useRef(new Animated.Value(0.45)).current;
   const currentType = catalogs.types.find((tp: { id: string; name: string; specialties: any[] }) => tp.id === selectedType);
   const canRunAI = !!file;
+
+  useEffect(() => {
+    if (!catalogsLoading) {
+      Animated.timing(catalogContentOpacity, {
+        toValue: 1,
+        duration: 280,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+
+    catalogContentOpacity.setValue(0);
+  }, [catalogContentOpacity, catalogsLoading]);
+
+  useEffect(() => {
+    if (!catalogsLoading) {
+      skeletonOpacity.setValue(0.45);
+      return;
+    }
+
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(skeletonOpacity, {
+          toValue: 1,
+          duration: 650,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(skeletonOpacity, {
+          toValue: 0.45,
+          duration: 650,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    pulse.start();
+    return () => pulse.stop();
+  }, [catalogsLoading, skeletonOpacity]);
 
   return (
     <View style={styles.form}>
@@ -69,8 +115,6 @@ export function DocumentClassificationForm({
       {classificationResult && (
         <ClassificationResultCard
           result={classificationResult}
-          catalogs={catalogs}
-          selectedTags={selectedTags}
           t={t}
         />
       )}
@@ -84,73 +128,91 @@ export function DocumentClassificationForm({
         />
       </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Tipo de Documento</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
-          {catalogs.types.map((tp: { id: string; name: string }) => (
-            <Chip
-              key={tp.id}
-              label={tp.name}
-              selected={selectedType === tp.id}
-              onPress={() => { setSelectedType(tp.id); setSelectedSpecialty(undefined); }}
-            />
-          ))}
-        </ScrollView>
-      </View>
-
-      {currentType && currentType.specialties.length > 0 && (
-        <View style={styles.field}>
-          <Text style={styles.label}>Especialidad</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
-            {currentType.specialties.map((s: { id: string; name: string }) => (
-              <Chip
-                key={s.id}
-                label={s.name}
-                selected={selectedSpecialty === s.id}
-                onPress={() => setSelectedSpecialty(s.id)}
-              />
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {catalogs.tags.map((category: { id: string; name: string; values: { id: string; value: string }[] }) => (
-        <View key={category.id} style={styles.field}>
-          <Text style={styles.label}>{category.name}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
-            {category.values.map((val: { id: string; value: string }) => (
-              <Chip
-                key={val.id}
-                label={val.value}
-                selected={selectedTags.includes(val.id)}
-                onPress={() => toggleTag(val.id)}
-              />
-            ))}
-
-            <View style={styles.addTagContainer}>
-              <TextInput
-                style={styles.addTagInput}
-                placeholder="Nueva..."
-                placeholderTextColor={t.text.muted}
-                value={newTagValues[category.id] || ""}
-                onChangeText={(text) => setNewTagValue(category.id, text)}
-                onSubmitEditing={() => handleAddCustomTag(category.id)}
-              />
-              <TouchableOpacity
-                style={styles.addTagBtn}
-                onPress={() => handleAddCustomTag(category.id)}
-                disabled={addingTag === category.id}
-              >
-                {addingTag === category.id ? (
-                  <ActivityIndicator size="small" color={t.brand.fg} />
-                ) : (
-                  <Text style={styles.addTagBtnText}>+</Text>
-                )}
-              </TouchableOpacity>
+      {catalogsLoading ? (
+        <View style={styles.catalogLoadingState}>
+          <Text style={styles.catalogLoadingText}>Cargando tipos y etiquetas...</Text>
+          {[0, 1, 2].map((section) => (
+            <View key={`skeleton-section-${section}`} style={styles.skeletonSection}>
+              <Animated.View style={[styles.skeletonLabel, { opacity: skeletonOpacity }]} />
+              <View style={styles.skeletonChipsRow}>
+                {[0, 1, 2, 3].map((chip) => (
+                  <Animated.View key={`skeleton-chip-${section}-${chip}`} style={[styles.skeletonChip, { opacity: skeletonOpacity }]} />
+                ))}
+              </View>
             </View>
-          </ScrollView>
+          ))}
         </View>
-      ))}
+      ) : (
+        <Animated.View style={{ opacity: catalogContentOpacity }}>
+          <View style={styles.field}>
+            <Text style={styles.label}>Tipo de Documento</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
+              {catalogs.types.map((tp: { id: string; name: string }) => (
+                <Chip
+                  key={tp.id}
+                  label={tp.name}
+                  selected={selectedType === tp.id}
+                  onPress={() => { setSelectedType(tp.id); setSelectedSpecialty(undefined); }}
+                />
+              ))}
+            </ScrollView>
+          </View>
+
+          {currentType && currentType.specialties.length > 0 && (
+            <View style={styles.field}>
+              <Text style={styles.label}>Especialidad</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
+                {currentType.specialties.map((s: { id: string; name: string }) => (
+                  <Chip
+                    key={s.id}
+                    label={s.name}
+                    selected={selectedSpecialty === s.id}
+                    onPress={() => setSelectedSpecialty(s.id)}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {catalogs.tags.map((category: { id: string; name: string; values: { id: string; value: string }[] }) => (
+            <View key={category.id} style={styles.field}>
+              <Text style={styles.label}>{category.name}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
+                {category.values.map((val: { id: string; value: string }) => (
+                  <Chip
+                    key={val.id}
+                    label={val.value}
+                    selected={selectedTags.includes(val.id)}
+                    onPress={() => toggleTag(val.id)}
+                  />
+                ))}
+
+                <View style={styles.addTagContainer}>
+                  <TextInput
+                    style={styles.addTagInput}
+                    placeholder="Nueva..."
+                    placeholderTextColor={t.text.muted}
+                    value={newTagValues[category.id] || ""}
+                    onChangeText={(text) => setNewTagValue(category.id, text)}
+                    onSubmitEditing={() => handleAddCustomTag(category.id)}
+                  />
+                  <TouchableOpacity
+                    style={styles.addTagBtn}
+                    onPress={() => handleAddCustomTag(category.id)}
+                    disabled={addingTag === category.id}
+                  >
+                    {addingTag === category.id ? (
+                      <ActivityIndicator size="small" color={t.brand.fg} />
+                    ) : (
+                      <Text style={styles.addTagBtnText}>+</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
+          ))}
+        </Animated.View>
+      )}
 
       <View style={styles.field}>
         <Text style={styles.label}>Nueva etiqueta (categoría + valor)</Text>
@@ -186,22 +248,15 @@ export function DocumentClassificationForm({
 
 function ClassificationResultCard({
   result,
-  catalogs,
-  selectedTags,
   t,
 }: Readonly<{
   result: NonNullable<DocumentFormState["classificationResult"]>;
-  catalogs: DocumentFormState["catalogs"];
-  selectedTags: readonly string[];
   t: ThemeContextValue;
 }>) {
   const styles = useMemo(() => makeStyles(t), [t]);
-  const appliedNames = catalogs.tags.flatMap((c) =>
-    c.values.filter((v) => selectedTags.includes(v.id)).map((v) => `${c.name}: ${v.value}`)
-  );
   const tagLabels = (result.customTags ?? []).map((ct) => ct.tagValueName ?? ct.tagValueId).filter(Boolean);
   const newTagLabels = (result.newTags ?? []).map((nt) => `${nt.categoryName ?? ""}: ${nt.value}`);
-  const hasAnyTags = tagLabels.length > 0 || newTagLabels.length > 0 || appliedNames.length > 0;
+  const hasAnyTags = tagLabels.length > 0 || newTagLabels.length > 0;
 
   return (
     <View style={styles.classificationResult}>
@@ -216,7 +271,6 @@ function ClassificationResultCard({
         <>
           {tagLabels.length > 0 && <Text style={styles.resultLine}><Text style={styles.resultLabel}>Etiquetas: </Text>{tagLabels.join(", ")}</Text>}
           {newTagLabels.length > 0 && <Text style={styles.resultLine}><Text style={styles.resultLabel}>Nuevas sugeridas: </Text>{newTagLabels.join(", ")}</Text>}
-          {appliedNames.length > 0 && <Text style={styles.resultLine}><Text style={styles.resultLabel}>Aplicadas: </Text>{appliedNames.join(", ")}</Text>}
         </>
       )}
     </View>
@@ -242,6 +296,12 @@ function makeStyles(t: ThemeContextValue) {
 
     // Altura mínima: un ScrollView horizontal dentro de otro ScrollView suele medir 0 de alto en RN y los chips no se ven.
     chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20, minHeight: 40 },
+    catalogLoadingState: { marginBottom: spacing[5], gap: spacing[3] },
+    catalogLoadingText: { fontSize: fontSize.sm, color: t.text.secondary, fontWeight: fontWeight.medium },
+    skeletonSection: { gap: spacing[2] },
+    skeletonLabel: { width: 140, height: 14, borderRadius: radii.sm, backgroundColor: t.border.light },
+    skeletonChipsRow: { flexDirection: "row", gap: spacing[2] },
+    skeletonChip: { width: 86, height: 34, borderRadius: radii.full, backgroundColor: t.border.light },
 
     addTagContainer: { flexDirection: "row", alignItems: "center", backgroundColor: t.surface.bg, borderRadius: radii.full, paddingLeft: spacing[3], paddingRight: 4, borderWidth: 1, borderColor: t.border.medium, height: 36, marginLeft: 4 },
     addTagInput:     { fontSize: fontSize.sm, color: t.text.primary, width: 80, padding: 0 },

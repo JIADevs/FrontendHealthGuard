@@ -29,6 +29,7 @@ import { retryAsync, RETRY_MAX_ATTEMPTS, RETRY_BASE_DELAY_MS, UPLOAD_MAX_FILE_SI
 
 export interface DocumentFormState {
     catalogs: { types: DocumentTypeOut[]; tags: TagCategoryOut[] };
+    catalogsLoading: boolean;
     selectedType: string | undefined;
     selectedSpecialty: string | undefined;
     selectedTags: string[];
@@ -75,6 +76,10 @@ export interface DocumentFormAdapters<TFile> {
     onError: (title: string, message: string) => void;
     /** Show a success notification after upload. */
     onUploadSuccess: (title: string, description: string) => void;
+    /** Show a success notification after AI classification. */
+    onClassifySuccess?: (title: string, description: string) => void;
+    /** Show an error notification after AI classification fails. */
+    onClassifyError?: (title: string, description: string) => void;
     /** Called after a successful upload (e.g. navigation.goBack() or onSuccess()). */
     onUploadComplete: () => void;
 }
@@ -99,6 +104,7 @@ export function useDocumentFormCore<TFile>(
         types: [],
         tags: [],
     });
+    const [catalogsLoading, setCatalogsLoading] = useState(true);
     const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
     const [selectedSpecialty, setSelectedSpecialty] = useState<string | undefined>(undefined);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -116,12 +122,15 @@ export function useDocumentFormCore<TFile>(
         let cancelled = false;
         async function fetchCatalogs() {
             try {
+                setCatalogsLoading(true);
                 const [typesRaw, tagsRaw] = await Promise.all([getDocumentTypes(), getTagCategories()]);
                 const types = Array.isArray(typesRaw) ? typesRaw : [];
                 const tags = Array.isArray(tagsRaw) ? tagsRaw : [];
                 if (!cancelled) setCatalogs({ types, tags });
             } catch (err) {
                 console.warn("Error fetching catalogs", err);
+            } finally {
+                if (!cancelled) setCatalogsLoading(false);
             }
         }
         fetchCatalogs();
@@ -163,6 +172,7 @@ export function useDocumentFormCore<TFile>(
     const handleAIClassify = useCallback(
         async (file: TFile) => {
             if (classifying) return;
+            let classificationCompleted = false;
             try {
                 setClassifying(true);
                 setClassificationResult(null);
@@ -178,11 +188,22 @@ export function useDocumentFormCore<TFile>(
                 if (result.specialties?.length) setSelectedSpecialty(result.specialties[0]!.id);
 
                 await applyClassificationTags(result);
+                classificationCompleted = true;
             } catch (err) {
                 const msg = isApiError(err) ? err.message : "No pudimos clasificar el documento automáticamente.";
-                adapters.onError("IA no disponible", msg);
+                if (adapters.onClassifyError) {
+                    adapters.onClassifyError("IA no disponible", msg);
+                } else {
+                    adapters.onError("IA no disponible", msg);
+                }
             } finally {
                 setClassifying(false);
+                if (classificationCompleted) {
+                    adapters.onClassifySuccess?.(
+                        "Clasificación completada",
+                        "El documento fue clasificado automáticamente con IA.",
+                    );
+                }
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -306,6 +327,7 @@ export function useDocumentFormCore<TFile>(
 
     return {
         catalogs,
+        catalogsLoading,
         selectedType,
         selectedSpecialty,
         selectedTags,

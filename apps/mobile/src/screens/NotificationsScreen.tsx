@@ -16,11 +16,11 @@ import type { ThemeContextValue } from "@helu/ui";
 import { Bell, Calendar, Pill, Activity, Info, CheckCircle } from "lucide-react-native";
 
 const TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
-  APPOINTMENT: { icon: Calendar, color: palette.brand[500],     bg: palette.brand[100] },
-  MEDICATION:  { icon: Pill,     color: colors.warning[500], bg: colors.warning[50] },
-  CHECKIN:     { icon: Activity, color: colors.emerald[500],  bg: colors.emerald[100] },
-  SYSTEM:      { icon: Bell,     color: colors.violet[500],  bg: colors.violet[100] },
-  INFO:        { icon: Info,     color: colors.slate[500],   bg: colors.slate[100] },
+  APPOINTMENT: { icon: Calendar, color: palette.brand[500],              bg: palette.brand[100] },
+  MEDICATION:  { icon: Pill,     color: palette.status.warning[500],     bg: palette.status.warning[50] },
+  CHECKIN:     { icon: Activity, color: palette.accent.notification[500], bg: palette.accent.notification[100] },
+  SYSTEM:      { icon: Bell,     color: palette.accent.ai[500],          bg: palette.accent.ai[100] },
+  INFO:        { icon: Info,     color: palette.surface[500],            bg: palette.surface[100] },
 };
 
 const NotificationItem = memo(function NotificationItem({
@@ -100,20 +100,16 @@ export function NotificationsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Typography variant="h2">Notificaciones</Typography>
-          {screen.unreadCount > 0 && (
-            <Typography variant="bodySm" color="secondary">{screen.unreadCount} sin leer</Typography>
-          )}
-        </View>
-        {screen.unreadCount > 0 && (
+    <View style={styles.container}>
+      {screen.unreadCount > 0 && (
+        <View style={styles.header}>
+          <Typography variant="bodySm" color="secondary">{screen.unreadCount} sin leer</Typography>
+          <View style={{ flex: 1 }} />
           <Button variant="ghost" size="sm" onPress={screen.markAllRead}>
             Marcar todo leído
           </Button>
-        )}
-      </View>
+        </View>
+      )}
 
       {screen.isLoading ? (
         <View style={styles.center}>
@@ -134,21 +130,21 @@ export function NotificationsScreen() {
             <RefreshControl
               refreshing={screen.isRefetching}
               onRefresh={screen.refetch}
-              tintColor={palette.brand[500]}
+              tintColor={t.brand.fg}
             />
           }
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.3}
           ListFooterComponent={
             screen.isFetchingNextPage ? (
-              <ActivityIndicator style={styles.loadingFooter} color={palette.brand[500]} />
+              <ActivityIndicator style={styles.loadingFooter} color={t.brand.fg} />
             ) : null
           }
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={Separator}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -181,7 +177,7 @@ function makeItemStyles(t: ThemeContextValue) {
       backgroundColor: t.surface.bgCard,
       gap: spacing[3],
     },
-    itemUnread:    { backgroundColor: palette.brand[50] },
+    itemUnread:    { backgroundColor: t.brand.tint },
     iconWrap: {
       width: 36,
       height: 36,
@@ -198,7 +194,7 @@ function makeItemStyles(t: ThemeContextValue) {
       width: 8,
       height: 8,
       borderRadius: 4,
-      backgroundColor: palette.brand[500],
+      backgroundColor: t.brand.fg,
       alignSelf: "center",
     },
   });

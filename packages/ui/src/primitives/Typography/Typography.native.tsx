@@ -1,5 +1,5 @@
 import { Text, StyleSheet } from 'react-native';
-import { colors, fontSize, fontWeight, nativeFontFamily } from '../../tokens/tokens';
+import { colors, palette, fontSize, fontWeight, nativeFontFamily } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { TypographyProps, TypographyVariant, TypographyColor } from './Typography.types';
 
@@ -35,9 +35,9 @@ export function Typography({
     default:   t.text.primary,
     secondary: t.text.secondary,
     muted:     t.text.muted,
-    error:     colors.error[500],
-    success:   colors.success[500],
-    warning:   colors.warning[500],
+    error:     palette.status.error[500],
+    success:   palette.status.success[500],
+    warning:   palette.status.warning[500],
     inherit:   t.text.primary,
   };
 

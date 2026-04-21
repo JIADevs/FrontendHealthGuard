@@ -238,14 +238,15 @@ function makeStyles(t: ThemeContextValue) {
       borderRadius: radii.full,
       fontSize: fontSize.xs,
       fontWeight: fontWeight.semibold,
+      color: t.text.primary,
     },
-    tagBlue:       { backgroundColor: palette.brand[100], color: palette.brand[700] },
-    tagAmber:      { backgroundColor: colors.warning[50], color: colors.amber[800] },
-    tagGreen:      { backgroundColor: colors.success[50], color: colors.green[800] },
+    tagBlue:       { backgroundColor: t.brand.tintMed },
+    tagAmber:      { backgroundColor: t.status.warningBg },
+    tagGreen:      { backgroundColor: t.status.successBg },
 
     actions:         { marginTop: spacing[2], flexDirection: "column", gap: spacing[3] },
     preview:         { marginBottom: spacing[4], backgroundColor: colors.black, borderRadius: radii.lg, overflow: "hidden", height: 400 },
     image:           { flex: 1, width: "100%", height: "100%" },
-    error:               { fontSize: fontSize.base, color: colors.error[500] },
+    error:               { fontSize: fontSize.base, color: t.status.errorFg },
   });
 }

@@ -60,7 +60,7 @@ export function ProfileScreen() {
   if (form.loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color={colors.primary[500]} style={{ marginTop: 48 }} />
+        <ActivityIndicator size="large" color={t.brand.fg} style={{ marginTop: 48 }} />
       </SafeAreaView>
     );
   }
@@ -188,16 +188,16 @@ function makeStyles(t: ThemeContextValue) {
     container:        { flex: 1, backgroundColor: t.surface.bg },
     content:          { padding: spacing[4], gap: spacing[3] },
     avatarCard:       { flexDirection: "row", alignItems: "center", gap: spacing[4], backgroundColor: t.surface.bgCard, padding: spacing[4], borderRadius: radii.lg, ...shadows.sm },
-    avatar:           { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary[500], alignItems: "center", justifyContent: "center" },
+    avatar:           { width: 56, height: 56, borderRadius: 28, backgroundColor: t.brand.fg, alignItems: "center", justifyContent: "center" },
     avatarText:       { color: colors.white, fontSize: fontSize.xl, fontWeight: fontWeight.bold },
     card:             { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, ...shadows.sm, overflow: "hidden" },
     fieldRow:         { paddingHorizontal: spacing[4], paddingTop: spacing[3], paddingBottom: spacing[3], borderBottomWidth: 1, borderBottomColor: t.border.light },
     fieldRowLast:     { borderBottomWidth: 0 },
     themeRow:         { flexDirection: "row", gap: spacing[2], padding: spacing[4] },
     themeBtn:         { flex: 1, alignItems: "center", gap: spacing[2], padding: spacing[3], borderRadius: radii.md, borderWidth: 2, borderColor: t.border.medium, backgroundColor: t.surface.bgCard },
-    themeBtnActive:   { borderColor: palette.brand[500], backgroundColor: palette.brand[50] },
+    themeBtnActive:   { borderColor: t.brand.fg, backgroundColor: t.brand.tint },
     themeBtnLabel:    { fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.secondary },
-    themeBtnLabelAct: { color: palette.brand[600] },
+    themeBtnLabelAct: { color: t.brand.solidAlt },
   });
 }
 
@@ -208,6 +208,7 @@ const THEME_OPTIONS = [
 ] as const;
 
 function AppearanceSection({ styles }: { styles: ReturnType<typeof makeStyles> }) {
+  const t = useAppTheme();
   const theme = useUiStore((s) => s.theme);
   const setTheme = useUiStore((s) => s.setTheme);
 
@@ -223,7 +224,7 @@ function AppearanceSection({ styles }: { styles: ReturnType<typeof makeStyles> }
               onPress={() => setTheme(opt.value)}
               activeOpacity={0.7}
             >
-              <opt.Icon size={22} color={active ? palette.brand[500] : colors.gray[400]} />
+              <opt.Icon size={22} color={active ? t.brand.fg : t.text.muted} />
               <Text style={[styles.themeBtnLabel, active && styles.themeBtnLabelAct]}>
                 {opt.label}
               </Text>

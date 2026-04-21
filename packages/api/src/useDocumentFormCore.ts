@@ -88,6 +88,8 @@ export type UseDocumentFormCoreOptions<TFile> = {
     adapters: DocumentFormAdapters<TFile>;
     backpackId?: string;
     backpackName?: string;
+    /** Si cambia (p. ej. token tras login), se vuelven a cargar tipos y etiquetas. */
+    catalogFetchDeps?: unknown;
 };
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -95,7 +97,7 @@ export type UseDocumentFormCoreOptions<TFile> = {
 export function useDocumentFormCore<TFile>(
     options: UseDocumentFormCoreOptions<TFile>,
 ): DocumentFormState & DocumentFormActions<TFile> {
-    const { adapters, backpackId, backpackName } = options;
+    const { adapters, backpackId, backpackName, catalogFetchDeps } = options;
     const queryClient = useQueryClient();
 
     const [catalogs, setCatalogs] = useState<{ types: DocumentTypeOut[]; tags: TagCategoryOut[] }>({
@@ -121,7 +123,9 @@ export function useDocumentFormCore<TFile>(
         async function fetchCatalogs() {
             try {
                 setCatalogsLoading(true);
-                const [types, tags] = await Promise.all([getDocumentTypes(), getTagCategories()]);
+                const [typesRaw, tagsRaw] = await Promise.all([getDocumentTypes(), getTagCategories()]);
+                const types = Array.isArray(typesRaw) ? typesRaw : [];
+                const tags = Array.isArray(tagsRaw) ? tagsRaw : [];
                 if (!cancelled) setCatalogs({ types, tags });
             } catch (err) {
                 console.warn("Error fetching catalogs", err);
@@ -131,7 +135,7 @@ export function useDocumentFormCore<TFile>(
         }
         fetchCatalogs();
         return () => { cancelled = true; };
-    }, []);
+    }, [catalogFetchDeps]);
 
     const toggleTag = useCallback((tagId: string) => {
         setSelectedTags((prev) =>

@@ -84,7 +84,7 @@ export function ScannerScreen() {
   if (!permission) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={palette.brand[500]} />
+        <ActivityIndicator color={t.brand.fg} />
       </View>
     );
   }
@@ -148,7 +148,7 @@ export function ScannerScreen() {
             {form.uploading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Check color={colors.white} size={32} />
+              <Check color={colors.white} size={28} />
             )}
           </TouchableOpacity>
         </View>
@@ -192,7 +192,7 @@ function makeStyles(t: ThemeContextValue) {
       padding: spacing[6],
     },
     text:    { fontSize: fontSize.md, color: t.text.primary, textAlign: "center", marginBottom: spacing[4] },
-    btn:     { backgroundColor: palette.brand[500], paddingHorizontal: spacing[5], paddingVertical: spacing[3], borderRadius: radii.md },
+    btn:     { backgroundColor: t.brand.fg, paddingHorizontal: spacing[5], paddingVertical: spacing[3], borderRadius: radii.md },
     btnText: { color: colors.white, fontWeight: fontWeight.semibold },
     helper:  { marginTop: spacing[4], fontSize: fontSize.sm, color: t.text.secondary, textAlign: "center", lineHeight: 18 },
 
@@ -245,24 +245,25 @@ function makeStyles(t: ThemeContextValue) {
     previewControls: {
       flexDirection: "row",
       justifyContent: "center",
+      alignItems: "center",
       gap: 32,
       paddingBottom: 48,
       backgroundColor: t.surface.bgCard,
       paddingTop: spacing[3],
     },
     circleBtnRed: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: colors.error[500],
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: t.status.errorFg,
       alignItems: "center",
       justifyContent: "center",
     },
     circleBtnGreen: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: colors.success[500],
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: t.status.successFg,
       alignItems: "center",
       justifyContent: "center",
     },

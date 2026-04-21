@@ -202,7 +202,7 @@ export function DocumentClassificationForm({
                     disabled={addingTag === category.id}
                   >
                     {addingTag === category.id ? (
-                      <ActivityIndicator size="small" color={palette.brand[500]} />
+                      <ActivityIndicator size="small" color={t.brand.fg} />
                     ) : (
                       <Text style={styles.addTagBtnText}>+</Text>
                     )}
@@ -282,19 +282,20 @@ function makeStyles(t: ThemeContextValue) {
     form:      { padding: spacing[5], backgroundColor: t.surface.bgCard, flex: 1 },
     formTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[4] },
 
-    aiBtn:         { backgroundColor: colors.violet[500], flexDirection: "row", alignItems: "center", justifyContent: "center", padding: spacing[3], borderRadius: radii.md, marginBottom: spacing[6], gap: spacing[2] },
+    aiBtn:         { backgroundColor: t.accent.aiFg, flexDirection: "row", alignItems: "center", justifyContent: "center", padding: spacing[3], borderRadius: radii.md, marginBottom: spacing[6], gap: spacing[2] },
     aiBtnDisabled: { opacity: 0.7 },
     aiBtnText:     { color: colors.white, fontWeight: fontWeight.bold, fontSize: 14 },
 
-    classificationResult:      { backgroundColor: palette.brand[50], padding: 14, borderRadius: radii.md, marginBottom: spacing[5], borderWidth: 1, borderColor: palette.brand[200] },
-    classificationResultTitle: { fontSize: 14, fontWeight: fontWeight.bold, color: palette.brand[700], marginBottom: spacing[2] },
-    resultLine:                { fontSize: fontSize.sm, color: palette.brand[900], marginBottom: 4 },
+    classificationResult:      { backgroundColor: t.brand.tint, padding: 14, borderRadius: radii.md, marginBottom: spacing[5], borderWidth: 1, borderColor: t.brand.tintBorder },
+    classificationResultTitle: { fontSize: 14, fontWeight: fontWeight.bold, color: t.brand.tintText, marginBottom: spacing[2] },
+    resultLine:                { fontSize: fontSize.sm, color: t.brand.tintStrong, marginBottom: 4 },
     resultLabel:               { fontWeight: fontWeight.semibold },
 
     field: { marginBottom: spacing[5] },
     label: { fontSize: 14, fontWeight: fontWeight.semibold, color: t.text.secondary, marginBottom: spacing[2] },
 
-    chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20 },
+    // Altura mínima: un ScrollView horizontal dentro de otro ScrollView suele medir 0 de alto en RN y los chips no se ven.
+    chipScroll:  { marginHorizontal: -20, paddingHorizontal: 20, minHeight: 40 },
     catalogLoadingState: { marginBottom: spacing[5], gap: spacing[3] },
     catalogLoadingText: { fontSize: fontSize.sm, color: t.text.secondary, fontWeight: fontWeight.medium },
     skeletonSection: { gap: spacing[2] },
@@ -305,9 +306,9 @@ function makeStyles(t: ThemeContextValue) {
     addTagContainer: { flexDirection: "row", alignItems: "center", backgroundColor: t.surface.bg, borderRadius: radii.full, paddingLeft: spacing[3], paddingRight: 4, borderWidth: 1, borderColor: t.border.medium, height: 36, marginLeft: 4 },
     addTagInput:     { fontSize: fontSize.sm, color: t.text.primary, width: 80, padding: 0 },
     addTagBtn:       { width: 28, height: 28, borderRadius: 14, backgroundColor: t.surface.bgCard, alignItems: "center", justifyContent: "center", marginLeft: 4 },
-    addTagBtnText:   { color: palette.brand[500], fontSize: 18, fontWeight: fontWeight.bold },
+    addTagBtnText:   { color: t.brand.fg, fontSize: 18, fontWeight: fontWeight.bold },
 
-    newTagSubmitBtn: { backgroundColor: palette.brand[500], paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radii.md, justifyContent: "center", alignSelf: "flex-start" },
+    newTagSubmitBtn: { backgroundColor: t.brand.fg, paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radii.md, justifyContent: "center", alignSelf: "flex-start" },
     newTagSubmitText: { color: colors.white, fontWeight: fontWeight.semibold, fontSize: 14 },
   });
 }

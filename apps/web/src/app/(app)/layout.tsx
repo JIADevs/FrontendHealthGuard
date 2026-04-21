@@ -32,17 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { token, isHydrated, user, logout } = useAuthStore();
 
-  // Auth guard
-  useEffect(() => {
-    console.log("[AppLayout] state:", { isHydrated, token: !!token, pathname });
-    if (isHydrated && !token) {
-      console.log("[AppLayout] No token found, redirecting to login...");
-      router.replace("/login");
-    }
-  }, [isHydrated, token, router, pathname]);
-
   // Sync theme to <html data-theme="..."> for CSS variable resolution
-  // Must run before any early return — same hook order on every render.
   const theme = useTheme();
   useEffect(() => {
     const html = document.documentElement;
@@ -52,6 +42,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       html.setAttribute("data-theme", theme);
     }
   }, [theme]);
+
+  // Auth guard
+  useEffect(() => {
+    console.log("[AppLayout] state:", { isHydrated, token: !!token, pathname });
+    if (isHydrated && !token) {
+      console.log("[AppLayout] No token found, redirecting to login...");
+      router.replace("/login");
+    }
+  }, [isHydrated, token, router, pathname]);
 
   if (!isHydrated) return null; // Render nothing until hydrated
 

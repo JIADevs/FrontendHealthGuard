@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from 'lucide-react';
-import { colors, radii, spacing, fontSize, fontWeight, surface, border } from '../../tokens/tokens';
+import { colors, palette, radii, spacing, fontSize, fontWeight, surface, border } from '../../tokens/tokens';
 import type { ModalProps, ModalSize } from './Modal.types';
 
 const maxWidthBySize: Record<ModalSize, number> = {
@@ -55,7 +55,7 @@ export function Modal({ title, onClose, children, size = 'md', footer }: ModalPr
               margin: 0,
               fontSize: fontSize.lg,
               fontWeight: fontWeight.extrabold,
-              color: colors.gray[900],
+              color: palette.neutral[900],
             }}
           >
             {title}
@@ -70,10 +70,10 @@ export function Modal({ title, onClose, children, size = 'md', footer }: ModalPr
               alignItems: 'center',
               justifyContent: 'center',
               border: 'none',
-              background: colors.gray[100],
+              background: palette.neutral[100],
               borderRadius: radii.sm,
               cursor: 'pointer',
-              color: colors.gray[500],
+              color: palette.neutral[500],
               flexShrink: 0,
             }}
           >

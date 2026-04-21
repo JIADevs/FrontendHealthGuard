@@ -7,27 +7,27 @@ import type { ButtonProps, ButtonVariant, ButtonSize } from './Button.types';
 const bgByVariant: Record<ButtonVariant, string> = {
   primary:   palette.brand[500],
   secondary: colors.white,
-  danger:    colors.error[500],
+  danger:    palette.status.error[500],
   ghost:     'transparent',
 };
 
 const bgHoverByVariant: Record<ButtonVariant, string> = {
   primary:   palette.brand[600],
-  secondary: colors.gray[50],
-  danger:    colors.error[600],
-  ghost:     colors.primary[50], 
+  secondary: palette.neutral[50],
+  danger:    palette.status.error[600],
+  ghost:     palette.brand[50], 
 };
 
 const colorByVariant: Record<ButtonVariant, string> = {
   primary:   colors.white,
-  secondary: colors.gray[700],
+  secondary: palette.neutral[700],
   danger:    colors.white,
-  ghost:     colors.primary[600],
+  ghost:     palette.brand[600],
 };
 
 const borderByVariant: Record<ButtonVariant, string> = {
   primary:   'none',
-  secondary: `1.5px solid ${colors.gray[200]}`,
+  secondary: `1.5px solid ${palette.neutral[200]}`,
   danger:    'none',
   ghost:     'none',
 };

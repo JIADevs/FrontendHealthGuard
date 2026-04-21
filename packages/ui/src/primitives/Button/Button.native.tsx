@@ -5,19 +5,19 @@ import type { ButtonProps, ButtonVariant, ButtonSize } from './Button.types';
 const bgByVariant: Record<ButtonVariant, string> = {
   primary:   palette.brand[500],
   secondary: colors.white,
-  danger:    colors.error[500],
+  danger:    palette.status.error[500],
   ghost:     'transparent',
 };
 
 const colorByVariant: Record<ButtonVariant, string> = {
   primary:   colors.white,
-  secondary: colors.gray[700],
+  secondary: palette.neutral[700],
   danger:    colors.white,
-  ghost:     colors.primary[600],
+  ghost:     palette.brand[600],
 };
 
 const borderColorByVariant: Partial<Record<ButtonVariant, string>> = {
-  secondary: colors.gray[200],
+  secondary: palette.neutral[200],
 };
 
 const paddingVerticalBySize: Record<ButtonSize, number> = {

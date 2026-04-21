@@ -27,6 +27,9 @@ export function ThemeProvider({ children, preference = "system" }: ThemeProvider
     surface: { ...theme.surface },
     text:    { ...theme.text },
     border:  { ...theme.border },
+    brand:   { ...theme.brand },
+    status:  { ...theme.status },
+    accent:  { ...theme.accent },
     mode,
   };
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { DashboardScreen } from "../screens/DashboardScreen";
 import { DocumentsScreen } from "../screens/DocumentsScreen";
+import { withDocumentsTheme } from "../components/documents";
 import { AgendaScreen } from "../screens/AgendaScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { BackpacksScreen } from "../screens/BackpacksScreen";
@@ -31,6 +32,8 @@ export type TabParamList = {
 };
 
 const Tab = createBottomTabNavigator<TabParamList>();
+
+const DocumentsScreenLight = withDocumentsTheme(DocumentsScreen);
 
 // ─── Center Tab (Inicio) — elevated FAB-like icon ───────────────────────────
 
@@ -123,7 +126,7 @@ export function TabNavigator() {
     >
       <Tab.Screen
         name="Documents"
-        component={DocumentsScreen}
+        component={DocumentsScreenLight}
         options={{
           title: "Documentos",
           tabBarIcon: ({ color, size }) => <FileText color={color} size={size} />,

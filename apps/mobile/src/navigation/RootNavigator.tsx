@@ -14,7 +14,11 @@ import { BackpackEditScreen } from "../screens/BackpackEditScreen";
 import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
 import { ShareDocumentsScreen } from "../screens/ShareDocumentsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
-import { useAppTheme, palette } from "@helu/ui";
+import { useAppTheme } from "@helu/ui";
+import {
+  withDocumentsTheme,
+  documentsStackScreenOptions,
+} from "../components/documents";
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -33,6 +37,12 @@ export type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const ScannerScreenLight = withDocumentsTheme(ScannerScreen);
+const DocumentUploadScreenLight = withDocumentsTheme(DocumentUploadScreen);
+const DocumentDetailScreenLight = withDocumentsTheme(DocumentDetailScreen);
+const DocumentEditScreenLight = withDocumentsTheme(DocumentEditScreen);
+const ShareDocumentsScreenLight = withDocumentsTheme(ShareDocumentsScreen);
 
 export function RootNavigator() {
   const token = useAuthStore((s) => s.token);
@@ -56,23 +66,31 @@ export function RootNavigator() {
           <Stack.Screen name="MainTabs" component={TabNavigator} />
           <Stack.Screen
             name="Scanner"
-            component={ScannerScreen}
-            options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
+            component={ScannerScreenLight}
+            options={{
+              ...documentsStackScreenOptions,
+              presentation: "fullScreenModal",
+              animation: "slide_from_bottom",
+            }}
           />
           <Stack.Screen
             name="DocumentUpload"
-            component={DocumentUploadScreen}
-            options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
+            component={DocumentUploadScreenLight}
+            options={{
+              ...documentsStackScreenOptions,
+              presentation: "fullScreenModal",
+              animation: "slide_from_bottom",
+            }}
           />
           <Stack.Screen
             name="DocumentDetail"
-            component={DocumentDetailScreen}
-            options={{ headerShown: true, title: "Documento" }}
+            component={DocumentDetailScreenLight}
+            options={{ ...documentsStackScreenOptions, headerShown: true, title: "Documento" }}
           />
           <Stack.Screen
             name="DocumentEdit"
-            component={DocumentEditScreen}
-            options={{ headerShown: true, title: "Editar documento" }}
+            component={DocumentEditScreenLight}
+            options={{ ...documentsStackScreenOptions, headerShown: true, title: "Editar documento" }}
           />
           <Stack.Screen
             name="Notifications"
@@ -96,8 +114,13 @@ export function RootNavigator() {
           />
           <Stack.Screen
             name="ShareDocuments"
-            component={ShareDocumentsScreen}
-            options={{ headerShown: true, title: "Compartir Documentos", animation: "slide_from_right" }}
+            component={ShareDocumentsScreenLight}
+            options={{
+              ...documentsStackScreenOptions,
+              headerShown: true,
+              title: "Compartir Documentos",
+              animation: "slide_from_right",
+            }}
           />
           <Stack.Screen
             name="Profile"

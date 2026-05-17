@@ -71,6 +71,8 @@ export async function getDocuments(params: {
     page?: number;
     limit?: number;
     searchQuery?: string;
+    startDate?: string;
+    endDate?: string;
 }) {
     const { data } = await apiClient.get("/documents/", { params });
     return DocumentPageSchema.parse(data);

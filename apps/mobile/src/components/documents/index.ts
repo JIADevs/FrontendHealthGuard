@@ -21,3 +21,4 @@ export { DocumentDetailPreview } from "./DocumentDetailPreview";
 export { DocumentDetailActions } from "./DocumentDetailActions";
 export { DocumentPdfViewer } from "./DocumentPdfViewer";
 export { DocumentViewerModal } from "./DocumentViewerModal";
+export { DocumentTagsEditor } from "./DocumentTagsEditor";

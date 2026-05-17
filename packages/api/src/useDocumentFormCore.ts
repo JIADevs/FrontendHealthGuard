@@ -55,8 +55,8 @@ export interface DocumentFormActions<TFile> {
     setNewTagValueField: (val: string) => void;
     handleAIClassify: (file: TFile) => Promise<void>;
     handleUpload: (file: TFile, docDate?: string) => Promise<void>;
-    handleAddCustomTag: (categoryId: string) => Promise<void>;
-    handleAddCategoryAndTag: () => Promise<void>;
+    handleAddCustomTag: (categoryId: string, valueOverride?: string) => Promise<void>;
+    handleAddCategoryAndTag: (categoryName?: string, tagValue?: string) => Promise<void>;
 }
 
 /**
@@ -278,8 +278,8 @@ export function useDocumentFormCore<TFile>(
     );
 
     const handleAddCustomTag = useCallback(
-        async (categoryId: string) => {
-            const value = newTagValues[categoryId];
+        async (categoryId: string, valueOverride?: string) => {
+            const value = valueOverride ?? newTagValues[categoryId];
             if (!value?.trim() || addingTag) return;
 
             try {
@@ -300,14 +300,16 @@ export function useDocumentFormCore<TFile>(
         [newTagValues, addingTag, adapters.onError],
     );
 
-    const handleAddCategoryAndTag = useCallback(async () => {
-        const catName = newCategoryName.trim();
-        const val = newTagValue.trim();
+    const handleAddCategoryAndTag = useCallback(async (categoryName?: string, tagValue?: string) => {
+        const catName = (categoryName ?? newCategoryName).trim();
+        const val = (tagValue ?? newTagValue).trim();
         if (!catName || !val || addingCustomTag) return;
 
         try {
             setAddingCustomTag(true);
-            const existing = catalogs.tags.find((c) => c.name.toLowerCase() === catName.toLowerCase());
+            const norm = (s: string) =>
+                s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+            const existing = catalogs.tags.find((c) => norm(c.name) === norm(catName));
             const categoryId = existing ? existing.id : (await createTagCategory({ name: catName })).id;
 
             const created = await addTagValue(categoryId, val);

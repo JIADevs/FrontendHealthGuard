@@ -9,6 +9,7 @@ import {
   Image,
   ScrollView,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 
@@ -24,6 +25,7 @@ import {
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
+import { useKeyboardScrollPadding } from "../hooks/useKeyboardScrollPadding";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
 import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
@@ -58,6 +60,7 @@ export function DocumentUploadScreen() {
     backpackId: params?.backpackId,
     backpackName: params?.backpackName,
   });
+  const scrollPaddingBottom = useKeyboardScrollPadding(120);
 
   const [pickerAsset, setPickerAsset] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
 
@@ -123,7 +126,18 @@ export function DocumentUploadScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 72 : 0}
+      >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: scrollPaddingBottom }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+      >
         <View style={styles.previewContainer}>
           {isImage ? (
             <Image source={{ uri: pickerAsset.uri }} style={styles.previewImage} resizeMode="contain" />
@@ -152,6 +166,7 @@ export function DocumentUploadScreen() {
 
         <DocumentClassificationForm file={fileSource} {...form} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <View style={styles.previewControls}>
         <TouchableOpacity style={styles.circleBtnRed} onPress={() => navigation.goBack()} disabled={form.uploading}>

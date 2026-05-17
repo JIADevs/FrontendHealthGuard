@@ -9,6 +9,8 @@ import {
   Linking,
   Image,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -125,12 +127,23 @@ export function ScannerScreen() {
 
     return (
       <View style={styles.container}>
-        <ScrollView style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 72 : 0}
+        >
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 200 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+        >
           <View style={styles.previewContainer}>
             <Image source={{ uri: photoUri }} style={styles.previewImage} resizeMode="contain" />
           </View>
           <DocumentClassificationForm file={fileSource} {...form} />
         </ScrollView>
+        </KeyboardAvoidingView>
 
         <View style={styles.previewControls}>
           <TouchableOpacity

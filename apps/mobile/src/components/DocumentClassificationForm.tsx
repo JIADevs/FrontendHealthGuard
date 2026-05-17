@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -6,52 +6,72 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-  TextInput,
   Animated,
   Easing,
 } from "react-native";
 import { Sparkles } from "lucide-react-native";
 import type { DocumentFormState, DocumentFormActions, FileSource } from "../hooks/useDocumentForm";
-import { useAppTheme, colors, palette, radii, spacing, fontSize, fontWeight, Chip, TextField } from "@helu/ui";
+import { useAppTheme, colors, radii, spacing, fontSize, fontWeight, Chip, TextField } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
+import { DocumentTagsEditor } from "./documents/DocumentTagsEditor";
 
 type Props = DocumentFormState &
   DocumentFormActions<FileSource> & {
     file?: FileSource;
+    /** Mientras se descarga el adjunto actual para clasificar en edición */
+    classifyFileLoading?: boolean;
+    variant?: "upload" | "edit";
   };
 
 export function DocumentClassificationForm({
   file,
+  classifyFileLoading = false,
+  variant = "upload",
   catalogs,
   catalogsLoading,
   selectedType,
   selectedSpecialty,
   selectedTags,
   title,
-  newTagValues,
   addingTag,
   classificationResult,
-  newCategoryName,
-  newTagValue,
   addingCustomTag,
   classifying,
   setSelectedType,
   setSelectedSpecialty,
   toggleTag,
   setTitle,
-  setNewTagValue,
-  setNewCategoryName,
-  setNewTagValueField,
   handleAIClassify,
   handleAddCustomTag,
   handleAddCategoryAndTag,
 }: Props) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+
+  const handleCreateTag = useCallback(
+    async (value: string, categoryId: string) => {
+      await handleAddCustomTag(categoryId, value);
+    },
+    [handleAddCustomTag],
+  );
+
+  const handleCreateCategoryAndTag = useCallback(
+    async (categoryName: string, value: string) => {
+      await handleAddCategoryAndTag(categoryName, value);
+    },
+    [handleAddCategoryAndTag],
+  );
   const catalogContentOpacity = useRef(new Animated.Value(0)).current;
   const skeletonOpacity = useRef(new Animated.Value(0.45)).current;
   const currentType = catalogs.types.find((tp: { id: string; name: string; specialties: any[] }) => tp.id === selectedType);
-  const canRunAI = !!file;
+  const canRunAI = !!file && !classifyFileLoading;
+  const aiHint = classifyFileLoading
+    ? "Preparando el adjunto para clasificar…"
+    : !file && variant === "edit"
+      ? "No se pudo cargar el adjunto para clasificar."
+      : !file
+        ? "Seleccioná un archivo para clasificar con IA."
+        : null;
 
   useEffect(() => {
     if (!catalogsLoading) {
@@ -96,7 +116,9 @@ export function DocumentClassificationForm({
 
   return (
     <View style={styles.form}>
-      <Text style={styles.formTitle}>Clasificar Documento</Text>
+      <Text style={styles.formTitle}>
+        {variant === "edit" ? "Editar documento" : "Clasificar documento"}
+      </Text>
 
       <TouchableOpacity
         style={[styles.aiBtn, (!canRunAI || classifying) && styles.aiBtnDisabled]}
@@ -106,11 +128,23 @@ export function DocumentClassificationForm({
         }}
         disabled={!canRunAI || classifying}
       >
-        <Sparkles color={colors.white} size={20} />
+        {classifyFileLoading ? (
+          <ActivityIndicator color={colors.white} size="small" />
+        ) : (
+          <Sparkles color={colors.white} size={20} />
+        )}
         <Text style={styles.aiBtnText}>
-          {classifying ? "Clasificando..." : "Clasificar con IA"}
+          {classifying
+            ? "Clasificando…"
+            : classifyFileLoading
+              ? "Preparando adjunto…"
+              : "Clasificar con IA"}
         </Text>
       </TouchableOpacity>
+
+      {aiHint && !classifying ? (
+        <Text style={styles.aiHint}>{aiHint}</Text>
+      ) : null}
 
       {classificationResult && (
         <ClassificationResultCard
@@ -174,74 +208,20 @@ export function DocumentClassificationForm({
             </View>
           )}
 
-          {catalogs.tags.map((category: { id: string; name: string; values: { id: string; value: string }[] }) => (
-            <View key={category.id} style={styles.field}>
-              <Text style={styles.label}>{category.name}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={{ gap: spacing[2] }}>
-                {category.values.map((val: { id: string; value: string }) => (
-                  <Chip
-                    key={val.id}
-                    label={val.value}
-                    selected={selectedTags.includes(val.id)}
-                    onPress={() => toggleTag(val.id)}
-                  />
-                ))}
-
-                <View style={styles.addTagContainer}>
-                  <TextInput
-                    style={styles.addTagInput}
-                    placeholder="Nueva..."
-                    placeholderTextColor={t.text.muted}
-                    value={newTagValues[category.id] || ""}
-                    onChangeText={(text) => setNewTagValue(category.id, text)}
-                    onSubmitEditing={() => handleAddCustomTag(category.id)}
-                  />
-                  <TouchableOpacity
-                    style={styles.addTagBtn}
-                    onPress={() => handleAddCustomTag(category.id)}
-                    disabled={addingTag === category.id}
-                  >
-                    {addingTag === category.id ? (
-                      <ActivityIndicator size="small" color={t.brand.fg} />
-                    ) : (
-                      <Text style={styles.addTagBtnText}>+</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
-            </View>
-          ))}
+          <DocumentTagsEditor
+            categories={catalogs.tags}
+            selectedTagIds={selectedTags}
+            onToggleTag={toggleTag}
+            onCreateTag={handleCreateTag}
+            onCreateCategoryAndTag={handleCreateCategoryAndTag}
+            addingTagCategoryId={addingTag}
+            loading={false}
+            creating={addingTag !== null || addingCustomTag}
+            classificationResult={classificationResult}
+            classifying={classifying}
+          />
         </Animated.View>
       )}
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Nueva etiqueta (categoría + valor)</Text>
-        <View style={{ gap: spacing[2] }}>
-          <TextField
-            label="Categoría"
-            value={newCategoryName}
-            onChange={setNewCategoryName}
-            placeholder="Ej. Médico, Institución"
-          />
-          <TextField
-            label="Valor"
-            value={newTagValue}
-            onChange={setNewTagValueField}
-            placeholder="Valor"
-          />
-          <TouchableOpacity
-            style={styles.newTagSubmitBtn}
-            onPress={handleAddCategoryAndTag}
-            disabled={addingCustomTag || !newCategoryName.trim() || !newTagValue.trim()}
-          >
-            {addingCustomTag ? (
-              <ActivityIndicator size="small" color={colors.white} />
-            ) : (
-              <Text style={styles.newTagSubmitText}>Agregar</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
     </View>
   );
 }
@@ -282,9 +262,10 @@ function makeStyles(t: ThemeContextValue) {
     form:      { padding: spacing[5], backgroundColor: t.surface.bgCard, flex: 1 },
     formTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[4] },
 
-    aiBtn:         { backgroundColor: t.accent.aiFg, flexDirection: "row", alignItems: "center", justifyContent: "center", padding: spacing[3], borderRadius: radii.md, marginBottom: spacing[6], gap: spacing[2] },
+    aiBtn:         { backgroundColor: t.accent.aiFg, flexDirection: "row", alignItems: "center", justifyContent: "center", padding: spacing[3], borderRadius: radii.md, marginBottom: spacing[2], gap: spacing[2] },
     aiBtnDisabled: { opacity: 0.7 },
     aiBtnText:     { color: colors.white, fontWeight: fontWeight.bold, fontSize: 14 },
+    aiHint:        { fontSize: fontSize.sm, color: t.text.secondary, marginBottom: spacing[5], lineHeight: 20 },
 
     classificationResult:      { backgroundColor: t.brand.tint, padding: 14, borderRadius: radii.md, marginBottom: spacing[5], borderWidth: 1, borderColor: t.brand.tintBorder },
     classificationResultTitle: { fontSize: 14, fontWeight: fontWeight.bold, color: t.brand.tintText, marginBottom: spacing[2] },
@@ -303,12 +284,5 @@ function makeStyles(t: ThemeContextValue) {
     skeletonChipsRow: { flexDirection: "row", gap: spacing[2] },
     skeletonChip: { width: 86, height: 34, borderRadius: radii.full, backgroundColor: t.border.light },
 
-    addTagContainer: { flexDirection: "row", alignItems: "center", backgroundColor: t.surface.bg, borderRadius: radii.full, paddingLeft: spacing[3], paddingRight: 4, borderWidth: 1, borderColor: t.border.medium, height: 36, marginLeft: 4 },
-    addTagInput:     { fontSize: fontSize.sm, color: t.text.primary, width: 80, padding: 0 },
-    addTagBtn:       { width: 28, height: 28, borderRadius: 14, backgroundColor: t.surface.bgCard, alignItems: "center", justifyContent: "center", marginLeft: 4 },
-    addTagBtnText:   { color: t.brand.fg, fontSize: 18, fontWeight: fontWeight.bold },
-
-    newTagSubmitBtn: { backgroundColor: t.brand.fg, paddingHorizontal: spacing[4], paddingVertical: spacing[3], borderRadius: radii.md, justifyContent: "center", alignSelf: "flex-start" },
-    newTagSubmitText: { color: colors.white, fontWeight: fontWeight.semibold, fontSize: 14 },
   });
 }

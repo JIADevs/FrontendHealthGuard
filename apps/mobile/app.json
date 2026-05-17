@@ -38,6 +38,7 @@
     },
     "android": {
       "package": "com.helu.app",
+      "softwareKeyboardLayoutMode": "resize",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

@@ -70,7 +70,7 @@ export function MoreScreen() {
           initials={initials}
           name={profile.data?.name || "Sin nombre"}
           email={profile.data?.email ?? ""}
-          onPress={() => navigation.navigate("Profile")}
+          onPress={() => navigation.navigate("Profile", { backTitle: "Más" })}
         />
 
         {/* Funciones */}
@@ -84,7 +84,7 @@ export function MoreScreen() {
           <MenuItem
             icon={<Share2 size={20} color={palette.brand[500]} />}
             label="Compartidos"
-            onPress={() => navigation.navigate("ShareDocuments")}
+            onPress={() => navigation.navigate("ShareDocuments", { backTitle: "Más" })}
           />
           <MenuItem
             icon={<Users size={20} color={palette.brand[600]} />}
@@ -99,12 +99,12 @@ export function MoreScreen() {
           <MenuItem
             icon={<Bell size={20} color={t.text.secondary} />}
             label="Notificaciones"
-            onPress={() => navigation.navigate("Notifications")}
+            onPress={() => navigation.navigate("Notifications", { backTitle: "Más" })}
           />
           <MenuItem
             icon={<Settings size={20} color={t.text.secondary} />}
             label="Configuraciones"
-            onPress={() => navigation.navigate("Settings")}
+            onPress={() => navigation.navigate("Settings", { backTitle: "Más" })}
           />
           <MenuItem
             icon={<ShieldCheck size={20} color={t.text.secondary} />}

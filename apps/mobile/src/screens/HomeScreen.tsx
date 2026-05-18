@@ -45,7 +45,6 @@ import { MedicationFormModal } from "../components/MedicationFormModal";
 // ─── Quick action data ───────────────────────────────────────────────────────
 
 const QUICK_ACTIONS = [
-  { key: "agenda", label: "Agendar Cita", icon: Calendar, route: "MainTabs" as const, tabParams: { screen: "Agenda" } },
   { key: "upload", label: "Subir Documento", icon: Upload, route: "DocumentUpload" as const },
   { key: "scan", label: "Escanear", icon: Camera, route: "Scanner" as const },
   { key: "share", label: "Compartir", icon: Share2, route: "ShareDocuments" as const },
@@ -104,7 +103,7 @@ export function HomeScreen() {
             </View>
             <TouchableOpacity
               style={styles.headerIconBtn}
-              onPress={() => navigation.navigate("Notifications")}
+              onPress={() => navigation.navigate("Notifications", { backTitle: "Inicio" })}
             >
               <Bell size={20} color={colors.white} />
             </TouchableOpacity>
@@ -123,7 +122,7 @@ export function HomeScreen() {
                 <TouchableOpacity
                   key={action.key}
                   style={styles.chip}
-                  onPress={() => navigation.navigate(action.route as any)}
+                  onPress={() => navigation.navigate(action.route as any, { backTitle: "Inicio" } as any)}
                   activeOpacity={0.7}
                 >
                   <Icon size={14} color={t.brand.solid} />
@@ -280,7 +279,7 @@ export function HomeScreen() {
                     key={doc.id}
                     document={doc}
                     isLast={idx === dash.recentDocs.length - 1}
-                    onPress={() => navigation.navigate("DocumentDetail", { id: doc.id, title: doc.title })}
+                    onPress={() => navigation.navigate("DocumentDetail", { id: doc.id, title: doc.title, backTitle: "Inicio" })}
                   />
                 ))
               )}

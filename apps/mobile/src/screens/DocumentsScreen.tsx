@@ -3,11 +3,13 @@ import { View, StyleSheet, SectionList, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Trash2 } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { Spinner, EmptyState, spacing, useAppTheme } from "@helu/ui";
+import { Spinner, EmptyState, ConfirmModal, palette, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { useDocumentsList } from "../hooks/useDocumentsList";
-import type { Document } from "../hooks/useDocumentsList";
+import { useDocumentListActions } from "../hooks/useDocumentListActions";
+import { useDocumentShareModal } from "../hooks/useDocumentShareModal";
 import {
   DocumentsListHeader,
   DocumentsSearchToolbar,
@@ -16,6 +18,7 @@ import {
   DocumentsSectionHeader,
   DocumentListItem,
   DocumentsFAB,
+  ShareDocumentModal,
 } from "../components/documents";
 
 export function DocumentsScreen() {
@@ -46,12 +49,17 @@ export function DocumentsScreen() {
     refetch,
   } = useDocumentsList();
 
-  const handleOpen = useCallback(
-    (doc: Document) => {
-      navigation.navigate("DocumentDetail", { id: doc.id, title: doc.title });
-    },
-    [navigation],
-  );
+  const {
+    handleView,
+    handleEdit,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+    deleteTarget,
+    deletePending,
+  } = useDocumentListActions();
+
+  const share = useDocumentShareModal();
 
   const handleUpload = useCallback(() => {
     navigation.navigate("DocumentUpload");
@@ -99,7 +107,17 @@ export function DocumentsScreen() {
             <DocumentsSectionHeader title={section.title} />
           )}
           renderItem={({ item }) => (
-            <DocumentListItem document={item} onPress={() => handleOpen(item)} />
+            <DocumentListItem
+              document={item}
+              onPress={() => handleView(item)}
+              actions={{
+                onView: () => handleView(item),
+                onEdit: () => handleEdit(item),
+                onShare: () => share.openShare(item),
+                onDelete: () => requestDelete(item),
+                shareLoading: share.isSharePendingFor(item.id),
+              }}
+            />
           )}
           ListEmptyComponent={
             <EmptyState
@@ -124,6 +142,33 @@ export function DocumentsScreen() {
         tagCategories={tagCategories}
         tagsLoading={tagsLoading}
       />
+
+      {share.shareTarget && (
+        <ShareDocumentModal
+          shareUrl={share.shareUrl}
+          isPreparing={share.isPreparing}
+          isCopying={share.isCopying}
+          onClose={share.closeShare}
+          onCopyLink={() => void share.copyLink()}
+          onWhatsApp={() => void share.shareWhatsApp()}
+          onEmail={() => void share.shareEmail()}
+          onLink={() => void share.shareLink()}
+          onMore={() => void share.shareMore()}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="¿Eliminar documento?"
+          message="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          loading={deletePending}
+          onConfirm={confirmDelete}
+          onCancel={cancelDelete}
+          icon={<Trash2 size={26} color={palette.status.error[500]} strokeWidth={2.25} />}
+          iconTone="danger"
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -2,8 +2,9 @@ import { useLayoutEffect, useMemo } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Trash2 } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { Typography, Spinner, spacing, useAppTheme } from "@helu/ui";
+import { Typography, Spinner, ConfirmModal, palette, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import {
   DocumentDetailHeader,
@@ -12,8 +13,10 @@ import {
   DocumentDetailPreview,
   DocumentDetailActions,
   DocumentViewerModal,
+  ShareDocumentModal,
 } from "../components/documents";
 import { useDocumentDetail } from "../hooks/useDocumentDetail";
+import { useDocumentShareModal } from "../hooks/useDocumentShareModal";
 
 type RouteParams = {
   id: string;
@@ -38,14 +41,17 @@ export function DocumentDetailScreen() {
     signedUrlLoading,
     isImage,
     docFormat,
-    sharePending,
     deletePending,
+    deleteTarget,
+    cancelDelete,
+    confirmDelete,
     viewerOpen,
     closeViewer,
     handleOpen,
-    handleShareLink,
     handleDelete,
   } = useDocumentDetail(id);
+
+  const share = useDocumentShareModal();
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: "" });
@@ -100,13 +106,13 @@ export function DocumentDetailScreen() {
         />
         <DocumentDetailActions
           onOpen={handleOpen}
-          onShare={handleShareLink}
+          onShare={() => share.openShare(document)}
           onEdit={() => navigation.navigate("DocumentEdit", { id: document.id })}
           onDelete={handleDelete}
           openDisabled={!signedUrl}
           openLoading={signedUrlLoading}
-          shareDisabled={sharePending}
-          shareLoading={sharePending}
+          shareDisabled={share.isPreparing && share.shareTarget?.id === document.id}
+          shareLoading={share.isSharePendingFor(document.id)}
           deleteLoading={deletePending}
         />
       </ScrollView>
@@ -119,6 +125,33 @@ export function DocumentDetailScreen() {
         loading={signedUrlLoading}
         onClose={closeViewer}
       />
+
+      {share.shareTarget && (
+        <ShareDocumentModal
+          shareUrl={share.shareUrl}
+          isPreparing={share.isPreparing}
+          isCopying={share.isCopying}
+          onClose={share.closeShare}
+          onCopyLink={() => void share.copyLink()}
+          onWhatsApp={() => void share.shareWhatsApp()}
+          onEmail={() => void share.shareEmail()}
+          onLink={() => void share.shareLink()}
+          onMore={() => void share.shareMore()}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="¿Eliminar documento?"
+          message="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          loading={deletePending}
+          onConfirm={confirmDelete}
+          onCancel={cancelDelete}
+          icon={<Trash2 size={26} color={palette.status.error[500]} strokeWidth={2.25} />}
+          iconTone="danger"
+        />
+      )}
     </>
   );
 }

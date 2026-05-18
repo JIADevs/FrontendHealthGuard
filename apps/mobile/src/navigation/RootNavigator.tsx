@@ -14,6 +14,7 @@ import { BackpackEditScreen } from "../screens/BackpackEditScreen";
 import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
 import { ShareDocumentsScreen } from "../screens/ShareDocumentsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
+import { SettingsScreen } from "../screens/SettingsScreen";
 import { useAppTheme, palette } from "@helu/ui";
 
 export type RootStackParamList = {
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   DocumentEdit: { id: string } | undefined;
   Notifications: undefined;
   Profile: undefined;
+  Settings: undefined;
   BackpackDetail: { id: string };
   BackpackEdit: { id?: string } | undefined;
   BackpackAddDocuments: { id: string };
@@ -103,6 +105,11 @@ export function RootNavigator() {
             name="Profile"
             component={ProfileScreen}
             options={{ headerShown: true, title: "Mi Perfil", animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={{ headerShown: true, title: "Configuraciones", animation: "slide_from_right" }}
           />
         </>
       ) : (

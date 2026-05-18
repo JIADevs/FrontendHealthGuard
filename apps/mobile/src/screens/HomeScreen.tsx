@@ -31,7 +31,6 @@ import {
   FileText,
   Upload,
   Bell,
-  ChevronRight,
   Camera,
   Share2,
 } from "lucide-react-native";
@@ -181,109 +180,112 @@ export function HomeScreen() {
           </View>
 
           {/* ── Próximas Citas ── */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Typography variant="h4">Próximas citas</Typography>
-              <TouchableOpacity
-                style={styles.seeAllBtn}
-                onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "appointments" } } as any)}
-              >
-                <Typography variant="caption" color="secondary">Ver todas</Typography>
-                <ChevronRight size={14} color={t.text.secondary} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.sectionBody}>
-              {dash.isApptsLoading ? (
+          <View style={styles.sectionHeader}>
+            <Typography variant="h4">Próximas citas</Typography>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "appointments" } } as any)}
+            >
+              <Text style={[styles.seeAllText, { color: t.brand.fg }]}>Ver todas</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.sectionList}>
+            {dash.isApptsLoading ? (
+              <View style={styles.itemCard}>
                 <ActivityIndicator color={t.brand.fg} style={{ padding: spacing[6] }} />
-              ) : dash.upcomingAppts.length === 0 ? (
+              </View>
+            ) : dash.upcomingAppts.length === 0 ? (
+              <View style={styles.itemCard}>
                 <View style={styles.emptyState}>
                   <Calendar size={32} color={t.text.muted} />
                   <Typography variant="bodySm" color="secondary" align="center">
                     No hay citas pendientes.
                   </Typography>
                 </View>
-              ) : (
-                dash.upcomingAppts.map((appt, idx) => (
+              </View>
+            ) : (
+              dash.upcomingAppts.map((appt) => (
+                <View key={appt.id} style={styles.itemCard}>
                   <AppointmentListItem
-                    key={appt.id}
                     appointment={appt}
-                    isLast={idx === dash.upcomingAppts.length - 1}
+                    isLast
                     onPress={() => setSelectedAppt(appt)}
                   />
-                ))
-              )}
-            </View>
+                </View>
+              ))
+            )}
           </View>
 
           {/* ── Medicamentos de hoy ── */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Typography variant="h4">Medicamentos de hoy</Typography>
-              <TouchableOpacity
-                style={styles.seeAllBtn}
-                onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "medications" } } as any)}
-              >
-                <Typography variant="caption" color="secondary">Gestionar</Typography>
-                <ChevronRight size={14} color={t.text.secondary} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.sectionBody}>
-              {dash.isMedsLoading ? (
+          <View style={styles.sectionHeader}>
+            <Typography variant="h4">Medicamentos de hoy</Typography>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "medications" } } as any)}
+            >
+              <Text style={[styles.seeAllText, { color: t.brand.fg }]}>Ver todos</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.sectionList}>
+            {dash.isMedsLoading ? (
+              <View style={styles.itemCard}>
                 <ActivityIndicator color={t.accent.medFg} style={{ padding: spacing[6] }} />
-              ) : dash.activeMeds.length === 0 ? (
+              </View>
+            ) : dash.activeMeds.length === 0 ? (
+              <View style={styles.itemCard}>
                 <View style={styles.emptyState}>
                   <Pill size={32} color={t.text.muted} />
                   <Typography variant="bodySm" color="secondary" align="center">
                     Sin medicamentos activos.
                   </Typography>
                 </View>
-              ) : (
-                dash.activeMeds.map((m, idx) => (
+              </View>
+            ) : (
+              dash.activeMeds.map((m) => (
+                <View key={m.id} style={styles.itemCard}>
                   <MedicationListItem
-                    key={m.id}
                     medication={m}
-                    isLast={idx === dash.activeMeds.length - 1}
+                    isLast
                     onTake={handleIntake}
                     onPress={() => setSelectedMed(m)}
                   />
-                ))
-              )}
-            </View>
+                </View>
+              ))
+            )}
           </View>
 
           {/* ── Documentos Recientes ── */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Typography variant="h4">Documentos Recientes</Typography>
-              <TouchableOpacity
-                style={styles.seeAllBtn}
-                onPress={() => navigation.navigate("MainTabs", { screen: "Documents" } as any)}
-              >
-                <Typography variant="caption" color="secondary">Ver todos</Typography>
-                <ChevronRight size={14} color={t.text.secondary} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.sectionBody}>
-              {dash.isDocsLoading ? (
+          <View style={styles.sectionHeader}>
+            <Typography variant="h4">Documentos recientes</Typography>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("MainTabs", { screen: "Documents" } as any)}
+            >
+              <Text style={[styles.seeAllText, { color: t.brand.fg }]}>Ver todos</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.sectionList}>
+            {dash.isDocsLoading ? (
+              <View style={styles.itemCard}>
                 <ActivityIndicator color={t.accent.docFg} style={{ padding: spacing[6] }} />
-              ) : dash.recentDocs.length === 0 ? (
+              </View>
+            ) : dash.recentDocs.length === 0 ? (
+              <View style={styles.itemCard}>
                 <View style={styles.emptyState}>
                   <FileText size={32} color={t.text.muted} />
                   <Typography variant="bodySm" color="secondary" align="center">
                     Aún no has subido documentos.
                   </Typography>
                 </View>
-              ) : (
-                dash.recentDocs.map((doc, idx) => (
+              </View>
+            ) : (
+              dash.recentDocs.map((doc) => (
+                <View key={doc.id} style={styles.itemCard}>
                   <DocumentListItem
-                    key={doc.id}
                     document={doc}
-                    isLast={idx === dash.recentDocs.length - 1}
+                    isLast
                     onPress={() => navigation.navigate("DocumentDetail", { id: doc.id, title: doc.title, backTitle: "Inicio" })}
                   />
-                ))
-              )}
-            </View>
+                </View>
+              ))
+            )}
           </View>
 
           {/* Bottom spacer for tab bar */}
@@ -448,29 +450,26 @@ function makeStyles(t: ThemeContextValue) {
     },
 
     // ── Sections ──
-    section: {
-      backgroundColor: t.surface.bgCard,
-      borderRadius: radii.lg,
-      ...shadows.sm,
-      overflow: "hidden",
-    },
     sectionHeader: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: spacing[5],
-      paddingVertical: spacing[4],
-      borderBottomWidth: 1,
-      borderBottomColor: t.border.light,
+      paddingHorizontal: spacing[1],
+      marginBottom: spacing[2],
     },
-    seeAllBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[1],
+    seeAllText: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
     },
-    sectionBody: {
+    sectionList: {
+      gap: spacing[3],
+    },
+    itemCard: {
+      backgroundColor: t.surface.bgCard,
+      borderRadius: radii.lg,
       paddingHorizontal: spacing[4],
-      paddingVertical: spacing[3],
+      paddingVertical: spacing[2],
+      ...shadows.sm,
     },
 
     // ── Empty State ──

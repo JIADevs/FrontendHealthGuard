@@ -20,13 +20,25 @@ import type { Appointment } from "./schemas";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface AppointmentFormState {
-  specialty: string;
-  doctor: string;
-  location: string;
+  name: string;
   date: string;
   time: string;
+  modality: "PRESENCIAL" | "VIRTUAL" | "DOMICILIARIA";
+  location: string;
+  videoCallLink: string;
+  specialty: string;
+  service: string;
+  consultationType: string;
+  doctorId: string;
+  doctor: string;
+  clinic: string;
   type: "APPOINTMENT" | "EXAM";
+  status: string;
   examType: string;
+  cost: string;
+  notes: string;
+  customReminder: string;
+  treatmentTags: string[];
   /** Inline validation / API error — display directly in the form UI. */
   error: string | null;
   saving: boolean;
@@ -34,13 +46,25 @@ export interface AppointmentFormState {
 }
 
 export interface AppointmentFormActions {
-  setSpecialty: (v: string) => void;
-  setDoctor: (v: string) => void;
-  setLocation: (v: string) => void;
+  setName: (v: string) => void;
   setDate: (v: string) => void;
   setTime: (v: string) => void;
+  setModality: (v: "PRESENCIAL" | "VIRTUAL" | "DOMICILIARIA") => void;
+  setLocation: (v: string) => void;
+  setVideoCallLink: (v: string) => void;
+  setSpecialty: (v: string) => void;
+  setService: (v: string) => void;
+  setConsultationType: (v: string) => void;
+  setDoctorId: (v: string) => void;
+  setDoctor: (v: string) => void;
+  setClinic: (v: string) => void;
   setType: (v: "APPOINTMENT" | "EXAM") => void;
+  setStatus: (v: string) => void;
   setExamType: (v: string) => void;
+  setCost: (v: string) => void;
+  setNotes: (v: string) => void;
+  setCustomReminder: (v: string) => void;
+  setTreatmentTags: (v: string[]) => void;
   clearError: () => void;
   handleSave: () => void;
 }
@@ -63,17 +87,31 @@ export function useAppointmentFormCore({
 }): AppointmentFormState & AppointmentFormActions {
   const isEdit = !!initial;
 
-  const [specialty, setSpecialty] = useState(initial?.specialty ?? "");
-  const [doctor, setDoctor] = useState(initial?.doctor ?? "");
-  const [location, setLocation] = useState(initial?.location ?? "");
+  const [name, setName] = useState(initial?.name ?? "");
   const [date, setDate] = useState(
     initial?.date ?? new Date().toISOString().split("T")[0]!,
   );
   const [time, setTime] = useState(initial?.time?.slice(0, 5) ?? "09:00");
+  const [modality, setModality] = useState<"PRESENCIAL" | "VIRTUAL" | "DOMICILIARIA">(
+    initial?.modality ?? "PRESENCIAL",
+  );
+  const [location, setLocation] = useState(initial?.location ?? "");
+  const [videoCallLink, setVideoCallLink] = useState(initial?.videoCallLink ?? "");
+  const [specialty, setSpecialty] = useState(initial?.specialty ?? "");
+  const [service, setService] = useState(initial?.service ?? "");
+  const [consultationType, setConsultationType] = useState(initial?.consultationType ?? "");
+  const [doctorId, setDoctorId] = useState(initial?.doctorId ?? "");
+  const [doctor, setDoctor] = useState(initial?.doctor ?? "");
+  const [clinic, setClinic] = useState(initial?.clinic ?? "");
   const [type, setType] = useState<"APPOINTMENT" | "EXAM">(
     initial?.type ?? "APPOINTMENT",
   );
+  const [status, setStatus] = useState(initial?.status ?? "PROGRAMADA");
   const [examType, setExamType] = useState(initial?.examType ?? "");
+  const [cost, setCost] = useState(initial?.cost?.toString() ?? "");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [customReminder, setCustomReminder] = useState(initial?.customReminder ?? "");
+  const [treatmentTags, setTreatmentTags] = useState<string[]>(initial?.treatmentTags ?? []);
   const [error, setError] = useState<string | null>(null);
 
   const createMut = useCreateAppointmentMutation();
@@ -81,22 +119,46 @@ export function useAppointmentFormCore({
   const saving = createMut.isPending || updateMut.isPending;
 
   function handleSave() {
-    if (!specialty.trim() || !doctor.trim() || !location.trim() || !date || !time) {
-      setError("Completa todos los campos obligatorios.");
+    // Validación básica
+    if (!date || !time) {
+      setError("Fecha y hora son obligatorios.");
       return;
     }
+
+    // Validar según modalidad
+    if (modality === "PRESENCIAL" && !location.trim()) {
+      setError("El lugar es obligatorio para citas presenciales.");
+      return;
+    }
+
+    if (modality === "VIRTUAL" && !videoCallLink.trim()) {
+      setError("El link de videollamada es obligatorio para citas virtuales.");
+      return;
+    }
+
     setError(null);
 
     const payload = {
-      specialty,
-      doctor,
-      location,
+      name: name.trim() || undefined,
       date,
       time,
+      modality,
+      location: location.trim() || undefined,
+      videoCallLink: videoCallLink.trim() || undefined,
+      specialty: specialty.trim() || undefined,
+      service: service.trim() || undefined,
+      consultationType: consultationType.trim() || undefined,
+      doctorId: doctorId.trim() || undefined,
+      doctor: doctor.trim() || undefined,
+      clinic: clinic.trim() || undefined,
       type,
-      status: initial?.status ?? "PENDING",
+      status,
       examType: type === "EXAM" ? examType : undefined,
+      cost: cost.trim() ? parseFloat(cost) : undefined,
+      notes: notes.trim() || undefined,
+      customReminder: customReminder.trim() || undefined,
       tags: [] as string[],
+      treatmentTags,
       reminderOffsets: [] as number[],
     };
 
@@ -117,9 +179,13 @@ export function useAppointmentFormCore({
   }
 
   return {
-    specialty, doctor, location, date, time, type, examType,
+    name, date, time, modality, location, videoCallLink,
+    specialty, service, consultationType, doctorId, doctor, clinic,
+    type, status, examType, cost, notes, customReminder, treatmentTags,
     error, saving, isEdit,
-    setSpecialty, setDoctor, setLocation, setDate, setTime, setType, setExamType,
+    setName, setDate, setTime, setModality, setLocation, setVideoCallLink,
+    setSpecialty, setService, setConsultationType, setDoctorId, setDoctor, setClinic,
+    setType, setStatus, setExamType, setCost, setNotes, setCustomReminder, setTreatmentTags,
     clearError: () => setError(null),
     handleSave,
   };

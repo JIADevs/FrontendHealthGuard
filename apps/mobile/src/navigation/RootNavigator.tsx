@@ -14,6 +14,9 @@ import { BackpackEditScreen } from "../screens/BackpackEditScreen";
 import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
 import { ShareDocumentsScreen } from "../screens/ShareDocumentsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
+import { AppointmentDetailScreen } from "../screens/AppointmentDetailScreen";
+import { AppointmentFormScreen } from "../screens/AppointmentFormScreen";
+import { DoctorFormScreen } from "../screens/DoctorFormScreen";
 import { useAppTheme, palette } from "@helu/ui";
 
 export type RootStackParamList = {
@@ -30,6 +33,9 @@ export type RootStackParamList = {
   BackpackEdit: { id?: string } | undefined;
   BackpackAddDocuments: { id: string };
   ShareDocuments: undefined;
+  AppointmentDetail: { id: string };
+  AppointmentForm: { id?: string } | undefined;
+  DoctorForm: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -103,6 +109,21 @@ export function RootNavigator() {
             name="Profile"
             component={ProfileScreen}
             options={{ headerShown: true, title: "Mi Perfil", animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="AppointmentDetail"
+            component={AppointmentDetailScreen}
+            options={{ headerShown: true, title: "Detalle de Cita", animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="AppointmentForm"
+            component={AppointmentFormScreen}
+            options={{ headerShown: true, title: "Nueva cita", animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="DoctorForm"
+            component={DoctorFormScreen}
+            options={{ headerShown: true, title: "Agregar profesional", animation: "slide_from_right" }}
           />
         </>
       ) : (

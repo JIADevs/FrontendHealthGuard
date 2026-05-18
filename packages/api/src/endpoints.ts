@@ -242,7 +242,9 @@ export async function deleteMedication(id: string) {
 }
 
 export async function confirmIntake(id: string) {
-    const { data } = await apiClient.post(`/medications/${id}/intake`);
+    const { data } = await apiClient.post(`/medications/${id}/intakes`, {
+        taken_at: new Date().toISOString(),
+    });
     return data;
 }
 

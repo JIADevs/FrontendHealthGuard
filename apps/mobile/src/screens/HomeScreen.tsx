@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,9 @@ import {
   StatusBar,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDashboardCore } from "@helu/api/hooks";
+import { useDashboardCore, useConfirmIntakeMutation } from "@helu/api/hooks";
+import type { Appointment, Medication } from "@helu/api";
+import Toast from "react-native-toast-message";
 import { useAuthStore } from "@helu/stores";
 import {
   colors,
@@ -20,9 +22,6 @@ import {
   shadows,
   overlay,
   useAppTheme,
-  formatDateLocal,
-  splitDate,
-  formatFileKind,
   Typography,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
@@ -35,12 +34,13 @@ import {
   ChevronRight,
   Camera,
   Share2,
-  Clock,
-  MapPin,
 } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
+import { AppointmentListItem, MedicationListItem, DocumentListItem } from "../components/home";
+import { AppointmentFormModal } from "../components/AppointmentFormModal";
+import { MedicationFormModal } from "../components/MedicationFormModal";
 
 // ─── Quick action data ───────────────────────────────────────────────────────
 
@@ -51,19 +51,30 @@ const QUICK_ACTIONS = [
   { key: "share", label: "Compartir", icon: Share2, route: "ShareDocuments" as const },
 ] as const;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-
-
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function DashboardScreen() {
+export function HomeScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const logout = useAuthStore((s) => s.logout);
   const dash = useDashboardCore();
+  const confirmIntake = useConfirmIntakeMutation();
   const insets = useSafeAreaInsets();
+
+  // Modal state
+  const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
+  const [selectedMed, setSelectedMed] = useState<Medication | null>(null);
+
+  const handleIntake = useCallback(
+    (id: string) => {
+      confirmIntake.mutate(id, {
+        onSuccess: () => Toast.show({ type: "success", text1: "Toma confirmada" }),
+        onError: () => Toast.show({ type: "error", text1: "Error al confirmar toma" }),
+      });
+    },
+    [confirmIntake],
+  );
 
   return (
     <View style={styles.container}>
@@ -170,10 +181,10 @@ export function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* ── Featured Next Appointment ── */}
+          {/* ── Próximas Citas ── */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Typography variant="h4">Próxima Cita</Typography>
+              <Typography variant="h4">Próximas citas</Typography>
               <TouchableOpacity
                 style={styles.seeAllBtn}
                 onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "appointments" } } as any)}
@@ -185,7 +196,7 @@ export function DashboardScreen() {
             <View style={styles.sectionBody}>
               {dash.isApptsLoading ? (
                 <ActivityIndicator color={t.brand.fg} style={{ padding: spacing[6] }} />
-              ) : !dash.nextAppt ? (
+              ) : dash.upcomingAppts.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Calendar size={32} color={t.text.muted} />
                   <Typography variant="bodySm" color="secondary" align="center">
@@ -193,57 +204,22 @@ export function DashboardScreen() {
                   </Typography>
                 </View>
               ) : (
-                <TouchableOpacity
-                  style={styles.featuredApptCard}
-                  activeOpacity={0.7}
-                  onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "appointments" } } as any)}
-                >
-                  {/* Left accent border */}
-                  <View style={[styles.featuredAccent, { backgroundColor: t.accent.calFg }]} />
-                  {/* Icon */}
-                  <View style={[styles.featuredIcon, { backgroundColor: t.accent.calBg }]}>
-                    <Calendar size={18} color={t.accent.calFg} />
-                  </View>
-                  {/* Info */}
-                  <View style={styles.featuredInfo}>
-                    <Text style={[styles.featuredTitle, { color: t.text.primary }]}>{dash.nextAppt.specialty}</Text>
-                    <View style={styles.featuredMeta}>
-                      <Text style={[styles.featuredSub, { color: t.text.secondary }]}>
-                        {dash.nextAppt.doctor}
-                      </Text>
-                    </View>
-                    {dash.nextAppt.location ? (
-                      <View style={styles.featuredLocationRow}>
-                        <MapPin size={11} color={t.text.muted} />
-                        <Text style={[styles.featuredLocation, { color: t.text.muted }]}>
-                          {dash.nextAppt.location}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  {/* Date badge */}
-                  <View style={[styles.dateBadge, { backgroundColor: t.accent.calBg }]}>
-                    <Text style={[styles.dateBadgeDay, { color: t.accent.calFg }]}>
-                      {splitDate(dash.nextAppt.date).day}
-                    </Text>
-                    <Text style={[styles.dateBadgeMonth, { color: t.accent.calFg }]}>
-                      {splitDate(dash.nextAppt.date).month}
-                    </Text>
-                    {dash.nextAppt.time && (
-                      <Text style={[styles.dateBadgeTime, { color: t.text.secondary }]}>
-                        {dash.nextAppt.time.slice(0, 5)}
-                      </Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
+                dash.upcomingAppts.map((appt, idx) => (
+                  <AppointmentListItem
+                    key={appt.id}
+                    appointment={appt}
+                    isLast={idx === dash.upcomingAppts.length - 1}
+                    onPress={() => setSelectedAppt(appt)}
+                  />
+                ))
               )}
             </View>
           </View>
 
-          {/* ── Active Medications (horizontal scroll) ── */}
-          <View>
-            <View style={styles.sectionHeaderFlat}>
-              <Typography variant="h4">Medicamentos</Typography>
+          {/* ── Medicamentos de hoy ── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Typography variant="h4">Medicamentos de hoy</Typography>
               <TouchableOpacity
                 style={styles.seeAllBtn}
                 onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "medications" } } as any)}
@@ -252,55 +228,33 @@ export function DashboardScreen() {
                 <ChevronRight size={14} color={t.text.secondary} />
               </TouchableOpacity>
             </View>
-            {dash.isMedsLoading ? (
-              <ActivityIndicator color={t.accent.medFg} style={{ padding: spacing[6] }} />
-            ) : dash.activeMeds.length === 0 ? (
-              <View style={[styles.section, { padding: spacing[5] }]}>
+            <View style={styles.sectionBody}>
+              {dash.isMedsLoading ? (
+                <ActivityIndicator color={t.accent.medFg} style={{ padding: spacing[6] }} />
+              ) : dash.activeMeds.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Pill size={32} color={t.text.muted} />
                   <Typography variant="bodySm" color="secondary" align="center">
                     Sin medicamentos activos.
                   </Typography>
                 </View>
-              </View>
-            ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.medsScrollRow}
-              >
-                {dash.activeMeds.map((m) => (
-                  <View key={m.id} style={[styles.medCard, { backgroundColor: t.surface.bgCard }]}>
-                    <View style={[styles.medIconWrap, { backgroundColor: t.accent.medBg }]}>
-                      <Pill size={16} color={t.accent.medFg} />
-                    </View>
-                    <Text style={[styles.medName, { color: t.text.primary }]} numberOfLines={1}>
-                      {m.name}
-                    </Text>
-                    <Text style={[styles.medDosage, { color: t.text.secondary }]} numberOfLines={1}>
-                      {m.dosage}
-                    </Text>
-                    {m.nextIntakeTime ? (
-                      <View style={[styles.medTimeBadge, { backgroundColor: t.accent.medBg }]}>
-                        <Clock size={10} color={t.accent.medFg} />
-                        <Text style={[styles.medTimeText, { color: t.accent.medFg }]}>
-                          {m.nextIntakeTime.slice(0, 5)}
-                        </Text>
-                      </View>
-                    ) : (
-                      <Text style={[styles.medFreq, { color: t.text.muted }]}>
-                        Cada {m.frequency}h
-                      </Text>
-                    )}
-                  </View>
-                ))}
-              </ScrollView>
-            )}
+              ) : (
+                dash.activeMeds.map((m, idx) => (
+                  <MedicationListItem
+                    key={m.id}
+                    medication={m}
+                    isLast={idx === dash.activeMeds.length - 1}
+                    onTake={handleIntake}
+                    onPress={() => setSelectedMed(m)}
+                  />
+                ))
+              )}
+            </View>
           </View>
 
-          {/* ── Recent Documents (horizontal scroll) ── */}
-          <View>
-            <View style={styles.sectionHeaderFlat}>
+          {/* ── Documentos Recientes ── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
               <Typography variant="h4">Documentos Recientes</Typography>
               <TouchableOpacity
                 style={styles.seeAllBtn}
@@ -310,59 +264,50 @@ export function DashboardScreen() {
                 <ChevronRight size={14} color={t.text.secondary} />
               </TouchableOpacity>
             </View>
-            {dash.isDocsLoading ? (
-              <ActivityIndicator color={t.accent.docFg} style={{ padding: spacing[6] }} />
-            ) : dash.recentDocs.length === 0 ? (
-              <View style={[styles.section, { padding: spacing[5] }]}>
+            <View style={styles.sectionBody}>
+              {dash.isDocsLoading ? (
+                <ActivityIndicator color={t.accent.docFg} style={{ padding: spacing[6] }} />
+              ) : dash.recentDocs.length === 0 ? (
                 <View style={styles.emptyState}>
                   <FileText size={32} color={t.text.muted} />
                   <Typography variant="bodySm" color="secondary" align="center">
                     Aún no has subido documentos.
                   </Typography>
                 </View>
-              </View>
-            ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.docsScrollRow}
-              >
-                {dash.recentDocs.map((doc) => (
-                  <TouchableOpacity
+              ) : (
+                dash.recentDocs.map((doc, idx) => (
+                  <DocumentListItem
                     key={doc.id}
-                    style={[styles.docCard, { backgroundColor: t.surface.bgCard }]}
-                    activeOpacity={0.7}
+                    document={doc}
+                    isLast={idx === dash.recentDocs.length - 1}
                     onPress={() => navigation.navigate("DocumentDetail", { id: doc.id, title: doc.title })}
-                  >
-                    <View style={[styles.docIconWrap, { backgroundColor: t.accent.docBg }]}>
-                      <FileText size={18} color={t.accent.docFg} />
-                    </View>
-                    <Text style={[styles.docTitle, { color: t.text.primary }]} numberOfLines={2}>
-                      {doc.title}
-                    </Text>
-                    <View style={styles.docFooter}>
-                      <Text style={[styles.docKind, { color: t.accent.docFg, backgroundColor: t.accent.docBg }]}>
-                        {formatFileKind(doc.format)}
-                      </Text>
-                      <Text style={[styles.docDate, { color: t.text.muted }]}>
-                        {formatDateLocal(doc.uploadedAt)}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
+                  />
+                ))
+              )}
+            </View>
           </View>
 
           {/* Bottom spacer for tab bar */}
           <View style={{ height: spacing[4] }} />
         </View>
       </ScrollView>
+
+      {/* ── Modals ── */}
+      {selectedAppt && (
+        <AppointmentFormModal
+          initial={selectedAppt}
+          onClose={() => setSelectedAppt(null)}
+        />
+      )}
+      {selectedMed && (
+        <MedicationFormModal
+          initial={selectedMed}
+          onClose={() => setSelectedMed(null)}
+        />
+      )}
     </View>
   );
 }
-
-
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -466,6 +411,7 @@ function makeStyles(t: ThemeContextValue) {
       padding: spacing[5],
       gap: spacing[5],
     },
+
     // ── Tu día card ──
     dayCard: {
       flexDirection: "row",
@@ -502,7 +448,7 @@ function makeStyles(t: ThemeContextValue) {
       marginHorizontal: spacing[2],
     },
 
-    // ── Sections (carded) ──
+    // ── Sections ──
     section: {
       backgroundColor: t.surface.bgCard,
       borderRadius: radii.lg,
@@ -518,12 +464,6 @@ function makeStyles(t: ThemeContextValue) {
       borderBottomWidth: 1,
       borderBottomColor: t.border.light,
     },
-    sectionHeaderFlat: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: spacing[3],
-    },
     seeAllBtn: {
       flexDirection: "row",
       alignItems: "center",
@@ -532,161 +472,6 @@ function makeStyles(t: ThemeContextValue) {
     sectionBody: {
       paddingHorizontal: spacing[4],
       paddingVertical: spacing[3],
-    },
-
-    // ── Featured Appointment Card ──
-    featuredApptCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],
-      paddingVertical: spacing[2],
-    },
-    featuredAccent: {
-      width: 4,
-      alignSelf: "stretch",
-      borderRadius: 2,
-    },
-    featuredIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: radii.md,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    featuredInfo: {
-      flex: 1,
-      gap: 2,
-    },
-    featuredTitle: {
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.bold,
-    },
-    featuredMeta: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[1],
-    },
-    featuredSub: {
-      fontSize: fontSize.sm,
-    },
-    featuredLocationRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 3,
-      marginTop: 2,
-    },
-    featuredLocation: {
-      fontSize: fontSize.xs,
-    },
-    dateBadge: {
-      alignItems: "center",
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[2],
-      borderRadius: radii.md,
-      minWidth: 52,
-    },
-    dateBadgeDay: {
-      fontSize: fontSize.xl,
-      fontWeight: fontWeight.extrabold,
-      lineHeight: 24,
-    },
-    dateBadgeMonth: {
-      fontSize: fontSize.xs,
-      fontWeight: fontWeight.semibold,
-      textTransform: "capitalize",
-    },
-    dateBadgeTime: {
-      fontSize: 10,
-      fontWeight: fontWeight.medium,
-      marginTop: 2,
-    },
-
-    // ── Medication horizontal cards ──
-    medsScrollRow: {
-      gap: spacing[3],
-      paddingRight: spacing[2],
-    },
-    medCard: {
-      width: 130,
-      padding: spacing[4],
-      borderRadius: radii.lg,
-      gap: spacing[2],
-      ...shadows.sm,
-    },
-    medIconWrap: {
-      width: 32,
-      height: 32,
-      borderRadius: radii.md,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    medName: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.bold,
-    },
-    medDosage: {
-      fontSize: fontSize.xs,
-    },
-    medTimeBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      alignSelf: "flex-start",
-      gap: 3,
-      paddingHorizontal: spacing[2],
-      paddingVertical: 3,
-      borderRadius: radii.full,
-      marginTop: spacing[1],
-    },
-    medTimeText: {
-      fontSize: 10,
-      fontWeight: fontWeight.semibold,
-    },
-    medFreq: {
-      fontSize: fontSize.xs,
-      fontWeight: fontWeight.medium,
-    },
-
-    // ── Document cards (horizontal) ──
-    docsScrollRow: {
-      gap: spacing[3],
-      paddingRight: spacing[2],
-    },
-    docCard: {
-      width: 160,
-      padding: spacing[4],
-      borderRadius: radii.lg,
-      gap: spacing[2],
-      ...shadows.sm,
-    },
-    docIconWrap: {
-      width: 36,
-      height: 36,
-      borderRadius: radii.md,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    docTitle: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      lineHeight: 18,
-    },
-    docFooter: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginTop: spacing[1],
-    },
-    docKind: {
-      fontSize: 10,
-      fontWeight: fontWeight.bold,
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: radii.sm,
-      overflow: "hidden",
-    },
-    docDate: {
-      fontSize: 10,
-      fontWeight: fontWeight.medium,
     },
 
     // ── Empty State ──

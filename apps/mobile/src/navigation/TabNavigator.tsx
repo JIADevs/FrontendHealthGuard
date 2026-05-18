@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { DashboardScreen } from "../screens/DashboardScreen";
+import { HomeScreen } from "../screens/HomeScreen";
 import { DocumentsScreen } from "../screens/DocumentsScreen";
 import { AgendaScreen } from "../screens/AgendaScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
@@ -25,7 +25,7 @@ import {
 export type TabParamList = {
   Documents: undefined;
   Agenda: { initialTab?: "appointments" | "medications" } | undefined;
-  Dashboard: undefined;
+  Home: undefined;
   Backpacks: undefined;
   Profile: undefined;
 };
@@ -89,7 +89,7 @@ export function TabNavigator() {
 
   return (
     <Tab.Navigator
-      initialRouteName="Dashboard"
+      initialRouteName="Home"
       screenOptions={{
         tabBarActiveTintColor: t.brand.fg,
         tabBarInactiveTintColor: t.text.muted,
@@ -138,8 +138,8 @@ export function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
+        name="Home"
+        component={HomeScreen}
         options={{
           title: "Inicio",
           tabBarIcon: ({ focused }) => <CenterTabIcon focused={focused} />,

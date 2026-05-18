@@ -111,7 +111,7 @@ export function RootNavigator() {
           <Stack.Screen
             name="Signup"
             component={SignupScreen}
-            options={{ headerShown: true, title: "Crear Cuenta" }}
+            options={{ headerShown: false }}
           />
         </>
       )}

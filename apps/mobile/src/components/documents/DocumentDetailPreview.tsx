@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { View, Image, Text, StyleSheet } from "react-native";
 import {
   Spinner,
@@ -22,6 +22,7 @@ interface DocumentDetailPreviewProps {
   isImage: boolean;
   docFormat: DocFormat;
   isLoading?: boolean;
+  pageCount?: number | null;
 }
 
 export function DocumentDetailPreview({
@@ -32,13 +33,17 @@ export function DocumentDetailPreview({
   isImage,
   docFormat,
   isLoading = false,
+  pageCount = null,
 }: DocumentDetailPreviewProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const [page, setPage] = useState({ current: 1, total: 1 });
 
-  const showPageIndicator =
-    !isLoading && docFormat === "pdf" && !!signedUrl && page.total > 0;
+  const pageLabel =
+    pageCount != null && pageCount > 0
+      ? pageCount === 1
+        ? "1 página"
+        : `${pageCount} páginas`
+      : null;
 
   return (
     <View style={styles.frame}>
@@ -55,12 +60,7 @@ export function DocumentDetailPreview({
             accessibilityLabel={`Vista previa de ${title}`}
           />
         ) : docFormat === "pdf" && signedUrl ? (
-          <DocumentPdfViewer
-            uri={signedUrl}
-            title={title}
-            height={320}
-            onPageChange={(current, total) => setPage({ current, total })}
-          />
+          <DocumentPdfViewer uri={signedUrl} title={title} height={320} />
         ) : description?.trim() ? (
           <View style={styles.textPreview}>
             <Text style={styles.reportTitle}>{title.toUpperCase()}</Text>
@@ -77,13 +77,8 @@ export function DocumentDetailPreview({
           </View>
         )}
       </View>
-      {showPageIndicator ? (
-        <Text style={styles.pageIndicator}>
-          {page.current} / {page.total}
-        </Text>
-      ) : !isLoading && (isImage || description?.trim()) ? (
-        <Text style={styles.pageIndicator}>1 / 1</Text>
-      ) : null}
+
+      {pageLabel ? <Text style={styles.pageIndicator}>{pageLabel}</Text> : null}
     </View>
   );
 }
@@ -96,7 +91,7 @@ function makeStyles(t: ThemeContextValue) {
       borderRadius: radii.lg,
       padding: spacing[3],
       backgroundColor: t.surface.bgCard,
-      gap: spacing[2],
+      gap: spacing[3],
     },
     card: {
       minHeight: 220,
@@ -138,8 +133,9 @@ function makeStyles(t: ThemeContextValue) {
       color: t.text.primary,
     },
     pageIndicator: {
-      fontSize: fontSize.xs,
-      color: t.text.muted,
+      fontSize: fontSize.sm,
+      color: t.text.secondary,
+      fontWeight: fontWeight.medium,
     },
   });
 }

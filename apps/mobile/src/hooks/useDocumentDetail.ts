@@ -1,8 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
-import { Linking } from "react-native";
+import { useCallback, useMemo } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import Toast from "react-native-toast-message";
 import { useQuery } from "@tanstack/react-query";
 import {
   useDocumentQuery,
@@ -21,8 +19,6 @@ import {
 
 export function useDocumentDetail(id: string) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [viewerOpen, setViewerOpen] = useState(false);
-
   const docQuery = useDocumentQuery(id);
   const tagCatalog = useTagCategoriesQuery();
   const {
@@ -66,36 +62,6 @@ export function useDocumentDetail(id: string) {
   const docFormat = resolveDocFormat(document?.format ?? "");
   const isImage = docFormat === "image";
 
-  const canOpenInApp = docFormat === "pdf" || docFormat === "image";
-
-  const handleOpen = useCallback(async () => {
-    if (!signedUrl) return;
-    if (canOpenInApp) {
-      setViewerOpen(true);
-      return;
-    }
-    try {
-      const canOpen = await Linking.canOpenURL(signedUrl);
-      if (!canOpen) {
-        Toast.show({
-          type: "error",
-          text1: "No se pudo abrir",
-          text2: "El enlace del documento no es válido.",
-        });
-        return;
-      }
-      await Linking.openURL(signedUrl);
-    } catch {
-      Toast.show({
-        type: "error",
-        text1: "Error al abrir",
-        text2: "No se pudo abrir el documento.",
-      });
-    }
-  }, [signedUrl, canOpenInApp]);
-
-  const closeViewer = useCallback(() => setViewerOpen(false), []);
-
   const handleDelete = useCallback(() => {
     if (!document) return;
     requestDelete(document);
@@ -115,9 +81,6 @@ export function useDocumentDetail(id: string) {
     deleteTarget,
     cancelDelete,
     confirmDelete,
-    viewerOpen,
-    closeViewer,
-    handleOpen,
     handleDelete,
   };
 }

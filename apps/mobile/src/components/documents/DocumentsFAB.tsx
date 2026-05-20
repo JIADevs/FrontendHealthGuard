@@ -16,7 +16,7 @@ export function DocumentsFAB({ onPress }: DocumentsFABProps) {
       onPress={onPress}
       activeOpacity={0.85}
       accessibilityRole="button"
-      accessibilityLabel="Subir documento"
+      accessibilityLabel="Agregar documento"
     >
       <Plus color={colors.white} size={28} />
     </TouchableOpacity>

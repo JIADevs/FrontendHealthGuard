@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { View, StyleSheet, SectionList, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -18,6 +18,7 @@ import {
   DocumentsSectionHeader,
   DocumentListItem,
   DocumentsFAB,
+  DocumentsAddSheet,
   ShareDocumentModal,
 } from "../components/documents";
 
@@ -60,9 +61,17 @@ export function DocumentsScreen() {
   } = useDocumentListActions();
 
   const share = useDocumentShareModal();
+  const [addSheetVisible, setAddSheetVisible] = useState(false);
+
+  const openAddSheet = useCallback(() => setAddSheetVisible(true), []);
+  const closeAddSheet = useCallback(() => setAddSheetVisible(false), []);
 
   const handleUpload = useCallback(() => {
     navigation.navigate("DocumentUpload");
+  }, [navigation]);
+
+  const handleScan = useCallback(() => {
+    navigation.navigate("Scanner");
   }, [navigation]);
 
   const isEmpty = sections.length === 0;
@@ -131,7 +140,14 @@ export function DocumentsScreen() {
         />
       )}
 
-      <DocumentsFAB onPress={handleUpload} />
+      <DocumentsFAB onPress={openAddSheet} />
+
+      <DocumentsAddSheet
+        visible={addSheetVisible}
+        onClose={closeAddSheet}
+        onUpload={handleUpload}
+        onScan={handleScan}
+      />
 
       <DocumentsFilterSheet
         visible={filterSheetVisible}

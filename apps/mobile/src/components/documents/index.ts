@@ -16,6 +16,8 @@ export { DocumentCategoryIcon } from "./DocumentCategoryIcon";
 export { DocumentCategoryTag } from "./DocumentCategoryTag";
 export { DocumentsTagFilterBuilder } from "./DocumentsTagFilterBuilder";
 export { DocumentsFAB } from "./DocumentsFAB";
+export { DocumentsAddSheet } from "./DocumentsAddSheet";
+export type { DocumentsAddSheetProps } from "./DocumentsAddSheet";
 export { DocumentDetailHeader } from "./DocumentDetailHeader";
 export { DocumentDetailMetaCard } from "./DocumentDetailMetaCard";
 export { DocumentDetailTags } from "./DocumentDetailTags";

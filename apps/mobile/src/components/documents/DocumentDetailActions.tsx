@@ -1,28 +1,22 @@
 import { useMemo, type ReactNode } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
-import { Share2, Pencil, Trash2, FileText } from "lucide-react-native";
-import { Button, colors, spacing, radii, fontSize, fontWeight, useAppTheme } from "@helu/ui";
+import { Share2, Pencil, Trash2 } from "lucide-react-native";
+import { spacing, radii, fontSize, fontWeight, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 interface DocumentDetailActionsProps {
-  onOpen: () => void;
   onShare: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  openDisabled?: boolean;
-  openLoading?: boolean;
   shareDisabled?: boolean;
   shareLoading?: boolean;
   deleteLoading?: boolean;
 }
 
 export function DocumentDetailActions({
-  onOpen,
   onShare,
   onEdit,
   onDelete,
-  openDisabled = false,
-  openLoading = false,
   shareDisabled = false,
   shareLoading = false,
   deleteLoading = false,
@@ -31,47 +25,31 @@ export function DocumentDetailActions({
   const styles = useMemo(() => makeStyles(t), [t]);
 
   return (
-    <View style={styles.root}>
-      <View style={styles.actionRow}>
-        <ActionCell
-          icon={<Share2 size={20} color={t.text.secondary} />}
-          label="Compartir"
-          onPress={onShare}
-          disabled={shareDisabled || shareLoading}
-          loading={shareLoading}
-          styles={styles}
-        />
-        <View style={styles.divider} />
-        <ActionCell
-          icon={<Pencil size={20} color={t.text.secondary} />}
-          label="Editar"
-          onPress={onEdit}
-          styles={styles}
-        />
-        <View style={styles.divider} />
-        <ActionCell
-          icon={<Trash2 size={20} color={t.status.errorFg} />}
-          label="Eliminar"
-          labelColor={t.status.errorFg}
-          onPress={onDelete}
-          disabled={deleteLoading}
-          styles={styles}
-        />
-      </View>
-
-      <Button
-        variant="primary"
-        size="lg"
-        fullWidth
-        onPress={onOpen}
-        disabled={openDisabled}
-        loading={openLoading}
-      >
-        <View style={styles.primaryContent}>
-          <FileText size={18} color={colors.white} />
-          <Text style={styles.primaryLabel}>Abrir documento</Text>
-        </View>
-      </Button>
+    <View style={styles.actionRow}>
+      <ActionCell
+        icon={<Share2 size={20} color={t.text.secondary} />}
+        label="Compartir"
+        onPress={onShare}
+        disabled={shareDisabled || shareLoading}
+        loading={shareLoading}
+        styles={styles}
+      />
+      <View style={styles.divider} />
+      <ActionCell
+        icon={<Pencil size={20} color={t.text.secondary} />}
+        label="Editar"
+        onPress={onEdit}
+        styles={styles}
+      />
+      <View style={styles.divider} />
+      <ActionCell
+        icon={<Trash2 size={20} color={t.status.errorFg} />}
+        label="Eliminar"
+        labelColor={t.status.errorFg}
+        onPress={onDelete}
+        disabled={deleteLoading}
+        styles={styles}
+      />
     </View>
   );
 }
@@ -113,9 +91,6 @@ function ActionCell({
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
-    root: {
-      gap: spacing[4],
-    },
     actionRow: {
       flexDirection: "row",
       alignItems: "stretch",
@@ -140,16 +115,6 @@ function makeStyles(t: ThemeContextValue) {
     divider: {
       width: 1,
       backgroundColor: t.border.default,
-    },
-    primaryContent: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[2],
-    },
-    primaryLabel: {
-      color: colors.white,
-      fontSize: fontSize.md,
-      fontWeight: fontWeight.semibold,
     },
   });
 }

@@ -12,11 +12,11 @@ import {
   DocumentDetailTags,
   DocumentDetailPreview,
   DocumentDetailActions,
-  DocumentViewerModal,
   ShareDocumentModal,
 } from "../components/documents";
 import { useDocumentDetail } from "../hooks/useDocumentDetail";
 import { useDocumentShareModal } from "../hooks/useDocumentShareModal";
+import { getDocumentPageCount } from "../components/documents/utils/documentDetailMeta";
 
 type RouteParams = {
   id: string;
@@ -45,9 +45,6 @@ export function DocumentDetailScreen() {
     deleteTarget,
     cancelDelete,
     confirmDelete,
-    viewerOpen,
-    closeViewer,
-    handleOpen,
     handleDelete,
   } = useDocumentDetail(id);
 
@@ -85,6 +82,8 @@ export function DocumentDetailScreen() {
     );
   }
 
+  const pageCount = getDocumentPageCount(document);
+
   return (
     <>
       <ScrollView
@@ -103,28 +102,17 @@ export function DocumentDetailScreen() {
           isImage={isImage}
           docFormat={docFormat}
           isLoading={signedUrlLoading}
+          pageCount={pageCount}
         />
         <DocumentDetailActions
-          onOpen={handleOpen}
           onShare={() => share.openShare(document)}
           onEdit={() => navigation.navigate("DocumentEdit", { id: document.id })}
           onDelete={handleDelete}
-          openDisabled={!signedUrl}
-          openLoading={signedUrlLoading}
           shareDisabled={share.isPreparing && share.shareTarget?.id === document.id}
           shareLoading={share.isSharePendingFor(document.id)}
           deleteLoading={deletePending}
         />
       </ScrollView>
-
-      <DocumentViewerModal
-        visible={viewerOpen}
-        title={document.title}
-        uri={signedUrl}
-        format={docFormat}
-        loading={signedUrlLoading}
-        onClose={closeViewer}
-      />
 
       {share.shareTarget && (
         <ShareDocumentModal

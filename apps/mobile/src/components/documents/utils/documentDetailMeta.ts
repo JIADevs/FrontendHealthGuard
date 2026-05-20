@@ -1,5 +1,5 @@
 import type { Document } from "@helu/api";
-import { getDocumentFilterLabel, inferDocumentCategoryKey } from "@helu/ui";
+import { getDocumentFilterLabel, inferDocumentCategoryKey, resolveDocFormat } from "@helu/ui";
 
 export type DocumentDetailTag = {
   id: string;
@@ -106,4 +106,17 @@ export function getDocumentDetailTags(
   }
 
   return tags;
+}
+
+const PAGE_COUNT_TITLE_RE = /\((\d+)\s*p[aá]ginas?\)\s*$/i;
+
+/** Páginas conocidas (p. ej. escaneo multipágina en el título). */
+export function getDocumentPageCount(document: Document): number | null {
+  const fromTitle = document.title.match(PAGE_COUNT_TITLE_RE);
+  if (fromTitle) {
+    const n = Number.parseInt(fromTitle[1]!, 10);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  if (resolveDocFormat(document.format) === "image") return 1;
+  return null;
 }

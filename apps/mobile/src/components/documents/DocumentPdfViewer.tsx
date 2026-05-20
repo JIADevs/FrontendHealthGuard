@@ -10,7 +10,6 @@ export interface DocumentPdfViewerProps {
   title: string;
   /** Altura fija para vista embebida; omitir para pantalla completa */
   height?: number;
-  onPageChange?: (page: number, total: number) => void;
 }
 
 const EMBEDDED_HEIGHT = 320;
@@ -34,7 +33,6 @@ export function DocumentPdfViewer({
   uri,
   title,
   height,
-  onPageChange,
 }: DocumentPdfViewerProps) {
   const t = useAppTheme();
   const isFullscreen = height == null;
@@ -74,10 +72,7 @@ export function DocumentPdfViewer({
       <WebView
         source={{ uri: webViewUri }}
         style={[styles.webview, isFullscreen && styles.fullscreen]}
-        onLoadEnd={() => {
-          setLoading(false);
-          onPageChange?.(1, 1);
-        }}
+        onLoadEnd={() => setLoading(false)}
         onError={() => {
           setLoading(false);
           setError("No se pudo cargar el PDF.");

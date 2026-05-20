@@ -19,7 +19,7 @@ export function FormSelector({ label, value, placeholder, onPress }: FormSelecto
         style={[styles.selector, { backgroundColor: t.surface.bgCard, borderColor: t.border.medium }]}
         onPress={onPress}
       >
-        <Text style={[styles.text, { color: value ? t.text.primary : t.text.tertiary }]}>
+        <Text style={[styles.text, { color: value ? t.text.primary : t.text.muted }]}>
           {value || placeholder}
         </Text>
         <ChevronRight size={20} color={t.text.secondary} />

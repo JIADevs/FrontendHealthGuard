@@ -113,17 +113,17 @@ export function RootNavigator() {
           <Stack.Screen
             name="AppointmentDetail"
             component={AppointmentDetailScreen}
-            options={{ headerShown: true, title: "Detalle de Cita", animation: "slide_from_right" }}
+            options={{ headerShown: false, animation: "slide_from_right" }}
           />
           <Stack.Screen
             name="AppointmentForm"
             component={AppointmentFormScreen}
-            options={{ headerShown: true, title: "Nueva cita", animation: "slide_from_right" }}
+            options={{ headerShown: false, animation: "slide_from_right" }}
           />
           <Stack.Screen
             name="DoctorForm"
             component={DoctorFormScreen}
-            options={{ headerShown: true, title: "Agregar profesional", animation: "slide_from_right" }}
+            options={{ headerShown: false, animation: "slide_from_right" }}
           />
         </>
       ) : (

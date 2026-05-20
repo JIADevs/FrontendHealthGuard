@@ -45,6 +45,7 @@ import {
     updateAppointment,
     deleteAppointment,
     updateAppointmentStatus,
+    getAppointmentOptions,
     // Medications
     getMedications,
     createMedication,
@@ -333,6 +334,14 @@ export function useUpdateAppointmentStatusMutation() {
     return useMutation({
         mutationFn: ({ id, status }: { id: string; status: string }) => updateAppointmentStatus(id, status),
         onSettled: () => qc.invalidateQueries({ queryKey: ["appointments"] }),
+    });
+}
+
+export function useAppointmentOptionsQuery() {
+    return useQuery({
+        queryKey: ["appointment-options"],
+        queryFn: getAppointmentOptions,
+        staleTime: Infinity, // Options rarely change
     });
 }
 

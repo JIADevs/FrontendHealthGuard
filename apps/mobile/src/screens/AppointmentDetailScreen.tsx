@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
-import { useAppTheme, Button, Spinner, spacing, EmptyState } from "@helu/ui";
+import { useAppTheme, Button, Spinner, spacing, EmptyState, colors } from "@helu/ui";
 import { useAppointmentsQuery, useDeleteAppointmentMutation, useUpdateAppointmentStatusMutation } from "@helu/api/hooks";
 import { Calendar, Clock, MapPin, User, FileText, DollarSign, Hospital, Stethoscope, Video, Trash2, Edit, Share2, FileCheck } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -65,8 +65,7 @@ export function AppointmentDetailScreen() {
   };
 
   const handleEdit = () => {
-    // TODO: Navigate to edit screen
-    console.log("Editar cita");
+    navigation.navigate("AppointmentForm", { appointment });
   };
 
   const handleShare = () => {
@@ -145,7 +144,7 @@ export function AppointmentDetailScreen() {
           <InfoRow
             icon={<Clock size={20} color={t.text.secondary} />}
             label="Hora"
-            value={`${appointment.time?.slice(0, 5)} (30 min)`}
+            value={`${appointment.time?.slice(0, 5)}${appointment.duration ? ` (${appointment.duration} min)` : ""}`}
           />
         </View>
 
@@ -199,11 +198,29 @@ export function AppointmentDetailScreen() {
           </View>
         )}
 
+        {appointment.service && (
+          <View style={styles.section}>
+            <InfoRow label="Servicio" value={appointment.service} />
+          </View>
+        )}
+
         {appointment.consultationType && (
           <View style={styles.section}>
             <InfoRow label="Tipo de cita" value={appointment.consultationType} />
           </View>
         )}
+        {appointment.type && appointment.type !== "APPOINTMENT" && (
+          <View style={styles.section}>
+            <InfoRow label="Tipo" value={appointment.type} />
+          </View>
+        )}
+
+        {appointment.examType && (
+          <View style={styles.section}>
+            <InfoRow label="Tipo de examen" value={appointment.examType} />
+          </View>
+        )}
+
 
         {appointment.cost && (
           <View style={styles.section}>
@@ -231,7 +248,22 @@ export function AppointmentDetailScreen() {
           </View>
         )}
 
-        {appointment.treatmentTags && appointment.treatmentTags.length > 0 && (
+        {appointment.tags && appointment.tags.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: t.text.secondary }]}>
+              Etiquetas
+            </Text>
+            <View style={styles.tagsRow}>
+              {appointment.tags.map((tag, idx) => (
+                <View key={idx} style={[styles.tag, { backgroundColor: t.brand.tintMed }]}>
+                  <Text style={[styles.tagText, { color: t.brand.fg }]}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {appointment.treatmentTags && appointment.treatmentTags.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: t.text.secondary }]}>
               Etiquetas de tratamiento
@@ -275,7 +307,7 @@ export function AppointmentDetailScreen() {
       {/* Delete confirmation dialog */}
       <ConfirmDialog
         visible={showDeleteDialog}
-        icon={<Trash2 size={24} color="#DC2626" />}
+        icon={<Trash2 size={24} color={colors.error[600]} />}
         title="¿Eliminar documento?"
         message="Esta acción no se puede deshacer."
         cancelText="Cancelar"

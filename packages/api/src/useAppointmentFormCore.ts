@@ -29,6 +29,7 @@ export interface AppointmentFormState {
   specialty: string;
   service: string;
   consultationType: string;
+  duration: string;
   doctorId: string;
   doctor: string;
   clinic: string;
@@ -55,6 +56,7 @@ export interface AppointmentFormActions {
   setSpecialty: (v: string) => void;
   setService: (v: string) => void;
   setConsultationType: (v: string) => void;
+  setDuration: (v: string) => void;
   setDoctorId: (v: string) => void;
   setDoctor: (v: string) => void;
   setClinic: (v: string) => void;
@@ -100,6 +102,7 @@ export function useAppointmentFormCore({
   const [specialty, setSpecialty] = useState(initial?.specialty ?? "");
   const [service, setService] = useState(initial?.service ?? "");
   const [consultationType, setConsultationType] = useState(initial?.consultationType ?? "");
+  const [duration, setDuration] = useState(initial?.duration?.toString() ?? "");
   const [doctorId, setDoctorId] = useState(initial?.doctorId ?? "");
   const [doctor, setDoctor] = useState(initial?.doctor ?? "");
   const [clinic, setClinic] = useState(initial?.clinic ?? "");
@@ -148,6 +151,7 @@ export function useAppointmentFormCore({
       specialty: specialty.trim() || undefined,
       service: service.trim() || undefined,
       consultationType: consultationType.trim() || undefined,
+      duration: duration.trim() ? parseInt(duration) : undefined,
       doctorId: doctorId.trim() || undefined,
       doctor: doctor.trim() || undefined,
       clinic: clinic.trim() || undefined,
@@ -180,11 +184,11 @@ export function useAppointmentFormCore({
 
   return {
     name, date, time, modality, location, videoCallLink,
-    specialty, service, consultationType, doctorId, doctor, clinic,
+    specialty, service, consultationType, duration, doctorId, doctor, clinic,
     type, status, examType, cost, notes, customReminder, treatmentTags,
     error, saving, isEdit,
     setName, setDate, setTime, setModality, setLocation, setVideoCallLink,
-    setSpecialty, setService, setConsultationType, setDoctorId, setDoctor, setClinic,
+    setSpecialty, setService, setConsultationType, setDuration, setDoctorId, setDoctor, setClinic,
     setType, setStatus, setExamType, setCost, setNotes, setCustomReminder, setTreatmentTags,
     clearError: () => setError(null),
     handleSave,

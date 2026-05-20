@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X, Check, RefreshCw } from "lucide-react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -32,6 +33,7 @@ export function ScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const cameraRef = useRef<CameraView>(null);
+  const insets = useSafeAreaInsets();
   const form = useDocumentForm({
     backpackId: params?.backpackId,
     backpackName: params?.backpackName,
@@ -126,15 +128,15 @@ export function ScannerScreen() {
     };
 
     return (
-      <View style={styles.container}>
+      <View style={styles.containerForm}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           keyboardVerticalOffset={Platform.OS === "ios" ? 72 : 0}
         >
         <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 200 }}
+          style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: spacing[4] }]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
         >
@@ -145,7 +147,7 @@ export function ScannerScreen() {
         </ScrollView>
         </KeyboardAvoidingView>
 
-        <View style={styles.previewControls}>
+        <View style={[styles.previewControls, { paddingBottom: spacing[5] + insets.bottom }]}>
           <TouchableOpacity
             style={styles.circleBtnRed}
             onPress={() => setPhotoUri(null)}
@@ -210,6 +212,9 @@ function makeStyles(t: ThemeContextValue) {
     helper:  { marginTop: spacing[4], fontSize: fontSize.sm, color: t.text.secondary, textAlign: "center", lineHeight: 18 },
 
     container:      { flex: 1, backgroundColor: colors.black },
+    containerForm:  { flex: 1, backgroundColor: t.surface.bg },
+    scroll:         { flex: 1, backgroundColor: t.surface.bgCard },
+    scrollContent:  { backgroundColor: t.surface.bgCard },
     overlay:        { flex: 1, justifyContent: "space-between" },
     cameraHeader:   { padding: spacing[6], paddingTop: 48, alignItems: "flex-start" },
     closeBtn: {
@@ -260,9 +265,10 @@ function makeStyles(t: ThemeContextValue) {
       justifyContent: "center",
       alignItems: "center",
       gap: 32,
-      paddingBottom: 48,
       backgroundColor: t.surface.bgCard,
       paddingTop: spacing[3],
+      borderTopWidth: 1,
+      borderTopColor: t.border.light,
     },
     circleBtnRed: {
       width: 72,

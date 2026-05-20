@@ -14,7 +14,7 @@ import {
   ScrollView,
   type TextInput as TextInputType,
 } from "react-native";
-import { Check, FolderPlus, Plus, Sparkles, X } from "lucide-react-native";
+import { Check, ChevronDown, ChevronRight, FolderPlus, Plus, Sparkles, X } from "lucide-react-native";
 import type { TagCategoryOut, ClassificationSuggestion } from "@helu/api";
 import { Chip, fontSize, fontWeight, radii, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
@@ -72,7 +72,48 @@ function TagCategoryCatalog({
 }) {
   const [openAddCategoryId, setOpenAddCategoryId] = useState<string | null>(null);
   const [draftByCategory, setDraftByCategory] = useState<Record<string, string>>({});
+  const [expandedCategoryIds, setExpandedCategoryIds] = useState<Set<string>>(() => new Set());
+  const expandedBeforeFilterRef = useRef<Set<string> | null>(null);
+  const wasFilterActiveRef = useRef(false);
   const addInputRef = useRef<TextInputType>(null);
+
+  useEffect(() => {
+    if (filterActive) {
+      if (!wasFilterActiveRef.current) {
+        setExpandedCategoryIds((prev) => {
+          expandedBeforeFilterRef.current = new Set(prev);
+          return new Set(categories.map((c) => c.id));
+        });
+      } else {
+        setExpandedCategoryIds((prev) => {
+          const next = new Set(prev);
+          for (const cat of categories) {
+            next.add(cat.id);
+          }
+          return next;
+        });
+      }
+    } else if (wasFilterActiveRef.current) {
+      const restored = expandedBeforeFilterRef.current;
+      expandedBeforeFilterRef.current = null;
+      if (restored) {
+        setExpandedCategoryIds(new Set(restored));
+      }
+    }
+    wasFilterActiveRef.current = filterActive;
+  }, [filterActive, categories]);
+
+  const toggleCategoryExpanded = useCallback((categoryId: string) => {
+    setExpandedCategoryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  }, []);
 
   const submitInlineAdd = useCallback(
     async (categoryId: string) => {
@@ -86,6 +127,7 @@ function TagCategoryCatalog({
   );
 
   const openAdd = useCallback((categoryId: string) => {
+    setExpandedCategoryIds((prev) => new Set(prev).add(categoryId));
     setOpenAddCategoryId(categoryId);
     requestAnimationFrame(() => addInputRef.current?.focus());
   }, []);
@@ -95,8 +137,8 @@ function TagCategoryCatalog({
       <Text style={styles.catalogTitle}>Categorías y valores</Text>
       <Text style={styles.catalogHint}>
         {filterActive
-          ? "Categorías que coinciden con tu búsqueda."
-          : "Toca una etiqueta para seleccionarla. Usa «+» en cada categoría para un valor nuevo."}
+          ? "Categorías que coinciden con tu búsqueda (expandidas automáticamente)."
+          : "Toca una categoría para ver sus valores. Luego elige las etiquetas o agrega una nueva con «+»."}
       </Text>
 
       {categories.length === 0 && filterActive ? (
@@ -107,87 +149,123 @@ function TagCategoryCatalog({
 
       {categories.map((cat, index) => {
         const values = cat.values ?? [];
+        const isExpanded = expandedCategoryIds.has(cat.id);
         const isAdding = openAddCategoryId === cat.id;
         const isSaving = addingTagCategoryId === cat.id;
+        const selectedInCategory = values.filter((v) => selectedSet.has(v.id)).length;
+        const valueCount = values.length;
 
         return (
           <View
             key={cat.id}
             style={[styles.catalogCategory, index === 0 && styles.catalogCategoryFirst]}
           >
-            <View style={styles.catalogCategoryHeader}>
-              <Text style={styles.catalogCategoryName}>{cat.name}</Text>
-              <Text style={styles.catalogCategoryCount}>{values.length}</Text>
-            </View>
-
-            <View style={styles.catalogValuesRow}>
-              {values.map((val) => (
-                <Chip
-                  key={val.id}
-                  label={val.value}
-                  selected={selectedSet.has(val.id)}
-                  onPress={() => onToggleTag(val.id)}
-                />
-              ))}
-
-              {!isAdding ? (
-                <TouchableOpacity
-                  style={styles.addValueBtn}
-                  onPress={() => openAdd(cat.id)}
-                  disabled={creating}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Agregar valor en ${cat.name}`}
-                >
-                  <Plus size={12} color={t.brand.fg} strokeWidth={2.5} />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-
-            {isAdding ? (
-              <View style={styles.inlineAddRow}>
-                <TextInput
-                  ref={openAddCategoryId === cat.id ? addInputRef : undefined}
-                  style={styles.inlineAddInput}
-                  value={draftByCategory[cat.id] ?? ""}
-                  onChangeText={(text) =>
-                    setDraftByCategory((prev) => ({ ...prev, [cat.id]: text }))
-                  }
-                  placeholder="Nuevo valor"
-                  placeholderTextColor={t.text.muted}
-                  returnKeyType="done"
-                  onSubmitEditing={() => void submitInlineAdd(cat.id)}
-                  editable={!creating}
-                  accessibilityLabel={`Nuevo valor para ${cat.name}`}
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.inlineAddConfirm,
-                    (!(draftByCategory[cat.id] ?? "").trim() || creating) &&
-                      styles.inlineAddConfirmDisabled,
-                  ]}
-                  onPress={() => void submitInlineAdd(cat.id)}
-                  disabled={!(draftByCategory[cat.id] ?? "").trim() || creating}
-                  accessibilityRole="button"
-                  accessibilityLabel="Confirmar nuevo valor"
-                >
-                  {isSaving ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <Check size={18} color="#fff" strokeWidth={2.5} />
-                  )}
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.inlineAddCancel}
-                  onPress={() => {
-                    setOpenAddCategoryId(null);
-                    setDraftByCategory((prev) => ({ ...prev, [cat.id]: "" }));
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Cancelar"
-                >
-                  <X size={18} color={t.text.secondary} />
-                </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.catalogCategoryHeader, isExpanded && styles.catalogCategoryHeaderOpen]}
+              onPress={() => toggleCategoryExpanded(cat.id)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: isExpanded }}
+              accessibilityLabel={`${cat.name}, ${valueCount} valor${valueCount === 1 ? "" : "es"}${selectedInCategory > 0 ? `, ${selectedInCategory} seleccionadas` : ""}`}
+            >
+              <View style={styles.catalogCategoryHeaderLeft}>
+                {isExpanded ? (
+                  <ChevronDown size={18} color={t.text.secondary} />
+                ) : (
+                  <ChevronRight size={18} color={t.text.secondary} />
+                )}
+                <Text style={styles.catalogCategoryName} numberOfLines={1}>
+                  {cat.name}
+                </Text>
               </View>
+              <View style={styles.catalogCategoryMeta}>
+                {selectedInCategory > 0 ? (
+                  <View style={styles.catalogSelectedBadge}>
+                    <Text style={styles.catalogSelectedBadgeText}>{selectedInCategory}</Text>
+                  </View>
+                ) : null}
+                <View style={styles.catalogCountBadge}>
+                  <Text style={styles.catalogCountBadgeText}>{valueCount}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            {isExpanded ? (
+              <>
+                <View style={styles.catalogValuesRow}>
+                  {values.length === 0 ? (
+                    <Text style={styles.catalogEmptyValues}>Sin valores en esta categoría.</Text>
+                  ) : (
+                    values.map((val) => (
+                      <Chip
+                        key={val.id}
+                        label={val.value}
+                        selected={selectedSet.has(val.id)}
+                        onPress={() => onToggleTag(val.id)}
+                      />
+                    ))
+                  )}
+
+                  {!isAdding ? (
+                    <TouchableOpacity
+                      style={styles.addValueBtn}
+                      onPress={() => openAdd(cat.id)}
+                      disabled={creating}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Agregar valor en ${cat.name}`}
+                    >
+                      <Plus size={12} color={t.brand.fg} strokeWidth={2.5} />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+
+                {isAdding ? (
+                  <View style={styles.inlineAddRow}>
+                    <TextInput
+                      ref={openAddCategoryId === cat.id ? addInputRef : undefined}
+                      style={styles.inlineAddInput}
+                      value={draftByCategory[cat.id] ?? ""}
+                      onChangeText={(text) =>
+                        setDraftByCategory((prev) => ({ ...prev, [cat.id]: text }))
+                      }
+                      placeholder="Nuevo valor"
+                      placeholderTextColor={t.text.muted}
+                      returnKeyType="done"
+                      onSubmitEditing={() => void submitInlineAdd(cat.id)}
+                      editable={!creating}
+                      accessibilityLabel={`Nuevo valor para ${cat.name}`}
+                    />
+                    <TouchableOpacity
+                      style={[
+                        styles.inlineAddConfirm,
+                        (!(draftByCategory[cat.id] ?? "").trim() || creating) &&
+                          styles.inlineAddConfirmDisabled,
+                      ]}
+                      onPress={() => void submitInlineAdd(cat.id)}
+                      disabled={!(draftByCategory[cat.id] ?? "").trim() || creating}
+                      accessibilityRole="button"
+                      accessibilityLabel="Confirmar nuevo valor"
+                    >
+                      {isSaving ? (
+                        <ActivityIndicator color="#fff" size="small" />
+                      ) : (
+                        <Check size={18} color="#fff" strokeWidth={2.5} />
+                      )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.inlineAddCancel}
+                      onPress={() => {
+                        setOpenAddCategoryId(null);
+                        setDraftByCategory((prev) => ({ ...prev, [cat.id]: "" }));
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cancelar"
+                    >
+                      <X size={18} color={t.text.secondary} />
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
+              </>
             ) : null}
           </View>
         );
@@ -602,19 +680,73 @@ function makeStyles(t: ThemeContextValue) {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      gap: spacing[2],
+      paddingVertical: spacing[2],
+      paddingHorizontal: spacing[2],
+      marginHorizontal: -spacing[2],
+      borderRadius: radii.md,
+      backgroundColor: t.surface.bg,
+    },
+    catalogCategoryHeaderOpen: {
+      backgroundColor: t.brand.tint,
+    },
+    catalogCategoryHeaderLeft: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing[2],
+      minWidth: 0,
     },
     catalogCategoryName: {
+      flex: 1,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: t.text.primary,
+    },
+    catalogCategoryMeta: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing[2],
+      flexShrink: 0,
+    },
+    catalogCountBadge: {
+      minWidth: 26,
+      height: 26,
+      paddingHorizontal: spacing[2],
+      borderRadius: radii.full,
+      borderWidth: 1,
+      borderColor: t.border.default,
+      backgroundColor: t.surface.bgCard,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    catalogCountBadgeText: {
       fontSize: fontSize.xs,
       fontWeight: fontWeight.bold,
-      color: t.text.secondary,
-      textTransform: "uppercase",
-      letterSpacing: 0.4,
-      flex: 1,
-    },
-    catalogCategoryCount: {
-      fontSize: fontSize.xs,
       color: t.text.muted,
-      fontWeight: fontWeight.semibold,
+      fontVariant: ["tabular-nums"],
+      lineHeight: 16,
+    },
+    catalogSelectedBadge: {
+      minWidth: 26,
+      height: 26,
+      paddingHorizontal: spacing[2],
+      borderRadius: radii.full,
+      backgroundColor: t.brand.fg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    catalogSelectedBadgeText: {
+      fontSize: fontSize.xs,
+      fontWeight: fontWeight.bold,
+      color: "#fff",
+      fontVariant: ["tabular-nums"],
+      lineHeight: 16,
+    },
+    catalogEmptyValues: {
+      fontSize: fontSize.sm,
+      color: t.text.muted,
+      fontStyle: "italic",
     },
     catalogValuesRow: {
       flexDirection: "row",

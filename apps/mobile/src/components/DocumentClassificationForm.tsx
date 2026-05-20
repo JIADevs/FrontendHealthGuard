@@ -259,7 +259,7 @@ function ClassificationResultCard({
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
-    form:      { padding: spacing[5], backgroundColor: t.surface.bgCard, flex: 1 },
+    form:      { padding: spacing[5], backgroundColor: t.surface.bgCard },
     formTitle: { fontSize: fontSize.xl, fontWeight: fontWeight.extrabold, color: t.text.primary, marginBottom: spacing[4] },
 
     aiBtn:         { backgroundColor: t.accent.aiFg, flexDirection: "row", alignItems: "center", justifyContent: "center", padding: spacing[3], borderRadius: radii.md, marginBottom: spacing[2], gap: spacing[2] },

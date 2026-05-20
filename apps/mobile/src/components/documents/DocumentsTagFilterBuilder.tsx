@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { ChevronLeft, ChevronRight, X, Check } from "lucide-react-native";
 import {
-  palette,
   radii,
   spacing,
   fontSize,
@@ -86,7 +85,7 @@ export function DocumentsTagFilterBuilder({
                   accessibilityRole="button"
                   accessibilityLabel={`Quitar filtro ${f.categoryName} ${f.valueLabel}`}
                 >
-                  <X size={14} color={palette.brand[700]} />
+                  <X size={14} color={t.brand.tintText} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -126,7 +125,7 @@ export function DocumentsTagFilterBuilder({
                       {value.value}
                     </Text>
                     {selected ? (
-                      <Check size={18} color={palette.brand[600]} strokeWidth={2.5} />
+                      <Check size={18} color={t.brand.fg} strokeWidth={2.5} />
                     ) : null}
                   </TouchableOpacity>
                 );
@@ -208,13 +207,13 @@ function makeStyles(t: ThemeContextValue) {
       paddingLeft: spacing[3],
       paddingRight: spacing[2],
       borderRadius: radii.full,
-      backgroundColor: palette.brand[50],
+      backgroundColor: t.brand.tint,
       borderWidth: 1,
-      borderColor: palette.brand[200],
+      borderColor: t.brand.tintBorder,
     },
     tokenText: {
       fontSize: fontSize.sm,
-      color: palette.brand[800],
+      color: t.brand.tintText,
       flexShrink: 1,
     },
     tokenCategory: {
@@ -249,7 +248,7 @@ function makeStyles(t: ThemeContextValue) {
       borderBottomColor: t.border.light,
     },
     listRowSelected: {
-      backgroundColor: palette.brand[50],
+      backgroundColor: t.brand.tint,
     },
     categoryLeading: {
       flexDirection: "row",
@@ -263,13 +262,13 @@ function makeStyles(t: ThemeContextValue) {
     },
     listLabelSelected: {
       fontWeight: fontWeight.semibold,
-      color: palette.brand[700],
+      color: t.brand.tintText,
     },
     countBadge: {
       minWidth: 20,
       height: 20,
       borderRadius: radii.full,
-      backgroundColor: palette.brand[500],
+      backgroundColor: t.brand.solid,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: spacing[1],

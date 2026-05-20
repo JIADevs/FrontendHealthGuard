@@ -6,7 +6,6 @@ import {
   Button,
   Spinner,
   colors,
-  palette,
   spacing,
   radii,
   fontSize,
@@ -55,7 +54,7 @@ export function ShareDocumentModal({
           <View style={styles.channels}>
             <ShareChannel
               label="WhatsApp"
-              iconBg={palette.accent.document[500]}
+              iconBg={t.accent.docFg}
               icon={<MessageCircle size={22} color={colors.white} strokeWidth={2.25} />}
               onPress={onWhatsApp}
               disabled={channelsDisabled}
@@ -63,7 +62,7 @@ export function ShareDocumentModal({
             />
             <ShareChannel
               label="Correo"
-              iconBg={palette.brand[500]}
+              iconBg={t.brand.solid}
               icon={<Mail size={22} color={colors.white} strokeWidth={2.25} />}
               onPress={onEmail}
               disabled={channelsDisabled}

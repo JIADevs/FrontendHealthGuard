@@ -16,7 +16,7 @@ import { ShareDocumentsScreen } from "../screens/ShareDocumentsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { useAppTheme } from "@helu/ui";
-import { withDocumentsTheme, documentsStackScreenOptions } from "../components/documents";
+import { withDocumentsTheme, getDocumentsStackScreenOptions } from "../components/documents";
 
 /** Shared optional param so any screen can show a contextual back label. */
 type WithBackTitle = { backTitle?: string };
@@ -70,7 +70,7 @@ export function RootNavigator() {
             name="Scanner"
             component={ScannerScreenLight}
             options={{
-              ...documentsStackScreenOptions,
+              ...getDocumentsStackScreenOptions(t),
               presentation: "fullScreenModal",
               animation: "slide_from_bottom",
             }}
@@ -79,7 +79,7 @@ export function RootNavigator() {
             name="DocumentUpload"
             component={DocumentUploadScreenLight}
             options={{
-              ...documentsStackScreenOptions,
+              ...getDocumentsStackScreenOptions(t),
               presentation: "fullScreenModal",
               animation: "slide_from_bottom",
             }}
@@ -88,7 +88,7 @@ export function RootNavigator() {
             name="DocumentDetail"
             component={DocumentDetailScreenLight}
             options={({ route }) => ({
-              ...documentsStackScreenOptions,
+              ...getDocumentsStackScreenOptions(t),
               headerShown: true,
               title: "Documento",
               headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
@@ -98,7 +98,7 @@ export function RootNavigator() {
             name="DocumentEdit"
             component={DocumentEditScreenLight}
             options={({ route }) => ({
-              ...documentsStackScreenOptions,
+              ...getDocumentsStackScreenOptions(t),
               headerShown: true,
               title: "Editar documento",
               headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Documento",
@@ -145,7 +145,7 @@ export function RootNavigator() {
             name="ShareDocuments"
             component={ShareDocumentsScreenLight}
             options={({ route }) => ({
-              ...documentsStackScreenOptions,
+              ...getDocumentsStackScreenOptions(t),
               headerShown: true,
               title: "Compartir Documentos",
               animation: "slide_from_right" as const,

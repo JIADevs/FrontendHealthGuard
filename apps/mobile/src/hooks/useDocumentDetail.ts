@@ -8,7 +8,7 @@ import {
 } from "@helu/api/hooks";
 import { useDocumentDeleteWithUndo } from "./useDocumentDeleteWithUndo";
 import { getSignedUrl, type Document } from "@helu/api";
-import { resolveDocFormat } from "@helu/ui";
+import { resolveDocFormat, useAppTheme } from "@helu/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { resolveDocumentTheme } from "../components/documents/utils/resolveDocumentTheme";
 import {
@@ -18,6 +18,7 @@ import {
 } from "../components/documents/utils/documentDetailMeta";
 
 export function useDocumentDetail(id: string) {
+  const t = useAppTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const docQuery = useDocumentQuery(id);
   const tagCatalog = useTagCategoriesQuery();
@@ -33,8 +34,8 @@ export function useDocumentDetail(id: string) {
 
   const document = docQuery.data as Document | undefined;
   const theme = useMemo(
-    () => (document ? resolveDocumentTheme(document) : null),
-    [document],
+    () => (document ? resolveDocumentTheme(document, t) : null),
+    [document, t],
   );
 
   const categoryMap = useMemo(() => {

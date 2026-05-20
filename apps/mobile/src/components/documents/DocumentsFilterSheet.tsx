@@ -10,7 +10,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft } from "lucide-react-native";
 import {
-  palette,
   radii,
   spacing,
   fontSize,
@@ -219,7 +218,7 @@ function makeStyles(t: ThemeContextValue) {
     clearText: {
       fontSize: fontSize.sm,
       fontWeight: fontWeight.semibold,
-      color: palette.brand[600],
+      color: t.brand.fg,
       textAlign: "right",
     },
     clearTextDisabled: {

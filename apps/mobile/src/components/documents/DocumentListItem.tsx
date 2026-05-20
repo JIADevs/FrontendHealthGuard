@@ -36,7 +36,7 @@ interface DocumentListItemProps {
 
 export function DocumentListItem({ document, onPress, actions }: DocumentListItemProps) {
   const t = useAppTheme();
-  const category = useMemo(() => resolveDocumentTheme(document), [document]);
+  const category = useMemo(() => resolveDocumentTheme(document, t), [document, t]);
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const menuTriggerRef = useRef<View>(null);

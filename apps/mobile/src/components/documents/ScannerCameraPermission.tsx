@@ -11,7 +11,6 @@ import {
 } from "../../utils/scannerPermissionMessages";
 import {
   colors,
-  palette,
   radii,
   spacing,
   fontSize,
@@ -47,7 +46,7 @@ export function ScannerCameraPermission({
   return (
     <View style={styles.screen}>
       <LinearGradient
-        colors={[palette.brand[50], t.surface.bg]}
+        colors={[t.brand.tint, t.surface.bg]}
         locations={[0, 0.45]}
         style={StyleSheet.absoluteFill}
       />

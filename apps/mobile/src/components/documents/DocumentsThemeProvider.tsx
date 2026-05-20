@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 import { StatusBar } from "expo-status-bar";
-import { ThemeProvider } from "@helu/ui";
+import { useAppTheme } from "@helu/ui";
 
-/** Fuerza tema claro en todo el flujo de documentos (ignora preferencia global). */
+/** Sincroniza la barra de estado con el tema global en pantallas del módulo documentos. */
 export function DocumentsThemeProvider({ children }: { children: ReactNode }) {
+  const t = useAppTheme();
+
   return (
-    <ThemeProvider preference="light">
-      <StatusBar style="dark" />
+    <>
+      <StatusBar style={t.mode === "dark" ? "light" : "dark"} />
       {children}
-    </ThemeProvider>
+    </>
   );
 }

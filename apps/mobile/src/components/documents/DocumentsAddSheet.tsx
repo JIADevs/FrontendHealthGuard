@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Camera, Upload, X } from "lucide-react-native";
-import { fontSize, fontWeight, radii, spacing, useAppTheme } from "@helu/ui";
+import { colors, fontSize, fontWeight, overlay, radii, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 export interface DocumentsAddSheetProps {
@@ -102,7 +102,7 @@ function makeStyles(t: ThemeContextValue) {
     },
     modalBackdropTouch: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(0,0,0,0.55)",
+      backgroundColor: overlay.darker,
     },
     modalSheet: {
       backgroundColor: t.surface.bgCard,
@@ -110,7 +110,7 @@ function makeStyles(t: ThemeContextValue) {
       borderTopRightRadius: radii.xl,
       padding: spacing[5],
       gap: spacing[2],
-      shadowColor: "#000",
+      shadowColor: colors.black,
       shadowOffset: { width: 0, height: -4 },
       shadowOpacity: 0.15,
       shadowRadius: 12,

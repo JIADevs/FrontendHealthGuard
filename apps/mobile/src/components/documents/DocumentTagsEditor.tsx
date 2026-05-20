@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { Check, ChevronDown, ChevronRight, FolderPlus, Plus, Sparkles, X } from "lucide-react-native";
 import type { TagCategoryOut, ClassificationSuggestion } from "@helu/api";
-import { Chip, fontSize, fontWeight, radii, spacing, useAppTheme } from "@helu/ui";
+import { Chip, colors, fontSize, fontWeight, overlay, radii, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import {
   flattenTagValues,
@@ -247,9 +247,9 @@ function TagCategoryCatalog({
                       accessibilityLabel="Confirmar nuevo valor"
                     >
                       {isSaving ? (
-                        <ActivityIndicator color="#fff" size="small" />
+                        <ActivityIndicator color={colors.white} size="small" />
                       ) : (
-                        <Check size={18} color="#fff" strokeWidth={2.5} />
+                        <Check size={18} color={colors.white} strokeWidth={2.5} />
                       )}
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -594,7 +594,7 @@ export function DocumentTagsEditor({
                 accessibilityLabel="Crear categoría y etiqueta"
               >
                 {creating ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={colors.white} size="small" />
                 ) : (
                   <Text style={styles.createCategoryBtnText}>Crear categoría y etiqueta</Text>
                 )}
@@ -739,7 +739,7 @@ function makeStyles(t: ThemeContextValue) {
     catalogSelectedBadgeText: {
       fontSize: fontSize.xs,
       fontWeight: fontWeight.bold,
-      color: "#fff",
+      color: colors.white,
       fontVariant: ["tabular-nums"],
       lineHeight: 16,
     },
@@ -867,7 +867,7 @@ function makeStyles(t: ThemeContextValue) {
     },
     modalBackdropTouch: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(0,0,0,0.55)",
+      backgroundColor: overlay.darker,
     },
     modalScroll: {
       flex: 1,
@@ -883,7 +883,7 @@ function makeStyles(t: ThemeContextValue) {
       padding: spacing[5],
       paddingBottom: spacing[5],
       gap: spacing[3],
-      shadowColor: "#000",
+      shadowColor: colors.black,
       shadowOffset: { width: 0, height: -4 },
       shadowOpacity: 0.15,
       shadowRadius: 12,
@@ -928,7 +928,7 @@ function makeStyles(t: ThemeContextValue) {
       opacity: 0.5,
     },
     createCategoryBtnText: {
-      color: "#fff",
+      color: colors.white,
       fontSize: fontSize.sm,
       fontWeight: fontWeight.semibold,
     },

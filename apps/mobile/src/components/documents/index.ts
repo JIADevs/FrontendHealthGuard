@@ -1,6 +1,6 @@
 export { DocumentsThemeProvider } from "./DocumentsThemeProvider";
 export { withDocumentsTheme } from "./withDocumentsTheme";
-export { documentsStackScreenOptions } from "./documentsScreenOptions";
+export { getDocumentsStackScreenOptions } from "./documentsScreenOptions";
 export { DocumentsListHeader } from "./DocumentsListHeader";
 export { DocumentsSearchToolbar } from "./DocumentsSearchToolbar";
 export { DocumentsFilterChips } from "./DocumentsFilterChips";

@@ -1,14 +1,16 @@
 import { useMemo } from "react";
 import { TouchableOpacity, StyleSheet } from "react-native";
 import { Plus } from "lucide-react-native";
-import { colors, palette, radii, spacing } from "@helu/ui";
+import { colors, radii, spacing, useAppTheme } from "@helu/ui";
+import type { ThemeContextValue } from "@helu/ui";
 
 interface DocumentsFABProps {
   onPress: () => void;
 }
 
 export function DocumentsFAB({ onPress }: DocumentsFABProps) {
-  const styles = useMemo(() => makeStyles(), []);
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
 
   return (
     <TouchableOpacity
@@ -23,7 +25,7 @@ export function DocumentsFAB({ onPress }: DocumentsFABProps) {
   );
 }
 
-function makeStyles() {
+function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     fab: {
       position: "absolute",
@@ -32,7 +34,7 @@ function makeStyles() {
       width: 56,
       height: 56,
       borderRadius: radii.full,
-      backgroundColor: palette.brand[500],
+      backgroundColor: t.brand.solid,
       alignItems: "center",
       justifyContent: "center",
       elevation: 8,

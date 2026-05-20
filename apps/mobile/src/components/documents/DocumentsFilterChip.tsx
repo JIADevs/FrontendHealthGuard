@@ -1,5 +1,5 @@
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
-import { colors, palette, radii, fontSize, fontWeight, spacing, useAppTheme } from "@helu/ui";
+import { colors, radii, fontSize, fontWeight, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { useMemo } from "react";
 
@@ -36,8 +36,8 @@ function makeStyles(t: ThemeContextValue) {
       borderWidth: 1,
     },
     chipSelected: {
-      backgroundColor: palette.brand[500],
-      borderColor: palette.brand[500],
+      backgroundColor: t.brand.solid,
+      borderColor: t.brand.solid,
     },
     chipIdle: {
       backgroundColor: t.surface.bgCard,

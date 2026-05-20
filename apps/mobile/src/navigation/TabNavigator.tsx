@@ -1,16 +1,17 @@
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { DashboardScreen } from "../screens/DashboardScreen";
+import { HomeScreen } from "../screens/HomeScreen";
 import { DocumentsScreen } from "../screens/DocumentsScreen";
 import { withDocumentsTheme } from "../components/documents";
 import { AgendaScreen } from "../screens/AgendaScreen";
-import { ProfileScreen } from "../screens/ProfileScreen";
+import { MoreScreen } from "../screens/MoreScreen";
 import { BackpacksScreen } from "../screens/BackpacksScreen";
 import {
   LayoutDashboard,
   FileText,
   CalendarDays,
   Folder,
+  Menu,
 } from "lucide-react-native";
 import { useAuthStore } from "@helu/stores";
 import {
@@ -26,9 +27,9 @@ import {
 export type TabParamList = {
   Documents: undefined;
   Agenda: { initialTab?: "appointments" | "medications" } | undefined;
-  Dashboard: undefined;
+  Home: undefined;
   Backpacks: undefined;
-  Profile: undefined;
+  More: undefined;
 };
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -43,48 +44,22 @@ function CenterTabIcon({ focused }: { focused: boolean }) {
     <View
       style={[
         styles.centerTab,
-        {
-          backgroundColor: focused ? t.brand.fg : t.brand.tintText,
-          shadowColor: t.brand.fg,
-        },
+        focused
+          ? {
+              backgroundColor: t.brand.fg,
+              shadowColor: t.brand.fg,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 6,
+            }
+          : { backgroundColor: t.text.muted },
       ]}
     >
       <LayoutDashboard size={24} color={colors.white} />
     </View>
   );
 }
-
-// ─── Profile Tab Icon — Airbnb-inspired avatar ──────────────────────────────
-
-function ProfileTabIcon({ focused }: { focused: boolean }) {
-  const user = useAuthStore((s) => s.user);
-  const t = useAppTheme();
-
-  const initials =
-    user?.name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() ??
-    user?.email?.[0]?.toUpperCase() ??
-    "U";
-
-  return (
-    <View
-      style={[
-        styles.profileAvatar,
-        {
-          backgroundColor: focused ? t.brand.fg : t.text.muted,
-          borderColor: focused ? t.brand.tintBorder : colors.transparent,
-        },
-      ]}
-    >
-      <Text style={styles.profileAvatarText}>{initials}</Text>
-    </View>
-  );
-}
-
 // ─── Tab Navigator ───────────────────────────────────────────────────────────
 
 export function TabNavigator() {
@@ -92,7 +67,7 @@ export function TabNavigator() {
 
   return (
     <Tab.Navigator
-      initialRouteName="Dashboard"
+      initialRouteName="Home"
       screenOptions={{
         tabBarActiveTintColor: t.brand.fg,
         tabBarInactiveTintColor: t.text.muted,
@@ -141,8 +116,8 @@ export function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
+        name="Home"
+        component={HomeScreen}
         options={{
           title: "Inicio",
           tabBarIcon: ({ focused }) => <CenterTabIcon focused={focused} />,
@@ -150,7 +125,6 @@ export function TabNavigator() {
             fontSize: fontSize.xs,
             fontWeight: fontWeight.bold,
             marginTop: spacing[1],
-            color: t.brand.fg,
           },
         }}
       />
@@ -163,11 +137,11 @@ export function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="More"
+        component={MoreScreen}
         options={{
-          title: "Perfil",
-          tabBarIcon: ({ focused }) => <ProfileTabIcon focused={focused} />,
+          title: "Más",
+          tabBarIcon: ({ color, size }) => <Menu color={color} size={size} />,
         }}
       />
     </Tab.Navigator>
@@ -184,11 +158,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: -20,
-    // Glow shadow (color set inline via theme)
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
   },
   profileAvatar: {
     width: 28,

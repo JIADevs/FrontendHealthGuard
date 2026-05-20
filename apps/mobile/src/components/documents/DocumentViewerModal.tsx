@@ -1,11 +1,26 @@
 import { useMemo } from "react";
-import { Modal, View, TouchableOpacity, Image, StyleSheet, StatusBar } from "react-native";
+import {
+  Modal,
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  useWindowDimensions,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { X } from "lucide-react-native";
-import { Spinner, Typography, spacing, radii, useAppTheme } from "@helu/ui";
+import { X, FileText } from "lucide-react-native";
+import {
+  Spinner,
+  Typography,
+  spacing,
+  radii,
+  shadows,
+  useAppTheme,
+} from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import type { DocFormat } from "@helu/ui";
 import { DocumentPdfViewer } from "./DocumentPdfViewer";
+import { DocumentZoomableImage } from "./DocumentZoomableImage";
 
 interface DocumentViewerModalProps {
   visible: boolean;
@@ -26,7 +41,16 @@ export function DocumentViewerModal({
 }: DocumentViewerModalProps) {
   const t = useAppTheme();
   const insets = useSafeAreaInsets();
-  const styles = useMemo(() => makeStyles(t, insets.top), [t, insets.top]);
+  const { height: windowHeight } = useWindowDimensions();
+  const styles = useMemo(
+    () => makeStyles(t, insets.top, insets.bottom),
+    [t, insets.top, insets.bottom],
+  );
+
+  const contentHeight = Math.max(
+    windowHeight - insets.top - insets.bottom - 88,
+    320,
+  );
 
   return (
     <Modal
@@ -35,28 +59,40 @@ export function DocumentViewerModal({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={t.mode === "dark" ? "light-content" : "dark-content"} />
       <View style={styles.root}>
         <View style={styles.header}>
-          <View style={styles.titleWrap}>
-            <Typography variant="h4" numberOfLines={1}>
-              {title}
-            </Typography>
+          <View style={styles.titleRow}>
+            <View style={styles.titleIcon}>
+              <FileText size={20} color={t.brand.fg} strokeWidth={2.25} />
+            </View>
+            <View style={styles.titleWrap}>
+              <Typography variant="caption" color="secondary">
+                Ver documento
+              </Typography>
+              <Typography variant="h4" numberOfLines={2}>
+                {title}
+              </Typography>
+            </View>
           </View>
           <TouchableOpacity
             onPress={onClose}
             style={styles.closeBtn}
+            activeOpacity={0.75}
             accessibilityRole="button"
             accessibilityLabel="Cerrar visor"
           >
-            <X size={22} color={t.text.primary} />
+            <X size={20} color={t.text.secondary} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.body}>
+        <View style={styles.viewerFrame}>
           {loading ? (
             <View style={styles.centered}>
               <Spinner size="lg" />
+              <Typography variant="bodySm" color="secondary">
+                Cargando documento…
+              </Typography>
             </View>
           ) : !uri ? (
             <View style={styles.centered}>
@@ -67,12 +103,7 @@ export function DocumentViewerModal({
           ) : format === "pdf" ? (
             <DocumentPdfViewer uri={uri} title={title} />
           ) : format === "image" ? (
-            <Image
-              source={{ uri }}
-              style={styles.image}
-              resizeMode="contain"
-              accessibilityLabel={title}
-            />
+            <DocumentZoomableImage uri={uri} title={title} contentHeight={contentHeight} />
           ) : (
             <View style={styles.centered}>
               <Typography variant="bodySm" color="secondary" align="center">
@@ -86,24 +117,44 @@ export function DocumentViewerModal({
   );
 }
 
-function makeStyles(t: ThemeContextValue, topInset: number) {
+function makeStyles(t: ThemeContextValue, topInset: number, bottomInset: number) {
   return StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: t.surface.bgCard,
+      backgroundColor: t.surface.bg,
       paddingTop: topInset,
+      paddingBottom: bottomInset,
     },
     header: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing[3],
-      paddingHorizontal: spacing[5],
-      paddingVertical: spacing[4],
-      borderBottomWidth: 1,
-      borderBottomColor: t.border.light,
+      marginHorizontal: spacing[4],
+      marginBottom: spacing[3],
+      padding: spacing[4],
+      backgroundColor: t.surface.bgCard,
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: t.border.light,
+      ...shadows.sm,
+    },
+    titleRow: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing[3],
+    },
+    titleIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: radii.md,
+      backgroundColor: t.brand.tint,
+      alignItems: "center",
+      justifyContent: "center",
     },
     titleWrap: {
       flex: 1,
+      gap: spacing[1],
     },
     closeBtn: {
       width: 36,
@@ -111,20 +162,28 @@ function makeStyles(t: ThemeContextValue, topInset: number) {
       alignItems: "center",
       justifyContent: "center",
       borderRadius: radii.sm,
-      backgroundColor: t.border.light,
+      backgroundColor: t.surface.bg,
+      borderWidth: 1,
+      borderColor: t.border.light,
     },
-    body: {
+    viewerFrame: {
       flex: 1,
-    },
-    image: {
-      flex: 1,
-      width: "100%",
+      minHeight: 0,
+      marginHorizontal: spacing[4],
+      borderRadius: radii.lg,
+      borderWidth: 1,
+      borderColor: t.border.default,
+      backgroundColor: t.surface.bgCard,
+      overflow: "hidden",
+      ...shadows.sm,
     },
     centered: {
       flex: 1,
+      minHeight: 0,
       alignItems: "center",
       justifyContent: "center",
       padding: spacing[6],
+      gap: spacing[3],
     },
   });
 }

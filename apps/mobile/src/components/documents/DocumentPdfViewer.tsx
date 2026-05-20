@@ -3,6 +3,7 @@ import { Platform, StyleSheet, View } from "react-native";
 import { WebView } from "react-native-webview";
 import { Spinner, Typography, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
+import { DOCUMENT_VIEWER_INITIAL_ZOOM } from "./DocumentZoomableImage";
 
 export interface DocumentPdfViewerProps {
   uri: string;
@@ -14,15 +15,21 @@ export interface DocumentPdfViewerProps {
 
 const EMBEDDED_HEIGHT = 320;
 
-/** URL embebida para Android (WebView no renderiza PDF directo de forma fiable). */
+/** Porcentaje de zoom para visor PDF nativo en iOS (#zoom=NN). */
+const PDF_ZOOM_PERCENT = Math.round(DOCUMENT_VIEWER_INITIAL_ZOOM * 100);
+
 function googlePdfEmbedUrl(remoteUri: string): string {
   return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(remoteUri)}`;
 }
 
-/**
- * Visor PDF con WebView (compatible con Expo Go).
- * react-native-pdf requiere dev client nativo; no usarlo aquí para evitar crash getConstants.
- */
+function pdfUriWithDefaultZoom(uri: string): string {
+  const hash = `zoom=${PDF_ZOOM_PERCENT}`;
+  if (uri.includes("#")) {
+    return `${uri}&${hash}`;
+  }
+  return `${uri}#${hash}`;
+}
+
 export function DocumentPdfViewer({
   uri,
   title,
@@ -40,10 +47,12 @@ export function DocumentPdfViewer({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const webViewUri = useMemo(
-    () => (Platform.OS === "android" ? googlePdfEmbedUrl(uri) : uri),
-    [uri],
-  );
+  const webViewUri = useMemo(() => {
+    if (Platform.OS === "android") {
+      return googlePdfEmbedUrl(uri);
+    }
+    return isFullscreen ? pdfUriWithDefaultZoom(uri) : uri;
+  }, [uri, isFullscreen]);
 
   if (error) {
     return (
@@ -71,16 +80,18 @@ export function DocumentPdfViewer({
         }}
         onError={() => {
           setLoading(false);
-          setError("No se pudo cargar el PDF. Probá abrirlo con el botón de abajo.");
+          setError("No se pudo cargar el PDF.");
         }}
         onHttpError={() => {
           setLoading(false);
-          setError("No se pudo cargar el PDF. Probá abrirlo con el botón de abajo.");
+          setError("No se pudo cargar el PDF.");
         }}
         startInLoadingState
         scalesPageToFit
         originWhitelist={["*"]}
         allowsInlineMediaPlayback
+        setBuiltInZoomControls={Platform.OS === "android"}
+        setDisplayZoomControls={false}
         accessibilityLabel={`Vista previa de ${title}`}
       />
     </View>
@@ -91,22 +102,24 @@ function makeStyles(t: ThemeContextValue, height: number, isFullscreen: boolean)
   return StyleSheet.create({
     container: {
       width: "100%",
-      ...(isFullscreen ? { flex: 1 } : { height }),
+      ...(isFullscreen ? { flex: 1, minHeight: 0 } : { height }),
       backgroundColor: t.surface.bg,
       overflow: "hidden",
     },
     fullscreen: {
       flex: 1,
+      minHeight: 0,
     },
     webview: {
       flex: 1,
       width: "100%",
+      minHeight: 0,
       ...(isFullscreen ? {} : { height }),
       backgroundColor: t.surface.bg,
     },
     centered: {
       width: "100%",
-      ...(isFullscreen ? { flex: 1 } : { height }),
+      ...(isFullscreen ? { flex: 1, minHeight: 0 } : { height }),
       alignItems: "center",
       justifyContent: "center",
       padding: spacing[4],

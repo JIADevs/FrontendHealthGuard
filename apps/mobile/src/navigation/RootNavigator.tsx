@@ -14,26 +14,28 @@ import { BackpackEditScreen } from "../screens/BackpackEditScreen";
 import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
 import { ShareDocumentsScreen } from "../screens/ShareDocumentsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
+import { SettingsScreen } from "../screens/SettingsScreen";
 import { useAppTheme } from "@helu/ui";
-import {
-  withDocumentsTheme,
-  documentsStackScreenOptions,
-} from "../components/documents";
+import { withDocumentsTheme, documentsStackScreenOptions } from "../components/documents";
+
+/** Shared optional param so any screen can show a contextual back label. */
+type WithBackTitle = { backTitle?: string };
 
 export type RootStackParamList = {
   Auth: undefined;
   Signup: undefined;
   MainTabs: undefined;
-  Scanner: { backpackId?: string; backpackName?: string } | undefined;
-  DocumentUpload: { backpackId?: string; backpackName?: string } | undefined;
-  DocumentDetail: { id: string; title?: string } | undefined;
-  DocumentEdit: { id: string } | undefined;
-  Notifications: undefined;
-  Profile: undefined;
-  BackpackDetail: { id: string };
-  BackpackEdit: { id?: string } | undefined;
-  BackpackAddDocuments: { id: string };
-  ShareDocuments: undefined;
+  Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
+  DocumentUpload: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
+  DocumentDetail: WithBackTitle & { id: string; title?: string } | undefined;
+  DocumentEdit: WithBackTitle & { id: string } | undefined;
+  Notifications: WithBackTitle | undefined;
+  Profile: WithBackTitle | undefined;
+  Settings: WithBackTitle | undefined;
+  BackpackDetail: WithBackTitle & { id: string };
+  BackpackEdit: WithBackTitle & { id?: string } | undefined;
+  BackpackAddDocuments: WithBackTitle & { id: string };
+  ShareDocuments: WithBackTitle | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -85,47 +87,90 @@ export function RootNavigator() {
           <Stack.Screen
             name="DocumentDetail"
             component={DocumentDetailScreenLight}
-            options={{ ...documentsStackScreenOptions, headerShown: true, title: "Documento" }}
+            options={({ route }) => ({
+              ...documentsStackScreenOptions,
+              headerShown: true,
+              title: "Documento",
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
+            })}
           />
           <Stack.Screen
             name="DocumentEdit"
             component={DocumentEditScreenLight}
-            options={{ ...documentsStackScreenOptions, headerShown: true, title: "Editar documento" }}
+            options={({ route }) => ({
+              ...documentsStackScreenOptions,
+              headerShown: true,
+              title: "Editar documento",
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Documento",
+            })}
           />
           <Stack.Screen
             name="Notifications"
             component={NotificationsScreen}
-            options={{ headerShown: true, title: "Notificaciones", animation: "slide_from_right" }}
+            options={({ route }) => ({
+              headerShown: true,
+              title: "Notificaciones",
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
+            })}
           />
           <Stack.Screen
             name="BackpackDetail"
             component={BackpackDetailScreen}
-            options={{ headerShown: true, title: "Mochila" }}
+            options={({ route }) => ({
+              headerShown: true,
+              title: "Mochila",
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Mochilas",
+            })}
           />
           <Stack.Screen
             name="BackpackEdit"
             component={BackpackEditScreen}
-            options={{ headerShown: true, title: "Mochila" }}
+            options={({ route }) => ({
+              headerShown: true,
+              title: "Mochila",
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Mochila",
+            })}
           />
           <Stack.Screen
             name="BackpackAddDocuments"
             component={BackpackAddDocumentsScreen}
-            options={{ headerShown: true, title: "Agregar documentos" }}
+            options={({ route }) => ({
+              headerShown: true,
+              title: "Agregar documentos",
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Mochila",
+            })}
           />
           <Stack.Screen
             name="ShareDocuments"
             component={ShareDocumentsScreenLight}
-            options={{
+            options={({ route }) => ({
               ...documentsStackScreenOptions,
               headerShown: true,
               title: "Compartir Documentos",
-              animation: "slide_from_right",
-            }}
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
+            })}
           />
           <Stack.Screen
             name="Profile"
             component={ProfileScreen}
-            options={{ headerShown: true, title: "Mi Perfil", animation: "slide_from_right" }}
+            options={({ route }) => ({
+              headerShown: true,
+              title: "Mi Perfil",
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Más",
+            })}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={({ route }) => ({
+              headerShown: true,
+              title: "Configuraciones",
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Más",
+            })}
           />
         </>
       ) : (
@@ -134,7 +179,7 @@ export function RootNavigator() {
           <Stack.Screen
             name="Signup"
             component={SignupScreen}
-            options={{ headerShown: true, title: "Crear Cuenta" }}
+            options={{ headerShown: false }}
           />
         </>
       )}

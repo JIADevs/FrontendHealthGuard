@@ -1,0 +1,432 @@
+/* ─── Auth Layout ───────────────────────────────────────────────────────────── */
+
+.authWrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, var(--brand-50) 0%, #ffffff 50%);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.authContent {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 440px;
+}
+
+/* ─── Header ────────────────────────────────────────────────────────────────── */
+
+.header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.logo {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto -15px;
+}
+
+.brandTitle {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.brandSubtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ─── Form Card ─────────────────────────────────────────────────────────────── */
+
+.formCard {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 40px 36px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1),
+    0 4px 12px -2px rgba(0, 0, 0, 0.05);
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.cardSubtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 24px;
+}
+
+.errorBox {
+  background: var(--error-50, #fef2f2);
+  color: var(--error-500, #ef4444);
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* ─── Input fields ──────────────────────────────────────────────────────────── */
+
+.fieldGroup {
+  margin-bottom: 18px;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.inputContainer {
+  display: flex;
+  align-items: center;
+  background: var(--gray-50);
+  border-radius: 10px;
+  border: 1.5px solid var(--gray-200);
+  padding: 0 14px;
+  height: 50px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.inputContainer:focus-within {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-ring-md, rgba(59, 130, 246, 0.15));
+}
+
+.inputIcon {
+  width: 18px;
+  height: 18px;
+  color: var(--brand-400);
+  flex-shrink: 0;
+  margin-right: 10px;
+}
+
+.textInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--text-primary);
+  outline: none;
+  height: 100%;
+}
+
+.textInput::placeholder {
+  color: var(--gray-400);
+}
+
+.eyeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  margin-left: 4px;
+  color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.eyeButton:hover {
+  color: var(--gray-600);
+}
+
+/* ─── Forgot password ───────────────────────────────────────────────────────── */
+
+.forgotRow {
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+.forgotLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-500);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.forgotLink:hover {
+  color: var(--brand-700);
+}
+
+/* ─── Submit button ─────────────────────────────────────────────────────────── */
+
+.submitBtn {
+  width: 100%;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--brand-400), var(--brand-500));
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.2s, transform 0.15s;
+  box-shadow: 0 4px 14px -3px rgba(59, 130, 246, 0.4);
+}
+
+.submitBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -3px rgba(59, 130, 246, 0.5);
+}
+
+.submitBtn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submitBtn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ─── Footer ────────────────────────────────────────────────────────────────── */
+
+.footer {
+  text-align: center;
+  margin-top: 32px;
+}
+
+.footerText {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0 0 4px;
+}
+
+.footerLink {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--brand-500);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footerLink:hover {
+  color: var(--brand-700);
+}
+
+/* ─── Animated Background: Bubbles ──────────────────────────────────────────── */
+
+.bgLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.bubble1 {
+  width: 260px;
+  height: 260px;
+  top: -40px;
+  left: -60px;
+  background: var(--brand-100);
+  opacity: 0.35;
+  animation: floatBubble1 22s ease-in-out infinite alternate;
+}
+
+.bubble2 {
+  width: 140px;
+  height: 140px;
+  top: 60px;
+  right: -30px;
+  background: var(--brand-200);
+  opacity: 0.25;
+  animation: floatBubble2 18s ease-in-out infinite alternate;
+}
+
+.bubble3 {
+  width: 60px;
+  height: 60px;
+  top: 40%;
+  left: 10%;
+  background: var(--brand-100);
+  opacity: 0.3;
+  animation: floatBubble3 16s ease-in-out infinite alternate;
+}
+
+.bubble4 {
+  width: 200px;
+  height: 200px;
+  top: 25%;
+  right: 5%;
+  background: var(--brand-200);
+  opacity: 0.18;
+  animation: floatBubble4 20s ease-in-out infinite alternate;
+}
+
+.bubble5 {
+  width: 35px;
+  height: 35px;
+  top: 55%;
+  left: 30%;
+  background: var(--brand-100);
+  opacity: 0.35;
+  animation: floatBubble5 14s ease-in-out infinite alternate;
+}
+
+.bubble6 {
+  width: 90px;
+  height: 90px;
+  bottom: 20%;
+  right: 15%;
+  background: var(--brand-200);
+  opacity: 0.2;
+  animation: floatBubble6 24s ease-in-out infinite alternate;
+}
+
+.bubble7 {
+  width: 500px;
+  height: 500px;
+  bottom: -150px;
+  left: 20%;
+  background: var(--brand-50);
+  opacity: 0.25;
+  animation: floatBubble7 28s ease-in-out infinite alternate;
+}
+
+@keyframes floatBubble1 {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(80px, 60px);
+  }
+}
+
+@keyframes floatBubble2 {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(-60px, 80px);
+  }
+}
+
+@keyframes floatBubble3 {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(100px, -40px);
+  }
+}
+
+@keyframes floatBubble4 {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(-70px, 50px);
+  }
+}
+
+@keyframes floatBubble5 {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(60px, 30px);
+  }
+}
+
+@keyframes floatBubble6 {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(-40px, -60px);
+  }
+}
+
+@keyframes floatBubble7 {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(-30px, -40px);
+  }
+}
+
+/* ─── Animated Background: Waves ────────────────────────────────────────────── */
+
+.wavesContainer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 160px;
+  overflow: hidden;
+}
+
+.waveSvg {
+  position: absolute;
+  bottom: 0;
+  width: 200%;
+  height: 100%;
+}
+
+.waveBack {
+  animation: waveSlide 14s linear infinite;
+}
+
+.waveMid {
+  animation: waveSlide 18s linear infinite reverse;
+}
+
+.waveFront {
+  animation: waveSlide 22s linear infinite;
+}
+
+@keyframes waveSlide {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}

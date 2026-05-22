@@ -7,6 +7,7 @@ import {
     DocumentSchema,
     DocumentActiveShareSchema,
     AppointmentPageSchema,
+    DoctorPageSchema,
     MedicationPageSchema,
     NotificationPageSchema,
     BackpackPageSchema,
@@ -18,6 +19,7 @@ import {
     type DocumentCreate,
     type AppointmentCreate,
     type MedicationCreate,
+    type DoctorCreate,
     type BackpackCreate,
     type CustomTagCreate,
 } from "./schemas";
@@ -217,6 +219,15 @@ export async function updateAppointmentStatus(
     return data;
 }
 
+export async function getAppointmentOptions() {
+    const { data } = await apiClient.get("/appointments/options/all");
+    return data as {
+        specialties: string[];
+        services: string[];
+        consultation_types: string[];
+    };
+}
+
 // ─── Medications ───────────────────────────────────────
 
 export async function getMedications(params: {
@@ -247,6 +258,32 @@ export async function confirmIntake(id: string) {
     });
     return data;
 }
+
+// ─── Doctors ───────────────────────────────────────────
+
+export async function getDoctors(params: {
+    page?: number;
+    limit?: number;
+    searchQuery?: string;
+}) {
+    const { data } = await apiClient.get("/doctors/", { params });
+    return DoctorPageSchema.parse(data);
+}
+
+export async function createDoctor(doctor: DoctorCreate) {
+    const { data } = await apiClient.post("/doctors/", doctor);
+    return data;
+}
+
+export async function updateDoctor(id: string, doctor: DoctorCreate) {
+    const { data } = await apiClient.put(`/doctors/${id}`, doctor);
+    return data;
+}
+
+export async function deleteDoctor(id: string) {
+    await apiClient.delete(`/doctors/${id}`);
+}
+
 
 // ─── Notifications ─────────────────────────────────────
 

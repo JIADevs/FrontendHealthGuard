@@ -34,12 +34,18 @@ import {
     addDocToBackpack,
     removeDocFromBackpack,
     getBackpackDocuments,
+        // Doctors
+    getDoctors,
+    createDoctor,
+    updateDoctor,
+    deleteDoctor,
     // Appointments
     getAppointments,
     createAppointment,
     updateAppointment,
     deleteAppointment,
     updateAppointmentStatus,
+    getAppointmentOptions,
     // Medications
     getMedications,
     createMedication,
@@ -60,6 +66,7 @@ import type {
     DocumentActiveShare,
     AppointmentCreate,
     MedicationCreate,
+    DoctorCreate,
     BackpackCreate,
     UserUpdate,
 } from "./schemas";
@@ -76,6 +83,7 @@ export const QK = {
     backpacks:        (search = "")           => ["backpacks", search] as const,
     backpack:         (id: string)            => ["backpack", id] as const,
     backpackDocs:     (id: string, search = "", page = 1) => ["backpack-docs", id, page, search] as const,
+     doctors:          (search = "", page = 1, limit = 50) => ["doctors", page, search, limit] as const,
 
     /** Incluye `limit` y rango de fechas: el dashboard usa limit pequeño y `startDate`; la agenda usa otros parámetros. */
     appointments:     (search = "", page = 1, limit = 20, startDate: string | null = null, endDate: string | null = null) =>
@@ -329,6 +337,14 @@ export function useUpdateAppointmentStatusMutation() {
     });
 }
 
+export function useAppointmentOptionsQuery() {
+    return useQuery({
+        queryKey: ["appointment-options"],
+        queryFn: getAppointmentOptions,
+        staleTime: Infinity, // Options rarely change
+    });
+}
+
 // ─── Medications ───────────────────────────────────────
 
 export function useMedicationsQuery(page = 1, limit = 20) {
@@ -369,6 +385,40 @@ export function useConfirmIntakeMutation() {
     return useMutation({
         mutationFn: (id: string) => confirmIntake(id),
         onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
+    });
+}
+// ─── Doctors ───────────────────────────────────────────
+
+export function useDoctorsQuery(search = "", page = 1, limit = 50) {
+    return useQuery({
+        queryKey: QK.doctors(search, page, limit),
+        queryFn: () => getDoctors({ page, limit, searchQuery: search || undefined }),
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
+    });
+}
+
+export function useCreateDoctorMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (doctor: DoctorCreate) => createDoctor(doctor),
+        onSettled: () => qc.invalidateQueries({ queryKey: ["doctors"] }),
+    });
+}
+
+export function useUpdateDoctorMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, doctor }: { id: string; doctor: DoctorCreate }) => updateDoctor(id, doctor),
+        onSettled: () => qc.invalidateQueries({ queryKey: ["doctors"] }),
+    });
+}
+
+export function useDeleteDoctorMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => deleteDoctor(id),
+        onSettled: () => qc.invalidateQueries({ queryKey: ["doctors"] }),
     });
 }
 
@@ -428,3 +478,4 @@ export * from './useMedicationFormCore';
 export * from './useAppointmentFormCore';
 export * from './useNotificationsCore';
 export * from './useDashboardCore';
+export * from './useDoctorFormCore';

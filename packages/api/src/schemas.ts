@@ -151,21 +151,55 @@ export const CustomTagCreateSchema = z.object({
     value: z.string().min(1),
 });
 
+// --- Doctors ---
+export const DoctorSchema = z.object({
+    id: z.string().uuid(),
+    userId: z.string().uuid(),
+    name: z.string(),
+    specialty: z.string().nullable().optional(),
+    clinic: z.string().nullable().optional(),
+    phone: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    createdAt: z.string().nullable().optional(),
+});
+
+export const DoctorPageSchema = createPageSchema(DoctorSchema);
+
+export const DoctorCreateSchema = z.object({
+    name: z.string().min(1, "El nombre es obligatorio"),
+    specialty: z.string().optional(),
+    clinic: z.string().optional(),
+    phone: z.string().optional(),
+    notes: z.string().optional(),
+});
+
 // --- Appointments ---
 export const AppointmentSchema = z.object({
     id: z.string().uuid(),
     userId: z.string().uuid(),
     createdBy: z.string().uuid().nullable().optional(),
+    name: z.string().nullable().optional(),
     date: z.string(),
     time: z.string(),
-    specialty: z.string(),
-    doctor: z.string(),
-    location: z.string(),
-    type: z.enum(["APPOINTMENT", "EXAM"]),
-    status: z.enum(["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"]),
+    modality: z.enum(["PRESENCIAL", "VIRTUAL", "DOMICILIARIA"]).default("PRESENCIAL"),
+    location: z.string().nullable().optional(),
+    videoCallLink: z.string().nullable().optional(),
+    specialty: z.string().nullable().optional(),
+    service: z.string().nullable().optional(),
+    consultationType: z.string().nullable().optional(),
+    duration: z.number().nullable().optional(),
+    doctorId: z.string().uuid().nullable().optional(),
+    doctor: z.string().nullable().optional(),
+    clinic: z.string().nullable().optional(),
+    type: z.enum(["APPOINTMENT", "EXAM"]).default("APPOINTMENT"),
+    status: z.enum(["PROGRAMADA", "REPROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI", "PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"]).default("PROGRAMADA"),
     examType: z.string().nullable().optional(),
-    tags: z.array(z.string()),
-    reminderOffsets: z.array(z.number()),
+    cost: z.number().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    customReminder: z.string().nullable().optional(),
+    tags: z.array(z.string()).default([]),
+    treatmentTags: z.array(z.string()).default([]),
+    reminderOffsets: z.array(z.number()).default([]),
     treatmentId: z.string().uuid().nullable().optional(),
     createdAt: z.string().nullable().optional(),
 });
@@ -173,15 +207,27 @@ export const AppointmentSchema = z.object({
 export const AppointmentPageSchema = createPageSchema(AppointmentSchema);
 
 export const AppointmentCreateSchema = z.object({
+    name: z.string().optional(),
     date: z.string(),
     time: z.string(),
-    specialty: z.string().min(1),
-    doctor: z.string().min(1),
-    location: z.string().min(1),
-    type: z.enum(["APPOINTMENT", "EXAM"]),
-    status: z.enum(["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"]).default("PENDING"),
+    modality: z.enum(["PRESENCIAL", "VIRTUAL", "DOMICILIARIA"]).default("PRESENCIAL"),
+    location: z.string().optional(),
+    videoCallLink: z.string().optional(),
+    specialty: z.string().optional(),
+    service: z.string().optional(),
+    consultationType: z.string().optional(),
+    duration: z.number().optional(),
+    doctorId: z.string().uuid().optional(),
+    doctor: z.string().optional(),
+    clinic: z.string().optional(),
+    type: z.enum(["APPOINTMENT", "EXAM"]).default("APPOINTMENT"),
+    status: z.enum(["PROGRAMADA", "REPROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI", "PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"]).default("PROGRAMADA"),
     examType: z.string().optional(),
+    cost: z.number().optional(),
+    notes: z.string().optional(),
+    customReminder: z.string().optional(),
     tags: z.array(z.string()).default([]),
+    treatmentTags: z.array(z.string()).default([]),
     reminderOffsets: z.array(z.number()).default([]),
     treatmentId: z.string().uuid().optional(),
 });
@@ -291,6 +337,9 @@ export type DocumentPage = z.infer<typeof DocumentPageSchema>;
 export type DocumentCreate = z.infer<typeof DocumentCreateSchema>;
 export type DocumentTypeOut = z.infer<typeof DocumentTypeOutSchema>;
 export type TagCategoryOut = z.infer<typeof TagCategoryOutSchema>;
+export type Doctor = z.infer<typeof DoctorSchema>;
+export type DoctorPage = z.infer<typeof DoctorPageSchema>;
+export type DoctorCreate = z.infer<typeof DoctorCreateSchema>;
 export type Appointment = z.infer<typeof AppointmentSchema>;
 export type AppointmentPage = z.infer<typeof AppointmentPageSchema>;
 export type AppointmentCreate = z.infer<typeof AppointmentCreateSchema>;

@@ -79,15 +79,15 @@ export function DatePicker({
           styles.field,
           {
             borderColor,
-            backgroundColor: disabled ? t.border.light : t.surface.bg,
+            backgroundColor: disabled ? t.border.light : t.surface.bgCard,
           },
           disabled && styles.disabled,
         ]}
       >
-        <Text style={[styles.fieldText, { color: value ? t.text.primary : t.text.muted }]}>
+        <Text style={[styles.fieldText, { color: value ? t.text.primary : t.text.tertiary }]}>
           {value ? formatDisplay(value) : (placeholder ?? 'Seleccionar fecha')}
         </Text>
-        <CalendarDays size={18} color={t.text.muted} />
+        <CalendarDays size={18} color={t.text.tertiary} />
       </Pressable>
 
       {error && <Text style={styles.error}>{error}</Text>}
@@ -138,7 +138,7 @@ export function DatePicker({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing[1],
+    gap: spacing[2],
   },
   label: {
     fontSize: fontSize.sm,

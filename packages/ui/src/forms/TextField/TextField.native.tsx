@@ -44,7 +44,7 @@ export function TextField({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor={t.text.muted}
+        placeholderTextColor={t.text.tertiary}
         editable={!disabled}
         multiline={multiline}
         numberOfLines={multiline ? numberOfLines : undefined}
@@ -61,7 +61,7 @@ export function TextField({
           {
             borderColor,
             color: t.text.primary,
-            backgroundColor: disabled ? t.border.light : t.surface.bg,
+            backgroundColor: disabled ? t.border.light : t.surface.bgCard,
           },
           multiline && styles.multiline,
           disabled && styles.disabled,
@@ -77,7 +77,7 @@ export function TextField({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing[1],
+    gap: spacing[2],
   },
   label: {
     fontSize: fontSize.sm,

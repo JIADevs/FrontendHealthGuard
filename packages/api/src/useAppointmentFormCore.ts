@@ -21,7 +21,9 @@ import type { Appointment } from "./schemas";
 
 export interface AppointmentFormState {
   name: string;
+  /** ISO date string "YYYY-MM-DD" */
   date: string;
+  /** Time string "HH:mm" */
   time: string;
   modality: "PRESENCIAL" | "VIRTUAL" | "DOMICILIARIA";
   location: string;

@@ -22,7 +22,6 @@ import {
   type Medication,
 } from "@helu/api";
 import { useMedicationForm } from "../hooks/useMedicationForm";
-import { useAppointmentForm } from "../hooks/useAppointmentForm";
 import {
   colors, palette,
   radii,
@@ -58,7 +57,7 @@ import {
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-const STATUSES = ["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"] as const;
+const STATUSES = ["PROGRAMADA", "REPROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI", "PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"] as const;
 
 // ─── main screen ──────────────────────────────────────────────────────────────
 
@@ -119,10 +118,9 @@ export function AgendaScreen() {
 function AppointmentsTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const navigation = require("@react-navigation/native").useNavigation();
 
   const [page, setPage] = useState(1);
-  const [showForm, setShowForm] = useState(false);
-  const [editTarget, setEditTarget] = useState<Appointment | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
 
   const appts = useAppointmentsQuery("", page, 10);
@@ -162,10 +160,7 @@ function AppointmentsTab() {
       <View style={styles.addRow}>
         <TouchableOpacity
           style={styles.addBtn}
-          onPress={() => {
-            setEditTarget(null);
-            setShowForm(true);
-          }}
+          onPress={() => navigation.navigate("AppointmentForm")}
         >
           <Plus size={16} color={colors.white} />
           <Text style={styles.addBtnText}>Nueva Cita</Text>
@@ -187,27 +182,42 @@ function AppointmentsTab() {
           keyExtractor={(a) => a.id}
           contentContainerStyle={cardContentStyle}
           renderItem={({ item: a }) => (
-            <Card
-              title={a.specialty}
-              subtitle={
+            <TouchableOpacity onPress={() => navigation.navigate("AppointmentDetail", { id: a.id })}>
+              <Card
+                title={a.name || a.specialty || "Cita médica"}
+                subtitle={
                 <View style={{ gap: spacing[1] }}>
-                  <View style={styles.cardMeta}>
-                    <User size={12} color={t.text.secondary} />
-                    <Text style={styles.cardMetaText}>{a.doctor}</Text>
-                    <MapPin size={12} color={t.text.secondary} />
-                    <Text style={styles.cardMetaText}>{a.location}</Text>
-                  </View>
+                  {a.doctor && (
+                    <View style={styles.cardMeta}>
+                      <User size={12} color={t.text.secondary} />
+                      <Text style={styles.cardMetaText}>{a.doctor}</Text>
+                    </View>
+                  )}
+                  {(a.location || a.videoCallLink) && (
+                    <View style={styles.cardMeta}>
+                      <MapPin size={12} color={t.text.secondary} />
+                      <Text style={styles.cardMetaText}>
+                        {a.modality === "VIRTUAL" ? "Virtual" : a.modality === "DOMICILIARIA" ? "Domiciliaria" : a.location}
+                      </Text>
+                    </View>
+                  )}
                   <View style={styles.cardMeta}>
                     <Clock size={12} color={t.text.secondary} />
                     <Text style={styles.cardMetaText}>{formatApptDate(a.date)} {a.time?.slice(0, 5)}</Text>
                   </View>
+                  {a.specialty && (
+                    <Text style={styles.cardMetaText}>• {a.specialty}</Text>
+                  )}
+                  {a.cost && (
+                    <Text style={styles.cardMetaText}>💰 ${a.cost}</Text>
+                  )}
                 </View>
               }
               icon={<CalendarDays size={20} color={t.brand.fg} />}
               iconBackground={t.brand.tintMed}
               actions={
                 <View style={styles.cardActions}>
-                  <ActionButton action="edit" size="sm" onPress={() => { setEditTarget(a); setShowForm(true); }} />
+                  <ActionButton action="edit" size="sm" onPress={() => navigation.navigate("AppointmentForm", { id: a.id })} />
                   <ActionButton action="delete" size="sm" onPress={() => setDeleteTarget(a)} />
                 </View>
               }
@@ -226,20 +236,11 @@ function AppointmentsTab() {
                 ))}
               </View>
             </Card>
+            </TouchableOpacity>
           )}
           ListFooterComponent={
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           }
-        />
-      )}
-
-      {showForm && (
-        <AppointmentFormModal
-          initial={editTarget}
-          onClose={() => {
-            setShowForm(false);
-            setEditTarget(null);
-          }}
         />
       )}
 
@@ -254,76 +255,6 @@ function AppointmentsTab() {
         />
       )}
     </View>
-  );
-}
-
-// ─── appointment form modal ───────────────────────────────────────────────────
-
-function AppointmentFormModal({
-  initial,
-  onClose,
-}: {
-  initial: Appointment | null;
-  onClose: () => void;
-}) {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-  const form = useAppointmentForm({ initial, onClose });
-
-  return (
-    <Modal
-      title={form.isEdit ? "Editar Cita" : "Nueva Cita"}
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="secondary" onPress={onClose}>Cancelar</Button>
-          <Button onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
-            {form.isEdit ? "Guardar Cambios" : "Agendar Cita"}
-          </Button>
-        </>
-      }
-    >
-          <Text style={styles.fieldLabel}>Tipo de evento</Text>
-          <View style={styles.typeRow}>
-            {(["APPOINTMENT", "EXAM"] as const).map((tp) => (
-              <TouchableOpacity
-                key={tp}
-                style={[styles.typePill, form.type === tp && styles.typePillActive]}
-                onPress={() => form.setType(tp)}
-              >
-                <Text
-                  style={[
-                    styles.typePillText,
-                    form.type === tp && styles.typePillTextActive,
-                  ]}
-                >
-                  {tp === "APPOINTMENT" ? "Cita Médica" : "Examen"}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {form.type === "EXAM" && (
-            <TextField
-              label="Tipo de examen"
-              value={form.examType}
-              onChange={form.setExamType}
-              placeholder="Ej: Resonancia, Hemograma..."
-            />
-          )}
-
-          <TextField label="Especialidad" value={form.specialty} onChange={form.setSpecialty} placeholder="Ej: Neurología" />
-          <TextField label="Médico" value={form.doctor} onChange={form.setDoctor} placeholder="Dr. nombre" />
-          <TextField label="Lugar" value={form.location} onChange={form.setLocation} placeholder="Hospital / Clínica" />
-          <DateTimePicker
-            label="Fecha y hora"
-            value={form.date && form.time ? `${form.date}T${form.time}` : ""}
-            onChange={(v) => { form.setDate(v.slice(0, 10)); form.setTime(v.slice(11, 16)); }}
-            required
-          />
-
-          {form.error && <Text style={styles.errorText}>{form.error}</Text>}
-    </Modal>
   );
 }
 

@@ -14,6 +14,11 @@ import { BackpackEditScreen } from "../screens/BackpackEditScreen";
 import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
 import { ShareDocumentsScreen } from "../screens/ShareDocumentsScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
+
+import { AppointmentDetailScreen } from "../screens/AppointmentDetailScreen";
+import { AppointmentFormScreen } from "../screens/AppointmentFormScreen";
+import { DoctorFormScreen } from "../screens/DoctorFormScreen";
+
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { useAppTheme } from "@helu/ui";
 import { withDocumentsTheme, getDocumentsStackScreenOptions } from "../components/documents";
@@ -25,6 +30,10 @@ export type RootStackParamList = {
   Auth: undefined;
   Signup: undefined;
   MainTabs: undefined;
+
+  AppointmentDetail: { id: string };
+  AppointmentForm: { id?: string } | undefined;
+  DoctorForm: undefined;
   Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
   DocumentUpload: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
   DocumentDetail: WithBackTitle & { id: string; title?: string } | undefined;
@@ -36,6 +45,7 @@ export type RootStackParamList = {
   BackpackEdit: WithBackTitle & { id?: string } | undefined;
   BackpackAddDocuments: WithBackTitle & { id: string };
   ShareDocuments: WithBackTitle | undefined;
+
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -175,6 +185,21 @@ export function RootNavigator() {
               animation: "slide_from_right" as const,
               headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Más",
             })}
+          />
+          <Stack.Screen
+            name="AppointmentDetail"
+            component={AppointmentDetailScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="AppointmentForm"
+            component={AppointmentFormScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="DoctorForm"
+            component={DoctorFormScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
           />
         </>
       ) : (

@@ -20,8 +20,8 @@ import { AppointmentFormScreen } from "../screens/AppointmentFormScreen";
 import { DoctorFormScreen } from "../screens/DoctorFormScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
-
-import { useAppTheme, palette } from "@helu/ui";
+import { useAppTheme } from "@helu/ui";
+import { withDocumentsTheme, getDocumentsStackScreenOptions } from "../components/documents";
 
 /** Shared optional param so any screen can show a contextual back label. */
 type WithBackTitle = { backTitle?: string };
@@ -50,6 +50,12 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+const ScannerScreenLight = withDocumentsTheme(ScannerScreen);
+const DocumentUploadScreenLight = withDocumentsTheme(DocumentUploadScreen);
+const DocumentDetailScreenLight = withDocumentsTheme(DocumentDetailScreen);
+const DocumentEditScreenLight = withDocumentsTheme(DocumentEditScreen);
+const ShareDocumentsScreenLight = withDocumentsTheme(ShareDocumentsScreen);
+
 export function RootNavigator() {
   const token = useAuthStore((s) => s.token);
   const t = useAppTheme();
@@ -72,18 +78,27 @@ export function RootNavigator() {
           <Stack.Screen name="MainTabs" component={TabNavigator} />
           <Stack.Screen
             name="Scanner"
-            component={ScannerScreen}
-            options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
+            component={ScannerScreenLight}
+            options={{
+              ...getDocumentsStackScreenOptions(t),
+              presentation: "fullScreenModal",
+              animation: "slide_from_bottom",
+            }}
           />
           <Stack.Screen
             name="DocumentUpload"
-            component={DocumentUploadScreen}
-            options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }}
+            component={DocumentUploadScreenLight}
+            options={{
+              ...getDocumentsStackScreenOptions(t),
+              presentation: "fullScreenModal",
+              animation: "slide_from_bottom",
+            }}
           />
           <Stack.Screen
             name="DocumentDetail"
-            component={DocumentDetailScreen}
+            component={DocumentDetailScreenLight}
             options={({ route }) => ({
+              ...getDocumentsStackScreenOptions(t),
               headerShown: true,
               title: "Documento",
               headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
@@ -91,8 +106,9 @@ export function RootNavigator() {
           />
           <Stack.Screen
             name="DocumentEdit"
-            component={DocumentEditScreen}
+            component={DocumentEditScreenLight}
             options={({ route }) => ({
+              ...getDocumentsStackScreenOptions(t),
               headerShown: true,
               title: "Editar documento",
               headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Documento",
@@ -120,11 +136,15 @@ export function RootNavigator() {
           <Stack.Screen
             name="BackpackEdit"
             component={BackpackEditScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: "Mochila",
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Mochila",
-            })}
+            options={({ route }) => {
+              const params = route.params as { id?: string } | undefined;
+              const isCreate = !params?.id;
+              return {
+                headerShown: true,
+                title: isCreate ? "Nueva mochila" : "Editar mochila",
+                headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Mochilas",
+              };
+            }}
           />
           <Stack.Screen
             name="BackpackAddDocuments"
@@ -137,8 +157,9 @@ export function RootNavigator() {
           />
           <Stack.Screen
             name="ShareDocuments"
-            component={ShareDocumentsScreen}
+            component={ShareDocumentsScreenLight}
             options={({ route }) => ({
+              ...getDocumentsStackScreenOptions(t),
               headerShown: true,
               title: "Compartir Documentos",
               animation: "slide_from_right" as const,

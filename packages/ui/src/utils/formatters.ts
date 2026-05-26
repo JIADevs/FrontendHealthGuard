@@ -66,10 +66,18 @@ export function timeAgo(dateStr: string): string {
 
 // ─── Archivos ────────────────────────────────────────────────────────────────
 
-/** Convierte bytes a KB legibles. Devuelve "—" si el valor es nulo. */
+/** Convierte bytes a unidad legible (B / KB / MB). Devuelve "—" si el valor es nulo. */
 export function formatFileSize(bytes: number | null | undefined): string {
   if (!bytes) return "—";
-  return `${(bytes / 1024).toFixed(0)} KB`;
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${bytes} B`;
+}
+
+/** Fecha compacta para listas (ej. "12 mar"). */
+export function formatShortDate(d: string | null | undefined): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("es-CO", { day: "numeric", month: "short" });
 }
 
 // ─── Dominio: citas ───────────────────────────────────────────────────────────

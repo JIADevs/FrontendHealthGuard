@@ -9,10 +9,12 @@ import {
   Image,
   ScrollView,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   X,
   Check,
@@ -24,6 +26,7 @@ import {
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
+import { useKeyboardScrollPadding } from "../hooks/useKeyboardScrollPadding";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
 import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
@@ -58,6 +61,8 @@ export function DocumentUploadScreen() {
     backpackId: params?.backpackId,
     backpackName: params?.backpackName,
   });
+  const insets = useSafeAreaInsets();
+  const scrollPaddingBottom = useKeyboardScrollPadding(spacing[4]);
 
   const [pickerAsset, setPickerAsset] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
 
@@ -123,7 +128,19 @@ export function DocumentUploadScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 72 : 0}
+      >
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+        bounces
+      >
         <View style={styles.previewContainer}>
           {isImage ? (
             <Image source={{ uri: pickerAsset.uri }} style={styles.previewImage} resizeMode="contain" />
@@ -152,8 +169,9 @@ export function DocumentUploadScreen() {
 
         <DocumentClassificationForm file={fileSource} {...form} />
       </ScrollView>
+      </KeyboardAvoidingView>
 
-      <View style={styles.previewControls}>
+      <View style={[styles.previewControls, { paddingBottom: spacing[5] + insets.bottom }]}>
         <TouchableOpacity style={styles.circleBtnRed} onPress={() => navigation.goBack()} disabled={form.uploading}>
           <X color={colors.white} size={24} />
         </TouchableOpacity>
@@ -187,7 +205,9 @@ function makeStyles(t: ThemeContextValue) {
     pickerBtn:      { backgroundColor: t.brand.fg, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14 },
     pickerBtnText:  { color: colors.white, fontWeight: fontWeight.bold, fontSize: fontSize.md },
 
-    container:        { flex: 1, backgroundColor: colors.black },
+    container:        { flex: 1, backgroundColor: t.surface.bg },
+    scroll:           { flex: 1, backgroundColor: t.surface.bgCard },
+    scrollContent:    { backgroundColor: t.surface.bgCard },
     previewContainer: { height: 350, backgroundColor: t.surface.bg, justifyContent: "center", alignItems: "center" },
     previewImage:     { width: "100%", height: "100%" },
     pdfPreview:       { alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
@@ -198,7 +218,16 @@ function makeStyles(t: ThemeContextValue) {
     fileInfoText:   { flex: 1, fontSize: fontSize.sm, color: t.text.primary, fontWeight: fontWeight.medium },
     changeFileLink: { fontSize: fontSize.sm, color: t.brand.fg, fontWeight: fontWeight.semibold },
 
-    previewControls: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 32, paddingBottom: 48, backgroundColor: t.surface.bgCard, paddingTop: spacing[3] },
+    previewControls: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 32,
+      backgroundColor: t.surface.bgCard,
+      paddingTop: spacing[3],
+      borderTopWidth: 1,
+      borderTopColor: t.border.light,
+    },
     circleBtnRed:    { width: 72, height: 72, borderRadius: 36, backgroundColor: t.status.errorFg, alignItems: "center", justifyContent: "center" },
     circleBtnGreen:  { width: 72, height: 72, borderRadius: 36, backgroundColor: t.status.successFg, alignItems: "center", justifyContent: "center" },
   });

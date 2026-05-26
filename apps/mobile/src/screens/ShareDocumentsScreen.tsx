@@ -17,7 +17,7 @@ import * as Clipboard from "expo-clipboard";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDocumentsQuery, useActiveDocumentSharesQuery, useRevokeDocumentShareMutation, QK } from "@helu/api/hooks";
 import { shareDocument, isApiError } from "@helu/api";
-import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner, EmptyState, Chip, ConfirmModal } from "@helu/ui";
+import { colors, radii, spacing, fontSize, fontWeight, useAppTheme, formatDate, Button, Pagination, Checkbox, Typography, Spinner, EmptyState, Chip, ConfirmModal } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { FileText, Share2, Clock, Copy, Link2, ChevronDown, ChevronUp, Ban } from "lucide-react-native";
 import { resolveExpoReachableUrl } from "../utils/shareLinks";
@@ -368,7 +368,7 @@ export function ShareDocumentsScreen() {
           {!activeSharesOpen ? (
             <View style={styles.activeSharesCollapsed}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1, flexWrap: "wrap" }}>
-                <Link2 size={16} color={palette.brand[500]} />
+                <Link2 size={16} color={t.brand.fg} />
                 <Typography variant="label">Enlaces activos</Typography>
                 {!activeShares.isLoading && activeShareRows.length > 0 && (
                   <Chip label={`${activeShareRows.length} activo${activeShareRows.length > 1 ? "s" : ""}`} color="green" />
@@ -384,14 +384,14 @@ export function ShareDocumentsScreen() {
               </View>
               <Button variant="secondary" size="sm" onPress={() => setActiveSharesOpen(true)}>
                 <Text style={styles.activeSharesBtnText}>Ver</Text>
-                <ChevronDown size={14} color={palette.brand[500]} />
+                <ChevronDown size={14} color={t.brand.fg} />
               </Button>
             </View>
           ) : (
             <View style={[styles.activeSharesCard, { maxHeight: activeSharesLayout.panelMaxHeight }]}>
               <View style={styles.activeSharesHeader}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1, flexWrap: "wrap" }}>
-                  <Link2 size={16} color={palette.brand[500]} />
+                  <Link2 size={16} color={t.brand.fg} />
                   <Typography variant="label">Enlaces activos</Typography>
                   {!activeShares.isLoading && activeShareRows.length > 0 && (
                     <Chip label={`${activeShareRows.length} activo${activeShareRows.length > 1 ? "s" : ""}`} color="green" />
@@ -399,7 +399,7 @@ export function ShareDocumentsScreen() {
                 </View>
                 <View style={{ flexDirection: "row", gap: spacing[2] }}>
                   <Button variant="ghost" size="sm" onPress={() => setActiveSharesOpen(false)}>
-                    <ChevronUp size={14} color={palette.brand[500]} />
+                    <ChevronUp size={14} color={t.brand.fg} />
                     <Text style={styles.activeSharesBtnText}>Ocultar</Text>
                   </Button>
                   <Button variant="ghost" size="sm" onPress={() => activeShares.refetch()} disabled={activeShares.isFetching} loading={activeShares.isFetching}>
@@ -476,13 +476,13 @@ export function ShareDocumentsScreen() {
                           <View style={styles.resultActions}>
                             <Button variant="secondary" size="sm" onPress={() => handleCopyLink(row.shareUrl)} disabled={panelActionBusy}>
                               <View style={styles.btnRowSm}>
-                                <Copy size={13} color={palette.brand[500]} />
+                                <Copy size={13} color={t.brand.fg} />
                                 <Text style={styles.btnLabelSecondary}>Copiar</Text>
                               </View>
                             </Button>
                             <Button variant="secondary" size="sm" onPress={() => handleSystemShare(row.shareUrl, row.documentTitle)} disabled={panelActionBusy}>
                               <View style={styles.btnRowSm}>
-                                <Share2 size={13} color={palette.brand[500]} />
+                                <Share2 size={13} color={t.brand.fg} />
                                 <Text style={styles.btnLabelSecondary}>Compartir</Text>
                               </View>
                             </Button>
@@ -515,7 +515,7 @@ export function ShareDocumentsScreen() {
             <RefreshControl
               refreshing={docs.isRefetching}
               onRefresh={() => docs.refetch()}
-              tintColor={palette.brand[500]}
+              tintColor={t.brand.fg}
             />
           }
           ListEmptyComponent={
@@ -678,13 +678,13 @@ function makeStyles(t: ThemeContextValue) {
     btnRow:           { flexDirection: "row", alignItems: "center", gap: spacing[2] },
     btnRowSm:         { flexDirection: "row", alignItems: "center", gap: spacing[1] },
     btnLabelPrimary:  { color: colors.white, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
-    btnLabelSecondary: { color: colors.gray[700], fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+    btnLabelSecondary: { color: t.text.primary, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
 
     // doc list
     docItem:          { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: spacing[4], backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, borderColor: t.border.medium },
     docItemSelected:  {
-      borderColor: palette.brand[400],
-      backgroundColor: t.mode === "dark" ? colors.slate[700] : palette.brand[50],
+      borderColor: t.brand.tintBorder,
+      backgroundColor: t.brand.tint,
     },
     docItemLocked:    { opacity: 0.75 },
     docInfo:          { flex: 1 },
@@ -692,7 +692,7 @@ function makeStyles(t: ThemeContextValue) {
     docMeta:          { fontSize: fontSize.xs, color: t.text.secondary, marginTop: 2 },
     lockedBadge:      { paddingHorizontal: spacing[2], paddingVertical: 3, backgroundColor: t.surface.bg, borderRadius: radii.full, borderWidth: 1, borderColor: t.border.medium },
     lockedBadgeText:  { fontSize: fontSize.xs, color: t.text.secondary, fontWeight: fontWeight.semibold },
-    activeSharesBtnText: { fontSize: fontSize.xs, color: palette.brand[600], fontWeight: fontWeight.semibold },
+    activeSharesBtnText: { fontSize: fontSize.xs, color: t.brand.fg, fontWeight: fontWeight.semibold },
 
   });
 }

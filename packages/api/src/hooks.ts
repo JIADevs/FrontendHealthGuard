@@ -75,7 +75,13 @@ import type {
 // Centralized so invalidation is always consistent.
 export const QK = {
     /** Incluye `limit` en la key: el dashboard pide p. ej. limit=1 y la lista otro tamaño; sin esto comparten caché y la lista queda corta. */
-    documents:        (search = "", page = 1, limit = 20) => ["documents", page, search, limit] as const,
+    documents:        (
+        search = "",
+        page = 1,
+        limit = 20,
+        startDate: string | null = null,
+        endDate: string | null = null,
+    ) => ["documents", page, search, limit, startDate, endDate] as const,
     document:         (id: string)            => ["document", id] as const,
     documentTypes:    ()                      => ["document-types"] as const,
     tagCategories:    ()                      => ["tag-categories"] as const,
@@ -102,10 +108,23 @@ export const QK = {
 
 // ─── Documents ─────────────────────────────────────────
 
-export function useDocumentsQuery(search = "", page = 1, limit = 20) {
+export function useDocumentsQuery(
+    search = "",
+    page = 1,
+    limit = 20,
+    startDate: string | null = null,
+    endDate: string | null = null,
+) {
     return useQuery({
-        queryKey: QK.documents(search, page, limit),
-        queryFn: () => getDocuments({ page, limit, searchQuery: search || undefined }),
+        queryKey: QK.documents(search, page, limit, startDate, endDate),
+        queryFn: () =>
+            getDocuments({
+                page,
+                limit,
+                searchQuery: search || undefined,
+                startDate: startDate ?? undefined,
+                endDate: endDate ?? undefined,
+            }),
         staleTime: 5_000,
         placeholderData: keepPreviousData,
     });

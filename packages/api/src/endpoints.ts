@@ -73,6 +73,8 @@ export async function getDocuments(params: {
     page?: number;
     limit?: number;
     searchQuery?: string;
+    startDate?: string;
+    endDate?: string;
 }) {
     const { data } = await apiClient.get("/documents/", { params });
     return DocumentPageSchema.parse(data);
@@ -166,12 +168,23 @@ export async function uploadFile(file: File) {
 }
 
 // React Native / mobile helper: upload from URI (expo-camera, image picker, etc.)
-export async function uploadFileFromUri(uri: string, name: string, mimeType: string) {
+export async function uploadFileFromUri(
+    uri: string,
+    name: string,
+    mimeType: string,
+    onProgress?: (percent: number) => void,
+) {
     const formData = new FormData();
     // In React Native, the "file" can be an object with uri/name/type
     formData.append("file", { uri, name, type: mimeType } as any);
     const { data } = await apiClient.post("/files/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (event) => {
+            const total = event.total ?? 0;
+            if (total > 0) {
+                onProgress?.(Math.min(100, Math.round((event.loaded / total) * 100)));
+            }
+        },
     });
     return data as { storagePath: string };
 }
@@ -355,7 +368,7 @@ export async function getBackpackById(id: string) {
 
 export async function createBackpack(bp: BackpackCreate) {
     const { data } = await apiClient.post("/backpacks/", bp);
-    return data;
+    return BackpackSchema.parse(data);
 }
 
 export async function updateBackpack(id: string, bp: BackpackCreate) {

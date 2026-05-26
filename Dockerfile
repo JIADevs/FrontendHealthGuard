@@ -30,7 +30,7 @@ COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 ARG HOISTED_LINKER=false
 COPY --from=pruner /app/.npmrc ./.npmrc
 RUN if [ "$HOISTED_LINKER" = "true" ]; then echo "node-linker=hoisted" >> .npmrc; fi \
-    && pnpm install
+    && CI=true pnpm install --no-frozen-lockfile
 
 # Step 3: WEB (Production-ready stage)
 FROM base AS web-runner

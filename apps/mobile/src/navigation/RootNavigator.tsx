@@ -126,11 +126,15 @@ export function RootNavigator() {
           <Stack.Screen
             name="BackpackEdit"
             component={BackpackEditScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: "Mochila",
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Mochila",
-            })}
+            options={({ route }) => {
+              const params = route.params as { id?: string } | undefined;
+              const isCreate = !params?.id;
+              return {
+                headerShown: true,
+                title: isCreate ? "Nueva mochila" : "Editar mochila",
+                headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Mochilas",
+              };
+            }}
           />
           <Stack.Screen
             name="BackpackAddDocuments"

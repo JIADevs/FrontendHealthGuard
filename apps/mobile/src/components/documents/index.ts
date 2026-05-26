@@ -22,6 +22,7 @@ export { DocumentDetailHeader } from "./DocumentDetailHeader";
 export { DocumentDetailMetaCard } from "./DocumentDetailMetaCard";
 export { DocumentDetailTags } from "./DocumentDetailTags";
 export { DocumentDetailPreview } from "./DocumentDetailPreview";
+export { DocumentDetailOpenExternal } from "./DocumentDetailOpenExternal";
 export { DocumentDetailActions } from "./DocumentDetailActions";
 export { DocumentPdfViewer } from "./DocumentPdfViewer";
 export { DocumentViewerModal } from "./DocumentViewerModal";

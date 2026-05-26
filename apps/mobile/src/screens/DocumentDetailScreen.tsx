@@ -11,11 +11,13 @@ import {
   DocumentDetailMetaCard,
   DocumentDetailTags,
   DocumentDetailPreview,
+  DocumentDetailOpenExternal,
   DocumentDetailActions,
   ShareDocumentModal,
 } from "../components/documents";
 import { useDocumentDetail } from "../hooks/useDocumentDetail";
 import { useDocumentShareModal } from "../hooks/useDocumentShareModal";
+import { useOpenDocumentExternal } from "../hooks/useOpenDocumentExternal";
 import { getDocumentPageCount } from "../components/documents/utils/documentDetailMeta";
 
 type RouteParams = {
@@ -49,6 +51,7 @@ export function DocumentDetailScreen() {
   } = useDocumentDetail(id);
 
   const share = useDocumentShareModal();
+  const { openDocument, opening } = useOpenDocumentExternal();
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: "" });
@@ -103,6 +106,18 @@ export function DocumentDetailScreen() {
           docFormat={docFormat}
           isLoading={signedUrlLoading}
           pageCount={pageCount}
+        />
+        <DocumentDetailOpenExternal
+          onPress={() =>
+            void openDocument({
+              url: signedUrl ?? "",
+              title: document.title,
+              format: document.format,
+              docFormat,
+            })
+          }
+          disabled={!signedUrl || signedUrlLoading}
+          loading={opening}
         />
         <DocumentDetailActions
           onShare={() => share.openShare(document)}

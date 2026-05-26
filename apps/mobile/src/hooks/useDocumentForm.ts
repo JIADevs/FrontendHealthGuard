@@ -23,6 +23,9 @@ export interface FileSource {
 type UseDocumentFormOptions = {
   backpackId?: string;
   backpackName?: string;
+  /** Si se define, no hace goBack automático al terminar la subida. */
+  onUploaded?: (doc: { id: string; title: string }) => void;
+  skipNavigateBackOnUpload?: boolean;
 };
 
 export function useDocumentForm(
@@ -31,8 +34,10 @@ export function useDocumentForm(
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const onUploadComplete = useCallback(() => {
-    navigation.goBack();
-  }, [navigation]);
+    if (!options?.skipNavigateBackOnUpload) {
+      navigation.goBack();
+    }
+  }, [navigation, options?.skipNavigateBackOnUpload]);
 
   const onError = useCallback((title: string, message: string) => {
     Toast.show({ type: "error", text1: title, text2: message });
@@ -40,9 +45,11 @@ export function useDocumentForm(
   }, []);
 
   return useDocumentFormCore<FileSource>({
+    onUploaded: options?.onUploaded,
     adapters: {
       classify:        (file) => classifyDocumentFromUri(file.uri, file.name, file.mimeType),
-      upload:          (file) => uploadFileFromUri(file.uri, file.name, file.mimeType),
+      upload:          (file, onProgress) =>
+        uploadFileFromUri(file.uri, file.name, file.mimeType, onProgress),
       getFileSize:     (file) => file.size,
       getMimeType:     (file) => file.mimeType,
       onError,

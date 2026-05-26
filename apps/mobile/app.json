@@ -20,6 +20,7 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Helu necesita la cámara para escanear tus documentos médicos.",
+        "NSPhotoLibraryUsageDescription": "Helu necesita acceder a tus fotos para subir documentos desde la galería.",
         "NSMicrophoneUsageDescription": "Helu puede usar el micrófono al grabar video con la cámara.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
@@ -41,7 +42,9 @@
     "android": {
       "package": "com.helu.app",
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE"
       ],
       "softwareKeyboardLayoutMode": "resize",
       "googleServicesFile": "./google-services.json",
@@ -64,6 +67,12 @@
           "cameraPermission": "Helu necesita la cámara para escanear tus documentos médicos.",
           "microphonePermission": "Helu puede usar el micrófono al grabar video con la cámara.",
           "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Helu necesita acceder a tus fotos para subir documentos desde la galería."
         }
       ],
       [

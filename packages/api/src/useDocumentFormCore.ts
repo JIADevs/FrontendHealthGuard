@@ -24,11 +24,14 @@ import {
 import { isApiError } from "./errors";
 import type { DocumentTypeOut, TagCategoryOut, ClassificationSuggestion } from "./schemas";
 import { retryAsync, RETRY_MAX_ATTEMPTS, RETRY_BASE_DELAY_MS, UPLOAD_MAX_FILE_SIZE_BYTES } from "./utils";
+import type { DocumentUploadOverrides } from "./documentUploadOverrides";
+export type { DocumentUploadOverrides } from "./documentUploadOverrides";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface DocumentFormState {
     catalogs: { types: DocumentTypeOut[]; tags: TagCategoryOut[] };
+    catalogsLoading: boolean;
     selectedType: string | undefined;
     selectedSpecialty: string | undefined;
     selectedTags: string[];
@@ -41,6 +44,8 @@ export interface DocumentFormState {
     addingCustomTag: boolean;
     uploading: boolean;
     classifying: boolean;
+    /** 0–100 mientras sube; null si no hay subida activa. */
+    uploadProgress: number | null;
 }
 
 export interface DocumentFormActions<TFile> {
@@ -53,9 +58,9 @@ export interface DocumentFormActions<TFile> {
     setNewCategoryName: (name: string) => void;
     setNewTagValueField: (val: string) => void;
     handleAIClassify: (file: TFile) => Promise<void>;
-    handleUpload: (file: TFile, docDate?: string) => Promise<void>;
-    handleAddCustomTag: (categoryId: string) => Promise<void>;
-    handleAddCategoryAndTag: () => Promise<void>;
+    handleUpload: (file: TFile, docDate?: string, overrides?: DocumentUploadOverrides) => Promise<{ id: string; title: string } | null>;
+    handleAddCustomTag: (categoryId: string, valueOverride?: string) => Promise<void>;
+    handleAddCategoryAndTag: (categoryName?: string, tagValue?: string) => Promise<void>;
 }
 
 /**
@@ -66,7 +71,7 @@ export interface DocumentFormAdapters<TFile> {
     /** Classify a document file via AI and return the suggestion. */
     classify: (file: TFile) => Promise<ClassificationSuggestion>;
     /** Upload a file to storage and return its storage path. */
-    upload: (file: TFile) => Promise<{ storagePath: string }>;
+    upload: (file: TFile, onProgress?: (percent: number) => void) => Promise<{ storagePath: string }>;
     /** Return the byte size of the file (for size validation). */
     getFileSize: (file: TFile) => number | undefined;
     /** Return the MIME type of the file (stored in createDocument.format). */
@@ -75,6 +80,10 @@ export interface DocumentFormAdapters<TFile> {
     onError: (title: string, message: string) => void;
     /** Show a success notification after upload. */
     onUploadSuccess: (title: string, description: string) => void;
+    /** Show a success notification after AI classification. */
+    onClassifySuccess?: (title: string, description: string) => void;
+    /** Show an error notification after AI classification fails. */
+    onClassifyError?: (title: string, description: string) => void;
     /** Called after a successful upload (e.g. navigation.goBack() or onSuccess()). */
     onUploadComplete: () => void;
 }
@@ -83,6 +92,12 @@ export type UseDocumentFormCoreOptions<TFile> = {
     adapters: DocumentFormAdapters<TFile>;
     backpackId?: string;
     backpackName?: string;
+    /** Si cambia (p. ej. token tras login), se vuelven a cargar tipos y etiquetas. */
+    catalogFetchDeps?: unknown;
+    /** Llamado tras crear el documento en el servidor (antes de onUploadComplete). */
+    onUploaded?: (doc: { id: string; title: string }) => void;
+    /** Llamado al terminar un lote de subidas (documentos separados). */
+    onBatchUploaded?: (docs: { id: string; title: string }[]) => void;
 };
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -90,13 +105,14 @@ export type UseDocumentFormCoreOptions<TFile> = {
 export function useDocumentFormCore<TFile>(
     options: UseDocumentFormCoreOptions<TFile>,
 ): DocumentFormState & DocumentFormActions<TFile> {
-    const { adapters, backpackId, backpackName } = options;
+    const { adapters, backpackId, backpackName, catalogFetchDeps, onUploaded, onBatchUploaded } = options;
     const queryClient = useQueryClient();
 
     const [catalogs, setCatalogs] = useState<{ types: DocumentTypeOut[]; tags: TagCategoryOut[] }>({
         types: [],
         tags: [],
     });
+    const [catalogsLoading, setCatalogsLoading] = useState(true);
     const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
     const [selectedSpecialty, setSelectedSpecialty] = useState<string | undefined>(undefined);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -109,20 +125,26 @@ export function useDocumentFormCore<TFile>(
     const [addingCustomTag, setAddingCustomTag] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [classifying, setClassifying] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
     useEffect(() => {
         let cancelled = false;
         async function fetchCatalogs() {
             try {
-                const [types, tags] = await Promise.all([getDocumentTypes(), getTagCategories()]);
+                setCatalogsLoading(true);
+                const [typesRaw, tagsRaw] = await Promise.all([getDocumentTypes(), getTagCategories()]);
+                const types = Array.isArray(typesRaw) ? typesRaw : [];
+                const tags = Array.isArray(tagsRaw) ? tagsRaw : [];
                 if (!cancelled) setCatalogs({ types, tags });
             } catch (err) {
                 console.warn("Error fetching catalogs", err);
+            } finally {
+                if (!cancelled) setCatalogsLoading(false);
             }
         }
         fetchCatalogs();
         return () => { cancelled = true; };
-    }, []);
+    }, [catalogFetchDeps]);
 
     const toggleTag = useCallback((tagId: string) => {
         setSelectedTags((prev) =>
@@ -159,6 +181,7 @@ export function useDocumentFormCore<TFile>(
     const handleAIClassify = useCallback(
         async (file: TFile) => {
             if (classifying) return;
+            let classificationCompleted = false;
             try {
                 setClassifying(true);
                 setClassificationResult(null);
@@ -174,11 +197,22 @@ export function useDocumentFormCore<TFile>(
                 if (result.specialties?.length) setSelectedSpecialty(result.specialties[0]!.id);
 
                 await applyClassificationTags(result);
+                classificationCompleted = true;
             } catch (err) {
                 const msg = isApiError(err) ? err.message : "No pudimos clasificar el documento automáticamente.";
-                adapters.onError("IA no disponible", msg);
+                if (adapters.onClassifyError) {
+                    adapters.onClassifyError("IA no disponible", msg);
+                } else {
+                    adapters.onError("IA no disponible", msg);
+                }
             } finally {
                 setClassifying(false);
+                if (classificationCompleted) {
+                    adapters.onClassifySuccess?.(
+                        "Clasificación completada",
+                        "El documento fue clasificado automáticamente con IA.",
+                    );
+                }
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -186,8 +220,8 @@ export function useDocumentFormCore<TFile>(
     );
 
     const handleUpload = useCallback(
-        async (file: TFile, docDate?: string) => {
-            if (uploading) return;
+        async (file: TFile, docDate?: string, overrides?: DocumentUploadOverrides) => {
+            if (uploading) return null;
 
             const fileSize = adapters.getFileSize(file);
             if (fileSize !== undefined && fileSize > UPLOAD_MAX_FILE_SIZE_BYTES) {
@@ -195,15 +229,30 @@ export function useDocumentFormCore<TFile>(
                     "Archivo demasiado grande",
                     `El tamaño máximo permitido es 25 MB. Tu archivo pesa ${(fileSize / (1024 * 1024)).toFixed(1)} MB.`,
                 );
-                return;
+                return null;
             }
 
-            setUploading(true);
+            const isSilent = overrides?.silent === true;
+            if (!isSilent) {
+                setUploading(true);
+                setUploadProgress(0);
+            }
             try {
                 const today = new Date();
-                const docTitle = title || `Documento ${today.toLocaleDateString()}`;
+                const docTitle =
+                    overrides?.title ?? (title || `Documento ${today.toLocaleDateString()}`);
+                const typeId = overrides?.typeId ?? selectedType;
+                const specialtyIds =
+                    overrides?.specialtyIds ??
+                    (selectedSpecialty ? [selectedSpecialty] : []);
+                const tagValueIds = overrides?.tagValueIds ?? selectedTags;
 
-                const { storagePath } = await retryAsync(() => adapters.upload(file), {
+                const { storagePath } = await retryAsync(
+                    () =>
+                        adapters.upload(file, (percent) => {
+                            if (!isSilent) setUploadProgress(percent);
+                        }),
+                    {
                     maxAttempts: RETRY_MAX_ATTEMPTS,
                     baseDelayMs: RETRY_BASE_DELAY_MS,
                 });
@@ -214,10 +263,10 @@ export function useDocumentFormCore<TFile>(
                     format: adapters.getMimeType(file),
                     file_size_bytes: fileSize ?? 0,
                     documentDate: docDate ?? today.toISOString(),
-                    typeId: selectedType,
+                    typeId,
                     subtypeIds: [],
-                    specialtyIds: selectedSpecialty ? [selectedSpecialty] : [],
-                    tagValueIds: selectedTags,
+                    specialtyIds,
+                    tagValueIds,
                 });
 
                 if (backpackId) {
@@ -227,11 +276,19 @@ export function useDocumentFormCore<TFile>(
                 }
 
                 queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
-                adapters.onUploadSuccess(
-                    backpackId ? "Documento subido y agregado a la mochila" : "Documento creado",
-                    backpackName ?? docTitle,
-                );
-                adapters.onUploadComplete();
+
+                if (!isSilent) {
+                    onUploaded?.({ id: createdDoc.id, title: createdDoc.title });
+                    if (!overrides?.skipSuccessToast) {
+                        adapters.onUploadSuccess(
+                            backpackId ? "Documento subido y agregado a la mochila" : "Documento creado",
+                            backpackName ?? docTitle,
+                        );
+                    }
+                    adapters.onUploadComplete();
+                }
+
+                return { id: createdDoc.id, title: createdDoc.title };
             } catch (err) {
                 let detail = "Ha ocurrido un error inesperado";
                 if (isApiError(err)) {
@@ -242,8 +299,12 @@ export function useDocumentFormCore<TFile>(
                     detail = err.message;
                 }
                 adapters.onError("No se pudo subir el documento", detail);
+                return null;
             } finally {
-                setUploading(false);
+                if (!isSilent) {
+                    setUploading(false);
+                    setUploadProgress(null);
+                }
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -253,8 +314,8 @@ export function useDocumentFormCore<TFile>(
     );
 
     const handleAddCustomTag = useCallback(
-        async (categoryId: string) => {
-            const value = newTagValues[categoryId];
+        async (categoryId: string, valueOverride?: string) => {
+            const value = valueOverride ?? newTagValues[categoryId];
             if (!value?.trim() || addingTag) return;
 
             try {
@@ -275,14 +336,16 @@ export function useDocumentFormCore<TFile>(
         [newTagValues, addingTag, adapters.onError],
     );
 
-    const handleAddCategoryAndTag = useCallback(async () => {
-        const catName = newCategoryName.trim();
-        const val = newTagValue.trim();
+    const handleAddCategoryAndTag = useCallback(async (categoryName?: string, tagValue?: string) => {
+        const catName = (categoryName ?? newCategoryName).trim();
+        const val = (tagValue ?? newTagValue).trim();
         if (!catName || !val || addingCustomTag) return;
 
         try {
             setAddingCustomTag(true);
-            const existing = catalogs.tags.find((c) => c.name.toLowerCase() === catName.toLowerCase());
+            const norm = (s: string) =>
+                s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+            const existing = catalogs.tags.find((c) => norm(c.name) === norm(catName));
             const categoryId = existing ? existing.id : (await createTagCategory({ name: catName })).id;
 
             const created = await addTagValue(categoryId, val);
@@ -302,6 +365,7 @@ export function useDocumentFormCore<TFile>(
 
     return {
         catalogs,
+        catalogsLoading,
         selectedType,
         selectedSpecialty,
         selectedTags,
@@ -314,6 +378,7 @@ export function useDocumentFormCore<TFile>(
         addingCustomTag,
         uploading,
         classifying,
+        uploadProgress,
 
         setSelectedType,
         setSelectedSpecialty,

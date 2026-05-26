@@ -16,6 +16,7 @@ import {
   LogOut,
   Bell,
   UserCircle,
+  Settings,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -25,12 +26,24 @@ const NAV_ITEMS = [
   { href: "/backpacks", label: "Mochilas", icon: Backpack },
   { href: "/share", label: "Compartir", icon: Share2 },
   { href: "/profile", label: "Mi Perfil", icon: UserCircle },
+  { href: "/settings", label: "Configuraciones", icon: Settings },
 ] as const;
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { token, isHydrated, user, logout } = useAuthStore();
+
+  // Sync theme to <html data-theme="..."> for CSS variable resolution
+  const theme = useTheme();
+  useEffect(() => {
+    const html = document.documentElement;
+    if (theme === "system") {
+      html.removeAttribute("data-theme");
+    } else {
+      html.setAttribute("data-theme", theme);
+    }
+  }, [theme]);
 
   // Auth guard
   useEffect(() => {
@@ -44,17 +57,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!isHydrated) return null; // Render nothing until hydrated
 
   if (!token) return null;
-
-  // Sync theme to <html data-theme="..."> for CSS variable resolution
-  const theme = useTheme();
-  useEffect(() => {
-    const html = document.documentElement;
-    if (theme === "system") {
-      html.removeAttribute("data-theme");
-    } else {
-      html.setAttribute("data-theme", theme);
-    }
-  }, [theme]);
 
   const initials =
     user?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() ??

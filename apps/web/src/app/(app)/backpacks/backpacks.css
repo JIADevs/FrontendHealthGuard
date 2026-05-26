@@ -34,8 +34,8 @@
 }
 
 .bp-search-input:focus {
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px var(--primary-ring-sm);
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-ring-sm);
   outline: none;
 }
 
@@ -58,7 +58,7 @@
 .bp-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
-  border-color: var(--primary-200);
+  border-color: var(--brand-200);
 }
 
 .bp-card-header {
@@ -72,8 +72,8 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--primary-100), var(--primary-200));
-  color: var(--primary-600);
+  background: linear-gradient(135deg, var(--brand-100), var(--brand-200));
+  color: var(--brand-600);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -163,7 +163,7 @@
 }
 
 .doc-selector-item:hover {
-  background: var(--primary-50);
+  background: var(--brand-50);
 }
 
 .doc-selector-item:last-child {
@@ -183,7 +183,7 @@
 }
 
 .doc-check.checked {
-  background: var(--primary-500);
-  border-color: var(--primary-500);
+  background: var(--brand-500);
+  border-color: var(--brand-500);
   color: white;
 }

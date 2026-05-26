@@ -1,26 +1,34 @@
 import { useEffect, useRef } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react-native";
 import type { ToastConfig } from "react-native-toast-message";
 import { colors, palette, toastBg, radii, spacing, fontSize, fontWeight } from "@helu/ui";
 
 // ─── Colores por tipo (dark toasts) ──────────────────────────────────────────
+// NOTE: Static config — can't use useAppTheme(). Uses palette directly.
+// Toast backgrounds (toastBg) are already dark, so light palette values work.
 const VARIANTS = {
-  success: { icon: CheckCircle2,  color: colors.success[500], bg: toastBg.success, border: colors.success[600] },
-  error:   { icon: XCircle,       color: colors.error[400],   bg: toastBg.error,   border: colors.error[600] },
-  warning: { icon: AlertTriangle, color: colors.warning[500], bg: toastBg.warning, border: colors.amber[600] },
-  info:    { icon: Info,           color: palette.brand[400],     bg: toastBg.info,    border: palette.brand[600] },
+  success: { icon: CheckCircle2,  color: palette.status.success[500], bg: toastBg.success, border: palette.status.success[600] },
+  error:   { icon: XCircle,       color: palette.status.error[500],   bg: toastBg.error,   border: palette.status.error[600] },
+  warning: { icon: AlertTriangle, color: palette.status.warning[500], bg: toastBg.warning, border: palette.accent.medication[600] },
+  info:    { icon: Info,           color: palette.brand[400],          bg: toastBg.info,    border: palette.brand[600] },
 } as const;
 
 type VariantKey = keyof typeof VARIANTS;
+
+export interface ToastActionProps {
+  actionLabel?: string;
+  onAction?: () => void;
+}
 
 interface ToastItemProps {
   text1?: string;
   text2?: string;
   type: VariantKey;
+  action?: ToastActionProps;
 }
 
-function ToastItem({ text1, text2, type }: ToastItemProps) {
+function ToastItem({ text1, text2, type, action }: ToastItemProps) {
   const variant = VARIANTS[type];
   const Icon = variant.icon;
 
@@ -56,12 +64,32 @@ function ToastItem({ text1, text2, type }: ToastItemProps) {
         {text1 ? <Text style={styles.title} numberOfLines={1}>{text1}</Text> : null}
         {text2 ? <Text style={styles.subtitle} numberOfLines={2}>{text2}</Text> : null}
       </View>
+
+      {action?.actionLabel && action.onAction ? (
+        <TouchableOpacity
+          onPress={action.onAction}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={action.actionLabel}
+          style={styles.actionBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.actionLabel}>{action.actionLabel}</Text>
+        </TouchableOpacity>
+      ) : null}
     </Animated.View>
   );
 }
 
 export const toastConfig: ToastConfig = {
-  success: (props) => <ToastItem type="success" text1={props.text1} text2={props.text2} />,
+  success: (props) => (
+    <ToastItem
+      type="success"
+      text1={props.text1}
+      text2={props.text2}
+      action={props.props as ToastActionProps | undefined}
+    />
+  ),
   error:   (props) => <ToastItem type="error"   text1={props.text1} text2={props.text2} />,
   warning: (props) => <ToastItem type="warning" text1={props.text1} text2={props.text2} />,
   info:    (props) => <ToastItem type="info"    text1={props.text1} text2={props.text2} />,
@@ -92,6 +120,15 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   textWrap: { flex: 1, gap: 2 },
-  title:    { color: colors.slate[100], fontSize: 14, fontWeight: fontWeight.bold, letterSpacing: 0.1 },
-  subtitle: { color: colors.slate[400], fontSize: fontSize.xs, lineHeight: 17 },
+  title:    { color: palette.surface[100], fontSize: 14, fontWeight: fontWeight.bold, letterSpacing: 0.1 },
+  subtitle: { color: palette.surface[400], fontSize: fontSize.xs, lineHeight: 17 },
+  actionBtn: {
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
+  },
+  actionLabel: {
+    color: palette.brand[400],
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+  },
 });

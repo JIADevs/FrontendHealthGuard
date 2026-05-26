@@ -307,7 +307,7 @@ export type Theme = typeof theme;
 
 export const palette = {
   /** Nivel 1 — Brand Identity (CTAs, sidebar, links, focus rings) */
-  brand: colors.sky,
+  brand: colors.primary,
 
   /** Nivel 2 — Estados Semánticos (significado funcional fijo) */
   status: {

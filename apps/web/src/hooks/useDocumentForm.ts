@@ -31,6 +31,8 @@ export function useDocumentForm(
       getMimeType:      (file) => file.type || "application/octet-stream",
       onError:          (title, msg) => sileo.error({ title, description: msg }),
       onUploadSuccess:  (title, desc) => sileo.success({ title, description: desc }),
+      onClassifySuccess: (title, desc) => sileo.success({ title, description: desc }),
+      onClassifyError: (title, msg) => sileo.error({ title, description: msg }),
       onUploadComplete,
     },
     backpackId:  options?.backpackId,

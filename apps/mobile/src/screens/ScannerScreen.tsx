@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,19 +6,37 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Linking,
   Image,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  FlatList,
 } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import { CameraView } from "expo-camera";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { X, Check, RefreshCw } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { X, Check, Plus } from "lucide-react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
-import { colors, palette, overlay, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@helu/ui";
+import { scanImagesToPdfFile } from "../utils/scanImagesToPdf";
+import { getUriFileSizeBytes } from "../utils/fileUriSize";
+import { ScannerCameraPermission } from "../components/documents/ScannerCameraPermission";
+import { useScannerCameraPermission } from "../hooks/useScannerCameraPermission";
+import { colors, overlay, radii, spacing, fontSize, fontWeight, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
+
+interface CapturedPhoto {
+  id: string;
+  uri: string;
+}
+
+type ScanPhase = "camera" | "review";
+
+function newPhotoId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
 export function ScannerScreen() {
   const t = useAppTheme();
@@ -27,155 +45,294 @@ export function ScannerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const params = (route.params ?? {}) as RootStackParamList["Scanner"];
-  const [permission, requestPermission] = useCameraPermissions();
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const cameraPermission = useScannerCameraPermission();
+  const [phase, setPhase] = useState<ScanPhase>("camera");
+  const [photos, setPhotos] = useState<CapturedPhoto[]>([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [capturing, setCapturing] = useState(false);
+  const [preparingUpload, setPreparingUpload] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+  const insets = useSafeAreaInsets();
   const form = useDocumentForm({
     backpackId: params?.backpackId,
     backpackName: params?.backpackName,
   });
 
-  useEffect(() => {
-    if (photoUri && !form.title) {
-      form.setTitle(`Escaneo ${new Date().toLocaleDateString()}`);
-    }
-  }, [photoUri]);
+  const activePhoto = photos[previewIndex] ?? photos[0];
 
-  async function handleRequestPermission() {
-    if (!permission) {
-      Alert.alert("Error", "El sistema de permisos no está listo.");
-      return;
-    }
-
-    if (!permission.canAskAgain && permission.status === "denied") {
-      Alert.alert(
-        "Cámara Bloqueada",
-        "El acceso a la cámara está desactivado en la configuración de tu celular. ¿Quieres ir a activarlo?",
-        [
-          { text: "No", style: "cancel" },
-          { text: "Sí, abrir ajustes", onPress: () => Linking.openSettings() },
-        ]
-      );
-      return;
-    }
-
-    try {
-      const response = await requestPermission();
-      if (!response.granted) {
-        if (!response.canAskAgain) {
-          Alert.alert(
-            "Permiso necesario",
-            "Para usar la cámara, debes activarla en los ajustes del sistema.",
-            [
-              { text: "Abrir ajustes", onPress: () => Linking.openSettings() },
-              { text: "Cerrar" },
-            ]
-          );
-        } else {
-          Alert.alert("Aviso", "Necesitamos el permiso para poder escanear tus documentos.");
-        }
-      }
-    } catch (err) {
-      console.error("Error in handleRequestPermission:", err);
-      Alert.alert("Error técnico", "No pudimos solicitar el permiso: " + String(err));
-    }
-  }
-
-  if (!permission) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={palette.brand[500]} />
-      </View>
-    );
-  }
-
-  if (!permission.granted) {
-    return (
-      <View style={styles.center}>
-        <Typography variant="body" align="center">Necesitamos permiso para usar la cámara</Typography>
-        <TouchableOpacity style={styles.btn} onPress={handleRequestPermission}>
-          <Text style={styles.btnText}>
-            {!permission.canAskAgain && permission.status === "denied"
-              ? "Abrir ajustes"
-              : "Conceder permiso"}
-          </Text>
-        </TouchableOpacity>
-        {!permission.canAskAgain && (
-          <Typography variant="bodySm" color="secondary" align="center">
-            Parece que el permiso fue denegado permanentemente. Ve a los ajustes del dispositivo y habilita la cámara para esta app.
-          </Typography>
-        )}
-      </View>
-    );
-  }
-
-  async function takePicture() {
-    if (!cameraRef.current) return;
-    const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
-    if (photo) setPhotoUri(photo.uri);
-  }
-
-  // ── Photo captured: preview + classification ──
-  if (photoUri) {
-    const fileSource: FileSource = {
-      uri: photoUri,
+  const classifyFile: FileSource | undefined = useMemo(() => {
+    const first = photos[0];
+    if (!first) return undefined;
+    return {
+      uri: first.uri,
       name: `scan-${Date.now()}.jpg`,
       mimeType: "image/jpeg",
     };
+  }, [photos]);
+
+  useEffect(() => {
+    if (phase === "review" && photos.length > 0 && !form.title) {
+      const pagesLabel = photos.length > 1 ? ` (${photos.length} páginas)` : "";
+      form.setTitle(`Escaneo ${new Date().toLocaleDateString()}${pagesLabel}`);
+    }
+  }, [phase, photos.length, form.title]);
+
+  const removePhoto = useCallback((id: string) => {
+    setPhotos((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      setPreviewIndex((idx) => Math.min(idx, Math.max(0, next.length - 1)));
+      if (next.length === 0) {
+        setPhase("camera");
+      }
+      return next;
+    });
+  }, []);
+
+  const takePicture = useCallback(async () => {
+    if (!cameraRef.current || capturing) return;
+    setCapturing(true);
+    try {
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+      if (photo?.uri) {
+        setPhotos((prev) => [...prev, { id: newPhotoId(), uri: photo.uri }]);
+      }
+    } finally {
+      setCapturing(false);
+    }
+  }, [capturing]);
+
+  const finishCapture = useCallback(() => {
+    if (photos.length === 0) return;
+    setPreviewIndex(0);
+    setPhase("review");
+  }, [photos.length]);
+
+  const addMorePages = useCallback(() => {
+    setPhase("camera");
+  }, []);
+
+  const handleConfirmUpload = useCallback(async () => {
+    if (!photos.length || form.uploading || preparingUpload) return;
+
+    setPreparingUpload(true);
+    try {
+      const file: FileSource =
+        photos.length === 1
+          ? {
+              uri: photos[0]!.uri,
+              name: `scan-${Date.now()}.jpg`,
+              mimeType: "image/jpeg",
+              size: await getUriFileSizeBytes(photos[0]!.uri),
+            }
+          : await scanImagesToPdfFile(photos.map((p) => p.uri));
+
+      await form.handleUpload(file);
+    } catch {
+      Alert.alert("Error", "No se pudo preparar el documento para subir.");
+    } finally {
+      setPreparingUpload(false);
+    }
+  }, [photos, form, preparingUpload]);
+
+  if (!cameraPermission.permissionReady) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={t.brand.fg} />
+      </View>
+    );
+  }
+
+  if (!cameraPermission.granted && cameraPermission.permission) {
+    return (
+      <ScannerCameraPermission
+        permission={cameraPermission.permission}
+        needsSettings={cameraPermission.needsSettings}
+        statusMessage={cameraPermission.statusMessage}
+        onRequest={cameraPermission.requestCameraAccess}
+        onOpenSettings={cameraPermission.openSettings}
+        onBack={() => navigation.goBack()}
+      />
+    );
+  }
+
+  if (phase === "review" && activePhoto) {
+    const busy = form.uploading || preparingUpload;
 
     return (
-      <View style={styles.container}>
-        <ScrollView style={{ flex: 1 }}>
-          <View style={styles.previewContainer}>
-            <Image source={{ uri: photoUri }} style={styles.previewImage} resizeMode="contain" />
-          </View>
-          <DocumentClassificationForm file={fileSource} {...form} />
-        </ScrollView>
+      <View style={styles.containerForm}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 72 : 0}
+        >
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: spacing[4] }]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+          >
+            <View style={styles.previewContainer}>
+              <Image source={{ uri: activePhoto.uri }} style={styles.previewImage} resizeMode="contain" />
+              {photos.length > 1 ? (
+                <View style={styles.pageBadge}>
+                  <Text style={styles.pageBadgeText}>
+                    {previewIndex + 1} / {photos.length}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
 
-        <View style={styles.previewControls}>
+            {photos.length > 1 ? (
+              <FlatList
+                horizontal
+                data={photos}
+                keyExtractor={(item) => item.id}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.thumbStrip}
+                renderItem={({ item, index }) => {
+                  const selected = index === previewIndex;
+                  return (
+                    <TouchableOpacity
+                      style={[styles.thumbWrap, selected && styles.thumbWrapSelected]}
+                      onPress={() => setPreviewIndex(index)}
+                      activeOpacity={0.85}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Página ${index + 1}`}
+                    >
+                      <Image source={{ uri: item.uri }} style={styles.thumbImage} />
+                      <TouchableOpacity
+                        style={styles.thumbRemove}
+                        onPress={() => removePhoto(item.id)}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Eliminar página ${index + 1}`}
+                      >
+                        <X color={colors.white} size={12} />
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            ) : null}
+
+            <TouchableOpacity
+              style={styles.addPageLink}
+              onPress={addMorePages}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Agregar otra página"
+            >
+              <Plus size={18} color={t.brand.fg} />
+              <Text style={styles.addPageLinkText}>Agregar otra página</Text>
+            </TouchableOpacity>
+
+            <DocumentClassificationForm file={classifyFile} {...form} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+
+        <View style={[styles.previewControls, { paddingBottom: spacing[5] + insets.bottom }]}>
           <TouchableOpacity
             style={styles.circleBtnRed}
-            onPress={() => setPhotoUri(null)}
-            disabled={form.uploading}
+            onPress={() => navigation.goBack()}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel="Cancelar escaneo"
           >
             <X color={colors.white} size={24} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.circleBtnGreen}
-            onPress={() => form.handleUpload(fileSource)}
-            disabled={form.uploading}
+            onPress={() => void handleConfirmUpload()}
+            disabled={busy || photos.length === 0}
+            accessibilityRole="button"
+            accessibilityLabel="Guardar documento escaneado"
           >
-            {form.uploading ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Check color={colors.white} size={32} />
-            )}
+            {busy ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={28} />}
           </TouchableOpacity>
         </View>
       </View>
     );
   }
 
-  // ── Camera view ──
   return (
     <View style={styles.container}>
       <CameraView style={StyleSheet.absoluteFill} facing="back" ref={cameraRef} />
 
       <View style={styles.overlay}>
-        <View style={styles.cameraHeader}>
-          <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
+        <View style={[styles.cameraHeader, { paddingTop: insets.top + spacing[4] }]}>
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={() => navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar escáner"
+          >
             <X color={colors.white} size={24} />
           </TouchableOpacity>
+          {photos.length > 0 ? (
+            <View style={styles.captureCountBadge}>
+              <Text style={styles.captureCountText}>{photos.length}</Text>
+            </View>
+          ) : null}
         </View>
 
-        <View style={styles.cameraControls}>
-          <View style={{ width: 64 }} />
-          <TouchableOpacity style={styles.captureBtn} onPress={takePicture}>
-            <View style={styles.captureBtnInner} />
+        <View style={styles.cameraViewport} />
+
+        <View style={[styles.bottomDock, { paddingBottom: spacing[6] + insets.bottom }]}>
+          {photos.length > 0 ? (
+            <FlatList
+              horizontal
+              data={photos}
+              keyExtractor={(item) => item.id}
+              showsHorizontalScrollIndicator={false}
+              style={styles.thumbList}
+              contentContainerStyle={styles.cameraThumbStrip}
+              renderItem={({ item, index }) => (
+                <View style={styles.cameraThumbWrap}>
+                  <Image source={{ uri: item.uri }} style={styles.cameraThumbImage} />
+                  <TouchableOpacity
+                    style={styles.cameraThumbRemove}
+                    onPress={() => removePhoto(item.id)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Eliminar foto ${index + 1}`}
+                  >
+                    <X color={colors.white} size={10} />
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+          ) : null}
+
+          <View style={styles.cameraControls}>
+          <View style={styles.cameraSideSlot} />
+
+          <TouchableOpacity
+            style={[styles.captureBtn, capturing && styles.captureBtnDisabled]}
+            onPress={() => void takePicture()}
+            disabled={capturing}
+            accessibilityRole="button"
+            accessibilityLabel="Tomar foto"
+          >
+            {capturing ? (
+              <ActivityIndicator color={colors.black} />
+            ) : (
+              <View style={styles.captureBtnInner} />
+            )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.switchBtn}>
-            <RefreshCw color={colors.white} size={24} />
-          </TouchableOpacity>
+
+          {photos.length > 0 ? (
+            <TouchableOpacity
+              style={styles.doneBtn}
+              onPress={finishCapture}
+              accessibilityRole="button"
+              accessibilityLabel="Continuar con las fotos tomadas"
+            >
+              <Check color={colors.white} size={28} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.cameraSideSlot} />
+          )}
+          </View>
         </View>
       </View>
     </View>
@@ -191,14 +348,22 @@ function makeStyles(t: ThemeContextValue) {
       backgroundColor: t.surface.bgCard,
       padding: spacing[6],
     },
-    text:    { fontSize: fontSize.md, color: t.text.primary, textAlign: "center", marginBottom: spacing[4] },
-    btn:     { backgroundColor: palette.brand[500], paddingHorizontal: spacing[5], paddingVertical: spacing[3], borderRadius: radii.md },
-    btnText: { color: colors.white, fontWeight: fontWeight.semibold },
-    helper:  { marginTop: spacing[4], fontSize: fontSize.sm, color: t.text.secondary, textAlign: "center", lineHeight: 18 },
-
-    container:      { flex: 1, backgroundColor: colors.black },
-    overlay:        { flex: 1, justifyContent: "space-between" },
-    cameraHeader:   { padding: spacing[6], paddingTop: 48, alignItems: "flex-start" },
+    container: { flex: 1, backgroundColor: colors.black },
+    containerForm: { flex: 1, backgroundColor: t.surface.bg },
+    scroll: { flex: 1, backgroundColor: t.surface.bgCard },
+    scrollContent: { backgroundColor: t.surface.bgCard },
+    overlay: { flex: 1 },
+    cameraViewport: { flex: 1 },
+    bottomDock: {
+      backgroundColor: overlay.darker,
+      paddingTop: spacing[2],
+    },
+    cameraHeader: {
+      paddingHorizontal: spacing[5],
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
     closeBtn: {
       width: 44,
       height: 44,
@@ -207,14 +372,60 @@ function makeStyles(t: ThemeContextValue) {
       alignItems: "center",
       justifyContent: "center",
     },
+    captureCountBadge: {
+      minWidth: 36,
+      height: 36,
+      paddingHorizontal: spacing[2],
+      borderRadius: radii.full,
+      backgroundColor: t.brand.fg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    captureCountText: {
+      color: colors.white,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.bold,
+    },
+    thumbList: {
+      maxHeight: 52,
+      flexGrow: 0,
+    },
+    cameraThumbStrip: {
+      paddingHorizontal: spacing[4],
+      paddingBottom: spacing[2],
+      gap: spacing[2],
+      alignItems: "center",
+    },
+    cameraThumbWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: radii.sm,
+      overflow: "hidden",
+      borderWidth: 2,
+      borderColor: colors.white,
+      marginRight: spacing[2],
+    },
+    cameraThumbImage: { width: "100%", height: "100%" },
+    cameraThumbRemove: {
+      position: "absolute",
+      top: 1,
+      right: 1,
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: overlay.darker,
+      alignItems: "center",
+      justifyContent: "center",
+    },
 
     cameraControls: {
       flexDirection: "row",
-      padding: 32,
-      paddingBottom: 48,
+      paddingHorizontal: spacing[6],
+      paddingTop: spacing[2],
       justifyContent: "space-between",
       alignItems: "center",
     },
+    cameraSideSlot: { width: 64 },
     captureBtn: {
       width: 72,
       height: 72,
@@ -224,45 +435,103 @@ function makeStyles(t: ThemeContextValue) {
       alignItems: "center",
       justifyContent: "center",
     },
+    captureBtnDisabled: { opacity: 0.7 },
     captureBtnInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.white },
-    switchBtn: {
-      width: 48,
-      height: 48,
-      borderRadius: radii.full,
-      backgroundColor: overlay.light,
+    doneBtn: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: t.status.successFg,
       alignItems: "center",
       justifyContent: "center",
     },
 
     previewContainer: {
-      height: 450,
+      height: 400,
       backgroundColor: colors.black,
       justifyContent: "center",
       alignItems: "center",
     },
     previewImage: { width: "100%", height: "100%" },
+    pageBadge: {
+      position: "absolute",
+      bottom: spacing[3],
+      alignSelf: "center",
+      backgroundColor: overlay.darker,
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[1],
+      borderRadius: radii.full,
+    },
+    pageBadgeText: {
+      color: colors.white,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+    },
+    thumbStrip: {
+      paddingHorizontal: spacing[5],
+      paddingVertical: spacing[3],
+      gap: spacing[2],
+    },
+    thumbWrap: {
+      width: 64,
+      height: 84,
+      borderRadius: radii.sm,
+      overflow: "hidden",
+      borderWidth: 2,
+      borderColor: "transparent",
+      marginRight: spacing[2],
+    },
+    thumbWrapSelected: {
+      borderColor: t.brand.fg,
+    },
+    thumbImage: { width: "100%", height: "100%" },
+    thumbRemove: {
+      position: "absolute",
+      top: 4,
+      right: 4,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: t.status.errorFg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    addPageLink: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing[2],
+      paddingVertical: spacing[3],
+    },
+    addPageLinkText: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: t.brand.fg,
+    },
 
     previewControls: {
       flexDirection: "row",
       justifyContent: "center",
+      alignItems: "center",
       gap: 32,
-      paddingBottom: 48,
       backgroundColor: t.surface.bgCard,
       paddingTop: spacing[3],
+      borderTopWidth: 1,
+      borderTopColor: t.border.light,
     },
     circleBtnRed: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: colors.error[500],
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: t.status.errorFg,
       alignItems: "center",
       justifyContent: "center",
     },
     circleBtnGreen: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: colors.success[500],
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: t.status.successFg,
       alignItems: "center",
       justifyContent: "center",
     },

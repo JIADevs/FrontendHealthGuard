@@ -1,24 +1,70 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useLayoutEffect, useMemo } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
+  TouchableOpacity,
+  Text,
   View,
 } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useBackpackForm } from "../hooks/useBackpackForm";
-import { useAppTheme, colors, spacing, Button, TextField, Typography, Spinner } from "@helu/ui";
+import { useBackpackCreateWithDocs } from "../hooks/useBackpackCreateWithDocs";
+import {
+  spacing,
+  Button,
+  TextField,
+  Typography,
+  Spinner,
+  useAppTheme,
+} from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
+import type { RootStackParamList } from "../navigation/RootNavigator";
+import { BackpackCreateDocumentPicker } from "../components/backpacks";
 
 type RouteParams = { id?: string };
 
 export function BackpackEditScreen() {
   const { id } = (useRoute().params ?? {}) as RouteParams;
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const isEdit = !!id;
 
   const form = useBackpackForm({ backpackId: id });
+  const create = useBackpackCreateWithDocs();
+
+  const handleHeaderCreate = useCallback(() => {
+    void create.handleCreate();
+  }, [create.handleCreate]);
+
+  useLayoutEffect(() => {
+    if (isEdit) {
+      navigation.setOptions({ title: "Editar mochila" });
+      return;
+    }
+    navigation.setOptions({
+      title: "Nueva mochila",
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={handleHeaderCreate}
+          disabled={create.creating}
+          style={styles.headerAction}
+          accessibilityRole="button"
+          accessibilityLabel="Crear mochila"
+        >
+          {create.creating ? (
+            <Spinner size="sm" />
+          ) : (
+            <Text style={styles.headerActionText}>Crear</Text>
+          )}
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, isEdit, create.creating, handleHeaderCreate, styles]);
 
   const confirmDelete = useCallback(() => {
     Alert.alert(
@@ -31,11 +77,49 @@ export function BackpackEditScreen() {
     );
   }, [form.handleDelete]);
 
-  if (form.loading) {
+  if (isEdit) {
+    if (form.loading) {
+      return (
+        <View style={styles.center}>
+          <Spinner size="lg" />
+        </View>
+      );
+    }
+
     return (
-      <View style={styles.center}>
-        <Spinner size="lg" />
-      </View>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.editContent} keyboardShouldPersistTaps="handled">
+          <TextField
+            label="Nombre"
+            value={form.name}
+            onChange={form.setName}
+            placeholder="Ej: Neurología"
+            autoCapitalize="words"
+            accessibilityLabel="Nombre de la mochila"
+          />
+
+          <TextField
+            label="Descripción (opcional)"
+            value={form.description}
+            onChange={form.setDescription}
+            placeholder="Ej: Para cita con Dr. Rivera · 24 abr"
+            multiline
+            numberOfLines={3}
+            accessibilityLabel="Descripción de la mochila"
+          />
+
+          <Button variant="danger" fullWidth onPress={confirmDelete} disabled={form.deleting} loading={form.deleting}>
+            Eliminar mochila
+          </Button>
+
+          <Button fullWidth onPress={form.handleSave} disabled={form.saving || form.deleting} loading={form.saving}>
+            Guardar
+          </Button>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -44,40 +128,44 @@ export function BackpackEditScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.content}>
-        <View style={{ marginBottom: spacing[5] }}>
-          <Typography variant="h3">{form.isEdit ? "Editar mochila" : "Crear mochila"}</Typography>
-        </View>
-
+      <ScrollView contentContainerStyle={styles.createContent} keyboardShouldPersistTaps="handled">
         <TextField
           label="Nombre"
-          value={form.name}
-          onChange={form.setName}
-          placeholder="Ej: Mochila de Radiología"
+          value={create.name}
+          onChange={create.setName}
+          placeholder="Ej: Chequeo anual"
           autoCapitalize="words"
           accessibilityLabel="Nombre de la mochila"
         />
 
         <TextField
           label="Descripción (opcional)"
-          value={form.description}
-          onChange={form.setDescription}
-          placeholder="Ej: Documentos para esta especialidad..."
+          value={create.description}
+          onChange={create.setDescription}
+          placeholder="Ej: Para cita con especialista"
           multiline
-          numberOfLines={4}
+          numberOfLines={2}
           accessibilityLabel="Descripción de la mochila"
         />
 
-        {form.isEdit && (
-          <Button variant="danger" fullWidth onPress={confirmDelete} disabled={form.deleting} loading={form.deleting}>
-            Eliminar
-          </Button>
-        )}
+        <BackpackCreateDocumentPicker
+          documents={create.documents}
+          selectedIds={create.selectedIds}
+          onToggle={create.toggleDocument}
+          loading={create.documentsLoading}
+        />
 
-        <Button fullWidth onPress={form.handleSave} disabled={form.saving || form.deleting} loading={form.saving}>
-          {form.isEdit ? "Guardar" : "Crear"}
-        </Button>
-      </View>
+        <View style={styles.createFooter}>
+          <Button
+            fullWidth
+            onPress={() => void create.handleCreate()}
+            disabled={create.creating}
+            loading={create.creating}
+          >
+            Crear mochila
+          </Button>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -85,7 +173,20 @@ export function BackpackEditScreen() {
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: t.surface.bg },
-    center:    { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-    content:   { padding: 20, gap: spacing[4] },
+    center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+    createContent: { padding: spacing[5], gap: spacing[5], paddingBottom: spacing[10] },
+    editContent: { padding: spacing[5], gap: spacing[4] },
+    createFooter: { marginTop: spacing[2] },
+    headerAction: {
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[2],
+      minWidth: 56,
+      alignItems: "center",
+    },
+    headerActionText: {
+      color: t.brand.fg,
+      fontSize: 16,
+      fontWeight: "700",
+    },
   });
 }

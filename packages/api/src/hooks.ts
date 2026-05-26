@@ -20,6 +20,8 @@ import {
     updateDocument,
     deleteDocument,
     shareDocument,
+    getActiveDocumentShares,
+    revokeDocumentShare,
     getDocumentTypes,
     getTagCategories,
     // Backpacks
@@ -55,6 +57,7 @@ import {
 } from "./endpoints";
 import type {
     DocumentCreate,
+    DocumentActiveShare,
     AppointmentCreate,
     MedicationCreate,
     BackpackCreate,
@@ -64,7 +67,14 @@ import type {
 // ─── Query keys ────────────────────────────────────────
 // Centralized so invalidation is always consistent.
 export const QK = {
-    documents:        (search = "", page = 1) => ["documents", page, search] as const,
+    /** Incluye `limit` en la key: el dashboard pide p. ej. limit=1 y la lista otro tamaño; sin esto comparten caché y la lista queda corta. */
+    documents:        (
+        search = "",
+        page = 1,
+        limit = 20,
+        startDate: string | null = null,
+        endDate: string | null = null,
+    ) => ["documents", page, search, limit, startDate, endDate] as const,
     document:         (id: string)            => ["document", id] as const,
     documentTypes:    ()                      => ["document-types"] as const,
     tagCategories:    ()                      => ["tag-categories"] as const,
@@ -73,25 +83,50 @@ export const QK = {
     backpack:         (id: string)            => ["backpack", id] as const,
     backpackDocs:     (id: string, search = "", page = 1) => ["backpack-docs", id, page, search] as const,
 
-    appointments:     (search = "", page = 1) => ["appointments", page, search] as const,
+    /** Incluye `limit` y rango de fechas: el dashboard usa limit pequeño y `startDate`; la agenda usa otros parámetros. */
+    appointments:     (search = "", page = 1, limit = 20, startDate: string | null = null, endDate: string | null = null) =>
+        ["appointments", page, search, limit, startDate, endDate] as const,
 
-    medications:      (page = 1)              => ["medications", page] as const,
+    medications:      (page = 1, limit = 20) => ["medications", page, limit] as const,
 
     notifications:    (page = 1)              => ["notifications", page] as const,
 
     calendar:         (start: string, end: string) => ["calendar", start, end] as const,
 
     profile:          ()                      => ["me"] as const,
+
+    documentSharesActive: () => ["document-shares-active"] as const,
 } as const;
 
 // ─── Documents ─────────────────────────────────────────
 
-export function useDocumentsQuery(search = "", page = 1, limit = 20) {
+export function useDocumentsQuery(
+    search = "",
+    page = 1,
+    limit = 20,
+    startDate: string | null = null,
+    endDate: string | null = null,
+) {
     return useQuery({
-        queryKey: QK.documents(search, page),
-        queryFn: () => getDocuments({ page, limit, searchQuery: search || undefined }),
+        queryKey: QK.documents(search, page, limit, startDate, endDate),
+        queryFn: () =>
+            getDocuments({
+                page,
+                limit,
+                searchQuery: search || undefined,
+                startDate: startDate ?? undefined,
+                endDate: endDate ?? undefined,
+            }),
         staleTime: 5_000,
         placeholderData: keepPreviousData,
+    });
+}
+
+export function useActiveDocumentSharesQuery() {
+    return useQuery({
+        queryKey: QK.documentSharesActive(),
+        queryFn: () => getActiveDocumentShares(),
+        staleTime: 30_000,
     });
 }
 
@@ -148,8 +183,24 @@ export function useDeleteDocumentMutation() {
 }
 
 export function useShareDocumentMutation() {
+    const qc = useQueryClient();
     return useMutation({
         mutationFn: (id: string) => shareDocument(id),
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: QK.documentSharesActive() });
+        },
+    });
+}
+
+export function useRevokeDocumentShareMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (linkId: string) => revokeDocumentShare(linkId),
+        onSuccess: (_, linkId) => {
+            qc.setQueryData<DocumentActiveShare[]>(QK.documentSharesActive(), (old) =>
+                old ? old.filter((r) => r.linkId !== linkId) : old,
+            );
+        },
     });
 }
 
@@ -249,7 +300,7 @@ export function useAppointmentsQuery(
     endDate?: string,
 ) {
     return useQuery({
-        queryKey: QK.appointments(search, page),
+        queryKey: QK.appointments(search, page, limit, startDate ?? null, endDate ?? null),
         queryFn: () => getAppointments({ page, limit, searchQuery: search || undefined, startDate, endDate }),
         staleTime: 5_000,
         placeholderData: keepPreviousData,
@@ -301,7 +352,7 @@ export function useUpdateAppointmentStatusMutation() {
 
 export function useMedicationsQuery(page = 1, limit = 20) {
     return useQuery({
-        queryKey: QK.medications(page),
+        queryKey: QK.medications(page, limit),
         queryFn: () => getMedications({ page, limit }),
         staleTime: 5_000,
         placeholderData: keepPreviousData,

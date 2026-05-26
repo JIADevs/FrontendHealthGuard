@@ -38,11 +38,13 @@ services:
         - APP_NAME=@helu/mobile
         - HOISTED_LINKER=true
     container_name: helu_frontend_mobile
-    working_dir: /app/apps/mobile
+    working_dir: /app
     tty: true
     stdin_open: true
-    # npx expo start --host lan asegura que el QR sea escaneable por tu celular en la misma red.
-    command: npx expo start --port 8081 --host lan
+    # Instala dependencias dentro del contenedor (volúmenes de node_modules) y luego arranca Expo.
+    # Tras cambiar package.json: `node docker-up.js --clear` o `docker compose build mobile --no-cache`.
+    # CI=true solo en pnpm (no interactivo). Expo sin CI para mostrar QR y hot reload.
+    command: sh -c "CI=true pnpm install --no-frozen-lockfile && cd apps/mobile && env -u CI npx expo start --port 8081 --host lan"
     ports:
       - "8081:8081"
       - "19000:19000"
@@ -54,6 +56,8 @@ services:
       # Se usa la variable de entorno HOST_IP detectada por el script de arranque
       - REACT_NATIVE_PACKAGER_HOSTNAME=${HOST_IP:-localhost}
       - EXPO_PUBLIC_API_URL=http://${HOST_IP:-localhost}:8000
+      # Misma IP que la API: el teléfono no puede abrir localhost:3000 de tu PC; reescribe enlaces de compartir en la app.
+      - EXPO_PUBLIC_WEB_APP_URL=http://${HOST_IP:-127.0.0.1}:3000
     volumes:
       - .:/app
       - /app/apps/mobile/node_modules
@@ -65,4 +69,3 @@ services:
 networks:
   helu_network:
     external: false
-

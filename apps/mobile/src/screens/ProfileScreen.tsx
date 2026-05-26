@@ -25,9 +25,8 @@ import {
   DatePicker,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { User, Phone, Heart, Shield, Sun, Moon, Monitor } from "lucide-react-native";
-import { useUiStore } from "@helu/stores";
-import { palette } from "@helu/ui";
+import { User, Phone, Heart, Shield } from "lucide-react-native";
+
 
 const GENDER_OPTIONS = [
   { value: "", label: "Sin especificar" },
@@ -60,7 +59,7 @@ export function ProfileScreen() {
   if (form.loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color={colors.primary[500]} style={{ marginTop: 48 }} />
+        <ActivityIndicator size="large" color={t.brand.fg} style={{ marginTop: 48 }} />
       </SafeAreaView>
     );
   }
@@ -126,10 +125,6 @@ export function ProfileScreen() {
           <Field label="Teléfono" value={form.emergencyContactPhone} onChangeText={form.setEmergencyContactPhone} placeholder="+57 300 000 0000" keyboardType="phone-pad" styles={styles} last />
         </View>
 
-        {/* Apariencia */}
-        <SectionHeader icon={<Sun size={16} color={t.text.secondary} />} title="Apariencia" />
-        <AppearanceSection styles={styles} />
-
         <Button fullWidth onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
           {form.saving ? "Guardando..." : "Guardar Cambios"}
         </Button>
@@ -188,49 +183,10 @@ function makeStyles(t: ThemeContextValue) {
     container:        { flex: 1, backgroundColor: t.surface.bg },
     content:          { padding: spacing[4], gap: spacing[3] },
     avatarCard:       { flexDirection: "row", alignItems: "center", gap: spacing[4], backgroundColor: t.surface.bgCard, padding: spacing[4], borderRadius: radii.lg, ...shadows.sm },
-    avatar:           { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary[500], alignItems: "center", justifyContent: "center" },
+    avatar:           { width: 56, height: 56, borderRadius: 28, backgroundColor: t.brand.fg, alignItems: "center", justifyContent: "center" },
     avatarText:       { color: colors.white, fontSize: fontSize.xl, fontWeight: fontWeight.bold },
     card:             { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, ...shadows.sm, overflow: "hidden" },
     fieldRow:         { paddingHorizontal: spacing[4], paddingTop: spacing[3], paddingBottom: spacing[3], borderBottomWidth: 1, borderBottomColor: t.border.light },
     fieldRowLast:     { borderBottomWidth: 0 },
-    themeRow:         { flexDirection: "row", gap: spacing[2], padding: spacing[4] },
-    themeBtn:         { flex: 1, alignItems: "center", gap: spacing[2], padding: spacing[3], borderRadius: radii.md, borderWidth: 2, borderColor: t.border.medium, backgroundColor: t.surface.bgCard },
-    themeBtnActive:   { borderColor: palette.brand[500], backgroundColor: palette.brand[50] },
-    themeBtnLabel:    { fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.secondary },
-    themeBtnLabelAct: { color: palette.brand[600] },
   });
-}
-
-const THEME_OPTIONS = [
-  { value: "light" as const, label: "Claro", Icon: Sun },
-  { value: "dark" as const, label: "Oscuro", Icon: Moon },
-  { value: "system" as const, label: "Sistema", Icon: Monitor },
-] as const;
-
-function AppearanceSection({ styles }: { styles: ReturnType<typeof makeStyles> }) {
-  const theme = useUiStore((s) => s.theme);
-  const setTheme = useUiStore((s) => s.setTheme);
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.themeRow}>
-        {THEME_OPTIONS.map((opt) => {
-          const active = theme === opt.value;
-          return (
-            <TouchableOpacity
-              key={opt.value}
-              style={[styles.themeBtn, active && styles.themeBtnActive]}
-              onPress={() => setTheme(opt.value)}
-              activeOpacity={0.7}
-            >
-              <opt.Icon size={22} color={active ? palette.brand[500] : colors.gray[400]} />
-              <Text style={[styles.themeBtnLabel, active && styles.themeBtnLabelAct]}>
-                {opt.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
 }

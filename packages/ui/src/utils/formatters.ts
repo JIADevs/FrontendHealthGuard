@@ -66,10 +66,18 @@ export function timeAgo(dateStr: string): string {
 
 // ─── Archivos ────────────────────────────────────────────────────────────────
 
-/** Convierte bytes a KB legibles. Devuelve "—" si el valor es nulo. */
+/** Convierte bytes a unidad legible (B / KB / MB). Devuelve "—" si el valor es nulo. */
 export function formatFileSize(bytes: number | null | undefined): string {
   if (!bytes) return "—";
-  return `${(bytes / 1024).toFixed(0)} KB`;
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${bytes} B`;
+}
+
+/** Fecha compacta para listas (ej. "12 mar"). */
+export function formatShortDate(d: string | null | undefined): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("es-CO", { day: "numeric", month: "short" });
 }
 
 // ─── Dominio: citas ───────────────────────────────────────────────────────────
@@ -84,4 +92,22 @@ const APPOINTMENT_STATUS_LABELS: Record<string, string> = {
 /** Convierte un status de cita a su etiqueta en español. */
 export function appointmentStatusLabel(status: string): string {
   return APPOINTMENT_STATUS_LABELS[status] ?? status;
+}
+
+// ─── Dashboard helpers ───────────────────────────────────────────────────────
+
+/** Splits "2026-04-27" → { day: "27", month: "abr" } for date badges. */
+export function splitDate(dateStr: string): { day: string; month: string } {
+  const d = new Date(dateStr + "T12:00:00");
+  const day = d.getDate().toString();
+  const month = d.toLocaleDateString("es", { month: "short" }).replace(".", "");
+  return { day, month };
+}
+
+/** Formats a file extension string into a friendly label for document cards. */
+export function formatFileKind(format: string): string {
+  const f = format.toLowerCase();
+  if (f.includes("pdf")) return "PDF";
+  if (f.includes("png") || f.includes("jpg") || f.includes("jpeg") || f.includes("webp")) return "Imagen";
+  return format.toUpperCase();
 }

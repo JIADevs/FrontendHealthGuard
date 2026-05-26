@@ -21,8 +21,8 @@
 }
 
 .search-input:focus {
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px var(--primary-ring-sm);
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-ring-sm);
 }
 
 .search-wrapper {
@@ -62,7 +62,7 @@
 .doc-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
-  border-color: var(--primary-200);
+  border-color: var(--brand-200);
 }
 
 .doc-card-header {
@@ -85,7 +85,7 @@
 
 .doc-card-icon.pdf { background: var(--error-50);   color: var(--error-600); }
 .doc-card-icon.img { background: var(--success-50); color: var(--success-600); }
-.doc-card-icon.dcm { background: var(--primary-50); color: var(--primary-600); }
+.doc-card-icon.dcm { background: var(--brand-50); color: var(--brand-600); }
 .doc-card-icon.other { background: var(--gray-100); color: var(--gray-600); }
 
 .doc-card-title {
@@ -118,8 +118,8 @@
   border-radius: var(--radius-full);
   font-size: 11px;
   font-weight: 500;
-  background: var(--primary-50);
-  color: var(--primary-700);
+  background: var(--brand-50);
+  color: var(--brand-700);
   white-space: nowrap;
 }
 
@@ -183,16 +183,16 @@
   align-items: center;
   justify-content: center;
   border: none;
-  background: var(--gray-100);
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
   border-radius: 8px;
   cursor: pointer;
-  color: var(--gray-500);
+  color: var(--text-secondary);
   transition: all var(--transition);
 }
 
 .modal-close:hover {
-  background: var(--gray-200);
-  color: var(--gray-700);
+  background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+  color: var(--text-primary);
 }
 
 .modal-body {
@@ -207,26 +207,44 @@
   gap: 8px;
 }
 
+/* ---------- Barra de archivo seleccionado (subida) ---------- */
+.upload-file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 20px;
+  border: 1px solid color-mix(in srgb, var(--success-500) 28%, var(--border));
+  background: color-mix(in srgb, var(--success-500) 10%, var(--bg-card));
+}
+
+.upload-file-info .upload-file-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
 /* ---------- Dropzone ---------- */
 .dropzone {
-  border: 2px dashed var(--gray-300);
+  border: 2px dashed var(--border);
   border-radius: var(--radius);
   padding: 40px 24px;
   text-align: center;
   cursor: pointer;
   transition: all var(--transition);
-  background: var(--gray-50);
+  background: color-mix(in srgb, var(--text-primary) 4%, var(--bg-card));
 }
 
 .dropzone:hover,
 .dropzone.active {
-  border-color: var(--primary-400);
-  background: var(--primary-50);
+  border-color: var(--brand-400);
+  background: color-mix(in srgb, var(--brand-500) 12%, var(--bg-card));
 }
 
 .dropzone svg {
   margin: 0 auto 12px;
-  color: var(--gray-400);
+  color: var(--text-muted);
 }
 
 .dropzone p {
@@ -235,7 +253,7 @@
 }
 
 .dropzone .highlight {
-  color: var(--primary-600);
+  color: var(--brand-600);
   font-weight: 600;
 }
 
@@ -254,18 +272,29 @@
   cursor: pointer;
   text-align: center;
   transition: all var(--transition);
-  background: var(--bg-card);
+  /* Ligero contraste respecto al panel del modal (mismo --bg-card) */
+  background: color-mix(in srgb, var(--text-primary) 3%, var(--bg-card));
+  /* Evita color de texto azul del navegador en :active / focus (WebKit) */
+  color: var(--text-primary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.template-card:active,
+.template-card:focus,
+.template-card:focus-visible {
+  color: var(--text-primary);
 }
 
 .template-card:hover {
-  border-color: var(--primary-300);
-  background: var(--primary-50);
+  border-color: var(--brand-400);
+  /* Tinte suave: el texto sigue siendo --text-primary (blanco en dark mode) */
+  background: color-mix(in srgb, var(--brand-500) 8%, var(--bg-card));
 }
 
 .template-card.selected {
-  border-color: var(--primary-500);
-  background: var(--primary-50);
-  box-shadow: 0 0 0 3px var(--primary-ring-md);
+  border-color: var(--brand-500);
+  background: color-mix(in srgb, var(--brand-500) 12%, var(--bg-card));
+  box-shadow: 0 0 0 3px var(--brand-ring-md);
 }
 
 .template-card-icon {
@@ -276,7 +305,7 @@
 .template-card-name {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: inherit;
 }
 
 /* ---------- Detail modal ---------- */
@@ -298,28 +327,63 @@
   font-weight: 500;
 }
 
+/* Altura fija: el spinner no “salta” al pasar de URL firmada → iframe/imagen */
 .doc-preview {
+  position: relative;
+  width: 100%;
+  height: 450px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   overflow: hidden;
   margin-bottom: 20px;
-  min-height: 300px;
+  background: color-mix(in srgb, var(--text-primary) 4%, var(--bg-card));
+}
+
+.doc-preview-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--gray-50);
+  gap: 14px;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.doc-preview-loading--overlay {
+  z-index: 2;
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.doc-preview-loading-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 280px;
 }
 
 .doc-preview iframe {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   width: 100%;
-  height: 450px;
+  height: 100%;
   border: none;
+  display: block;
 }
 
 .doc-preview img {
-  max-width: 100%;
-  max-height: 450px;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+  display: block;
 }
 
 /* ---------- Share modal ---------- */
@@ -380,9 +444,9 @@
 }
 
 .pagination button.active {
-  background: var(--primary-500);
+  background: var(--brand-500);
   color: white;
-  border-color: var(--primary-500);
+  border-color: var(--brand-500);
 }
 
 .pagination button:disabled {

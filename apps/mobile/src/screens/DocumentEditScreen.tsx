@@ -9,6 +9,7 @@ import {
   Image,
   ScrollView,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -20,6 +21,8 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
+import { resolveClassifyFileSource } from "../utils/resolveClassifyFileSource";
+import { useKeyboardScrollPadding } from "../hooks/useKeyboardScrollPadding";
 import {
   getSignedUrl,
   updateDocument,
@@ -64,6 +67,7 @@ export function DocumentEditScreen() {
   const { id } = (route.params ?? {}) as RouteParams;
 
   const form = useDocumentForm();
+  const scrollPaddingBottom = useKeyboardScrollPadding(120);
 
   const docQuery = useDocumentQuery(id);
 
@@ -74,6 +78,8 @@ export function DocumentEditScreen() {
   });
 
   const [replacementFile, setReplacementFile] = useState<FileSource | null>(null);
+  const [classifyFile, setClassifyFile] = useState<FileSource | undefined>(undefined);
+  const [classifyFileLoading, setClassifyFileLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const didInitRef = useRef(false);
 
@@ -90,6 +96,66 @@ export function DocumentEditScreen() {
     form.setSelectedSpecialty(d.specialties?.[0]?.id);
     form.setSelectedTags(d.customTags?.map((t) => t.id) ?? []);
   }, [docQuery.data]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function prepareClassifyFile() {
+      if (replacementFile) {
+        setClassifyFile(replacementFile);
+        setClassifyFileLoading(false);
+        return;
+      }
+
+      const d = docQuery.data as Document | undefined;
+      if (!d) {
+        setClassifyFile(undefined);
+        setClassifyFileLoading(docQuery.isLoading);
+        return;
+      }
+
+      if (!d.fileUrl) {
+        setClassifyFile(undefined);
+        setClassifyFileLoading(false);
+        return;
+      }
+
+      if (signedUrlQuery.isLoading || !signedUrl) {
+        setClassifyFile(undefined);
+        setClassifyFileLoading(true);
+        return;
+      }
+
+      if (signedUrlQuery.isError) {
+        setClassifyFile(undefined);
+        setClassifyFileLoading(false);
+        return;
+      }
+
+      setClassifyFileLoading(true);
+      try {
+        const source = await resolveClassifyFileSource(d, signedUrl, null);
+        if (!cancelled) setClassifyFile(source);
+      } catch (err) {
+        console.warn("No se pudo preparar el archivo para clasificación IA", err);
+        if (!cancelled) setClassifyFile(undefined);
+      } finally {
+        if (!cancelled) setClassifyFileLoading(false);
+      }
+    }
+
+    void prepareClassifyFile();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    replacementFile,
+    docQuery.data,
+    docQuery.isLoading,
+    signedUrl,
+    signedUrlQuery.isLoading,
+    signedUrlQuery.isError,
+  ]);
 
   const pickReplacementFile = useCallback(async () => {
     try {
@@ -198,14 +264,25 @@ export function DocumentEditScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 72 : 0}
+      >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.content, { paddingBottom: scrollPaddingBottom }]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+      >
         <View style={styles.previewContainer}>
           {replacementFile ? (
             currentIsImage ? (
               <Image source={{ uri: replacementFile.uri }} style={styles.previewImage} resizeMode="contain" />
             ) : (
               <View style={styles.pdfPreview}>
-                <FileTextIcon color={palette.brand[500]} size={64} />
+                <FileTextIcon color={t.brand.fg} size={64} />
                 <Typography variant="label" numberOfLines={2} align="center">{replacementFile.name}</Typography>
                 {replacementFile.size != null && <Typography variant="caption" color="secondary" align="center">{friendlySize(replacementFile.size)}</Typography>}
               </View>
@@ -215,7 +292,7 @@ export function DocumentEditScreen() {
               <Image source={{ uri: signedUrl }} style={styles.previewImage} resizeMode="contain" />
             ) : (
               <View style={styles.pdfPreview}>
-                <FileTextIcon color={palette.brand[500]} size={64} />
+                <FileTextIcon color={t.brand.fg} size={64} />
                 <Typography variant="label" numberOfLines={2} align="center">Adjunto actual</Typography>
                 <Typography variant="caption" color="secondary" align="center">{d.format}</Typography>
               </View>
@@ -240,8 +317,14 @@ export function DocumentEditScreen() {
           </TouchableOpacity>
         )}
 
-        <DocumentClassificationForm file={replacementFile ?? undefined} {...form} />
+        <DocumentClassificationForm
+          variant="edit"
+          file={classifyFile}
+          classifyFileLoading={classifyFileLoading}
+          {...form}
+        />
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.circleBtnSecondary} onPress={() => navigation.goBack()} disabled={saving} accessibilityRole="button" accessibilityLabel="Cancelar edición">
@@ -258,9 +341,10 @@ export function DocumentEditScreen() {
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container:        { flex: 1, backgroundColor: t.surface.bgCard },
+    keyboardAvoid:    { flex: 1 },
     center:           { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing[6], backgroundColor: t.surface.bgCard },
-    error:            { color: colors.error[500], fontSize: fontSize.md, fontWeight: fontWeight.bold },
-    content:          { paddingBottom: 96 },
+    error:            { color: t.status.errorFg, fontSize: fontSize.md, fontWeight: fontWeight.bold },
+    content:          {},
     previewContainer: { height: 360, backgroundColor: t.surface.bg, justifyContent: "center", alignItems: "center" },
     previewImage:     { width: "100%", height: "100%" },
     pdfPreview:       { alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[5] },
@@ -269,7 +353,7 @@ function makeStyles(t: ThemeContextValue) {
     fileInfoBar:      { flexDirection: "row", alignItems: "center", gap: spacing[3], backgroundColor: t.surface.bgCard, paddingHorizontal: spacing[5], paddingVertical: spacing[3] },
     fileInfoTitle:    { fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: t.text.primary },
     fileInfoSub:      { fontSize: fontSize.sm, color: t.text.secondary, marginTop: 2 },
-    changeFileBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], paddingHorizontal: 14, height: 40, borderRadius: radii.md, backgroundColor: palette.brand[500] },
+    changeFileBtn:    { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], paddingHorizontal: 14, height: 40, borderRadius: radii.md, backgroundColor: t.brand.fg },
     changeFileBtnText:    { color: colors.white, fontWeight: fontWeight.bold, fontSize: fontSize.sm },
     clearReplacementLink: { paddingHorizontal: spacing[5], paddingBottom: 10 },
     clearReplacementText: { color: t.text.secondary, fontWeight: fontWeight.semibold },
@@ -283,8 +367,8 @@ function makeStyles(t: ThemeContextValue) {
       alignItems: "center",
       gap: spacing[5],
     },
-    circleBtnSecondary:      { width: 64, height: 64, borderRadius: 32, backgroundColor: t.border.medium, alignItems: "center", justifyContent: "center" },
-    circleBtnPrimary:        { width: 80, height: 80, borderRadius: 40, backgroundColor: palette.brand[500], alignItems: "center", justifyContent: "center", shadowColor: palette.brand[500], shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
+    circleBtnSecondary:      { width: 64, height: 64, borderRadius: 32, backgroundColor: t.status.errorFg, alignItems: "center", justifyContent: "center" },
+    circleBtnPrimary:        { width: 80, height: 80, borderRadius: 40, backgroundColor: t.brand.fg, alignItems: "center", justifyContent: "center", shadowColor: t.brand.fg, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
     circleBtnPrimaryDisabled: { opacity: 0.6 },
   });
 }

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { colors, spacing, fontSize, fontWeight, radii, border, surface, text } from '../../tokens/tokens';
+import { colors, palette, spacing, fontSize, fontWeight, radii, border, surface, text } from '../../tokens/tokens';
 import type { DatePickerProps } from './DatePicker.types';
 
 export function DatePicker({
@@ -20,7 +20,7 @@ export function DatePicker({
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: `${spacing[3]}px ${spacing[4]}px`,
-    border: `1.5px solid ${error ? colors.error[500] : focused ? 'var(--primary-500)' : border.default}`,
+    border: `1.5px solid ${error ? palette.status.error[500] : focused ? 'var(--brand-500)' : border.default}`,
     borderRadius: radii.sm,
     fontSize: fontSize.sm,
     fontFamily: 'inherit',
@@ -28,7 +28,7 @@ export function DatePicker({
     background: disabled ? border.light : surface.bg,
     outline: 'none',
     boxSizing: 'border-box',
-    boxShadow: focused ? '0 0 0 3px var(--primary-ring-md)' : undefined,
+    boxShadow: focused ? '0 0 0 3px var(--brand-ring-md)' : undefined,
     transition: 'border-color 0.15s, box-shadow 0.15s',
     opacity: disabled ? 0.6 : 1,
     cursor: disabled ? 'not-allowed' : undefined,
@@ -47,7 +47,7 @@ export function DatePicker({
           }}
         >
           {label}
-          {required && <span style={{ color: colors.error[500], marginLeft: 2 }}>*</span>}
+          {required && <span style={{ color: palette.status.error[500], marginLeft: 2 }}>*</span>}
         </label>
       )}
 
@@ -67,7 +67,7 @@ export function DatePicker({
       />
 
       {error && (
-        <span style={{ fontSize: fontSize.xs, color: colors.error[500] }}>
+        <span style={{ fontSize: fontSize.xs, color: palette.status.error[500] }}>
           {error}
         </span>
       )}

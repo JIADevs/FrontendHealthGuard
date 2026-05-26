@@ -1,32 +1,33 @@
 "use client";
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { colors, palette, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
 import type { ButtonProps, ButtonVariant, ButtonSize } from './Button.types';
 
 const bgByVariant: Record<ButtonVariant, string> = {
   primary:   palette.brand[500],
   secondary: colors.white,
-  danger:    colors.error[500],
+  danger:    palette.status.error[500],
   ghost:     'transparent',
 };
 
 const bgHoverByVariant: Record<ButtonVariant, string> = {
   primary:   palette.brand[600],
-  secondary: colors.gray[50],
-  danger:    colors.error[600],
-  ghost:     colors.primary[50], 
+  secondary: palette.neutral[50],
+  danger:    palette.status.error[600],
+  ghost:     palette.brand[50], 
 };
 
 const colorByVariant: Record<ButtonVariant, string> = {
   primary:   colors.white,
-  secondary: colors.gray[700],
+  secondary: palette.neutral[700],
   danger:    colors.white,
-  ghost:     colors.primary[600],
+  ghost:     palette.brand[600],
 };
 
 const borderByVariant: Record<ButtonVariant, string> = {
   primary:   'none',
-  secondary: `1.5px solid ${colors.gray[200]}`,
+  secondary: `1.5px solid ${palette.neutral[200]}`,
   danger:    'none',
   ghost:     'none',
 };
@@ -42,6 +43,20 @@ const fontSizeBySize: Record<ButtonSize, number> = {
   md: fontSize.base,
   lg: fontSize.md,
 };
+
+const loaderSizeBySize: Record<ButtonSize, number> = {
+  sm: 14,
+  md: 16,
+  lg: 18,
+};
+
+/* Keyframes injected once for loading indicator (works without app globals.css). */
+if (typeof document !== 'undefined' && !document.getElementById('helu-ui-btn-spin-kf')) {
+  const el = document.createElement('style');
+  el.id = 'helu-ui-btn-spin-kf';
+  el.textContent = '@keyframes helu-ui-btn-spin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(el);
+}
 
 export function Button({
   children,
@@ -88,7 +103,19 @@ export function Button({
         boxSizing: 'border-box',
       }}
     >
-      {loading ? '...' : children}
+      {loading ? (
+        <Loader2
+          size={loaderSizeBySize[size]}
+          strokeWidth={2.5}
+          aria-hidden
+          style={{
+            color: colorByVariant[variant],
+            animation: 'helu-ui-btn-spin 0.65s linear infinite',
+          }}
+        />
+      ) : (
+        children
+      )}
     </button>
   );
 }

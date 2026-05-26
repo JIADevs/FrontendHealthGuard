@@ -1,9 +1,11 @@
 import { apiClient } from "./client";
+import { z } from "zod";
 import {
     TokenResponseSchema,
     UserProfileSchema,
     DocumentPageSchema,
     DocumentSchema,
+    DocumentActiveShareSchema,
     AppointmentPageSchema,
     MedicationPageSchema,
     NotificationPageSchema,
@@ -69,6 +71,8 @@ export async function getDocuments(params: {
     page?: number;
     limit?: number;
     searchQuery?: string;
+    startDate?: string;
+    endDate?: string;
 }) {
     const { data } = await apiClient.get("/documents/", { params });
     return DocumentPageSchema.parse(data);
@@ -126,6 +130,30 @@ export async function shareDocument(id: string) {
     return data as { shareUrl: string; qrCodeUrl: string; expiresAt: string };
 }
 
+export async function getActiveDocumentShares() {
+    const { data } = await apiClient.get("/documents/shares/active");
+    return z.array(DocumentActiveShareSchema).parse(data);
+}
+
+/** Revoca un enlace activo (solo el dueño del documento). */
+export async function revokeDocumentShare(linkId: string) {
+    await apiClient.delete(`/documents/shares/${linkId}`);
+}
+
+/** Load document metadata for a public share link (no auth required; token is the capability). */
+export async function consumeSharedDocument(token: string) {
+    const { data } = await apiClient.get("/documents/shared/consume", { params: { token } });
+    return DocumentSchema.parse(data);
+}
+
+/** Signed URL to preview/download the file for a share link (no auth required). */
+export async function getSharedDocumentSignedUrl(token: string, expiresInSeconds = 3600) {
+    const { data } = await apiClient.get("/documents/shared/signed-url", {
+        params: { token, expires_in: expiresInSeconds },
+    });
+    return data as { url: string };
+}
+
 // ─── Files ─────────────────────────────────────────────
 
 export async function uploadFile(file: File) {
@@ -138,12 +166,23 @@ export async function uploadFile(file: File) {
 }
 
 // React Native / mobile helper: upload from URI (expo-camera, image picker, etc.)
-export async function uploadFileFromUri(uri: string, name: string, mimeType: string) {
+export async function uploadFileFromUri(
+    uri: string,
+    name: string,
+    mimeType: string,
+    onProgress?: (percent: number) => void,
+) {
     const formData = new FormData();
     // In React Native, the "file" can be an object with uri/name/type
     formData.append("file", { uri, name, type: mimeType } as any);
     const { data } = await apiClient.post("/files/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (event) => {
+            const total = event.total ?? 0;
+            if (total > 0) {
+                onProgress?.(Math.min(100, Math.round((event.loaded / total) * 100)));
+            }
+        },
     });
     return data as { storagePath: string };
 }
@@ -216,7 +255,9 @@ export async function deleteMedication(id: string) {
 }
 
 export async function confirmIntake(id: string) {
-    const { data } = await apiClient.post(`/medications/${id}/intake`);
+    const { data } = await apiClient.post(`/medications/${id}/intakes`, {
+        taken_at: new Date().toISOString(),
+    });
     return data;
 }
 
@@ -290,7 +331,7 @@ export async function getBackpackById(id: string) {
 
 export async function createBackpack(bp: BackpackCreate) {
     const { data } = await apiClient.post("/backpacks/", bp);
-    return data;
+    return BackpackSchema.parse(data);
 }
 
 export async function updateBackpack(id: string, bp: BackpackCreate) {

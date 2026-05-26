@@ -26,15 +26,15 @@ config.resolver.nodeModulesPaths = [
 config.resolver.extraNodeModules = {
   // Workspace packages
   "@healthguard/stores": path.resolve(workspaceRoot, "packages/stores"),
-  "@healthguard/api":    path.resolve(workspaceRoot, "packages/api"),
+  "@healthguard/api": path.resolve(workspaceRoot, "packages/api"),
   "@healthguard/config": path.resolve(workspaceRoot, "packages/config"),
-  "@healthguard/ui":     path.resolve(workspaceRoot, "packages/ui"),
+  "@healthguard/ui": path.resolve(workspaceRoot, "packages/ui"),
 
   // Pinned native packages
-  "react-native":               path.resolve(workspaceRoot, "node_modules/react-native"),
-  "expo-asset":                 path.resolve(projectRoot,   "node_modules/expo-asset"),
+  "react-native": path.resolve(workspaceRoot, "node_modules/react-native"),
+  "expo-asset": path.resolve(projectRoot, "node_modules/expo-asset"),
   "react-native-toast-message": path.resolve(workspaceRoot, "node_modules/react-native-toast-message"),
-  "expo-modules-core":          path.resolve(workspaceRoot, "node_modules/expo-modules-core"),
+  "expo-modules-core": path.resolve(workspaceRoot, "node_modules/expo-modules-core"),
 };
 
 module.exports = config;

@@ -9,7 +9,13 @@ FROM base AS pruner
 WORKDIR /app
 COPY . .
 ARG APP_NAME
-RUN turbo prune $APP_NAME --docker
+# `turbo prune --docker` requires a parsed pnpm lockfile. Repos without `pnpm-lock.yaml`
+# (never committed or fresh clone) can still build: generate the lockfile here — no host install.
+RUN if [ ! -f pnpm-lock.yaml ]; then \
+      echo "pnpm-lock.yaml not in build context; generating with pnpm install --lockfile-only..."; \
+      pnpm install --lockfile-only; \
+    fi
+RUN turbo prune "$APP_NAME" --docker
 
 # Step 2: Install dependencies
 FROM base AS installer
@@ -24,7 +30,7 @@ COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 ARG HOISTED_LINKER=false
 COPY --from=pruner /app/.npmrc ./.npmrc
 RUN if [ "$HOISTED_LINKER" = "true" ]; then echo "node-linker=hoisted" >> .npmrc; fi \
-    && pnpm install
+    && CI=true pnpm install --no-frozen-lockfile
 
 # Step 3: WEB (Production-ready stage)
 FROM base AS web-runner
@@ -34,7 +40,7 @@ COPY --from=installer /app/ .
 COPY turbo.json turbo.json
 
 # Build the app
-RUN turbo run build --filter=@healthguard/web
+RUN turbo run build --filter=@helu/web
 
 # Next.js standalone optimization
 RUN cp -r apps/web/public apps/web/.next/standalone/apps/web/public

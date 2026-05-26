@@ -1,129 +1,219 @@
-import { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, FlatList, TouchableOpacity, Share, RefreshControl } from "react-native";
+import { useMemo, useCallback, useState } from "react";
+import { View, StyleSheet, SectionList, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useDocumentsQuery, useShareDocumentMutation } from "@helu/api/hooks";
-import { Camera, Share2, FileUp } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Trash2 } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { DocumentTypeIcon } from "@helu/ui";
-import { colors, palette, overlay, radii, spacing, shadows, useAppTheme, useDebounceSearch, formatDate, PAGE_SIZE_LIST, Card, cardContentStyle, SearchField, Typography, Spinner, EmptyState } from "@helu/ui";
+import { Spinner, EmptyState, ConfirmModal, palette, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { ExpandableFAB } from "../components/ExpandableFAB";
+import { useDocumentsList } from "../hooks/useDocumentsList";
+import { useDocumentListActions } from "../hooks/useDocumentListActions";
+import { useDocumentShareModal } from "../hooks/useDocumentShareModal";
+import {
+  DocumentsListHeader,
+  DocumentsSearchToolbar,
+  DocumentsFilterChips,
+  DocumentsFilterSheet,
+  DocumentsSectionHeader,
+  DocumentListItem,
+  DocumentsFAB,
+  DocumentsAddSheet,
+  ShareDocumentModal,
+} from "../components/documents";
 
 export function DocumentsScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounceSearch(search);
+  const {
+    search,
+    setSearch,
+    debouncedSearch,
+    draftFilters,
+    setDraftFilters,
+    categoryFilter,
+    setCategoryFilter,
+    filterSheetVisible,
+    openFilterSheet,
+    closeFilterSheet,
+    applyFilters,
+    hasHiddenSelection,
+    hasActiveFilter,
+    tagCategories,
+    tagsLoading,
+    sections,
+    totalCount,
+    isLoading,
+    isRefetching,
+    refetch,
+  } = useDocumentsList();
 
-  const docs = useDocumentsQuery(debouncedSearch, 1, PAGE_SIZE_LIST);
-  const shareMut = useShareDocumentMutation();
+  const {
+    handleView,
+    handleEdit,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+    deleteTarget,
+    deletePending,
+  } = useDocumentListActions();
 
-  async function handleShare(docId: string, title: string) {
-    try {
-      const result = await shareMut.mutateAsync(docId);
-      await Share.share({
-        message: `Te comparto este documento de Helu: ${title}\n\n${result.shareUrl}`,
-        url: result.shareUrl,
-        title: title,
-      });
-    } catch (err) {
-      console.warn("Error compartiendo documento", err);
-    }
-  }
+  const share = useDocumentShareModal();
+  const [addSheetVisible, setAddSheetVisible] = useState(false);
 
-  const fabOptions = useMemo(() => [
-    {
-      label: 'Subir archivo',
-      icon: <FileUp color={colors.white} size={22} />,
-      color: colors.violet[500],
-      onPress: () => navigation.navigate('DocumentUpload' as any),
-    },
-    {
-      label: 'Escanear',
-      icon: <Camera color={colors.white} size={22} />,
-      color: palette.brand[500],
-      onPress: () => navigation.navigate('Scanner' as any),
-    },
-  ], [navigation]);
+  const openAddSheet = useCallback(() => setAddSheetVisible(true), []);
+  const closeAddSheet = useCallback(() => setAddSheetVisible(false), []);
+
+  const handleUpload = useCallback(() => {
+    navigation.navigate("DocumentUpload");
+  }, [navigation]);
+
+  const handleScan = useCallback(() => {
+    navigation.navigate("Scanner");
+  }, [navigation]);
+
+  const isEmpty = sections.length === 0;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Typography variant="h2">Documentos</Typography>
-          <TouchableOpacity
-            style={styles.shareAllBtn}
-            onPress={() => navigation.navigate("ShareDocuments")}
-            accessibilityRole="button"
-            accessibilityLabel="Compartir documentos"
-          >
-            <Share2 size={18} color={palette.brand[500]} />
-          </TouchableOpacity>
-        </View>
-        <View style={{ marginTop: 14 }}>
-          <SearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Buscar por nombre o etiqueta..."
-            accessibilityLabel="Buscar documentos"
-          />
-        </View>
+        <DocumentsListHeader totalCount={totalCount} />
+        <DocumentsSearchToolbar
+          value={search}
+          onChange={setSearch}
+          onFilterPress={openFilterSheet}
+          filterActive={hasActiveFilter}
+        />
+        <DocumentsFilterChips
+          selected={categoryFilter}
+          onSelect={setCategoryFilter}
+          onMorePress={openFilterSheet}
+          hasHiddenSelection={hasHiddenSelection}
+        />
       </View>
 
-      {docs.isLoading && !docs.isRefetching ? (
-        <View style={styles.center}><Spinner size="lg" /></View>
+      {isLoading ? (
+        <View style={styles.center}>
+          <Spinner size="lg" />
+        </View>
       ) : (
-        <FlatList
-          data={docs.data?.items ?? []}
-          keyExtractor={(d) => d.id}
-          contentContainerStyle={cardContentStyle}
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) => item.id}
+          stickySectionHeadersEnabled={false}
+          contentContainerStyle={isEmpty ? styles.emptyList : styles.list}
           refreshControl={
             <RefreshControl
-              refreshing={docs.isRefetching}
-              onRefresh={() => docs.refetch()}
-              colors={[palette.brand[500]]}
-              tintColor={palette.brand[500]}
+              refreshing={isRefetching}
+              onRefresh={() => refetch()}
+              colors={[t.brand.fg]}
+              tintColor={t.brand.fg}
             />
           }
+          renderSectionHeader={({ section }) => (
+            <DocumentsSectionHeader title={section.title} />
+          )}
           renderItem={({ item }) => (
-            <Card
-              title={item.title}
-              subtitle={`${formatDate(item.uploadedAt)}${item.documentType?.name ? ` • ${item.documentType.name}` : ""}`}
-              icon={<DocumentTypeIcon format={item.format} documentTypeName={item.documentType?.name} />}
-              onPress={() => navigation.navigate("DocumentDetail", { id: item.id, title: item.title })}
-              actions={
-                <TouchableOpacity onPress={() => handleShare(item.id, item.title)}>
-                  <Share2 size={20} color={t.text.secondary} />
-                </TouchableOpacity>
-              }
+            <DocumentListItem
+              document={item}
+              onPress={() => handleView(item)}
+              actions={{
+                onView: () => handleView(item),
+                onEdit: () => handleEdit(item),
+                onShare: () => share.openShare(item),
+                onDelete: () => requestDelete(item),
+                shareLoading: share.isSharePendingFor(item.id),
+              }}
             />
           )}
           ListEmptyComponent={
             <EmptyState
-              message={debouncedSearch.trim()
-                ? "Sin resultados para esta búsqueda."
-                : "No tienes documentos aún."}
+              message={
+                debouncedSearch.trim() || hasActiveFilter
+                  ? "Sin resultados para esta búsqueda."
+                  : "No tienes documentos aún."
+              }
             />
           }
         />
       )}
 
-      <ExpandableFAB options={fabOptions} />
+      <DocumentsFAB onPress={openAddSheet} />
+
+      <DocumentsAddSheet
+        visible={addSheetVisible}
+        onClose={closeAddSheet}
+        onUpload={handleUpload}
+        onScan={handleScan}
+      />
+
+      <DocumentsFilterSheet
+        visible={filterSheetVisible}
+        draft={draftFilters}
+        onChangeDraft={setDraftFilters}
+        onApply={applyFilters}
+        onClose={closeFilterSheet}
+        tagCategories={tagCategories}
+        tagsLoading={tagsLoading}
+      />
+
+      {share.shareTarget && (
+        <ShareDocumentModal
+          shareUrl={share.shareUrl}
+          isPreparing={share.isPreparing}
+          isCopying={share.isCopying}
+          onClose={share.closeShare}
+          onCopyLink={() => void share.copyLink()}
+          onWhatsApp={() => void share.shareWhatsApp()}
+          onEmail={() => void share.shareEmail()}
+          onLink={() => void share.shareLink()}
+          onMore={() => void share.shareMore()}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="¿Eliminar documento?"
+          message="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          loading={deletePending}
+          onConfirm={confirmDelete}
+          onCancel={cancelDelete}
+          icon={<Trash2 size={26} color={palette.status.error[500]} strokeWidth={2.25} />}
+          iconTone="danger"
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
-    container:   { flex: 1, backgroundColor: t.surface.bg },
-    header:      { padding: spacing[6], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
-    titleRow:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    shareAllBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: palette.brand[50], borderWidth: 1, borderColor: palette.brand[200] },
-    center:     { flex: 1, alignItems: "center", justifyContent: "center" },
+    container: {
+      flex: 1,
+      backgroundColor: t.surface.bg,
+    },
+    header: {
+      paddingHorizontal: spacing[5],
+      paddingTop: spacing[4],
+      paddingBottom: spacing[3],
+      backgroundColor: t.surface.bgCard,
+      borderBottomWidth: 1,
+      borderBottomColor: t.border.medium,
+    },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    list: {
+      paddingBottom: spacing[12] + 56,
+    },
+    emptyList: {
+      flexGrow: 1,
+      paddingBottom: spacing[12] + 56,
+    },
   });
 }

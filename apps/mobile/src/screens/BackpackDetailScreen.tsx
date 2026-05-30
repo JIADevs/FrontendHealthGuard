@@ -2,10 +2,8 @@ import { useCallback, useEffect, useMemo } from "react";
 import {
   Alert,
   ScrollView,
-  Share,
   StyleSheet,
   View,
-  Image,
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,11 +20,8 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import {
   Spinner,
   Typography,
-  Button,
-  Modal,
   useAppTheme,
   spacing,
-  radii,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { useBackpackDetail } from "../hooks/useBackpackDetail";
@@ -37,7 +32,7 @@ import {
   BackpackDetailDeleteRow,
 } from "../components/backpacks";
 import { sumDocumentsBytes } from "../components/backpacks/utils/sumDocumentsBytes";
-import { qrCodeImageUriForShareUrl, resolveExpoReachableUrl } from "../utils/shareLinks";
+import { useShareFlow } from "../components/share";
 
 type RouteParams = { id: string };
 
@@ -58,6 +53,7 @@ export function BackpackDetailScreen() {
 
   const detail = useBackpackDetail(id);
   const deleteMut = useDeleteBackpackMutation();
+  const shareFlow = useShareFlow(navigation);
 
   const totalBytes = useMemo(() => sumDocumentsBytes(docs), [docs]);
 
@@ -122,11 +118,6 @@ export function BackpackDetailScreen() {
     [navigation],
   );
 
-  const shareLink = resolveExpoReachableUrl(detail.shareData?.shareUrl ?? "");
-  const shareQrUri = detail.shareData?.shareUrl
-    ? qrCodeImageUriForShareUrl(detail.shareData.shareUrl)
-    : "";
-
   if (backpackQuery.isLoading && !backpackQuery.isRefetching) {
     return (
       <SafeAreaView style={styles.center}>
@@ -170,9 +161,13 @@ export function BackpackDetailScreen() {
         <BackpackDetailHeader backpack={backpack} totalBytes={totalBytes} />
 
         <BackpackDetailShareRow
-          onShare={detail.shareBackpack}
+          onShare={() =>
+            shareFlow.openConfigureBackpack(
+              { id: backpack.id, name: backpack.name, documentCount: docs.length },
+              "Mochila",
+            )
+          }
           onEdit={() => navigation.navigate("BackpackEdit", { id })}
-          shareLoading={detail.isSharing}
         />
 
         {docsQuery.isLoading ? (
@@ -197,43 +192,6 @@ export function BackpackDetailScreen() {
           loading={deleteMut.isPending}
         />
       </ScrollView>
-
-      {detail.shareData && (
-        <Modal
-          title="Compartir mochila"
-          onClose={detail.clearShareData}
-          footer={
-            <>
-              <Button
-                fullWidth
-                onPress={() =>
-                  void Share.share({
-                    url: shareLink,
-                    message: "Comparto una mochila con documentos médicos.",
-                  })
-                }
-              >
-                Compartir
-              </Button>
-              <Button variant="secondary" fullWidth onPress={detail.clearShareData}>
-                Cerrar
-              </Button>
-            </>
-          }
-        >
-          <Typography variant="bodySm" color="secondary">
-            Link (válido hasta expiración):
-          </Typography>
-          <View style={{ paddingVertical: 4, marginBottom: 8 }}>
-            <Typography variant="bodySm" numberOfLines={2}>
-              {shareLink}
-            </Typography>
-          </View>
-          <View style={styles.qrWrap}>
-            <Image source={{ uri: shareQrUri }} style={styles.qrImg} />
-          </View>
-        </Modal>
-      )}
     </SafeAreaView>
   );
 }
@@ -258,16 +216,5 @@ function makeStyles(t: ThemeContextValue) {
       paddingVertical: spacing[8],
       alignItems: "center",
     },
-    qrWrap: {
-      alignItems: "center",
-      justifyContent: "center",
-      marginVertical: 8,
-      padding: 10,
-      backgroundColor: t.surface.bg,
-      borderRadius: radii.lg,
-      borderWidth: 1,
-      borderColor: t.border.medium,
-    },
-    qrImg: { width: 170, height: 170 },
   });
 }

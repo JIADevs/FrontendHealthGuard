@@ -12,7 +12,10 @@ import { NotificationsScreen } from "../screens/NotificationsScreen";
 import { BackpackDetailScreen } from "../screens/BackpackDetailScreen";
 import { BackpackEditScreen } from "../screens/BackpackEditScreen";
 import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
-import { ShareDocumentsScreen } from "../screens/ShareDocumentsScreen";
+import { ShareConfigureScreen } from "../screens/ShareConfigureScreen";
+import { ShareQrScreen } from "../screens/ShareQrScreen";
+import { SharedHistoryScreen } from "../screens/SharedHistoryScreen";
+import { SharedDetailScreen } from "../screens/SharedDetailScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 
 import { AppointmentDetailScreen } from "../screens/AppointmentDetailScreen";
@@ -22,6 +25,7 @@ import { DoctorFormScreen } from "../screens/DoctorFormScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { useAppTheme } from "@helu/ui";
 import { withDocumentsTheme, getDocumentsStackScreenOptions } from "../components/documents";
+import type { ShareResourceType } from "@helu/api";
 
 /** Shared optional param so any screen can show a contextual back label. */
 type WithBackTitle = { backTitle?: string };
@@ -44,8 +48,25 @@ export type RootStackParamList = {
   BackpackDetail: WithBackTitle & { id: string };
   BackpackEdit: WithBackTitle & { id?: string } | undefined;
   BackpackAddDocuments: WithBackTitle & { id: string };
-  ShareDocuments: WithBackTitle | undefined;
-
+  ShareConfigure: WithBackTitle & {
+    resourceType: ShareResourceType;
+    resourceId: string;
+    title: string;
+    subtitle?: string;
+    documentCount?: number;
+  };
+  ShareQr: WithBackTitle & {
+    shareUrl: string;
+    title: string;
+    resourceType: ShareResourceType;
+    expiresAt: string | null;
+    documentCount?: number;
+  };
+  SharedHistory: WithBackTitle | undefined;
+  SharedDetail: WithBackTitle & {
+    linkId: string;
+    resourceType: ShareResourceType;
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -54,7 +75,10 @@ const ScannerScreenLight = withDocumentsTheme(ScannerScreen);
 const DocumentUploadScreenLight = withDocumentsTheme(DocumentUploadScreen);
 const DocumentDetailScreenLight = withDocumentsTheme(DocumentDetailScreen);
 const DocumentEditScreenLight = withDocumentsTheme(DocumentEditScreen);
-const ShareDocumentsScreenLight = withDocumentsTheme(ShareDocumentsScreen);
+const ShareConfigureScreenLight = withDocumentsTheme(ShareConfigureScreen);
+const ShareQrScreenLight = withDocumentsTheme(ShareQrScreen);
+const SharedHistoryScreenLight = withDocumentsTheme(SharedHistoryScreen);
+const SharedDetailScreenLight = withDocumentsTheme(SharedDetailScreen);
 
 export function RootNavigator() {
   const token = useAuthStore((s) => s.token);
@@ -156,14 +180,47 @@ export function RootNavigator() {
             })}
           />
           <Stack.Screen
-            name="ShareDocuments"
-            component={ShareDocumentsScreenLight}
+            name="ShareConfigure"
+            component={ShareConfigureScreenLight}
             options={({ route }) => ({
               ...getDocumentsStackScreenOptions(t),
               headerShown: true,
-              title: "Compartir Documentos",
+              title: "Compartir",
               animation: "slide_from_right" as const,
               headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
+            })}
+          />
+          <Stack.Screen
+            name="ShareQr"
+            component={ShareQrScreenLight}
+            options={({ route }) => ({
+              ...getDocumentsStackScreenOptions(t),
+              headerShown: true,
+              title: "Compartir QR",
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Compartir",
+            })}
+          />
+          <Stack.Screen
+            name="SharedHistory"
+            component={SharedHistoryScreenLight}
+            options={({ route }) => ({
+              ...getDocumentsStackScreenOptions(t),
+              headerShown: true,
+              title: "Compartidos",
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
+            })}
+          />
+          <Stack.Screen
+            name="SharedDetail"
+            component={SharedDetailScreenLight}
+            options={({ route }) => ({
+              ...getDocumentsStackScreenOptions(t),
+              headerShown: true,
+              title: "Compartido",
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Compartidos",
             })}
           />
           <Stack.Screen

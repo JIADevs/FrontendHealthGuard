@@ -5,7 +5,6 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink } from "lucide-react";
 import {
   consumeSharedDocument,
   getSharedDocumentSignedUrl,
@@ -150,27 +149,19 @@ function ShareDocInner() {
         )}
 
         {url && (
-          <>
-            <div className="doc-preview">
-              {isPdf ? (
-                <iframe src={url} title={d.title} />
-              ) : isImage ? (
-                <img src={url} alt={d.title} />
-              ) : (
-                <div className="empty-state">
-                  <Typography variant="bodySm" color="secondary">
-                    Vista previa no disponible para este formato.
-                  </Typography>
-                </div>
-              )}
-            </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
-              <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 13 }}>
-                <ExternalLink size={14} style={{ marginRight: 6, verticalAlign: "middle" }} />
-                Abrir archivo
-              </a>
-            </div>
-          </>
+          <div className="doc-preview">
+            {isPdf ? (
+              <iframe src={url} title={d.title} />
+            ) : isImage ? (
+              <img src={url} alt={d.title} />
+            ) : (
+              <div className="empty-state">
+                <Typography variant="bodySm" color="secondary">
+                  Vista previa no disponible para este formato.
+                </Typography>
+              </div>
+            )}
+          </div>
         )}
 
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--gray-100, #eee)" }}>

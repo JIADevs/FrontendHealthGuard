@@ -46,7 +46,7 @@ import { MedicationFormModal } from "../components/MedicationFormModal";
 const QUICK_ACTIONS = [
   { key: "upload", label: "Subir Documento", icon: Upload, route: "DocumentUpload" as const },
   { key: "scan", label: "Escanear", icon: Camera, route: "Scanner" as const },
-  { key: "share", label: "Compartir", icon: Share2, route: "ShareDocuments" as const },
+  { key: "share", label: "Compartir", icon: Share2, route: "SharedHistory" as const },
 ] as const;
 
 // ─── Component ───────────────────────────────────────────────────────────────

@@ -19,7 +19,6 @@ import {
     createDocument,
     updateDocument,
     deleteDocument,
-    shareDocument,
     getActiveDocumentShares,
     revokeDocumentShare,
     getDocumentTypes,
@@ -30,7 +29,6 @@ import {
     createBackpack,
     updateBackpack,
     deleteBackpack,
-    shareBackpack,
     addDocToBackpack,
     removeDocFromBackpack,
     getBackpackDocuments,
@@ -70,7 +68,16 @@ import type {
     BackpackCreate,
     UserUpdate,
 } from "./schemas";
+import type { ShareStatusFilter } from "./shares/schemas";
 import { invalidateBackpackQueries } from "./backpackQueryUtils";
+import {
+    useSharesQuery,
+    useShareDocumentMutation as useShareDocumentMutationCore,
+    useRevokeShareMutation,
+    useExtendShareMutation,
+    invalidateShareQueries,
+    shareQK,
+} from "./shares/hooks";
 
 // ─── Query keys ────────────────────────────────────────
 // Centralized so invalidation is always consistent.
@@ -106,6 +113,7 @@ export const QK = {
     profile:          ()                      => ["me"] as const,
 
     documentSharesActive: () => ["document-shares-active"] as const,
+    shares: (status: ShareStatusFilter = "all") => ["shares", status] as const,
 } as const;
 
 // ─── Documents ─────────────────────────────────────────
@@ -139,6 +147,33 @@ export function useActiveDocumentSharesQuery() {
         staleTime: 30_000,
     });
 }
+
+export function useShareDocumentMutation() {
+    return useShareDocumentMutationCore();
+}
+
+export function useRevokeDocumentShareMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (linkId: string) => revokeDocumentShare(linkId),
+        onSuccess: (_, linkId) => {
+            qc.setQueryData<DocumentActiveShare[]>(QK.documentSharesActive(), (old) =>
+                old ? old.filter((r) => r.linkId !== linkId) : old,
+            );
+            invalidateShareQueries(qc);
+        },
+    });
+}
+
+export {
+    useSharesQuery,
+    useShareHistoryQuery,
+    useShareBackpackMutation,
+    useRevokeShareMutation,
+    useExtendShareMutation,
+    invalidateShareQueries,
+    shareQK,
+} from "./shares/hooks";
 
 export function useDocumentQuery(id: string) {
     return useQuery({
@@ -189,28 +224,6 @@ export function useDeleteDocumentMutation() {
     return useMutation({
         mutationFn: (id: string) => deleteDocument(id),
         onSettled: () => qc.invalidateQueries({ queryKey: ["documents"] }),
-    });
-}
-
-export function useShareDocumentMutation() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: (id: string) => shareDocument(id),
-        onSettled: () => {
-            qc.invalidateQueries({ queryKey: QK.documentSharesActive() });
-        },
-    });
-}
-
-export function useRevokeDocumentShareMutation() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: (linkId: string) => revokeDocumentShare(linkId),
-        onSuccess: (_, linkId) => {
-            qc.setQueryData<DocumentActiveShare[]>(QK.documentSharesActive(), (old) =>
-                old ? old.filter((r) => r.linkId !== linkId) : old,
-            );
-        },
     });
 }
 
@@ -267,12 +280,6 @@ export function useDeleteBackpackMutation() {
     return useMutation({
         mutationFn: (id: string) => deleteBackpack(id),
         onSettled: () => qc.invalidateQueries({ queryKey: ["backpacks"] }),
-    });
-}
-
-export function useShareBackpackMutation() {
-    return useMutation({
-        mutationFn: (id: string) => shareBackpack(id),
     });
 }
 

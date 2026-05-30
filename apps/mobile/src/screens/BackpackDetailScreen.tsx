@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   Alert,
   ScrollView,
@@ -10,10 +10,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { useBackpackDocumentsQuery, useBackpackQuery, useDeleteBackpackMutation } from "@helu/api/hooks";
+import {
+  useBackpackQuery,
+  useDeleteBackpackMutation,
+  useInfiniteBackpackDocuments,
+} from "@helu/api/hooks";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { isApiError, type Document, type DocumentPage } from "@helu/api";
+import { isApiError, type Document } from "@helu/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import {
   Spinner,
@@ -45,9 +49,10 @@ export function BackpackDetailScreen() {
   const { id } = (route.params ?? {}) as RouteParams;
 
   const backpackQuery = useBackpackQuery(id);
-  const docsQuery = useBackpackDocumentsQuery(id, "");
+  const docsQuery = useInfiniteBackpackDocuments(id);
+
   const docs = useMemo(
-    () => (docsQuery.data?.items ?? []) as DocumentPage["items"],
+    () => docsQuery.data?.pages.flatMap((p) => p.items) ?? [],
     [docsQuery.data],
   );
 
@@ -55,6 +60,36 @@ export function BackpackDetailScreen() {
   const deleteMut = useDeleteBackpackMutation();
 
   const totalBytes = useMemo(() => sumDocumentsBytes(docs), [docs]);
+
+  useEffect(() => {
+    if (docsQuery.hasNextPage && !docsQuery.isFetchingNextPage) {
+      void docsQuery.fetchNextPage();
+    }
+  }, [docsQuery.hasNextPage, docsQuery.isFetchingNextPage, docsQuery.fetchNextPage]);
+
+  const handleLoadMore = useCallback(() => {
+    if (docsQuery.hasNextPage && !docsQuery.isFetchingNextPage) {
+      void docsQuery.fetchNextPage();
+    }
+  }, [docsQuery]);
+
+  const handleRemoveDocument = useCallback(
+    (doc: Document) => {
+      Alert.alert(
+        "Quitar documento",
+        `¿Querés quitar "${doc.title}" de esta mochila? El documento no se elimina de tu biblioteca.`,
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Quitar",
+            style: "destructive",
+            onPress: () => detail.removeDocument(doc.id, doc.title),
+          },
+        ],
+      );
+    },
+    [detail],
+  );
 
   const handleDeleteBackpack = useCallback(() => {
     Alert.alert("Eliminar mochila", "¿Querés eliminar esta mochila? Los documentos no se borran.", [
@@ -119,7 +154,10 @@ export function BackpackDetailScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={docsQuery.isRefetching || backpackQuery.isRefetching}
+            refreshing={
+              (docsQuery.isRefetching && !docsQuery.isFetchingNextPage) ||
+              backpackQuery.isRefetching
+            }
             onRefresh={() => {
               void backpackQuery.refetch();
               void docsQuery.refetch();
@@ -146,6 +184,11 @@ export function BackpackDetailScreen() {
             documents={docs}
             onDocumentPress={openDocument}
             onAddPress={() => navigation.navigate("BackpackAddDocuments", { id })}
+            onRemoveDocument={handleRemoveDocument}
+            removingDocId={detail.removingDocId}
+            hasNextPage={docsQuery.hasNextPage}
+            isFetchingNextPage={docsQuery.isFetchingNextPage}
+            onLoadMore={handleLoadMore}
           />
         )}
 

@@ -1,6 +1,14 @@
 import { apiClient } from "./client";
 import { z } from "zod";
 import {
+    listShares,
+    revokeShare,
+    shareBackpackWithOptions,
+    shareDocumentWithOptions,
+    getSharedDocumentSignedUrlViewOnly,
+} from "./shares/endpoints";
+import type { ShareCreateOptions } from "./shares/schemas";
+import {
     TokenResponseSchema,
     UserProfileSchema,
     DocumentPageSchema,
@@ -127,19 +135,29 @@ export async function addTagValue(categoryId: string, value: string) {
     return data as { id: string; categoryId?: string; value: string };
 }
 
-export async function shareDocument(id: string) {
-    const { data } = await apiClient.post(`/documents/${id}/share`);
-    return data as { shareUrl: string; qrCodeUrl: string; expiresAt: string };
+export async function shareDocument(id: string, expiresIn: ShareCreateOptions["expiresIn"] = "24h") {
+    return shareDocumentWithOptions(id, { expiresIn });
 }
 
+/** @deprecated Prefer listShares from `./shares` */
 export async function getActiveDocumentShares() {
-    const { data } = await apiClient.get("/documents/shares/active");
-    return z.array(DocumentActiveShareSchema).parse(data);
+    const items = await listShares("active");
+    return items
+        .filter((item) => item.resourceType === "document")
+        .map((item) => ({
+            linkId: item.linkId,
+            documentId: item.resourceId,
+            documentTitle: item.title,
+            shareUrl: item.shareUrl,
+            qrCodeUrl: item.qrCodeUrl,
+            expiresAt: item.expiresAt ?? "",
+            createdAt: item.createdAt,
+        }));
 }
 
 /** Revoca un enlace activo (solo el dueño del documento). */
 export async function revokeDocumentShare(linkId: string) {
-    await apiClient.delete(`/documents/shares/${linkId}`);
+    await revokeShare(linkId, "document");
 }
 
 /** Load document metadata for a public share link (no auth required; token is the capability). */
@@ -148,12 +166,9 @@ export async function consumeSharedDocument(token: string) {
     return DocumentSchema.parse(data);
 }
 
-/** Signed URL to preview/download the file for a share link (no auth required). */
+/** Signed URL to preview a shared file (view-only; no download). */
 export async function getSharedDocumentSignedUrl(token: string, expiresInSeconds = 3600) {
-    const { data } = await apiClient.get("/documents/shared/signed-url", {
-        params: { token, expires_in: expiresInSeconds },
-    });
-    return data as { url: string };
+    return getSharedDocumentSignedUrlViewOnly(token, expiresInSeconds);
 }
 
 // ─── Files ─────────────────────────────────────────────
@@ -389,9 +404,8 @@ export async function removeDocFromBackpack(backpackId: string, documentId: stri
     await apiClient.delete(`/backpacks/${backpackId}/documents/${documentId}`);
 }
 
-export async function shareBackpack(id: string) {
-    const { data } = await apiClient.post(`/backpacks/${id}/share`);
-    return data as { shareUrl: string; qrCodeUrl: string; expiresAt: string };
+export async function shareBackpack(id: string, expiresIn: ShareCreateOptions["expiresIn"] = "24h") {
+    return shareBackpackWithOptions(id, { expiresIn });
 }
 
 export async function getBackpackDocuments(params: {

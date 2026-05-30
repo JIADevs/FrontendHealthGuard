@@ -1,0 +1,38 @@
+schema: spec-driven
+
+context: |
+  Product: Helu (FrontendHealthGuard monorepo).
+  Scope: mobile-first — apps/mobile + shared packages (api, ui, stores, config).
+  Out of scope (unless explicit): apps/web.
+  Stack: Expo 54, React Navigation 7, TanStack Query 5, Zustand, TypeScript 5.9.
+  Shared logic lives in packages/*; feature UI in apps/mobile/src/components/{module}/.
+  Cross-feature primitives stay in packages/ui; screens only compose module components.
+  Backend contract: BackendHealthGuard FastAPI (separate repo).
+
+rules:
+  proposal:
+    - State platform scope explicitly (mobile / web / shared packages / backend).
+    - Defer web UI work when mobile-first; document reuse path in packages/api.
+    - Require reusable components in the module folder under work (not one-off UI in screens).
+  specs:
+    - Split domains: mobile/, shared-api/, web/ (web may be marked deferred).
+    - Use Given/When/Then for scenarios; RFC 2119 keywords.
+  design:
+    - Prefer extending packages/api hooks and *Core hooks before apps/mobile screens.
+    - Extract or extend components in apps/mobile/src/components/{module}/ before editing screens.
+    - Promote to packages/ui only when a second feature needs the same primitive; otherwise keep module-local.
+    - Document what web will reuse later (module components + packages/api) without implementing web screens.
+  tasks:
+    - Order: packages/api → apps/mobile/src/components/{module}/ → apps/mobile screens.
+    - Each UI fix MUST land as a module component or extend an existing one; screens wire props/callbacks only.
+    - Tag tasks [web-deferred] when shared layer is ready but web UI is not.
+  apply:
+    - Follow component-creation / feature-module skills for module component structure and exports via index.ts.
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: "pnpm exec tsc --noEmit -p apps/mobile"
+    coverage_threshold: 0
+  archive:
+    - Merge mobile deltas into openspec/specs/mobile/

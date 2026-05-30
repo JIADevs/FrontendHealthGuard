@@ -153,6 +153,13 @@ export function BackpackEditScreen() {
           selectedIds={create.selectedIds}
           onToggle={create.toggleDocument}
           loading={create.documentsLoading}
+          search={create.docSearch}
+          onSearchChange={create.setDocSearch}
+          isRefetching={create.documentsRefetching}
+          onRefresh={() => void create.refetchDocuments()}
+          hasNextPage={create.hasMoreDocuments}
+          isFetchingNextPage={create.isFetchingMoreDocuments}
+          onLoadMore={create.loadMoreDocuments}
         />
 
         <View style={styles.createFooter}>

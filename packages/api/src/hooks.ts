@@ -70,6 +70,7 @@ import type {
     BackpackCreate,
     UserUpdate,
 } from "./schemas";
+import { invalidateBackpackQueries } from "./backpackQueryUtils";
 
 // ─── Query keys ────────────────────────────────────────
 // Centralized so invalidation is always consistent.
@@ -89,6 +90,7 @@ export const QK = {
     backpacks:        (search = "")           => ["backpacks", search] as const,
     backpack:         (id: string)            => ["backpack", id] as const,
     backpackDocs:     (id: string, search = "", page = 1) => ["backpack-docs", id, page, search] as const,
+    backpackDocIds:   (id: string)            => ["backpack-doc-ids", id] as const,
      doctors:          (search = "", page = 1, limit = 50) => ["doctors", page, search, limit] as const,
 
     /** Incluye `limit` y rango de fechas: el dashboard usa limit pequeño y `startDate`; la agenda usa otros parámetros. */
@@ -280,8 +282,7 @@ export function useAddDocToBackpackMutation() {
         mutationFn: ({ backpackId, documentId }: { backpackId: string; documentId: string }) =>
             addDocToBackpack(backpackId, documentId),
         onSettled: (_data, _err, vars) => {
-            qc.invalidateQueries({ queryKey: ["backpack-docs", vars.backpackId] });
-            qc.invalidateQueries({ queryKey: QK.backpack(vars.backpackId) });
+            invalidateBackpackQueries(qc, vars.backpackId);
         },
     });
 }
@@ -292,8 +293,7 @@ export function useRemoveDocFromBackpackMutation() {
         mutationFn: ({ backpackId, documentId }: { backpackId: string; documentId: string }) =>
             removeDocFromBackpack(backpackId, documentId),
         onSettled: (_data, _err, vars) => {
-            qc.invalidateQueries({ queryKey: ["backpack-docs", vars.backpackId] });
-            qc.invalidateQueries({ queryKey: QK.backpack(vars.backpackId) });
+            invalidateBackpackQueries(qc, vars.backpackId);
         },
     });
 }
@@ -498,3 +498,5 @@ export * from './useAppointmentFormCore';
 export * from './useNotificationsCore';
 export * from './useDashboardCore';
 export * from './useDoctorFormCore';
+export * from './backpackQueryUtils';
+export * from './useBackpackInfiniteDocuments';

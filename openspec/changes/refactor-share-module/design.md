@@ -15,10 +15,11 @@ PRs encadenados: **(1) backend `/shares`**, **(2) `packages/api`**, **(3) mobile
 | Legacy endpoints | Wrappers que delegan a `/shares` | Break immediately | Transición suave web/mobile |
 | Share entry | Navigate to `ShareConfigure` | Modal channels | Alineado a mockups |
 | History screen | Reemplaza `ShareDocumentsScreen` | Panel colapsable | Mockup pantalla dedicada |
-| View tracking | Increment on `consume` | Sin stats MVP | Mockup actividad; mínimo view_count |
+| View tracking | Increment on `consume` + refetch en detalle (`focus` y app resume) | Sin stats MVP | Evita ir al listado para ver actividad actualizada |
 | History data loading | `useShareHistoryQuery` + client filter | Per-tab `useSharesQuery(status)` | Evita spinner/refetch al cambiar filtros |
 | History refetch | Invalidación post-mutation + pull-to-refresh | `refetchOnMount: always` + focus refetch | Evitó refetch storm / spinner infinito |
 | Zod optional/null | `.nullish()` + transforms | `.optional()` | FastAPI JSON usa `null`, no `undefined` |
+| Public share UX | `/share/doc` redirige directo a signed-url | Helu viewer embebido | Consistencia con expectativa de abrir documento inmediato |
 | PIN | Deferred | Implement now | Complejidad auth pública |
 
 ## Data Flow
@@ -38,7 +39,7 @@ SharedDetailScreen ── extend / revoke / copy / system share
 Public viewer (/share/doc)
         │
         ▼
-GET consume + signed-url (inline preview only, no download CTA)
+GET consume + signed-url → `window.location.replace(signed_url)` (apertura directa)
 ```
 
 ## File Changes
@@ -75,8 +76,8 @@ GET consume + signed-url (inline preview only, no download CTA)
 | `ShareQrPanel.tsx` | Create | QR + URL + copiar/enviar |
 | `SharedHistoryListItem.tsx` | Create | Icono tipo, título recurso, badge estado, tiempo desde `createdAt` |
 | `SharedHistoryFilters.tsx` | Create | Todos/Activos/Expirados |
-| `SharedDetailActions.tsx` | Create | QR, copiar, extender, revocar |
-| `SharedActivityCards.tsx` | Create | Visualizaciones, último acceso |
+| `SharedDetailActions.tsx` | Create | Abrir documento, QR, copiar, extender, revocar |
+| `SharedActivityCards.tsx` | Create | Visualizaciones, último acceso, spinner de refresh |
 | `useShareFlow.ts` | Create | Hook navegación + mutations |
 | `index.ts` | Create | Barrel exports |
 
@@ -179,6 +180,9 @@ Fixes durante QA manual documentados en `apply-progress.md`:
 - List item alineado a mockup (título + estado + tiempo; sin enlace público / doc count)
 - Detalle: último acceso mismo estilo h3 que visualizaciones
 - Configure: spinner en "Generar" (`isPending`)
+- Detalle: botón "Abrir documento" agregado por encima de "Ver QR de nuevo"
+- Detalle: actividad refresca con `useFocusEffect` + `AppState(active)` y muestra spinner mientras refetch
+- Web: `/share/doc` cambió de visor embebido a redirección directa al documento
 - Pendiente: página pública `/share/backpack` (deferred en `state.yaml`)
 
 ## Web reuse (deferred)

@@ -126,12 +126,26 @@ The user MUST view share activity and revoke access from a detail screen.
 - WHEN the detail screen opens
 - THEN it MUST show title, resource type, status, expiration, view count, and last access when available
 
+#### Scenario: Open shared document from detail
+
+- GIVEN an active shared link on the detail screen
+- WHEN the user taps "Abrir documento"
+- THEN the app MUST open the shared URL directly
+- AND this action MUST appear above "Ver QR de nuevo"
+
 #### Scenario: Activity card typography
 
 - GIVEN the detail screen activity section
 - WHEN view count and last access are displayed
 - THEN both numeric/time values MUST use the same typography variant (`h3`)
 - AND labels "Visualizaciones" and "Último acceso" MUST use caption secondary below each value
+
+#### Scenario: Activity refresh feedback
+
+- GIVEN the detail screen is fetching latest share activity
+- WHEN `useShareHistoryQuery` is refetching
+- THEN the activity section MUST show a loading spinner in its header
+- AND values MUST update after fetch completion
 
 #### Scenario: Revoke access
 

@@ -22,6 +22,9 @@ Paired backend change: `BackendHealthGuard/openspec/changes/refactor-share-modul
 - [x] List item: título recurso, estado, tiempo desde `createdAt`
 - [x] Activity cards: tipografía unificada h3
 - [x] Configure: spinner en "Generar"
+- [x] Detail: refetch actividad en focus + app resume
+- [x] Detail actions: "Abrir documento" arriba de "Ver QR de nuevo"
+- [x] Web share: `/share/doc` redirige directo al documento (sin visor embebido)
 
 ## Deviations
 
@@ -31,10 +34,13 @@ Paired backend change: `BackendHealthGuard/openspec/changes/refactor-share-modul
 | List row meta | tipo + enlace público + doc count | título + estado + tiempo creación | Alineado a mockup revisado |
 | Schema optional fields | `.optional()` | `.nullish()` + transforms | FastAPI serializa `null`, no `undefined` |
 | Focus refetch | `refetchOnMount: always` + focus | removido | Cancelaba fetches → spinner infinito |
+| Activity refresh UX | refresh manual desde listado | focus + app resume + spinner en actividad | Menos pasos para ver métricas actualizadas |
+| Public doc share UX | visor Helu embebido | redirección directa al documento | Petición explícita de producto |
 | Backpack public link | en scope MVP web | deferred (`/share/backpack` 404) | Sin consume público de mochila aún |
 
 ## Verification pending
 
 - [ ] `tsc --noEmit -p apps/mobile`
-- [ ] PRs PR-F1, PR-F2 mergeados a tracker
+- [x] PRs PR-F1, PR-F2 mergeados a tracker
+- [ ] QA final de refresco de actividad tras abrir documento
 - [ ] Tracker → `dev`

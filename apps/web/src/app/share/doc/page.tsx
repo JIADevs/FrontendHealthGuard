@@ -98,11 +98,10 @@ function ShareDocInner() {
 
   return (
     <div style={{ ...shell, justifyContent: "center" }}>
-      <div style={card}>
-        <Typography variant="bodySm" color="secondary">
-          Redirigiendo al documento...
-        </Typography>
-      </div>
+      <Spinner size="lg" />
+      <Typography variant="bodySm" color="secondary" style={{ marginTop: 12 }}>
+        Redirigiendo al documento...
+      </Typography>
     </div>
   );
 }

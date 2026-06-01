@@ -1,7 +1,7 @@
 change: refactor-share-module
 status: proposed
 created: 2026-05-29
-last_updated: 2026-05-30
+last_updated: 2026-05-31
 repos:
   frontend: FrontendHealthGuard
   backend: BackendHealthGuard
@@ -55,6 +55,10 @@ tasks_progress:
     - "4.5.5"
     - "4.5.6"
     - "4.5.7"
+    - "4.5.8"
+    - "4.5.9"
+    - "4.5.10"
+    - "4.5.11"
     - "5.1"
     - "5.2"
     - "5.3"
@@ -63,24 +67,24 @@ tasks_progress:
   pending:
     - "5.6"
     - "5.7"
-    - "5.8"
+    - "5.9"
 
 prs:
   - id: PR-B
     repo: BackendHealthGuard
     head: refactor/shares-api
     base: feature/refactor-share-module
-    status: pending
+    status: merged
   - id: PR-F1
     repo: FrontendHealthGuard
     head: refactor/shares-shared-api
     base: feature/refactor-share-module
-    status: pending
+    status: merged
   - id: PR-F2
     repo: FrontendHealthGuard
     head: refactor/shares-mobile-ui
     base: refactor/shares-shared-api
-    status: pending
+    status: merged
 
 requirements:
   - resource_type_in_history
@@ -89,6 +93,8 @@ requirements:
   - configure_expiration_flow
   - qr_detail_revoke_extend
   - mutation_loading_feedback
+  - open_document_directly
+  - activity_refresh_feedback
 
 mockups:
   - assets/image-b7688b0d-6a53-4aad-9041-161bb11577b1.png

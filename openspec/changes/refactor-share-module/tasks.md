@@ -87,6 +87,10 @@ Chain strategy: feature-branch-chain
 - [x] 4.5.5 `SharedActivityCards`: último acceso con `variant="h3"` igual que visualizaciones
 - [x] 4.5.6 `ShareConfigureScreen`: spinner en header "Generar" mientras `isPending`
 - [x] 4.5.7 `formatShareStartedAt` en `shareUtils.ts` para filas de historial
+- [x] 4.5.8 `SharedDetailScreen`: refresco actividad con `useFocusEffect` + `AppState(active)`
+- [x] 4.5.9 `SharedActivityCards`: spinner visible durante refetch (`shares.isFetching`)
+- [x] 4.5.10 `SharedDetailActions`: botón "Abrir documento" antes de "Ver QR de nuevo"
+- [x] 4.5.11 Web `/share/doc`: redirección directa al documento (sin Helu viewer embebido)
 
 ---
 
@@ -99,7 +103,8 @@ Chain strategy: feature-branch-chain
 - [x] 5.5 Mobile QA: receptor no ve acción de descarga (`/share/doc`)
 - [ ] 5.6 `tsc --noEmit -p apps/mobile`
 - [ ] 5.7 Mobile QA: Generar muestra spinner hasta navegar a QR
-- [ ] 5.8 PRs encadenados creados y mergeados a tracker
+- [x] 5.8 PRs encadenados creados y mergeados a tracker
+- [ ] 5.9 QA: "Abrir documento" abre URL pública y refresca actividad al volver al detalle
 
 ---
 

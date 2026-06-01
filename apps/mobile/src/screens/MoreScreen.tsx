@@ -84,7 +84,7 @@ export function MoreScreen() {
           <MenuItem
             icon={<Share2 size={20} color={palette.brand[500]} />}
             label="Compartidos"
-            onPress={() => navigation.navigate("ShareDocuments", { backTitle: "Más" })}
+            onPress={() => navigation.navigate("SharedHistory", { backTitle: "Más" })}
           />
           <MenuItem
             icon={<Users size={20} color={palette.brand[600]} />}

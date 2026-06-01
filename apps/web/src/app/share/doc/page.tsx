@@ -50,6 +50,43 @@ function ShareDocInner() {
     // Pedimos en paralelo para reducir el tiempo hasta mostrar la vista.
     enabled: Boolean(token),
   });
+  const url = signedQuery.data?.url;
+
+  useEffect(() => {
+    if (!url) return;
+    let cancelled = false;
+    let localObjectUrl: string | null = null;
+
+    const loadBlob = async () => {
+      try {
+        setBlobError(null);
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error("No se pudo cargar el archivo compartido.");
+        }
+        const fileBlob = await res.blob();
+        if (cancelled) return;
+        localObjectUrl = URL.createObjectURL(fileBlob);
+        setBlobUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return localObjectUrl;
+        });
+      } catch {
+        if (!cancelled) {
+          // Fallback al URL firmado original si el fetch del blob falla (CORS o proveedor externo).
+          setBlobError("No se pudo incrustar el archivo; usando vista directa.");
+          setBlobUrl(null);
+        }
+      }
+    };
+
+    void loadBlob();
+
+    return () => {
+      cancelled = true;
+      if (localObjectUrl) URL.revokeObjectURL(localObjectUrl);
+    };
+  }, [url]);
 
   if (!token) {
     return (
@@ -102,46 +139,9 @@ function ShareDocInner() {
   }
 
   const d = docQuery.data as Document;
-  const url = signedQuery.data?.url;
   const isPdf = d.format?.toLowerCase().includes("pdf");
   const isImage = d.format?.toLowerCase().match(/image|jpg|jpeg|png/);
   const previewUrl = blobUrl ?? url ?? null;
-
-  useEffect(() => {
-    if (!url) return;
-    let cancelled = false;
-    let localObjectUrl: string | null = null;
-
-    const loadBlob = async () => {
-      try {
-        setBlobError(null);
-        const res = await fetch(url);
-        if (!res.ok) {
-          throw new Error("No se pudo cargar el archivo compartido.");
-        }
-        const fileBlob = await res.blob();
-        if (cancelled) return;
-        localObjectUrl = URL.createObjectURL(fileBlob);
-        setBlobUrl((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
-          return localObjectUrl;
-        });
-      } catch {
-        if (!cancelled) {
-          // Fallback al URL firmado original si el fetch del blob falla (CORS o proveedor externo).
-          setBlobError("No se pudo incrustar el archivo; usando vista directa.");
-          setBlobUrl(null);
-        }
-      }
-    };
-
-    void loadBlob();
-
-    return () => {
-      cancelled = true;
-      if (localObjectUrl) URL.revokeObjectURL(localObjectUrl);
-    };
-  }, [url]);
 
   return (
     <div style={shell}>

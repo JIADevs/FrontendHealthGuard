@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AppState, ScrollView, StyleSheet, View, Text } from "react-native";
+import { AppState, Linking, ScrollView, StyleSheet, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import * as Clipboard from "expo-clipboard";
@@ -68,6 +68,7 @@ export function SharedDetailScreen() {
   const revoke = useRevokeShareMutation();
   const extend = useExtendShareMutation();
   const [copying, setCopying] = useState(false);
+  const [openingDoc, setOpeningDoc] = useState(false);
   const [revokeOpen, setRevokeOpen] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -94,6 +95,18 @@ export function SharedDetailScreen() {
       backTitle: "Compartido",
     });
   }, [link, shareFlow]);
+
+  const handleOpenDocument = useCallback(async () => {
+    if (!link) return;
+    setOpeningDoc(true);
+    try {
+      await Linking.openURL(resolveExpoReachableUrl(link.shareUrl));
+    } catch {
+      Toast.show({ type: "error", text1: "No se pudo abrir el documento" });
+    } finally {
+      setOpeningDoc(false);
+    }
+  }, [link]);
 
   const handleExtend = useCallback(() => {
     if (!link) return;
@@ -166,13 +179,19 @@ export function SharedDetailScreen() {
             ) : null}
           </View>
 
-          <SharedActivityCards viewCount={link.viewCount} lastViewedAt={link.lastViewedAt} />
+          <SharedActivityCards
+            viewCount={link.viewCount}
+            lastViewedAt={link.lastViewedAt}
+            loading={shares.isFetching}
+          />
 
           {isActive ? (
             <SharedDetailActions
+              onOpenDocument={() => void handleOpenDocument()}
               onViewQr={handleViewQr}
               onCopy={() => void handleCopy()}
               onExtend={handleExtend}
+              openLoading={openingDoc}
               copyLoading={copying}
               extendLoading={extend.isPending}
               extendDisabled={link.expiresAt == null}

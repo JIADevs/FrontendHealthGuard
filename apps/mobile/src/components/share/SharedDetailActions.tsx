@@ -1,13 +1,15 @@
 import { useMemo } from "react";
 import { View, StyleSheet, Text } from "react-native";
-import { Clock, Copy, Eye } from "lucide-react-native";
+import { Clock, Copy, Eye, ExternalLink } from "lucide-react-native";
 import { Button, spacing, radii, fontSize, fontWeight, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 export interface SharedDetailActionsProps {
+  onOpenDocument: () => void;
   onViewQr: () => void;
   onCopy: () => void;
   onExtend: () => void;
+  openLoading?: boolean;
   copyLoading?: boolean;
   extendLoading?: boolean;
   extendDisabled?: boolean;
@@ -15,9 +17,11 @@ export interface SharedDetailActionsProps {
 }
 
 export function SharedDetailActions({
+  onOpenDocument,
   onViewQr,
   onCopy,
   onExtend,
+  openLoading = false,
   copyLoading = false,
   extendLoading = false,
   extendDisabled = false,
@@ -28,6 +32,14 @@ export function SharedDetailActions({
 
   return (
     <View style={styles.wrap}>
+      <ActionRow
+        icon={<ExternalLink size={18} color={t.brand.fg} />}
+        label="Abrir documento"
+        onPress={onOpenDocument}
+        disabled={actionsDisabled}
+        loading={openLoading}
+        styles={styles}
+      />
       <ActionRow
         icon={<Eye size={18} color={t.brand.fg} />}
         label="Ver QR de nuevo"

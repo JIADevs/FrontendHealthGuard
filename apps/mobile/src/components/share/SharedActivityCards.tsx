@@ -1,20 +1,24 @@
 import { useMemo } from "react";
 import { View, StyleSheet, Text } from "react-native";
-import { Typography, spacing, radii, fontWeight, timeAgo, useAppTheme, fontSize } from "@helu/ui";
+import { Spinner, Typography, spacing, radii, fontWeight, timeAgo, useAppTheme, fontSize } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 export interface SharedActivityCardsProps {
   viewCount: number;
   lastViewedAt: string | null;
+  loading?: boolean;
 }
 
-export function SharedActivityCards({ viewCount, lastViewedAt }: SharedActivityCardsProps) {
+export function SharedActivityCards({ viewCount, lastViewedAt, loading = false }: SharedActivityCardsProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.sectionLabel}>ACTIVIDAD</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.sectionLabel}>ACTIVIDAD</Text>
+        {loading ? <Spinner size="sm" /> : null}
+      </View>
       <View style={styles.row}>
         <View style={styles.card}>
           <Typography variant="h3">{viewCount}</Typography>
@@ -39,6 +43,11 @@ function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     wrap: {
       gap: spacing[2],
+    },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
     },
     sectionLabel: {
       letterSpacing: 0.6,

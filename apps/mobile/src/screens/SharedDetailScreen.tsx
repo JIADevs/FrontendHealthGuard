@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, View, Text } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AppState, ScrollView, StyleSheet, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import * as Clipboard from "expo-clipboard";
@@ -55,6 +55,15 @@ export function SharedDetailScreen() {
       void shares.refetch();
     }, [shares.refetch]),
   );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        void shares.refetch();
+      }
+    });
+    return () => sub.remove();
+  }, [shares.refetch]);
 
   const revoke = useRevokeShareMutation();
   const extend = useExtendShareMutation();

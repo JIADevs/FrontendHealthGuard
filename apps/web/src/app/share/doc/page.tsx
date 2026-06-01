@@ -1,7 +1,7 @@
 "use client";
 
 import "../../(app)/documents/documents.css";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -35,6 +35,8 @@ const card: React.CSSProperties = {
 function ShareDocInner() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [blobError, setBlobError] = useState<string | null>(null);
 
   const docQuery = useQuery({
     queryKey: ["shared-document", token],
@@ -103,6 +105,43 @@ function ShareDocInner() {
   const url = signedQuery.data?.url;
   const isPdf = d.format?.toLowerCase().includes("pdf");
   const isImage = d.format?.toLowerCase().match(/image|jpg|jpeg|png/);
+  const previewUrl = blobUrl ?? url ?? null;
+
+  useEffect(() => {
+    if (!url) return;
+    let cancelled = false;
+    let localObjectUrl: string | null = null;
+
+    const loadBlob = async () => {
+      try {
+        setBlobError(null);
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error("No se pudo cargar el archivo compartido.");
+        }
+        const fileBlob = await res.blob();
+        if (cancelled) return;
+        localObjectUrl = URL.createObjectURL(fileBlob);
+        setBlobUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return localObjectUrl;
+        });
+      } catch {
+        if (!cancelled) {
+          // Fallback al URL firmado original si el fetch del blob falla (CORS o proveedor externo).
+          setBlobError("No se pudo incrustar el archivo; usando vista directa.");
+          setBlobUrl(null);
+        }
+      }
+    };
+
+    void loadBlob();
+
+    return () => {
+      cancelled = true;
+      if (localObjectUrl) URL.revokeObjectURL(localObjectUrl);
+    };
+  }, [url]);
 
   return (
     <div style={shell}>
@@ -141,12 +180,20 @@ function ShareDocInner() {
           </Typography>
         )}
 
-        {url && (
+        {blobError && (
+          <Typography variant="caption" color="secondary" style={{ marginBottom: 8 }}>
+            {blobError}
+          </Typography>
+        )}
+
+        {previewUrl && (
           <div className="doc-preview">
             {isPdf ? (
-              <iframe src={url} title={d.title} />
+              <object data={previewUrl} type="application/pdf" style={{ width: "100%", height: "70vh" }}>
+                <iframe src={previewUrl} title={d.title} />
+              </object>
             ) : isImage ? (
-              <img src={url} alt={d.title} />
+              <img src={previewUrl} alt={d.title} />
             ) : (
               <div className="empty-state">
                 <Typography variant="bodySm" color="secondary">

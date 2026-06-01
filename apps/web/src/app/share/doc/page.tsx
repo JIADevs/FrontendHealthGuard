@@ -45,7 +45,8 @@ function ShareDocInner() {
   const signedQuery = useQuery({
     queryKey: ["shared-document-signed-url", token],
     queryFn: () => getSharedDocumentSignedUrl(token!),
-    enabled: Boolean(token) && Boolean(docQuery.data),
+    // Pedimos en paralelo para reducir el tiempo hasta mostrar la vista.
+    enabled: Boolean(token),
   });
 
   if (!token) {
@@ -105,16 +106,8 @@ function ShareDocInner() {
 
   return (
     <div style={shell}>
-      <div style={{ width: "100%", maxWidth: 720, marginBottom: 16 }}>
-        <Typography variant="caption" color="secondary">
-          Helu · documento compartido
-        </Typography>
-      </div>
       <div style={card}>
-        <Typography variant="h2" style={{ marginBottom: 4 }}>{d.title}</Typography>
-        <Typography variant="bodySm" color="secondary" style={{ marginBottom: 20 }}>
-          Vista de solo lectura. El enlace caduca según lo configuró quien lo compartió.
-        </Typography>
+        <Typography variant="h2" style={{ marginBottom: 12 }}>{d.title}</Typography>
 
         <dl className="doc-detail-meta">
           {d.documentDate ? (

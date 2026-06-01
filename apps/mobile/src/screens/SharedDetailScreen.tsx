@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import * as Clipboard from "expo-clipboard";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   useExtendShareMutation,
@@ -47,6 +47,13 @@ export function SharedDetailScreen() {
   const link = useMemo(
     () => shares.data?.find((row) => row.linkId === params.linkId && row.resourceType === params.resourceType),
     [shares.data, params.linkId, params.resourceType],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      // Trae view_count / last_viewed_at más recientes (p. ej. si un receptor abrió el enlace).
+      void shares.refetch();
+    }, [shares.refetch]),
   );
 
   const revoke = useRevokeShareMutation();

@@ -173,6 +173,31 @@ export const DoctorCreateSchema = z.object({
     notes: z.string().optional(),
 });
 
+// --- Treatments ---
+export const TreatmentSchema = z.object({
+    id: z.string().uuid(),
+    userId: z.string().uuid(),
+    name: z.string(),
+    description: z.string().nullable().optional(),
+    status: z.enum(["ACTIVE", "COMPLETED", "INACTIVE"]).default("ACTIVE"),
+    startDate: z.string().nullable().optional(),
+    endDate: z.string().nullable().optional(),
+    createdAt: z.string().nullable().optional(),
+});
+export const TreatmentPageSchema = createPageSchema(TreatmentSchema);
+
+// --- Reminder config ---
+export const ReminderConfigSchema = z.object({
+    enabled: z.boolean().default(false),
+    frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).default("DAILY"),
+    interval: z.number().min(1).default(1),
+    byDay: z.enum(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]).optional(),
+    endType: z.enum(["NEVER", "ON_DATE", "AFTER_N"]).default("NEVER"),
+    endDate: z.string().optional(),
+    endCount: z.number().min(1).optional(),
+    time: z.string().default("09:00"),
+});
+
 // --- Appointments ---
 export const AppointmentSchema = z.object({
     id: z.string().uuid(),
@@ -197,10 +222,15 @@ export const AppointmentSchema = z.object({
     cost: z.number().nullable().optional(),
     notes: z.string().nullable().optional(),
     customReminder: z.string().nullable().optional(),
+    reminderConfig: ReminderConfigSchema.nullable().optional(),
     tags: z.array(z.string()).default([]),
     treatmentTags: z.array(z.string()).default([]),
     reminderOffsets: z.array(z.number()).default([]),
     treatmentId: z.string().uuid().nullable().optional(),
+    preDocumentIds: z.array(z.string().uuid()).default([]),
+    postDocumentIds: z.array(z.string().uuid()).default([]),
+    preBackpackIds: z.array(z.string().uuid()).default([]),
+    postBackpackIds: z.array(z.string().uuid()).default([]),
     createdAt: z.string().nullable().optional(),
 });
 
@@ -226,10 +256,15 @@ export const AppointmentCreateSchema = z.object({
     cost: z.number().optional(),
     notes: z.string().optional(),
     customReminder: z.string().optional(),
+    reminderConfig: ReminderConfigSchema.optional(),
     tags: z.array(z.string()).default([]),
     treatmentTags: z.array(z.string()).default([]),
     reminderOffsets: z.array(z.number()).default([]),
     treatmentId: z.string().uuid().optional(),
+    preDocumentIds: z.array(z.string().uuid()).default([]),
+    postDocumentIds: z.array(z.string().uuid()).default([]),
+    preBackpackIds: z.array(z.string().uuid()).default([]),
+    postBackpackIds: z.array(z.string().uuid()).default([]),
 });
 
 // --- Medications ---
@@ -354,4 +389,7 @@ export type BackpackWithDocs = z.infer<typeof BackpackWithDocsSchema>;
 export type BackpackPage = z.infer<typeof BackpackPageSchema>;
 export type BackpackCreate = z.infer<typeof BackpackCreateSchema>;
 export type CustomTagCreate = z.infer<typeof CustomTagCreateSchema>;
+export type Treatment = z.infer<typeof TreatmentSchema>;
+export type TreatmentPage = z.infer<typeof TreatmentPageSchema>;
+export type ReminderConfig = z.infer<typeof ReminderConfigSchema>;
 

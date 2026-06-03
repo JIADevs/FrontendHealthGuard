@@ -7,6 +7,7 @@ import {
     DocumentSchema,
     DocumentActiveShareSchema,
     AppointmentPageSchema,
+    TreatmentPageSchema,
     DoctorPageSchema,
     MedicationPageSchema,
     NotificationPageSchema,
@@ -239,6 +240,13 @@ export async function getAppointmentOptions() {
         services: string[];
         consultation_types: string[];
     };
+}
+
+// ─── Treatments ────────────────────────────────────────
+
+export async function getTreatments(params: { page?: number; limit?: number } = {}) {
+    const { data } = await apiClient.get("/treatments/", { params });
+    return TreatmentPageSchema.parse(data);
 }
 
 // ─── Medications ───────────────────────────────────────

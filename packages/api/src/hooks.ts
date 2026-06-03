@@ -46,6 +46,8 @@ import {
     deleteAppointment,
     updateAppointmentStatus,
     getAppointmentOptions,
+    // Treatments
+    getTreatments,
     // Medications
     getMedications,
     createMedication,
@@ -94,6 +96,8 @@ export const QK = {
     /** Incluye `limit` y rango de fechas: el dashboard usa limit pequeño y `startDate`; la agenda usa otros parámetros. */
     appointments:     (search = "", page = 1, limit = 20, startDate: string | null = null, endDate: string | null = null) =>
         ["appointments", page, search, limit, startDate, endDate] as const,
+
+    treatments:       (page = 1, limit = 100) => ["treatments", page, limit] as const,
 
     medications:      (page = 1, limit = 20) => ["medications", page, limit] as const,
 
@@ -361,6 +365,17 @@ export function useAppointmentOptionsQuery() {
         queryKey: ["appointment-options"],
         queryFn: getAppointmentOptions,
         staleTime: Infinity, // Options rarely change
+    });
+}
+
+// ─── Treatments ────────────────────────────────────────
+
+export function useTreatmentsQuery(page = 1, limit = 100) {
+    return useQuery({
+        queryKey: QK.treatments(page, limit),
+        queryFn: () => getTreatments({ page, limit }),
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
     });
 }
 

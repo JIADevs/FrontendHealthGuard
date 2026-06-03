@@ -3,10 +3,6 @@
  *
  * Cubre creación y edición. La plataforma inyecta `adapters` para
  * notificaciones (toasts/sileo) y cierre de modal.
- *
- * Uso:
- *   Crear:  useAppointmentFormCore({ adapters, afterSave: onClose })
- *   Editar: useAppointmentFormCore({ initial: appt, adapters, afterSave: onClose })
  */
 
 import { useState } from "react";
@@ -15,7 +11,7 @@ import {
   useUpdateAppointmentMutation,
 } from "./hooks";
 import { isApiError } from "./errors";
-import type { Appointment } from "./schemas";
+import type { Appointment, ReminderConfig } from "./schemas";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +38,12 @@ export interface AppointmentFormState {
   notes: string;
   customReminder: string;
   treatmentTags: string[];
+  treatmentId: string;
+  preDocumentIds: string[];
+  postDocumentIds: string[];
+  preBackpackIds: string[];
+  postBackpackIds: string[];
+  reminderConfig: ReminderConfig | null;
   /** Inline validation / API error — display directly in the form UI. */
   error: string | null;
   saving: boolean;
@@ -69,6 +71,12 @@ export interface AppointmentFormActions {
   setNotes: (v: string) => void;
   setCustomReminder: (v: string) => void;
   setTreatmentTags: (v: string[]) => void;
+  setTreatmentId: (v: string) => void;
+  setPreDocumentIds: (v: string[]) => void;
+  setPostDocumentIds: (v: string[]) => void;
+  setPreBackpackIds: (v: string[]) => void;
+  setPostBackpackIds: (v: string[]) => void;
+  setReminderConfig: (v: ReminderConfig | null) => void;
   clearError: () => void;
   handleSave: () => void;
 }
@@ -117,6 +125,14 @@ export function useAppointmentFormCore({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [customReminder, setCustomReminder] = useState(initial?.customReminder ?? "");
   const [treatmentTags, setTreatmentTags] = useState<string[]>(initial?.treatmentTags ?? []);
+  const [treatmentId, setTreatmentId] = useState(initial?.treatmentId ?? "");
+  const [preDocumentIds, setPreDocumentIds] = useState<string[]>(initial?.preDocumentIds ?? []);
+  const [postDocumentIds, setPostDocumentIds] = useState<string[]>(initial?.postDocumentIds ?? []);
+  const [preBackpackIds, setPreBackpackIds] = useState<string[]>(initial?.preBackpackIds ?? []);
+  const [postBackpackIds, setPostBackpackIds] = useState<string[]>(initial?.postBackpackIds ?? []);
+  const [reminderConfig, setReminderConfig] = useState<ReminderConfig | null>(
+    initial?.reminderConfig ?? null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const createMut = useCreateAppointmentMutation();
@@ -124,13 +140,11 @@ export function useAppointmentFormCore({
   const saving = createMut.isPending || updateMut.isPending;
 
   function handleSave() {
-    // Validación básica
     if (!date || !time) {
       setError("Fecha y hora son obligatorios.");
       return;
     }
 
-    // Validar según modalidad
     if (modality === "PRESENCIAL" && !location.trim()) {
       setError("El lugar es obligatorio para citas presenciales.");
       return;
@@ -163,9 +177,15 @@ export function useAppointmentFormCore({
       cost: cost.trim() ? parseFloat(cost) : undefined,
       notes: notes.trim() || undefined,
       customReminder: customReminder.trim() || undefined,
+      reminderConfig: reminderConfig?.enabled ? reminderConfig : undefined,
       tags: [] as string[],
       treatmentTags,
       reminderOffsets: [] as number[],
+      treatmentId: treatmentId.trim() || undefined,
+      preDocumentIds,
+      postDocumentIds,
+      preBackpackIds,
+      postBackpackIds,
     };
 
     if (isEdit) {
@@ -188,10 +208,14 @@ export function useAppointmentFormCore({
     name, date, time, modality, location, videoCallLink,
     specialty, service, consultationType, duration, doctorId, doctor, clinic,
     type, status, examType, cost, notes, customReminder, treatmentTags,
+    treatmentId, preDocumentIds, postDocumentIds, preBackpackIds, postBackpackIds,
+    reminderConfig,
     error, saving, isEdit,
     setName, setDate, setTime, setModality, setLocation, setVideoCallLink,
     setSpecialty, setService, setConsultationType, setDuration, setDoctorId, setDoctor, setClinic,
     setType, setStatus, setExamType, setCost, setNotes, setCustomReminder, setTreatmentTags,
+    setTreatmentId, setPreDocumentIds, setPostDocumentIds, setPreBackpackIds, setPostBackpackIds,
+    setReminderConfig,
     clearError: () => setError(null),
     handleSave,
   };

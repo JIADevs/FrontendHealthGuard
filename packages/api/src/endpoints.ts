@@ -235,10 +235,10 @@ export async function updateAppointmentStatus(
 
 export async function getAppointmentOptions() {
     const { data } = await apiClient.get("/appointments/options/all");
-    return data as {
-        specialties: string[];
-        services: string[];
-        consultation_types: string[];
+    return {
+        specialties: (data.specialties ?? []) as string[],
+        services: (data.services ?? []) as string[],
+        consultation_types: (data.consultation_types ?? data.consultationTypes ?? []) as string[],
     };
 }
 

@@ -191,7 +191,14 @@ export const ReminderConfigSchema = z.object({
     enabled: z.boolean().default(false),
     frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).default("DAILY"),
     interval: z.number().min(1).default(1),
-    byDay: z.enum(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]).optional(),
+    byDay: z.preprocess(
+        (v) => {
+            if (v === null || v === undefined) return undefined;
+            if (typeof v === "string") return [v];
+            return v;
+        },
+        z.array(z.enum(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"])).optional(),
+    ),
     endType: z.enum(["NEVER", "ON_DATE", "AFTER_N"]).default("NEVER"),
     endDate: z.string().optional(),
     endCount: z.number().min(1).optional(),

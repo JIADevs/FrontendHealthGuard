@@ -1,4 +1,4 @@
-﻿import React from "react";
+﻿import React, { useRef, useEffect } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   KeyboardAvoidingView, Platform, Modal, Pressable, Switch, TextInput,
@@ -27,7 +27,7 @@ import type { ReminderConfig } from "@helu/api";
 import {
   Plus, ChevronDown, ChevronUp, Calendar, Clock, MapPin, Video, Phone,
   User, Building2, FileText, Stethoscope, Briefcase, ClipboardList, Timer,
-  DollarSign, Activity, FolderOpen, Backpack, Bell, X, Check,
+  DollarSign, Activity, FolderOpen, Backpack, Bell, X, Search,
 } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { MODALITIES } from "../constants/appointments";
@@ -86,6 +86,16 @@ interface PickerModalProps {
 function PickerModal({ visible, onClose, title, items, selected, onToggle }: PickerModalProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (!visible) setSearch("");
+  }, [visible]);
+
+  const filtered = search.trim()
+    ? items.filter((item) => item.label.toLowerCase().includes(search.toLowerCase()))
+    : items;
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
@@ -97,31 +107,61 @@ function PickerModal({ visible, onClose, title, items, selected, onToggle }: Pic
             </TouchableOpacity>
           </View>
           <View style={styles.sheetDivider} />
-          <ScrollView style={styles.sheetScroll}>
-            {items.length === 0 && (
+          {/* Buscador */}
+          <View style={styles.pickerSearchContainer}>
+            <Search size={16} color={t.text.secondary} />
+            <TextInput
+              style={styles.pickerSearchInput}
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Buscar..."
+              placeholderTextColor={t.text.secondary}
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch("")}>
+                <X size={16} color={t.text.secondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+          <ScrollView
+            style={styles.sheetScroll}
+            contentContainerStyle={{ gap: spacing[2], paddingBottom: spacing[2] }}
+          >
+            {filtered.length === 0 && (
               <Text style={styles.emptyText}>No hay elementos disponibles</Text>
             )}
-            {items.map((item) => {
+            {filtered.map((item) => {
               const isSelected = selected.includes(item.id);
               return (
                 <TouchableOpacity
                   key={item.id}
-                  style={styles.pickerRow}
+                  style={[styles.pickerCard, isSelected && styles.pickerCardSelected]}
                   onPress={() => onToggle(item.id)}
+                  activeOpacity={0.7}
                 >
-                  <View style={[styles.checkBox, isSelected && styles.checkBoxActive]}>
-                    {isSelected && <Check size={14} color="#fff" />}
+                  {/* Icono izquierda */}
+                  <View style={styles.pickerCardIcon}>
+                    <FileText size={20} color={t.text.secondary} />
                   </View>
+                  {/* Texto */}
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.pickerRowTitle}>{item.label}</Text>
+                    <Text style={styles.pickerRowTitle} numberOfLines={1}>{item.label}</Text>
                     {item.sub && <Text style={styles.pickerRowSub}>{item.sub}</Text>}
+                  </View>
+                  {/* Botón + / × */}
+                  <View style={[styles.pickerAddBtn, isSelected && styles.pickerAddBtnSelected]}>
+                    {isSelected
+                      ? <X size={22} color="#fff" />
+                      : <Plus size={22} color="#fff" />
+                    }
                   </View>
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
-          <TouchableOpacity style={[styles.pill, styles.pillActive, { margin: spacing[4], justifyContent: "center" }]} onPress={onClose}>
-            <Text style={styles.pillTextActive}>Listo</Text>
+          {/* Botón cerrar al estilo de la screenshot */}
+          <TouchableOpacity style={styles.pickerCloseBtn} onPress={onClose}>
+            <Text style={styles.pickerCloseBtnText}>Cerrar</Text>
           </TouchableOpacity>
         </Pressable>
       </Pressable>
@@ -159,11 +199,14 @@ export function AppointmentFormScreen() {
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const [showAddDoctorModal, setShowAddDoctorModal] = useState(false);
 
-  // Picker modals for documents/backpacks
+  // Picker modals for documents/backpacks/treatments
+  const [showTreatmentPicker, setShowTreatmentPicker] = useState(false);
   const [showPreDocPicker, setShowPreDocPicker] = useState(false);
   const [showPostDocPicker, setShowPostDocPicker] = useState(false);
   const [showPreBpPicker, setShowPreBpPicker] = useState(false);
   const [showPostBpPicker, setShowPostBpPicker] = useState(false);
+
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Find appointment if editing
   const appointmentsQuery = useAppointmentsQuery("", 1, 100);
@@ -194,6 +237,7 @@ export function AppointmentFormScreen() {
   const backpacks = backpacksQuery.data?.items ?? [];
 
   // Derived labels for selected items
+  const treatmentItems = treatments.map((tx: any) => ({ id: tx.id, label: tx.name, sub: tx.description ?? undefined }));
   const docItems = documents.map((d: any) => ({ id: d.id, label: d.title, sub: d.format }));
   const bpItems = backpacks.map((b: any) => ({ id: b.id, label: b.name, sub: b.description ?? undefined }));
 
@@ -213,6 +257,13 @@ export function AppointmentFormScreen() {
 
   // ── Reminder helpers ──────────────────────────────────────────────────────
   const reminder = form.reminderConfig;
+
+  // Local text state for interval input — allows clearing before typing new value
+  const [intervalText, setIntervalText] = useState(String(reminder?.interval ?? 1));
+  useEffect(() => {
+    if (reminder?.enabled) setIntervalText(String(reminder.interval ?? 1));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reminder?.enabled]);
 
   function toggleReminder(val: boolean) {
     if (val) {
@@ -238,7 +289,7 @@ export function AppointmentFormScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <ScrollView ref={scrollViewRef} style={styles.scroll} contentContainerStyle={styles.content}>
 
           {/* ── INFORMACIÓN BÁSICA ─────────────────────────────────────────── */}
           <View style={styles.card}>
@@ -353,16 +404,22 @@ export function AppointmentFormScreen() {
                 <Activity size={16} color={t.text.secondary} />
                 <Text style={styles.label}>Tratamiento</Text>
               </View>
-              <SelectField
-                label=""
-                value={treatments.find((tx: any) => tx.id === form.treatmentId)?.name ?? ""}
-                placeholder="Seleccionar tratamiento"
-                options={treatments.map((tx: any) => tx.name)}
-                onChange={(name) => {
-                  const tx = treatments.find((t: any) => t.name === name);
-                  form.setTreatmentId(tx?.id ?? "");
-                }}
-              />
+              {form.treatmentIds.length > 0 && (
+                <View style={styles.chipRow}>
+                  {(form.treatmentIds as string[]).map((id: string) => (
+                    <React.Fragment key={id}>
+                      <ChipTag
+                        label={labelForId(id, treatmentItems)}
+                        onRemove={() => form.setTreatmentIds((form.treatmentIds as string[]).filter((x: string) => x !== id))}
+                      />
+                    </React.Fragment>
+                  ))}
+                </View>
+              )}
+              <TouchableOpacity style={styles.addButton} onPress={() => setShowTreatmentPicker(true)}>
+                <Plus size={16} color={t.brand.fg} />
+                <Text style={styles.addButtonText}>Agregar tratamiento</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -492,10 +549,15 @@ export function AppointmentFormScreen() {
                     <TextInput
                       style={styles.numberInput}
                       keyboardType="numeric"
-                      value={String(reminder.interval ?? 1)}
+                      value={intervalText}
                       onChangeText={(v: string) => {
-                        const n = parseInt(v);
+                        setIntervalText(v);
+                        const n = parseInt(v, 10);
                         if (!isNaN(n) && n > 0) updateReminder({ interval: n });
+                      }}
+                      onBlur={() => {
+                        const n = parseInt(intervalText, 10);
+                        if (isNaN(n) || n <= 0) setIntervalText(String(reminder.interval ?? 1));
                       }}
                     />
                     <View style={[styles.pillRow, { flex: 1 }]}>
@@ -514,22 +576,31 @@ export function AppointmentFormScreen() {
                   </View>
                 </View>
 
-                {/* Día de la semana (solo si es WEEKLY) */}
+                {/* Días de la semana (solo si es WEEKLY) — selección múltiple */}
                 {reminder.frequency === "WEEKLY" && (
                   <View>
                     <Text style={styles.label}>Se repite el</Text>
                     <View style={[styles.pillRow, { marginTop: spacing[2] }]}>
-                      {WEEK_DAYS.map((d) => (
-                        <TouchableOpacity
-                          key={d.value}
-                          style={[styles.pill, reminder.byDay === d.value && styles.pillActive]}
-                          onPress={() => updateReminder({ byDay: d.value })}
-                        >
-                          <Text style={[styles.pillText, reminder.byDay === d.value && styles.pillTextActive]}>
-                            {d.label}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                      {WEEK_DAYS.map((d) => {
+                        const activeDays = (reminder.byDay as string[] | undefined) ?? [];
+                        const isActive = activeDays.includes(d.value);
+                        return (
+                          <TouchableOpacity
+                            key={d.value}
+                            style={[styles.pill, isActive && styles.pillActive]}
+                            onPress={() => {
+                              const newDays = isActive
+                                ? activeDays.filter((x) => x !== d.value)
+                                : [...activeDays, d.value];
+                              updateReminder({ byDay: (newDays.length > 0 ? newDays : undefined) as any });
+                            }}
+                          >
+                            <Text style={[styles.pillText, isActive && styles.pillTextActive]}>
+                              {d.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
                     </View>
                   </View>
                 )}
@@ -598,7 +669,13 @@ export function AppointmentFormScreen() {
           {/* ── DETALLES ADICIONALES (colapsable) ─────────────────────────── */}
           <TouchableOpacity
             style={styles.collapsibleHeader}
-            onPress={() => setShowAdditionalDetails(!showAdditionalDetails)}
+            onPress={() => {
+              const opening = !showAdditionalDetails;
+              setShowAdditionalDetails(opening);
+              if (opening) {
+                setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
+              }
+            }}
           >
             <Text style={styles.collapsibleHeaderText}>Detalles adicionales</Text>
             {showAdditionalDetails
@@ -677,6 +754,17 @@ export function AppointmentFormScreen() {
         visible={showAddDoctorModal}
         onClose={() => setShowAddDoctorModal(false)}
         onCreated={(name) => { form.setDoctor(name); setShowAddDoctorModal(false); }}
+      />
+
+      <PickerModal
+        visible={showTreatmentPicker} onClose={() => setShowTreatmentPicker(false)}
+        title="Tratamientos" items={treatmentItems}
+        selected={form.treatmentIds}
+        onToggle={(id: string) => form.setTreatmentIds(
+          (form.treatmentIds as string[]).includes(id)
+            ? (form.treatmentIds as string[]).filter((x: string) => x !== id)
+            : [...(form.treatmentIds as string[]), id]
+        )}
       />
 
       <PickerModal
@@ -793,14 +881,50 @@ const makeStyles = (t: ThemeContextValue) =>
     sheetTitle: { fontSize: 17, fontWeight: "600", color: t.text.primary },
     sheetDivider: { height: 1, backgroundColor: t.border.light, marginBottom: spacing[2] },
     sheetScroll: { paddingHorizontal: spacing[4] },
-    pickerRow: { flexDirection: "row", alignItems: "center", paddingVertical: spacing[3], gap: spacing[3] },
-    checkBox: {
-      width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: t.border.medium,
-      alignItems: "center", justifyContent: "center",
-    },
-    checkBoxActive: { backgroundColor: t.brand.fg, borderColor: t.brand.fg },
     pickerRowTitle: { fontSize: 15, color: t.text.primary, fontWeight: "500" },
     pickerRowSub: { fontSize: 13, color: t.text.secondary },
-    emptyText: { fontSize: 14, color: t.text.tertiary, textAlign: "center", paddingVertical: spacing[6] },
+    pickerSearchContainer: {
+      flexDirection: "row", alignItems: "center", gap: spacing[2],
+      marginHorizontal: spacing[4], marginBottom: spacing[3],
+      borderWidth: 1, borderColor: t.border.medium, borderRadius: 10,
+      paddingHorizontal: spacing[3], paddingVertical: spacing[2],
+      backgroundColor: t.surface.bg,
+    },
+    pickerSearchInput: { flex: 1, fontSize: 15, color: t.text.primary },
+    // Tarjeta estilo "agregar documento en mochila"
+    pickerCard: {
+      flexDirection: "row", alignItems: "center", gap: spacing[3],
+      padding: spacing[3],
+      borderRadius: 16, borderWidth: 1, borderColor: t.border.light,
+      backgroundColor: t.surface.bgCard,
+    },
+    pickerCardSelected: {
+      borderColor: t.brand.fg,
+      backgroundColor: t.brand.bg,
+    },
+    pickerCardIcon: {
+      width: 46, height: 46, borderRadius: 12,
+      backgroundColor: t.surface.bg,
+      alignItems: "center", justifyContent: "center",
+    },
+    pickerAddBtn: {
+      width: 52, height: 52, borderRadius: 14,
+      backgroundColor: t.brand.fg,
+      alignItems: "center", justifyContent: "center",
+    },
+    pickerAddBtnSelected: {
+      backgroundColor: "#e53e3e",
+    },
+    pickerCloseBtn: {
+      margin: spacing[4],
+      padding: spacing[4],
+      backgroundColor: t.surface.bgCard,
+      borderRadius: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: t.border.light,
+    },
+    pickerCloseBtnText: { fontSize: 16, fontWeight: "600", color: t.text.primary },
+    emptyText: { fontSize: 14, color: t.text.secondary, textAlign: "center", paddingVertical: spacing[6] },
     doctorInitials: { fontSize: 16, fontWeight: "600", color: t.text.primary },
   });

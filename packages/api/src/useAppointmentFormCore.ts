@@ -38,7 +38,7 @@ export interface AppointmentFormState {
   notes: string;
   customReminder: string;
   treatmentTags: string[];
-  treatmentId: string;
+  treatmentIds: string[];
   preDocumentIds: string[];
   postDocumentIds: string[];
   preBackpackIds: string[];
@@ -71,7 +71,7 @@ export interface AppointmentFormActions {
   setNotes: (v: string) => void;
   setCustomReminder: (v: string) => void;
   setTreatmentTags: (v: string[]) => void;
-  setTreatmentId: (v: string) => void;
+  setTreatmentIds: (v: string[]) => void;
   setPreDocumentIds: (v: string[]) => void;
   setPostDocumentIds: (v: string[]) => void;
   setPreBackpackIds: (v: string[]) => void;
@@ -125,7 +125,9 @@ export function useAppointmentFormCore({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [customReminder, setCustomReminder] = useState(initial?.customReminder ?? "");
   const [treatmentTags, setTreatmentTags] = useState<string[]>(initial?.treatmentTags ?? []);
-  const [treatmentId, setTreatmentId] = useState(initial?.treatmentId ?? "");
+  const [treatmentIds, setTreatmentIds] = useState<string[]>(
+    initial?.treatmentId ? [initial.treatmentId] : [],
+  );
   const [preDocumentIds, setPreDocumentIds] = useState<string[]>(initial?.preDocumentIds ?? []);
   const [postDocumentIds, setPostDocumentIds] = useState<string[]>(initial?.postDocumentIds ?? []);
   const [preBackpackIds, setPreBackpackIds] = useState<string[]>(initial?.preBackpackIds ?? []);
@@ -181,7 +183,7 @@ export function useAppointmentFormCore({
       tags: [] as string[],
       treatmentTags,
       reminderOffsets: [] as number[],
-      treatmentId: treatmentId.trim() || undefined,
+      treatmentId: treatmentIds[0]?.trim() || undefined,
       preDocumentIds,
       postDocumentIds,
       preBackpackIds,
@@ -208,13 +210,13 @@ export function useAppointmentFormCore({
     name, date, time, modality, location, videoCallLink,
     specialty, service, consultationType, duration, doctorId, doctor, clinic,
     type, status, examType, cost, notes, customReminder, treatmentTags,
-    treatmentId, preDocumentIds, postDocumentIds, preBackpackIds, postBackpackIds,
+    treatmentIds, preDocumentIds, postDocumentIds, preBackpackIds, postBackpackIds,
     reminderConfig,
     error, saving, isEdit,
     setName, setDate, setTime, setModality, setLocation, setVideoCallLink,
     setSpecialty, setService, setConsultationType, setDuration, setDoctorId, setDoctor, setClinic,
     setType, setStatus, setExamType, setCost, setNotes, setCustomReminder, setTreatmentTags,
-    setTreatmentId, setPreDocumentIds, setPostDocumentIds, setPreBackpackIds, setPostBackpackIds,
+    setTreatmentIds, setPreDocumentIds, setPostDocumentIds, setPreBackpackIds, setPostBackpackIds,
     setReminderConfig,
     clearError: () => setError(null),
     handleSave,

@@ -13,10 +13,9 @@ import {
   DocumentDetailPreview,
   DocumentDetailOpenExternal,
   DocumentDetailActions,
-  ShareDocumentModal,
 } from "../components/documents";
+import { useShareFlow } from "../components/share";
 import { useDocumentDetail } from "../hooks/useDocumentDetail";
-import { useDocumentShareModal } from "../hooks/useDocumentShareModal";
 import { useOpenDocumentExternal } from "../hooks/useOpenDocumentExternal";
 import { getDocumentPageCount } from "../components/documents/utils/documentDetailMeta";
 
@@ -50,7 +49,7 @@ export function DocumentDetailScreen() {
     handleDelete,
   } = useDocumentDetail(id);
 
-  const share = useDocumentShareModal();
+  const shareFlow = useShareFlow(navigation);
   const { openDocument, opening } = useOpenDocumentExternal();
 
   useLayoutEffect(() => {
@@ -120,28 +119,12 @@ export function DocumentDetailScreen() {
           loading={opening}
         />
         <DocumentDetailActions
-          onShare={() => share.openShare(document)}
+          onShare={() => shareFlow.openConfigureDocument(document, "Documento")}
           onEdit={() => navigation.navigate("DocumentEdit", { id: document.id })}
           onDelete={handleDelete}
-          shareDisabled={share.isPreparing && share.shareTarget?.id === document.id}
-          shareLoading={share.isSharePendingFor(document.id)}
           deleteLoading={deletePending}
         />
       </ScrollView>
-
-      {share.shareTarget && (
-        <ShareDocumentModal
-          shareUrl={share.shareUrl}
-          isPreparing={share.isPreparing}
-          isCopying={share.isCopying}
-          onClose={share.closeShare}
-          onCopyLink={() => void share.copyLink()}
-          onWhatsApp={() => void share.shareWhatsApp()}
-          onEmail={() => void share.shareEmail()}
-          onLink={() => void share.shareLink()}
-          onMore={() => void share.shareMore()}
-        />
-      )}
 
       {deleteTarget && (
         <ConfirmModal

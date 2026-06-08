@@ -10,9 +10,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useShareBackpackMutation } from "./hooks";
-import { removeDocFromBackpack } from "./endpoints";
+import { useShareBackpackMutation, useRemoveDocFromBackpackMutation } from "./hooks";
 import { isApiError } from "./errors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -58,45 +56,34 @@ export function useBackpackDetailCore(
   backpackId: string,
   adapters: BackpackDetailAdapters,
 ): BackpackDetailState & BackpackDetailActions {
-  const qc = useQueryClient();
-
   const [shareData, setShareData] = useState<BackpackShareData | null>(null);
   const [removingDocId, setRemovingDocId] = useState<string | null>(null);
 
   const shareMut = useShareBackpackMutation();
-
-  const removeMut = useMutation({
-    mutationFn: ({ documentId }: { documentId: string; title: string }) =>
-      removeDocFromBackpack(backpackId, documentId),
-    onSuccess: (_data, vars) => {
-      adapters.onRemoveSuccess(vars.title);
-    },
-    onError: (err, vars) => {
-      adapters.onRemoveError(
-        "Error al quitar documento",
-        isApiError(err) ? err.message : "No se pudo quitar el documento.",
-      );
-      // Restore the doc in the list caches on failure
-      qc.invalidateQueries({ queryKey: ["backpack-docs", backpackId], exact: false });
-      qc.invalidateQueries({ queryKey: ["backpack", backpackId], exact: false });
-    },
-    onMutate: ({ documentId }) => {
-      setRemovingDocId(documentId);
-    },
-    onSettled: () => {
-      setRemovingDocId(null);
-      qc.invalidateQueries({ queryKey: ["backpack-docs", backpackId], exact: false });
-      qc.invalidateQueries({ queryKey: ["backpack", backpackId], exact: false });
-      qc.invalidateQueries({ queryKey: ["backpacks"], exact: false });
-    },
-  });
+  const removeMut = useRemoveDocFromBackpackMutation();
 
   const removeDocument = useCallback(
     (documentId: string, title: string) => {
-      removeMut.mutate({ documentId, title });
+      setRemovingDocId(documentId);
+      removeMut.mutate(
+        { backpackId, documentId },
+        {
+          onSuccess: () => {
+            adapters.onRemoveSuccess(title);
+          },
+          onError: (err) => {
+            adapters.onRemoveError(
+              "Error al quitar documento",
+              isApiError(err) ? err.message : "No se pudo quitar el documento.",
+            );
+          },
+          onSettled: () => {
+            setRemovingDocId(null);
+          },
+        },
+      );
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [backpackId],
+    [backpackId, removeMut, adapters],
   );
 
   const shareBackpack = useCallback(() => {

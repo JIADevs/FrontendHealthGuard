@@ -9,3 +9,6 @@ export { BackpackDetailDocumentItem } from "./BackpackDetailDocumentItem";
 export { BackpackDetailContentSection } from "./BackpackDetailContentSection";
 export { BackpackDetailDeleteRow } from "./BackpackDetailDeleteRow";
 export { BackpackCreateDocumentPicker } from "./BackpackCreateDocumentPicker";
+export { BackpackAddDocumentsHeader } from "./BackpackAddDocumentsHeader";
+export { BackpackDocumentPickerList } from "./BackpackDocumentPickerList";
+export type { BackpackDocumentPickerMode, BackpackDocumentPickerListProps } from "./BackpackDocumentPickerList";

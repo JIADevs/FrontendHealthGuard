@@ -2,15 +2,19 @@ import { useCallback, useMemo, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Toast from "react-native-toast-message";
-import { useDocumentsQuery, useCreateBackpackMutation } from "@helu/api/hooks";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useCreateBackpackMutation,
+  useInfiniteDocumentsCatalog,
+  invalidateBackpackQueries,
+} from "@helu/api/hooks";
 import { addDocToBackpack, isApiError } from "@helu/api";
 import { useDebounceSearch } from "@helu/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 
-const DOCS_FETCH_LIMIT = 50;
-
 export function useBackpackCreateWithDocs() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const qc = useQueryClient();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -18,8 +22,11 @@ export function useBackpackCreateWithDocs() {
   const debouncedDocSearch = useDebounceSearch(docSearch);
   const [creating, setCreating] = useState(false);
 
-  const docsQuery = useDocumentsQuery(debouncedDocSearch, 1, DOCS_FETCH_LIMIT);
-  const documents = useMemo(() => docsQuery.data?.items ?? [], [docsQuery.data]);
+  const catalogQuery = useInfiniteDocumentsCatalog(debouncedDocSearch);
+  const documents = useMemo(
+    () => catalogQuery.data?.pages.flatMap((p) => p.items) ?? [],
+    [catalogQuery.data],
+  );
 
   const createMut = useCreateBackpackMutation();
 
@@ -31,6 +38,12 @@ export function useBackpackCreateWithDocs() {
       return next;
     });
   }, []);
+
+  const handleLoadMore = useCallback(() => {
+    if (catalogQuery.hasNextPage && !catalogQuery.isFetchingNextPage) {
+      void catalogQuery.fetchNextPage();
+    }
+  }, [catalogQuery]);
 
   const handleCreate = useCallback(async () => {
     const trimmed = name.trim();
@@ -63,6 +76,10 @@ export function useBackpackCreateWithDocs() {
         } catch {
           failedIds.push(documentId);
         }
+      }
+
+      if (ids.length > 0) {
+        invalidateBackpackQueries(qc, backpack.id);
       }
 
       if (failedIds.length > 0 && failedIds.length < ids.length) {
@@ -101,7 +118,7 @@ export function useBackpackCreateWithDocs() {
     } finally {
       setCreating(false);
     }
-  }, [name, description, selectedIds, createMut, navigation]);
+  }, [name, description, selectedIds, createMut, navigation, qc]);
 
   return {
     name,
@@ -111,7 +128,12 @@ export function useBackpackCreateWithDocs() {
     docSearch,
     setDocSearch,
     documents,
-    documentsLoading: docsQuery.isLoading,
+    documentsLoading: catalogQuery.isLoading,
+    documentsRefetching: catalogQuery.isRefetching && !catalogQuery.isFetchingNextPage,
+    refetchDocuments: catalogQuery.refetch,
+    hasMoreDocuments: catalogQuery.hasNextPage,
+    isFetchingMoreDocuments: catalogQuery.isFetchingNextPage,
+    loadMoreDocuments: handleLoadMore,
     selectedIds,
     toggleDocument,
     handleCreate,

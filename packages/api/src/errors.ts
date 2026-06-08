@@ -33,6 +33,9 @@ export class ApiError extends Error {
     get isForbidden() {
         return this.status === 403;
     }
+    get isConflict() {
+        return this.status === 409;
+    }
     get isValidation() {
         return this.status === 422;
     }

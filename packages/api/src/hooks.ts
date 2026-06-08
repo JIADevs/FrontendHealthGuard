@@ -9,6 +9,7 @@
 import {
     keepPreviousData,
     useMutation,
+    useQueries,
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
@@ -41,7 +42,10 @@ import {
     deleteDoctor,
     // Appointments
     getAppointments,
+    getAppointmentById,
     createAppointment,
+    // Treatments
+    getTreatmentById,
     updateAppointment,
     deleteAppointment,
     updateAppointmentStatus,
@@ -96,8 +100,10 @@ export const QK = {
     /** Incluye `limit` y rango de fechas: el dashboard usa limit pequeño y `startDate`; la agenda usa otros parámetros. */
     appointments:     (search = "", page = 1, limit = 20, startDate: string | null = null, endDate: string | null = null) =>
         ["appointments", page, search, limit, startDate, endDate] as const,
+    appointment:      (id: string)             => ["appointment", id] as const,
 
     treatments:       (page = 1, limit = 100) => ["treatments", page, limit] as const,
+    treatment:        (id: string)            => ["treatment", id] as const,
 
     medications:      (page = 1, limit = 20) => ["medications", page, limit] as const,
 
@@ -304,6 +310,15 @@ export function useRemoveDocFromBackpackMutation() {
 
 // ─── Appointments ──────────────────────────────────────
 
+export function useAppointmentByIdQuery(id: string) {
+    return useQuery({
+        queryKey: QK.appointment(id),
+        queryFn: () => getAppointmentById(id),
+        staleTime: 5_000,
+        enabled: !!id,
+    });
+}
+
 export function useAppointmentsQuery(
     search = "",
     page = 1,
@@ -376,6 +391,45 @@ export function useTreatmentsQuery(page = 1, limit = 100) {
         queryFn: () => getTreatments({ page, limit }),
         staleTime: 30_000,
         placeholderData: keepPreviousData,
+    });
+}
+
+export function useTreatmentByIdQuery(id: string | null | undefined) {
+    return useQuery({
+        queryKey: QK.treatment(id ?? ""),
+        queryFn: () => getTreatmentById(id!),
+        enabled: !!id,
+        staleTime: 30_000,
+    });
+}
+
+export function useTreatmentsByIdsQuery(ids: string[]) {
+    return useQueries({
+        queries: ids.map((id) => ({
+            queryKey: QK.treatment(id),
+            queryFn: () => getTreatmentById(id),
+            staleTime: 30_000,
+        })),
+    });
+}
+
+export function useDocumentsByIdsQuery(ids: string[]) {
+    return useQueries({
+        queries: ids.map((id) => ({
+            queryKey: QK.document(id),
+            queryFn: () => getDocumentById(id),
+            staleTime: 30_000,
+        })),
+    });
+}
+
+export function useBackpacksByIdsQuery(ids: string[]) {
+    return useQueries({
+        queries: ids.map((id) => ({
+            queryKey: QK.backpack(id),
+            queryFn: () => getBackpackById(id),
+            staleTime: 30_000,
+        })),
     });
 }
 

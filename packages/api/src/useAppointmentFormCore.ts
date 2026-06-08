@@ -125,9 +125,10 @@ export function useAppointmentFormCore({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [customReminder, setCustomReminder] = useState(initial?.customReminder ?? "");
   const [treatmentTags, setTreatmentTags] = useState<string[]>(initial?.treatmentTags ?? []);
-  const [treatmentIds, setTreatmentIds] = useState<string[]>(
-    initial?.treatmentId ? [initial.treatmentId] : [],
-  );
+  const initialTreatmentIds = initial?.treatmentIds?.length
+    ? initial.treatmentIds
+    : (initial?.treatmentId ? [initial.treatmentId] : []);
+  const [treatmentIds, setTreatmentIds] = useState<string[]>(initialTreatmentIds);
   const [preDocumentIds, setPreDocumentIds] = useState<string[]>(initial?.preDocumentIds ?? []);
   const [postDocumentIds, setPostDocumentIds] = useState<string[]>(initial?.postDocumentIds ?? []);
   const [preBackpackIds, setPreBackpackIds] = useState<string[]>(initial?.preBackpackIds ?? []);
@@ -183,7 +184,7 @@ export function useAppointmentFormCore({
       tags: [] as string[],
       treatmentTags,
       reminderOffsets: [] as number[],
-      treatmentId: treatmentIds[0]?.trim() || undefined,
+      treatmentIds: treatmentIds.map((id) => id.trim()).filter(Boolean),
       preDocumentIds,
       postDocumentIds,
       preBackpackIds,

@@ -7,7 +7,9 @@ import {
     DocumentSchema,
     DocumentActiveShareSchema,
     AppointmentPageSchema,
+    AppointmentSchema,
     TreatmentPageSchema,
+    TreatmentSchema,
     DoctorPageSchema,
     MedicationPageSchema,
     NotificationPageSchema,
@@ -209,6 +211,11 @@ export async function getAppointments(params: {
     return AppointmentPageSchema.parse(data);
 }
 
+export async function getAppointmentById(id: string) {
+    const { data } = await apiClient.get(`/appointments/${id}`);
+    return AppointmentSchema.parse(data);
+}
+
 export async function createAppointment(appt: AppointmentCreate) {
     const { data } = await apiClient.post("/appointments/", appt);
     return data;
@@ -247,6 +254,11 @@ export async function getAppointmentOptions() {
 export async function getTreatments(params: { page?: number; limit?: number } = {}) {
     const { data } = await apiClient.get("/treatments/", { params });
     return TreatmentPageSchema.parse(data);
+}
+
+export async function getTreatmentById(id: string) {
+    const { data } = await apiClient.get(`/treatments/${id}`);
+    return TreatmentSchema.parse(data);
 }
 
 // ─── Medications ───────────────────────────────────────

@@ -247,7 +247,7 @@ function AppointmentsTab() {
       {deleteTarget && (
         <ConfirmModal
           title="Eliminar Cita"
-          message={`¿Eliminar la cita de ${deleteTarget.specialty} el ${formatApptDate(deleteTarget.date)}?`}
+          message={`¿Eliminar la cita programada para el ${formatApptDate(deleteTarget.date)}?`}
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
           onConfirm={handleDelete}

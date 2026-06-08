@@ -146,7 +146,7 @@ export function AppointmentDetailScreen() {
     });
   };
 
-  const handleEdit = () => navigation.navigate("AppointmentForm", { appointment });
+  const handleEdit = () => navigation.navigate("AppointmentForm", { id: appointment.id });
   const handleShare = () => console.log("Compartir cita");
 
   if (isLoading) {
@@ -233,7 +233,6 @@ export function AppointmentDetailScreen() {
       <DetailHeader
         actions={[
           { icon: Edit, label: "Editar", onPress: handleEdit },
-          { icon: Share2, label: "Compartir", onPress: handleShare },
           { icon: Trash2, label: "Eliminar", onPress: handleDelete, destructive: true },
         ]}
       />

@@ -356,6 +356,9 @@ export function useUpdateAppointmentMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ id, appt }: { id: string; appt: AppointmentCreate }) => updateAppointment(id, appt),
+        onSuccess: (_data, variables) => {
+            qc.removeQueries({ queryKey: QK.appointment(variables.id) });
+        },
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["appointments"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });

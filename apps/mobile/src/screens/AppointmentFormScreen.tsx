@@ -11,13 +11,14 @@ import {
   TextField,
   DatePicker,
   TimePicker,
+  Spinner,
   spacing,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { useAppointmentForm } from "../hooks/useAppointmentForm";
 import {
   useDoctorsQuery,
-  useAppointmentsQuery,
+  useAppointmentByIdQuery,
   useAppointmentOptionsQuery,
   useTreatmentsQuery,
   useDocumentsQuery,
@@ -187,16 +188,45 @@ function ChipTag({ label, onRemove }: { label: string; onRemove: () => void }) {
   );
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
+// ─── Loader wrapper ───────────────────────────────────────────────────────────
 
 export function AppointmentFormScreen() {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-  const navigation = useNavigation();
   const route = useRoute<AppointmentFormRouteProp>();
   const appointmentId = route.params?.id;
 
-  const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
+  if (appointmentId) {
+    return <AppointmentFormEditor id={appointmentId} />;
+  }
+  return <AppointmentFormBody appointment={null} />;
+}
+
+function AppointmentFormEditor({ id }: { id: string }) {
+  const t = useAppTheme();
+  const { data: appointment, isLoading } = useAppointmentByIdQuery(id);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["top", "bottom"]}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Spinner size="lg" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return <AppointmentFormBody appointment={appointment ?? null} />;
+}
+
+// ─── Form body ────────────────────────────────────────────────────────────────
+
+function AppointmentFormBody({ appointment }: { appointment: any }) {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const navigation = useNavigation();
+
+  const [showAdditionalDetails, setShowAdditionalDetails] = useState(
+    !!(appointment?.duration || appointment?.notes || appointment?.service || appointment?.consultationType || appointment?.cost)
+  );
   const [showAddDoctorModal, setShowAddDoctorModal] = useState(false);
 
   // Picker modals for documents/backpacks/treatments
@@ -207,12 +237,6 @@ export function AppointmentFormScreen() {
   const [showPostBpPicker, setShowPostBpPicker] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
-
-  // Find appointment if editing
-  const appointmentsQuery = useAppointmentsQuery("", 1, 100);
-  const appointment = appointmentId
-    ? appointmentsQuery.data?.items.find((a: any) => a.id === appointmentId)
-    : null;
 
   const form = useAppointmentForm({
     initial: appointment,
@@ -280,7 +304,7 @@ export function AppointmentFormScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <FormHeader
-        title={appointmentId ? "Editar cita" : "Nueva cita"}
+        title={appointment ? "Editar cita" : "Nueva cita"}
         onSave={form.handleSave}
         saveButtonText={form.isEdit ? "Guardar cambios" : "Guardar"}
       />

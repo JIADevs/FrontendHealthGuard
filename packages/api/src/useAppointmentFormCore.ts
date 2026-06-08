@@ -180,7 +180,7 @@ export function useAppointmentFormCore({
       cost: cost.trim() ? parseFloat(cost) : undefined,
       notes: notes.trim() || undefined,
       customReminder: customReminder.trim() || undefined,
-      reminderConfig: reminderConfig?.enabled ? reminderConfig : undefined,
+      reminderConfig: reminderConfig?.enabled ? reminderConfig : null,
       tags: [] as string[],
       treatmentTags,
       reminderOffsets: [] as number[],

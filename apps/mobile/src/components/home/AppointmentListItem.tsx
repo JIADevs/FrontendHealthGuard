@@ -30,12 +30,19 @@ function getStatusConfig(
     return { label: "Prep. previa", bg: t.brand.tint, fg: t.brand.fg };
   }
   switch (status) {
+    case "PENDIENTE":
     case "PENDING":
       return { label: "Pendiente", bg: t.status.warningBg, fg: t.status.warningFg };
+    case "PROGRAMADA":
+      return { label: "Programada", bg: t.status.infoBg, fg: t.status.infoFg };
+    case "ASISTI":
     case "COMPLETED":
-      return { label: "Completada", bg: t.status.successBg, fg: t.status.successFg };
+      return { label: "Asistí", bg: t.status.successBg, fg: t.status.successFg };
+    case "CANCELADA":
     case "CANCELLED":
       return { label: "Cancelada", bg: t.status.errorBg, fg: t.status.errorFg };
+    case "NO_ASISTI":
+      return { label: "No asistí", bg: t.surface.bgCard, fg: t.text.secondary };
     case "RESCHEDULED":
       return { label: "Reprogramada", bg: t.brand.tint, fg: t.brand.fg };
     default:

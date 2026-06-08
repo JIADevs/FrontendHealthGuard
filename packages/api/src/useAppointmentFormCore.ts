@@ -100,10 +100,8 @@ export function useAppointmentFormCore({
   const isEdit = !!initial;
 
   const [name, setName] = useState(initial?.name ?? "");
-  const [date, setDate] = useState(
-    initial?.date ?? new Date().toISOString().split("T")[0]!,
-  );
-  const [time, setTime] = useState(initial?.time?.slice(0, 5) ?? "09:00");
+  const [date, setDate] = useState(initial?.date ?? "");
+  const [time, setTime] = useState(initial?.time?.slice(0, 5) ?? "");
   const [modality, setModality] = useState<"PRESENCIAL" | "VIRTUAL" | "DOMICILIARIA">(
     initial?.modality ?? "PRESENCIAL",
   );
@@ -143,7 +141,9 @@ export function useAppointmentFormCore({
   const saving = createMut.isPending || updateMut.isPending;
 
   function handleSave() {
-    if (!date || !time) {
+    const isPendiente = status === "PENDIENTE";
+
+    if (!isPendiente && (!date || !time)) {
       setError("Fecha y hora son obligatorios.");
       return;
     }
@@ -162,8 +162,8 @@ export function useAppointmentFormCore({
 
     const payload = {
       name: name.trim() || undefined,
-      date,
-      time,
+      date: isPendiente ? undefined : date,
+      time: isPendiente ? undefined : time,
       modality,
       location: location.trim() || undefined,
       videoCallLink: videoCallLink.trim() || undefined,

@@ -41,21 +41,21 @@ export const CONSULTATION_TYPES = [
 ] as const;
 
 export const APPOINTMENT_STATUSES = [
+  { value: "PENDIENTE", label: "Pendiente" },
   { value: "PROGRAMADA", label: "Programada" },
-  { value: "REPROGRAMADA", label: "Reprogramada" },
   { value: "ASISTI", label: "Asistí" },
   { value: "CANCELADA", label: "Cancelada" },
   { value: "NO_ASISTI", label: "No asistí" },
 ] as const;
 
 export const STATUS_COLORS: Record<string, string> = {
+  PENDIENTE: colors.warning[500],
   PROGRAMADA: colors.primary[500],
-  REPROGRAMADA: colors.warning[500],
   ASISTI: colors.emerald[500],
   CANCELADA: colors.error[500],
   NO_ASISTI: colors.gray[500],
   // Legacy statuses
-  PENDING: colors.primary[500],
+  PENDING: colors.warning[500],
   COMPLETED: colors.emerald[500],
   CANCELLED: colors.error[500],
   RESCHEDULED: colors.warning[500],

@@ -114,6 +114,9 @@ const makeStyles = (t: ThemeContextValue) =>
       justifyContent: "center",
       paddingVertical: spacing[3],
       minHeight: 64,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderColor: t.status.errorFg,
     },
     destructiveText: {
       fontSize: 14,

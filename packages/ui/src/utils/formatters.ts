@@ -83,10 +83,16 @@ export function formatShortDate(d: string | null | undefined): string {
 // ─── Dominio: citas ───────────────────────────────────────────────────────────
 
 const APPOINTMENT_STATUS_LABELS: Record<string, string> = {
+  PENDIENTE:    "Pendiente",
+  PROGRAMADA:   "Programada",
+  ASISTI:       "Asistí",
+  CANCELADA:    "Cancelada",
+  NO_ASISTI:    "No asistí",
+  // Legacy English statuses
   PENDING:      "Pendiente",
   COMPLETED:    "Realizada",
   CANCELLED:    "Cancelada",
-  RESCHEDULED:  "Re-agendada",
+  RESCHEDULED:  "Reprogramada",
 };
 
 /** Convierte un status de cita a su etiqueta en español. */

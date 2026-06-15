@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -6,6 +6,7 @@ import {
   View,
   RefreshControl,
 } from "react-native";
+import { Trash2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import {
@@ -20,6 +21,8 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import {
   Spinner,
   Typography,
+  ConfirmModal,
+  palette,
   useAppTheme,
   spacing,
 } from "@helu/ui";
@@ -54,6 +57,7 @@ export function BackpackDetailScreen() {
   const detail = useBackpackDetail(id);
   const deleteMut = useDeleteBackpackMutation();
   const shareFlow = useShareFlow(navigation);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
 
   const totalBytes = useMemo(() => sumDocumentsBytes(docs), [docs]);
 
@@ -88,24 +92,21 @@ export function BackpackDetailScreen() {
   );
 
   const handleDeleteBackpack = useCallback(() => {
-    Alert.alert("Eliminar mochila", "¿Querés eliminar esta mochila? Los documentos no se borran.", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Eliminar",
-        style: "destructive",
-        onPress: () =>
-          deleteMut.mutate(id, {
-            onSuccess: () => {
-              Toast.show({ type: "success", text1: "Mochila eliminada" });
-              navigation.goBack();
-            },
-            onError: (err) => {
-              const msg = isApiError(err) ? err.message : "No se pudo eliminar la mochila.";
-              Toast.show({ type: "error", text1: "Error al eliminar", text2: msg });
-            },
-          }),
+    setDeleteConfirmVisible(true);
+  }, []);
+
+  const confirmDeleteBackpack = useCallback(() => {
+    deleteMut.mutate(id, {
+      onSuccess: () => {
+        setDeleteConfirmVisible(false);
+        Toast.show({ type: "success", text1: "Mochila eliminada" });
+        navigation.goBack();
       },
-    ]);
+      onError: (err) => {
+        const msg = isApiError(err) ? err.message : "No se pudo eliminar la mochila.";
+        Toast.show({ type: "error", text1: "Error al eliminar", text2: msg });
+      },
+    });
   }, [deleteMut, id, navigation]);
 
   const openDocument = useCallback(
@@ -192,6 +193,19 @@ export function BackpackDetailScreen() {
           loading={deleteMut.isPending}
         />
       </ScrollView>
+
+      {deleteConfirmVisible && (
+        <ConfirmModal
+          title="¿Eliminar mochila?"
+          message="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          loading={deleteMut.isPending}
+          onConfirm={confirmDeleteBackpack}
+          onCancel={() => setDeleteConfirmVisible(false)}
+          icon={<Trash2 size={26} color={palette.status.error[500]} strokeWidth={2.25} />}
+          iconTone="danger"
+        />
+      )}
     </SafeAreaView>
   );
 }

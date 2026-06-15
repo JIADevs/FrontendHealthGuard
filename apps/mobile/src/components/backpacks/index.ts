@@ -1,6 +1,8 @@
 export { BackpacksListHeader } from "./BackpacksListHeader";
 export { BackpacksSearchToolbar } from "./BackpacksSearchToolbar";
 export { BackpackListItem } from "./BackpackListItem";
+export type { BackpackListItemActions } from "./BackpackListItem";
+export { BackpackQuickActionsMenu } from "./BackpackQuickActionsMenu";
 export { BackpacksFAB } from "./BackpacksFAB";
 export { BackpackDetailHeader } from "./BackpackDetailHeader";
 export { BackpackDetailBadges } from "./BackpackDetailBadges";

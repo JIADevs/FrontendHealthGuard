@@ -1,6 +1,5 @@
-import { useCallback, useLayoutEffect, useMemo } from "react";
+import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Trash2 } from "lucide-react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useBackpackForm } from "../hooks/useBackpackForm";
@@ -19,6 +19,8 @@ import {
   TextField,
   Typography,
   Spinner,
+  ConfirmModal,
+  palette,
   useAppTheme,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
@@ -36,6 +38,7 @@ export function BackpackEditScreen() {
 
   const form = useBackpackForm({ backpackId: id });
   const create = useBackpackCreateWithDocs();
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
 
   const handleHeaderCreate = useCallback(() => {
     void create.handleCreate();
@@ -67,14 +70,11 @@ export function BackpackEditScreen() {
   }, [navigation, isEdit, create.creating, handleHeaderCreate, styles]);
 
   const confirmDelete = useCallback(() => {
-    Alert.alert(
-      "Eliminar mochila",
-      "Esta acción no se puede deshacer. ¿Querés eliminar esta mochila?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Eliminar", style: "destructive", onPress: form.handleDelete },
-      ],
-    );
+    setDeleteConfirmVisible(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    form.handleDelete();
   }, [form.handleDelete]);
 
   if (isEdit) {
@@ -119,6 +119,19 @@ export function BackpackEditScreen() {
             Guardar
           </Button>
         </ScrollView>
+
+        {deleteConfirmVisible && (
+          <ConfirmModal
+            title="¿Eliminar mochila?"
+            message="Esta acción no se puede deshacer."
+            confirmLabel="Eliminar"
+            loading={form.deleting}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => setDeleteConfirmVisible(false)}
+            icon={<Trash2 size={26} color={palette.status.error[500]} strokeWidth={2.25} />}
+            iconTone="danger"
+          />
+        )}
       </KeyboardAvoidingView>
     );
   }

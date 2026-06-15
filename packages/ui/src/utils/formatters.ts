@@ -83,7 +83,6 @@ export function formatShortDate(d: string | null | undefined): string {
 // ─── Dominio: citas ───────────────────────────────────────────────────────────
 
 const APPOINTMENT_STATUS_LABELS: Record<string, string> = {
-  PENDIENTE:    "Pendiente",
   PROGRAMADA:   "Programada",
   ASISTI:       "Asistí",
   CANCELADA:    "Cancelada",

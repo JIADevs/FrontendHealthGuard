@@ -261,7 +261,9 @@ function AppointmentFormBody({ appointment }: { appointment: any }) {
   const backpacks = backpacksQuery.data?.items ?? [];
 
   // Derived labels for selected items
-  const treatmentItems = treatments.map((tx: any) => ({ id: tx.id, label: tx.name, sub: tx.description ?? undefined }));
+  const treatmentItems = treatments
+    .filter((tx: any) => tx.status === "ACTIVE")
+    .map((tx: any) => ({ id: tx.id, label: tx.name, sub: tx.description ?? undefined }));
   const docItems = documents.map((d: any) => ({ id: d.id, label: d.title, sub: d.format }));
   const bpItems = backpacks.map((b: any) => ({ id: b.id, label: b.name, sub: b.description ?? undefined }));
 

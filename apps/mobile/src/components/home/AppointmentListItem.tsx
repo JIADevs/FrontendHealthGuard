@@ -30,7 +30,6 @@ function getStatusConfig(
     return { label: "Prep. previa", bg: t.brand.tint, fg: t.brand.fg };
   }
   switch (status) {
-    case "PENDIENTE":
     case "PENDING":
       return { label: "Pendiente", bg: t.status.warningBg, fg: t.status.warningFg };
     case "PROGRAMADA":

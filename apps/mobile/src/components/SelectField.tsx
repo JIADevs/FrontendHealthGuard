@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity } from "react-native";
 import { useState, useMemo } from "react";
 import { spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
@@ -62,25 +62,23 @@ export function SelectField({ label, value, placeholder, options, onChange, requ
               onChangeText={setSearch}
             />
           </View>
-          <FlatList
-            data={filteredOptions}
-            keyExtractor={(item) => item}
-            renderItem={({ item }: { item: string }) => (
-              <TouchableOpacity
-                style={styles.option}
-                onPress={() => handleSelect(item)}
-              >
-                <Text style={[styles.optionText, { color: t.text.primary }]}>{item}</Text>
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
+          <ScrollView style={styles.optionsList} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+            {filteredOptions.length === 0 ? (
               <Text style={[styles.emptyText, { color: t.text.muted }]}>
                 No se encontraron resultados
               </Text>
-            }
-            style={styles.optionsList}
-            nestedScrollEnabled
-          />
+            ) : (
+              filteredOptions.map((item: string) => (
+                <TouchableOpacity
+                  key={item}
+                  style={styles.option}
+                  onPress={() => handleSelect(item)}
+                >
+                  <Text style={[styles.optionText, { color: t.text.primary }]}>{item}</Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </ScrollView>
         </View>
       )}
     </View>
@@ -110,7 +108,6 @@ const styles = StyleSheet.create({
   dropdown: {
     borderWidth: 1,
     borderRadius: 8,
-    overflow: "hidden",
     marginTop: spacing[1],
   },
   searchContainer: {

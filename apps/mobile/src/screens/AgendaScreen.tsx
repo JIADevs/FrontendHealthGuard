@@ -57,7 +57,7 @@ import {
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-const STATUSES = ["PENDIENTE", "PROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI", "PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"] as const;
+const STATUSES = ["PROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI"] as const;
 
 // ─── main screen ──────────────────────────────────────────────────────────────
 

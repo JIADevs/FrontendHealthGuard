@@ -19,10 +19,9 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { APPOINTMENT_STATUSES } from "../constants/appointments";
 import { StatusBadge } from "../components/StatusBadge";
 import { ConfirmDialog } from "../components/ConfirmDialog";
-import { FeedbackToast } from "../components/FeedbackToast";
 import { DetailHeader } from "../components/DetailHeader";
 import { DetailFooter, type FooterAction } from "../components/DetailFooter";
-import { useFeedbackToast } from "../hooks/useFeedbackToast";
+import Toast from "react-native-toast-message";
 import { useState, Fragment } from "react";
 
 type AppointmentDetailRouteProp = RouteProp<RootStackParamList, "AppointmentDetail">;
@@ -106,7 +105,6 @@ export function AppointmentDetailScreen() {
   const { id } = route.params;
 
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const { toast, showSuccess, showError, hideToast } = useFeedbackToast();
 
   const { data: appointment, isLoading } = useAppointmentByIdQuery(id);
 
@@ -126,15 +124,12 @@ export function AppointmentDetailScreen() {
   const confirmDelete = () => {
     deleteMut.mutate(id, {
       onSuccess: () => {
-        showSuccess("Cita eliminada", {
-          actionText: "Deshacer",
-          onAction: () => { hideToast(); },
-        });
+        Toast.show({ type: "success", text1: "Cita eliminada" });
         setShowDeleteDialog(false);
         setTimeout(() => navigation.goBack(), 500);
       },
       onError: () => {
-        showError("Error al eliminar la cita");
+        Toast.show({ type: "error", text1: "Error al eliminar la cita" });
         setShowDeleteDialog(false);
       },
     });
@@ -142,7 +137,7 @@ export function AppointmentDetailScreen() {
 
   const handleMarkAsCompleted = () => {
     statusMut.mutate({ id, status: "ASISTI" }, {
-      onSuccess: () => showSuccess("Estado actualizado"),
+      onSuccess: () => Toast.show({ type: "success", text1: "Estado actualizado" }),
     });
   };
 
@@ -287,7 +282,7 @@ export function AppointmentDetailScreen() {
               <View style={styles.statItem}>
                 <DollarSign size={16} color={t.text.secondary} />
                 <Text style={[styles.statMain, { color: t.text.primary }]}>
-                  ${appointment.cost.toLocaleString("es-CO")}
+                  {appointment.cost.toLocaleString("es-CO")}
                 </Text>
                 <Text style={[styles.statSub, { color: t.text.secondary }]}>Costo</Text>
               </View>
@@ -536,14 +531,6 @@ export function AppointmentDetailScreen() {
         destructive
       />
 
-      <FeedbackToast
-        visible={toast.visible}
-        type={toast.type}
-        message={toast.message}
-        actionText={toast.actionText}
-        onAction={toast.onAction}
-        onDismiss={hideToast}
-      />
     </SafeAreaView>
   );
 }

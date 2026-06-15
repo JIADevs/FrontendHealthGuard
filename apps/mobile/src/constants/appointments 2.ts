@@ -41,7 +41,6 @@ export const CONSULTATION_TYPES = [
 ] as const;
 
 export const APPOINTMENT_STATUSES = [
-  { value: "PENDIENTE", label: "Pendiente" },
   { value: "PROGRAMADA", label: "Programada" },
   { value: "ASISTI", label: "Asistí" },
   { value: "CANCELADA", label: "Cancelada" },
@@ -49,7 +48,6 @@ export const APPOINTMENT_STATUSES = [
 ] as const;
 
 export const STATUS_COLORS: Record<string, string> = {
-  PENDIENTE: colors.warning[500],
   PROGRAMADA: colors.primary[500],
   ASISTI: colors.emerald[500],
   CANCELADA: colors.error[500],

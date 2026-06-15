@@ -141,9 +141,7 @@ export function useAppointmentFormCore({
   const saving = createMut.isPending || updateMut.isPending;
 
   function handleSave() {
-    const isPendiente = status === "PENDIENTE";
-
-    if (!isPendiente && (!date || !time)) {
+    if (!date || !time) {
       setError("Fecha y hora son obligatorios.");
       return;
     }
@@ -162,8 +160,8 @@ export function useAppointmentFormCore({
 
     const payload = {
       name: name.trim() || undefined,
-      date: isPendiente ? undefined : date,
-      time: isPendiente ? undefined : time,
+      date,
+      time,
       modality,
       location: location.trim() || undefined,
       videoCallLink: videoCallLink.trim() || undefined,

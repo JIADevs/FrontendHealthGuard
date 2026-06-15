@@ -277,34 +277,69 @@ export const AppointmentCreateSchema = z.object({
 });
 
 // --- Medications ---
-export const MedicationSchema = z.object({
+export const MedicationIntakeSchema = z.object({
     id: z.string().uuid(),
-    name: z.string(),
+    cycleId: z.string().uuid(),
+    takenAt: z.string(),
+});
+
+export const MedicationDeliverySchema = z.object({
+    id: z.string().uuid(),
+    cycleId: z.string().uuid(),
+    date: z.string(),
+    quantity: z.number(),
+    cost: z.number().nullable().optional(),
+    source: z.string().nullable().optional(),
+});
+
+export const MedicationCycleSchema = z.object({
+    id: z.string().uuid(),
+    medicationId: z.string().uuid(),
+    treatmentId: z.string().uuid().nullable().optional(),
+    replacesCycleId: z.string().uuid().nullable().optional(),
     dosage: z.string(),
     frequency: z.number(),
+    reason: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
     startDate: z.string(),
-    firstIntakeTime: z.string(),
     endDate: z.string().nullable().optional(),
-    indications: z.string().nullable().optional(),
-    reminderOffsets: z.array(z.number()),
-    treatmentId: z.string().uuid().nullable().optional(),
-    createdBy: z.string().uuid().nullable().optional(),
+    firstIntakeTime: z.string(),
     nextIntakeTime: z.string().nullable().optional(),
+    reminderOffsets: z.array(z.number()),
+    intakes: z.array(MedicationIntakeSchema).default([]),
+    deliveries: z.array(MedicationDeliverySchema).default([]),
+});
+
+export const MedicationSchema = z.object({
+    id: z.string().uuid(),
+    userId: z.string().uuid(),
+    createdBy: z.string().uuid().nullable().optional(),
+    name: z.string(),
+    cycles: z.array(MedicationCycleSchema).default([]),
 });
 
 export const MedicationPageSchema = createPageSchema(MedicationSchema);
 
 export const MedicationCreateSchema = z.object({
-    name: z.string().min(1),
-    dosage: z.string().min(1),
+    name: z.string().min(1, "El nombre es obligatorio"),
+});
+
+export const MedicationUpdateSchema = z.object({
+    name: z.string().min(1).optional(),
+});
+
+export const MedicationCycleCreateSchema = z.object({
+    dosage: z.string().min(1, "La dosis es obligatoria"),
     frequency: z.number().min(1),
+    reason: z.string().optional(),
+    notes: z.string().optional(),
     startDate: z.string(),
-    firstIntakeTime: z.string(),
     endDate: z.string().optional(),
-    indications: z.string().optional(),
+    firstIntakeTime: z.string(),
+    nextIntakeTime: z.string().optional(),
     reminderOffsets: z.array(z.number()).default([]),
     treatmentId: z.string().uuid().optional(),
-    nextIntakeTime: z.string().optional(),
+    replacesCycleId: z.string().uuid().optional(),
 });
 
 // --- Notifications ---
@@ -387,9 +422,14 @@ export type DoctorCreate = z.infer<typeof DoctorCreateSchema>;
 export type Appointment = z.infer<typeof AppointmentSchema>;
 export type AppointmentPage = z.infer<typeof AppointmentPageSchema>;
 export type AppointmentCreate = z.infer<typeof AppointmentCreateSchema>;
+export type MedicationIntake = z.infer<typeof MedicationIntakeSchema>;
+export type MedicationDelivery = z.infer<typeof MedicationDeliverySchema>;
+export type MedicationCycle = z.infer<typeof MedicationCycleSchema>;
 export type Medication = z.infer<typeof MedicationSchema>;
 export type MedicationPage = z.infer<typeof MedicationPageSchema>;
 export type MedicationCreate = z.infer<typeof MedicationCreateSchema>;
+export type MedicationUpdate = z.infer<typeof MedicationUpdateSchema>;
+export type MedicationCycleCreate = z.infer<typeof MedicationCycleCreateSchema>;
 export type Notification = z.infer<typeof NotificationSchema>;
 export type NotificationPage = z.infer<typeof NotificationPageSchema>;
 export type ClassificationSuggestion = z.infer<typeof ClassificationSuggestionSchema>;

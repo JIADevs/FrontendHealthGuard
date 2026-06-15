@@ -53,6 +53,7 @@ import {
     // Medications
     getMedications,
     createMedication,
+    createMedicationCycle,
     updateMedication,
     deleteMedication,
     confirmIntake,
@@ -69,7 +70,7 @@ import type {
     DocumentCreate,
     DocumentActiveShare,
     AppointmentCreate,
-    MedicationCreate,
+    MedicationCycleCreate,
     DoctorCreate,
     BackpackCreate,
     UserUpdate,
@@ -457,7 +458,16 @@ export function useMedicationsQuery(page = 1, limit = 20) {
 export function useCreateMedicationMutation() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (med: MedicationCreate) => createMedication(med),
+        mutationFn: (name: string) => createMedication(name),
+        onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
+    });
+}
+
+export function useCreateMedicationCycleMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ medicationId, cycle }: { medicationId: string; cycle: MedicationCycleCreate }) =>
+            createMedicationCycle(medicationId, cycle),
         onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
     });
 }
@@ -465,7 +475,7 @@ export function useCreateMedicationMutation() {
 export function useUpdateMedicationMutation() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, med }: { id: string; med: MedicationCreate }) => updateMedication(id, med),
+        mutationFn: ({ id, name }: { id: string; name: string }) => updateMedication(id, name),
         onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
     });
 }

@@ -21,7 +21,7 @@ import {
   type Appointment,
   type Medication,
 } from "@helu/api";
-import { useMedicationForm } from "../hooks/useMedicationForm";
+
 import {
   colors, palette,
   radii,
@@ -31,14 +31,10 @@ import {
   useAppTheme,
   appointmentStatusLabel,
   formatApptDate,
-  Button,
   Pagination,
-  Modal,
   Card,
   cardContentStyle,
-  TextField,
   Typography,
-  DateTimePicker,
   ActionButton,
   Spinner,
   ConfirmModal,
@@ -263,10 +259,9 @@ function AppointmentsTab() {
 function MedicationsTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const navigation = require("@react-navigation/native").useNavigation();
 
   const [page, setPage] = useState(1);
-  const [showForm, setShowForm] = useState(false);
-  const [editTarget, setEditTarget] = useState<Medication | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Medication | null>(null);
 
   const meds = useMedicationsQuery(page, 10);
@@ -293,8 +288,8 @@ function MedicationsTab() {
   }, [deleteTarget, deleteMut]);
 
   const handleIntake = useCallback(
-    (id: string) => {
-      intakeMut.mutate(id, {
+    (cycleId: string) => {
+      intakeMut.mutate(cycleId, {
         onSuccess: () =>
           Toast.show({ type: "success", text1: "Toma confirmada" }),
         onError: () =>
@@ -311,10 +306,7 @@ function MedicationsTab() {
       <View style={styles.addRow}>
         <TouchableOpacity
           style={styles.addBtn}
-          onPress={() => {
-            setEditTarget(null);
-            setShowForm(true);
-          }}
+          onPress={() => navigation.navigate("MedicationForm")}
         >
           <Plus size={16} color={colors.white} />
           <Text style={styles.addBtnText}>Nuevo Medicamento</Text>
@@ -335,58 +327,56 @@ function MedicationsTab() {
           data={items}
           keyExtractor={(m) => m.id}
           contentContainerStyle={cardContentStyle}
-          renderItem={({ item: m }) => (
-            <Card
-              title={m.name}
-              subtitle={`${m.dosage} — cada ${m.frequency}h`}
-              icon={<Pill size={20} color={t.status.warningFg} />}
-              iconBackground={t.status.warningBg}
-              actions={
-                <View style={styles.cardActions}>
-                  <ActionButton action="edit" size="sm" onPress={() => { setEditTarget(m); setShowForm(true); }} />
-                  <ActionButton action="delete" size="sm" onPress={() => setDeleteTarget(m)} />
-                </View>
-              }
-            >
-              {m.indications ? (
-                <Text style={styles.cardMetaText}>{m.indications}</Text>
-              ) : null}
-              {m.nextIntakeTime ? (
-                <View style={styles.cardMeta}>
-                  <Clock size={12} color={t.text.secondary} />
-                  <Text style={styles.cardMetaText}>
-                    {new Date(m.nextIntakeTime).toLocaleString("es-CO", {
-                      month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit",
-                    })}
-                  </Text>
-                </View>
-              ) : null}
-              <TouchableOpacity style={styles.intakeBtn} onPress={() => handleIntake(m.id)} disabled={intakeMut.isPending}>
-                <Check size={13} color={colors.white} />
-                <Text style={styles.intakeBtnText}>Tomado</Text>
-              </TouchableOpacity>
-            </Card>
-          )}
+          renderItem={({ item: m }) => {
+            const cycle = m.cycles?.[0];
+            return (
+              <Card
+                title={m.name}
+                subtitle={cycle ? `${cycle.dosage} — cada ${cycle.frequency}h` : "Sin ciclo activo"}
+                icon={<Pill size={20} color={t.status.warningFg} />}
+                iconBackground={t.status.warningBg}
+                actions={
+                  <View style={styles.cardActions}>
+                    <ActionButton action="delete" size="sm" onPress={() => setDeleteTarget(m)} />
+                  </View>
+                }
+              >
+                {cycle?.reason ? (
+                  <Text style={styles.cardMetaText}>{cycle.reason}</Text>
+                ) : null}
+                {cycle?.nextIntakeTime ? (
+                  <View style={styles.cardMeta}>
+                    <Clock size={12} color={t.text.secondary} />
+                    <Text style={styles.cardMetaText}>
+                      {new Date(cycle.nextIntakeTime).toLocaleString("es-CO", {
+                        month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit",
+                      })}
+                    </Text>
+                  </View>
+                ) : null}
+                {cycle ? (
+                  <TouchableOpacity
+                    style={styles.intakeBtn}
+                    onPress={() => handleIntake(cycle.id)}
+                    disabled={intakeMut.isPending}
+                  >
+                    <Check size={13} color={colors.white} />
+                    <Text style={styles.intakeBtnText}>Tomado</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </Card>
+            );
+          }}
           ListFooterComponent={
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           }
         />
       )}
 
-      {showForm && (
-        <MedicationFormModal
-          initial={editTarget}
-          onClose={() => {
-            setShowForm(false);
-            setEditTarget(null);
-          }}
-        />
-      )}
-
       {deleteTarget && (
         <ConfirmModal
           title="Eliminar Medicamento"
-          message={`¿Eliminar "${deleteTarget.name}"? Los recordatorios también se eliminarán.`}
+          message={`¿Eliminar "${deleteTarget.name}"? Los ciclos y recordatorios también se eliminarán.`}
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
           onConfirm={handleDelete}
@@ -394,48 +384,6 @@ function MedicationsTab() {
         />
       )}
     </View>
-  );
-}
-
-// ─── medication form modal ────────────────────────────────────────────────────
-
-function MedicationFormModal({
-  initial,
-  onClose,
-}: {
-  initial: Medication | null;
-  onClose: () => void;
-}) {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-  const form = useMedicationForm({ initial, onClose });
-
-  return (
-    <Modal
-      title={form.isEdit ? "Editar Medicamento" : "Nuevo Medicamento"}
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="secondary" onPress={onClose}>Cancelar</Button>
-          <Button onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
-            {form.isEdit ? "Guardar Cambios" : "Registrar"}
-          </Button>
-        </>
-      }
-    >
-          <TextField label="Nombre del medicamento" value={form.name} onChange={form.setName} placeholder="Ej: Ibuprofeno 400mg" />
-          <TextField label="Dosis" value={form.dosage} onChange={form.setDosage} placeholder="Ej: 1 tableta" />
-          <TextField label="Frecuencia (horas)" value={form.frequency} onChange={form.setFrequency} placeholder="8" keyboardType="number-pad" />
-          <DateTimePicker
-            label="Inicio y primera toma"
-            value={form.startDate && form.firstIntakeTime ? `${form.startDate}T${form.firstIntakeTime}` : ""}
-            onChange={(v) => { form.setStartDate(v.slice(0, 10)); form.setFirstIntakeTime(v.slice(11, 16)); }}
-            required
-          />
-          <TextField label="Indicaciones (opcional)" value={form.indications} onChange={form.setIndications} placeholder="Ej: Tomar con alimentos" />
-
-          {form.error && <Text style={styles.errorText}>{form.error}</Text>}
-    </Modal>
   );
 }
 

@@ -1,17 +1,14 @@
 /**
  * useMedicationFormCore — lógica de formulario de medicamentos, agnóstica de plataforma.
  *
- * Cubre creación y edición. La plataforma inyecta `adapters` para
- * notificaciones (toasts/sileo) y navegación/cierre de modal.
- *
- * Uso:
- *   Crear:  useMedicationFormCore({ adapters, afterSave: onClose })
- *   Editar: useMedicationFormCore({ initial: med, adapters, afterSave: onClose })
+ * Creación: POST /medications/ (nombre) → POST /medications/{id}/cycles (prescripción).
+ * Edición:  PATCH /medications/{id} (nombre) — edición de ciclo es futura.
  */
 
 import { useState } from "react";
 import {
   useCreateMedicationMutation,
+  useCreateMedicationCycleMutation,
   useUpdateMedicationMutation,
 } from "./hooks";
 import { isApiError } from "./errors";
@@ -22,12 +19,11 @@ import type { Medication } from "./schemas";
 export interface MedicationFormState {
   name: string;
   dosage: string;
-  /** Kept as string for text-input compatibility; parsed to int on save. */
+  /** String para compatibilidad con inputs de texto; se parsea a int al guardar. */
   frequency: string;
   startDate: string;
   firstIntakeTime: string;
-  indications: string;
-  /** Inline validation / API error — display directly in the form UI. */
+  reason: string;
   error: string | null;
   saving: boolean;
   isEdit: boolean;
@@ -39,15 +35,13 @@ export interface MedicationFormActions {
   setFrequency: (v: string) => void;
   setStartDate: (v: string) => void;
   setFirstIntakeTime: (v: string) => void;
-  setIndications: (v: string) => void;
+  setReason: (v: string) => void;
   clearError: () => void;
   handleSave: () => void;
 }
 
 export interface MedicationFormAdapters {
-  /** Called on successful create or update (e.g. show toast). */
   onSaveSuccess: () => void;
-  /** Called after success, typically to close the modal/screen. */
   afterSave: () => void;
 }
 
@@ -61,28 +55,28 @@ export function useMedicationFormCore({
   adapters: MedicationFormAdapters;
 }): MedicationFormState & MedicationFormActions {
   const isEdit = !!initial;
+  const activeCycle = initial?.cycles?.[0];
 
   const [name, setName] = useState(initial?.name ?? "");
-  const [dosage, setDosage] = useState(initial?.dosage ?? "");
-  const [frequency, setFrequency] = useState(
-    initial?.frequency?.toString() ?? "8",
-  );
+  const [dosage, setDosage] = useState(activeCycle?.dosage ?? "");
+  const [frequency, setFrequency] = useState(activeCycle?.frequency?.toString() ?? "8");
   const [startDate, setStartDate] = useState(
-    initial?.startDate ?? new Date().toISOString().split("T")[0]!,
+    activeCycle?.startDate ?? new Date().toISOString().split("T")[0]!,
   );
   const [firstIntakeTime, setFirstIntakeTime] = useState(() => {
-    const raw = initial?.firstIntakeTime;
+    const raw = activeCycle?.firstIntakeTime;
     if (!raw) return "08:00";
-    // Backend returns full datetime "2026-04-02T08:00:00" — extract HH:MM
     const timePart = raw.includes("T") ? raw.split("T")[1]! : raw;
     return timePart.slice(0, 5);
   });
-  const [indications, setIndications] = useState(initial?.indications ?? "");
+  const [reason, setReason] = useState(activeCycle?.reason ?? "");
   const [error, setError] = useState<string | null>(null);
 
-  const createMut = useCreateMedicationMutation();
-  const updateMut = useUpdateMedicationMutation();
-  const saving = createMut.isPending || updateMut.isPending;
+  const createMedMut = useCreateMedicationMutation();
+  const createCycleMut = useCreateMedicationCycleMutation();
+  const updateMedMut = useUpdateMedicationMutation();
+
+  const saving = createMedMut.isPending || createCycleMut.isPending || updateMedMut.isPending;
 
   function handleSave() {
     if (!name.trim() || !dosage.trim() || !frequency || !startDate || !firstIntakeTime) {
@@ -91,50 +85,49 @@ export function useMedicationFormCore({
     }
     setError(null);
 
-    const payload = {
-      name,
+    const cyclePayload = {
       dosage,
-      frequency: parseInt(frequency, 10),
+      frequency: Number.parseInt(frequency, 10),
+      reason: reason.trim() || undefined,
       startDate,
       firstIntakeTime: `${startDate}T${firstIntakeTime}:00`,
-      indications: indications || undefined,
       reminderOffsets: [60, 30, 15, 5],
     };
 
     if (isEdit) {
-      updateMut.mutate(
-        { id: initial!.id, med: payload },
+      updateMedMut.mutate(
+        { id: initial!.id, name },
         {
           onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
           onError: (err) => {
-          if (isApiError(err) && err.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
-            const details = Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join(" | ");
-            setError(`Error de validación: ${details}`);
-          } else {
             setError(isApiError(err) ? err.message : "Error actualizando el medicamento.");
-          }
-        },
+          },
         },
       );
     } else {
-      createMut.mutate(payload, {
-        onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
+      createMedMut.mutate(name, {
+        onSuccess: (med) => {
+          createCycleMut.mutate(
+            { medicationId: med.id, cycle: cyclePayload },
+            {
+              onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
+              onError: (err) => {
+                setError(isApiError(err) ? err.message : "Error guardando el ciclo.");
+              },
+            },
+          );
+        },
         onError: (err) => {
-          if (isApiError(err) && err.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
-            const details = Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join(" | ");
-            setError(`Error de validación: ${details}`);
-          } else {
-            setError(isApiError(err) ? err.message : "Error guardando el medicamento.");
-          }
+          setError(isApiError(err) ? err.message : "Error guardando el medicamento.");
         },
       });
     }
   }
 
   return {
-    name, dosage, frequency, startDate, firstIntakeTime, indications,
+    name, dosage, frequency, startDate, firstIntakeTime, reason,
     error, saving, isEdit,
-    setName, setDosage, setFrequency, setStartDate, setFirstIntakeTime, setIndications,
+    setName, setDosage, setFrequency, setStartDate, setFirstIntakeTime, setReason,
     clearError: () => setError(null),
     handleSave,
   };

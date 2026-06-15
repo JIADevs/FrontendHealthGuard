@@ -20,6 +20,7 @@ import {
     TreatmentSchema,
     DoctorPageSchema,
     MedicationPageSchema,
+    MedicationSchema,
     NotificationPageSchema,
     BackpackPageSchema,
     BackpackSchema,
@@ -29,7 +30,7 @@ import {
     type UserUpdate,
     type DocumentCreate,
     type AppointmentCreate,
-    type MedicationCreate,
+    type MedicationCycleCreate,
     type DoctorCreate,
     type BackpackCreate,
     type CustomTagCreate,
@@ -286,13 +287,18 @@ export async function getMedications(params: {
     return MedicationPageSchema.parse(data);
 }
 
-export async function createMedication(med: MedicationCreate) {
-    const { data } = await apiClient.post("/medications/", med);
+export async function createMedication(name: string) {
+    const { data } = await apiClient.post("/medications/", { name });
+    return MedicationSchema.parse(data);
+}
+
+export async function createMedicationCycle(medicationId: string, cycle: MedicationCycleCreate) {
+    const { data } = await apiClient.post(`/medications/${medicationId}/cycles`, cycle);
     return data;
 }
 
-export async function updateMedication(id: string, med: MedicationCreate) {
-    const { data } = await apiClient.put(`/medications/${id}`, med);
+export async function updateMedication(id: string, name: string) {
+    const { data } = await apiClient.patch(`/medications/${id}`, { name });
     return data;
 }
 
@@ -300,8 +306,8 @@ export async function deleteMedication(id: string) {
     await apiClient.delete(`/medications/${id}`);
 }
 
-export async function confirmIntake(id: string) {
-    const { data } = await apiClient.post(`/medications/${id}/intakes`, {
+export async function confirmIntake(cycleId: string) {
+    const { data } = await apiClient.post(`/medication-cycles/${cycleId}/intakes`, {
         taken_at: new Date().toISOString(),
     });
     return data;

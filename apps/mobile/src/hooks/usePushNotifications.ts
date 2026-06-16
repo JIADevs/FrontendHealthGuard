@@ -1,35 +1,54 @@
 import { useEffect, useRef, useCallback } from "react";
 import { Platform } from "react-native";
-
-declare const __DEV__: boolean;
+import Constants from "expo-constants";
 import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
+import type * as ExpoNotifications from "expo-notifications";
 import { registerDeviceToken } from "@helu/api";
-import { colors, palette } from "@helu/ui";
+import { palette } from "@helu/ui";
 import { navigateTo } from "../navigation/navigationRef";
 
-export interface PushNotificationState {
-  notification?: Notifications.Notification;
+declare const __DEV__: boolean;
+
+/** Remote push is not available in Expo Go (Android SDK 53+). */
+const isExpoGo = Constants.appOwnership === "expo";
+
+let notificationsModule: typeof ExpoNotifications | null = null;
+let handlerConfigured = false;
+
+function getNotificationsModule(): typeof ExpoNotifications | null {
+  if (isExpoGo) return null;
+  if (!notificationsModule) {
+    notificationsModule = require("expo-notifications") as typeof ExpoNotifications;
+  }
+  if (!handlerConfigured) {
+    notificationsModule.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+    handlerConfigured = true;
+  }
+  return notificationsModule;
 }
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+export interface PushNotificationState {
+  notification?: ExpoNotifications.Notification;
+}
 
 export const usePushNotifications = (authToken?: string | null): PushNotificationState => {
-  const notificationRef = useRef<Notifications.Notification>(undefined);
-  const notificationListener = useRef<Notifications.Subscription>(undefined);
-  const responseListener = useRef<Notifications.Subscription>(undefined);
-  // Evita re-registrar en cada refresh de token — solo registra una vez por sesión
+  const notificationRef = useRef<ExpoNotifications.Notification>(undefined);
+  const notificationListener = useRef<ExpoNotifications.Subscription>(undefined);
+  const responseListener = useRef<ExpoNotifications.Subscription>(undefined);
   const hasRegistered = useRef(false);
 
   const registerForPushNotificationsAsync = useCallback(async () => {
+    const Notifications = getNotificationsModule();
+    if (!Notifications) return;
+
     if (!Device.isDevice) {
       if (__DEV__) console.warn("Se requiere un dispositivo físico para notificaciones push");
       return;
@@ -68,32 +87,32 @@ export const usePushNotifications = (authToken?: string | null): PushNotificatio
     }
   }, []);
 
-  // Se registra solo una vez por sesión: cuando el usuario se autentica por primera vez
   useEffect(() => {
     if (!authToken || hasRegistered.current) return;
     registerForPushNotificationsAsync();
   }, [authToken, registerForPushNotificationsAsync]);
 
-  // Resetea el flag al cerrar sesión para que el próximo login registre de nuevo
   useEffect(() => {
     if (!authToken) {
       hasRegistered.current = false;
     }
   }, [authToken]);
 
-  // Listeners montados una sola vez, independientemente del auth
   useEffect(() => {
+    const Notifications = getNotificationsModule();
+    if (!Notifications) return;
+
     notificationListener.current = Notifications.addNotificationReceivedListener(
-      (notification: Notifications.Notification) => {
+      (notification: ExpoNotifications.Notification) => {
         notificationRef.current = notification;
-      }
+      },
     );
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (response: Notifications.NotificationResponse) => {
+      (response: ExpoNotifications.NotificationResponse) => {
         const data = response.notification.request.content.data as Record<string, string>;
         handleNotificationTap(data);
-      }
+      },
     );
 
     return () => {

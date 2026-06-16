@@ -10,7 +10,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { useShareBackpackMutation, useRemoveDocFromBackpackMutation } from "./hooks";
+import { useShareBackpackMutation, useRemoveDocFromBackpackMutation } from "./reactQueryHooks";
 import { isApiError } from "./errors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

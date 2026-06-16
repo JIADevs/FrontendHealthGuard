@@ -9,7 +9,7 @@ import { useState } from "react";
 import {
   useCreateAppointmentMutation,
   useUpdateAppointmentMutation,
-} from "./hooks";
+} from "./reactQueryHooks";
 import { isApiError } from "./errors";
 import type { Appointment, ReminderConfig } from "./schemas";
 

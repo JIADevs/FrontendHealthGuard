@@ -12,7 +12,7 @@ import {
   useDocumentsQuery,
   useAppointmentsQuery,
   useMedicationsQuery,
-} from "./hooks";
+} from "./reactQueryHooks";
 import { useAuthStore } from "@helu/stores";
 import { todayISODate } from "@helu/ui";
 import type { Appointment, Medication, Document } from "./schemas";

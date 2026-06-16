@@ -13,7 +13,7 @@ import { useState } from "react";
 import {
   useCreateMedicationMutation,
   useUpdateMedicationMutation,
-} from "./hooks";
+} from "./reactQueryHooks";
 import { isApiError } from "./errors";
 import type { Medication } from "./schemas";
 

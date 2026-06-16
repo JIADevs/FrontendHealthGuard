@@ -27,6 +27,7 @@ export default function App() {
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const token = useAuthStore((s) => s.token);
   const setUnreadCount = useNotifStore((s) => s.setUnreadCount);
+  const themePreference = useUiStore((s) => s.theme);
 
   // Pasa el JWT para que el registro FCM ocurra solo después del login
   usePushNotifications(token);
@@ -55,8 +56,6 @@ export default function App() {
       </View>
     );
   }
-
-  const themePreference = useUiStore((s) => s.theme);
 
   return (
     <ThemeProvider preference={themePreference}>

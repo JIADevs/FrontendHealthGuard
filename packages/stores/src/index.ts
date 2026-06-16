@@ -4,7 +4,7 @@ export {
     useUser,
     useIsAuth,
     useIsManaging,
-    setStoreStorage,
 } from "./authStore";
+export { setStoreStorage } from "./persistStorage";
 export { useUiStore, useTheme } from "./uiStore";
 export { useNotifStore, useUnreadCount } from "./notifStore";

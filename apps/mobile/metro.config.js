@@ -1,8 +1,19 @@
 const { getDefaultConfig } = require("expo/metro-config");
 const path = require("path");
+const fs = require("fs");
 
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, "../..");
+
+function resolveHoistedPackage(...segments) {
+  for (const base of [projectRoot, workspaceRoot]) {
+    const candidate = path.join(base, "node_modules", ...segments);
+    if (fs.existsSync(path.join(candidate, "package.json"))) {
+      return candidate;
+    }
+  }
+  return path.join(workspaceRoot, "node_modules", ...segments);
+}
 
 const config = getDefaultConfig(projectRoot);
 
@@ -32,9 +43,13 @@ config.resolver.extraNodeModules = {
 
   // Pinned native packages
   "react-native": path.resolve(workspaceRoot, "node_modules/react-native"),
-  "expo-asset": path.resolve(projectRoot, "node_modules/expo-asset"),
-  "react-native-toast-message": path.resolve(workspaceRoot, "node_modules/react-native-toast-message"),
-  "expo-modules-core": path.resolve(workspaceRoot, "node_modules/expo-modules-core"),
+  "expo-asset": resolveHoistedPackage("expo-asset"),
+  "expo-modules-core": resolveHoistedPackage("expo-modules-core"),
+  "@react-native-async-storage/async-storage": resolveHoistedPackage(
+    "@react-native-async-storage",
+    "async-storage",
+  ),
+  "react-native-toast-message": resolveHoistedPackage("react-native-toast-message"),
 };
 
 module.exports = config;

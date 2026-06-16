@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { resolvePersistStorage } from "./persistStorage";
 
 type User = {
     id: string;
@@ -20,13 +21,6 @@ type AuthState = {
     setPatientContext: (patientId: string | null) => void;
     logout: () => void;
     setHydrated: () => void;
-};
-
-const memoryStorage = new Map<string, string>();
-let _customStorage: any = null;
-
-export const setStoreStorage = (storage: any) => {
-    _customStorage = storage;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -55,24 +49,7 @@ export const useAuthStore = create<AuthState>()(
         }),
         {
             name: "auth-store",
-            storage: createJSONStorage(() => {
-                if (_customStorage) return _customStorage;
-                
-                // Fallback para entornos sin window o sin localStorage (React Native)
-                const isBrowser = typeof window !== "undefined" && typeof window.localStorage !== "undefined";
-                
-                if (!isBrowser) {
-                    console.log("[AuthStore] Storage: Using memory fallback");
-                    return {
-                        getItem: (key) => memoryStorage.get(key) || null,
-                        setItem: (key, value) => { memoryStorage.set(key, value); },
-                        removeItem: (key) => { memoryStorage.delete(key); },
-                    };
-                }
-
-                console.log("[AuthStore] Storage: Using window.localStorage");
-                return window.localStorage;
-            }),
+            storage: createJSONStorage(() => resolvePersistStorage("AuthStore")),
             partialize: (s) => ({
                 token: s.token,
                 refreshToken: s.refreshToken,

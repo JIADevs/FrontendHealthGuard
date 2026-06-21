@@ -13,6 +13,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
+import { ZodError } from "zod";
 import {
     // Documents
     getDocuments,
@@ -557,6 +558,9 @@ export function useCalendarEventsQuery(startDate: string, endDate: string) {
         queryFn: () => getCalendarEvents(startDate, endDate),
         enabled: !!startDate && !!endDate,
         staleTime: 60_000,
+        // Zod parse failures are not transient — default retry: 3 caused 4 identical GETs.
+        retry: (failureCount, error) =>
+            !(error instanceof ZodError) && failureCount < 2,
     });
 }
 

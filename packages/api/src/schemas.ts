@@ -276,21 +276,60 @@ export const AppointmentCreateSchema = z.object({
     postBackpackIds: z.array(z.string().uuid()).default([]),
 });
 
-// --- Medications ---
-export const MedicationSchema = z.object({
+// --- Medications (identity + cycles; flat fields derived from active cycle for UI) ---
+
+export const MedicationCycleSchema = z.object({
     id: z.string().uuid(),
-    name: z.string(),
+    medicationId: z.string().uuid(),
+    treatmentId: z.string().uuid().nullable().optional(),
+    replacesCycleId: z.string().uuid().nullable().optional(),
     dosage: z.string(),
     frequency: z.number(),
+    reason: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
     startDate: z.string(),
-    firstIntakeTime: z.string(),
     endDate: z.string().nullable().optional(),
-    indications: z.string().nullable().optional(),
-    reminderOffsets: z.array(z.number()),
-    treatmentId: z.string().uuid().nullable().optional(),
-    createdBy: z.string().uuid().nullable().optional(),
+    firstIntakeTime: z.string(),
     nextIntakeTime: z.string().nullable().optional(),
+    reminderOffsets: z.array(z.number()).default([]),
 });
+
+export type MedicationCycle = z.infer<typeof MedicationCycleSchema>;
+
+function pickActiveMedicationCycle(cycles: MedicationCycle[]): MedicationCycle | undefined {
+    if (cycles.length === 0) return undefined;
+    const now = Date.now();
+    const active = cycles.find((cycle) => {
+        const start = new Date(cycle.startDate).getTime();
+        const end = cycle.endDate ? new Date(cycle.endDate).getTime() : Number.POSITIVE_INFINITY;
+        return start <= now && now <= end;
+    });
+    return active ?? cycles[cycles.length - 1];
+}
+
+export const MedicationSchema = z
+    .object({
+        id: z.string().uuid(),
+        userId: z.string().uuid().optional(),
+        name: z.string(),
+        createdBy: z.string().uuid().nullable().optional(),
+        cycles: z.array(MedicationCycleSchema).default([]),
+    })
+    .transform((med) => {
+        const cycle = pickActiveMedicationCycle(med.cycles);
+        return {
+            ...med,
+            dosage: cycle?.dosage ?? "",
+            frequency: cycle?.frequency ?? 0,
+            startDate: cycle?.startDate ?? "",
+            firstIntakeTime: cycle?.firstIntakeTime ?? "",
+            endDate: cycle?.endDate ?? null,
+            indications: cycle?.notes ?? null,
+            reminderOffsets: cycle?.reminderOffsets ?? [],
+            treatmentId: cycle?.treatmentId ?? null,
+            nextIntakeTime: cycle?.nextIntakeTime ?? null,
+        };
+    });
 
 export const MedicationPageSchema = createPageSchema(MedicationSchema);
 

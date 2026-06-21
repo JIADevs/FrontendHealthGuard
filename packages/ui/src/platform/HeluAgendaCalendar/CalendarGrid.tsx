@@ -4,6 +4,7 @@ import { spacing, fontSize, fontWeight } from "../../tokens/tokens";
 import { useAppTheme } from "../../tokens/ThemeProvider";
 import type { ThemeContextValue } from "../../tokens/ThemeProvider";
 import { eventHourFraction, type AgendaEvent } from "./mapCalendarApiToEvents";
+import { localDateKeyFromISO } from "./calendarDateUtils";
 import { EventBlock } from "./EventBlock";
 
 const HOUR_HEIGHT = 52;
@@ -24,7 +25,7 @@ export function CalendarGrid({ events, dates }: CalendarGridProps) {
         for (const event of events) {
             const key =
                 event.type === "checkin"
-                    ? event.data.recordedAt.slice(0, 10)
+                    ? localDateKeyFromISO(event.data.recordedAt)
                     : event.data.date?.slice(0, 10) ?? "";
             if (map.has(key)) map.get(key)!.push(event);
         }

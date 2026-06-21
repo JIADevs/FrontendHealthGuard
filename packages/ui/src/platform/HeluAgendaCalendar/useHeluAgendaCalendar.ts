@@ -1,6 +1,10 @@
 import { useMemo, useState, useCallback } from "react";
 import { useCalendarEventsQuery } from "@helu/api/reactQueryHooks";
 import {
+    addLocalDays,
+    todayLocalDateKey,
+} from "./calendarDateUtils";
+import {
     filterEventsForDates,
     mapCalendarApiToEvents,
     type AgendaEvent,
@@ -8,25 +12,15 @@ import {
 
 export type ViewRange = 1 | 3 | 7;
 
-function formatDate(d: Date): string {
-    return d.toISOString().slice(0, 10);
-}
-
-function addDays(isoDate: string, delta: number): string {
-    const d = new Date(`${isoDate}T12:00:00`);
-    d.setDate(d.getDate() + delta);
-    return formatDate(d);
-}
-
 function buildVisibleDates(anchor: string, range: ViewRange): string[] {
     if (range === 1) return [anchor];
     const startOffset = range === 3 ? -1 : -3;
-    return Array.from({ length: range }, (_, i) => addDays(anchor, startOffset + i));
+    return Array.from({ length: range }, (_, i) => addLocalDays(anchor, startOffset + i));
 }
 
 export function useHeluAgendaCalendar(initialDate?: string) {
     const [selectedDate, setSelectedDate] = useState(
-        initialDate ?? formatDate(new Date()),
+        initialDate ?? todayLocalDateKey(),
     );
     const [viewRange, setViewRange] = useState<ViewRange>(1);
 
@@ -47,16 +41,16 @@ export function useHeluAgendaCalendar(initialDate?: string) {
     }, [calendarQuery.data, visibleDates]);
 
     const goToToday = useCallback(() => {
-        setSelectedDate(formatDate(new Date()));
+        setSelectedDate(todayLocalDateKey());
         setViewRange(1);
     }, []);
 
     const goPrevious = useCallback(() => {
-        setSelectedDate((prev) => addDays(prev, -viewRange));
+        setSelectedDate((prev) => addLocalDays(prev, -viewRange));
     }, [viewRange]);
 
     const goNext = useCallback(() => {
-        setSelectedDate((prev) => addDays(prev, viewRange));
+        setSelectedDate((prev) => addLocalDays(prev, viewRange));
     }, [viewRange]);
 
     const selectDate = useCallback((date: string) => {

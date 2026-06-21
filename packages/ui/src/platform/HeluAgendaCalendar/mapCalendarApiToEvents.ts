@@ -1,4 +1,5 @@
 import type { Appointment, CalendarDay, DailyCheckIn } from "@helu/api";
+import { localDateKeyFromISO } from "./calendarDateUtils";
 
 export type AgendaEvent =
     | { type: "appointment"; data: Appointment; sortKey: number }
@@ -43,7 +44,7 @@ export function filterEventsForDates(events: AgendaEvent[], dates: string[]): Ag
     const dateSet = new Set(dates);
     return events.filter((event) => {
         if (event.type === "checkin") {
-            return dateSet.has(event.data.recordedAt.slice(0, 10));
+            return dateSet.has(localDateKeyFromISO(event.data.recordedAt));
         }
         const dateKey = event.data.date?.slice(0, 10);
         return dateKey ? dateSet.has(dateKey) : false;

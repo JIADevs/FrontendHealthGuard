@@ -1,5 +1,7 @@
-import { View, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Spinner } from "../../primitives/Spinner/Spinner.native";
+import { fontSize } from "../../tokens/tokens";
+import { useAppTheme } from "../../tokens/ThemeProvider";
 import { DaySelector } from "./DaySelector";
 import { CalendarGrid } from "./CalendarGrid";
 import { AgendaCalendarFAB } from "./AgendaCalendarFAB";
@@ -12,6 +14,7 @@ export interface HeluAgendaCalendarProps {
 
 export function HeluAgendaCalendar({ onNewAppointment, initialDate }: HeluAgendaCalendarProps) {
     const calendar = useHeluAgendaCalendar(initialDate);
+    const t = useAppTheme();
 
     return (
         <View style={styles.root}>
@@ -28,6 +31,12 @@ export function HeluAgendaCalendar({ onNewAppointment, initialDate }: HeluAgenda
             {calendar.isLoading ? (
                 <View style={styles.center}>
                     <Spinner size="lg" />
+                </View>
+            ) : calendar.isError ? (
+                <View style={styles.center}>
+                    <Text style={[styles.errorText, { color: t.status.errorFg }]}>
+                        No se pudieron cargar los eventos del calendario.
+                    </Text>
                 </View>
             ) : (
                 <CalendarGrid events={calendar.events} dates={calendar.visibleDates} />
@@ -46,5 +55,10 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
+        paddingHorizontal: 24,
+    },
+    errorText: {
+        fontSize: fontSize.sm,
+        textAlign: "center",
     },
 });

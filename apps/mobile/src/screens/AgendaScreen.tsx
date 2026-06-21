@@ -21,6 +21,7 @@ import {
   isApiError,
   type Appointment,
   type Medication,
+  type DailyCheckIn,
 } from "@helu/api";
 import { useMedicationForm } from "../hooks/useMedicationForm";
 import {
@@ -44,6 +45,7 @@ import {
   Spinner,
   ConfirmModal,
   EmptyState,
+  HeluAgendaCalendar,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import {
@@ -143,6 +145,7 @@ function AppointmentsTab() {
 
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
+  const [viewMode, setViewMode] = useState<"calendario" | "lista">("calendario");
 
   const appts = useAppointmentsQuery("", page, 10);
   const statusMut = useUpdateAppointmentStatusMutation();
@@ -178,6 +181,29 @@ function AppointmentsTab() {
 
   return (
     <View style={styles.tabContent}>
+      <View style={styles.viewToggleRow}>
+        <TouchableOpacity
+          style={[styles.viewToggleChip, viewMode === "calendario" && styles.viewToggleChipActive]}
+          onPress={() => setViewMode("calendario")}
+        >
+          <Text style={[styles.viewToggleText, viewMode === "calendario" && styles.viewToggleTextActive]}>
+            Calendario
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.viewToggleChip, viewMode === "lista" && styles.viewToggleChipActive]}
+          onPress={() => setViewMode("lista")}
+        >
+          <Text style={[styles.viewToggleText, viewMode === "lista" && styles.viewToggleTextActive]}>
+            Lista
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {viewMode === "calendario" ? (
+        <HeluAgendaCalendar onNewAppointment={() => navigation.navigate("AppointmentForm")} />
+      ) : (
+        <>
       <View style={styles.addRow}>
         <TouchableOpacity
           style={styles.addBtn}
@@ -274,6 +300,8 @@ function AppointmentsTab() {
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
         />
+      )}
+        </>
       )}
     </View>
   );
@@ -425,7 +453,7 @@ function WellbeingTab() {
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const [page, setPage] = useState(1);
-  const [showForm, setShowForm] = useState(false);
+  const [formTarget, setFormTarget] = useState<DailyCheckIn | "new" | null>(null);
 
   const query = useDailyCheckInsQuery({ page, limit: 10 });
   const totalPages = query.data?.totalPages ?? 1;
@@ -451,7 +479,7 @@ function WellbeingTab() {
           icon={<Heart size={48} color={t.border.medium} />}
           message="No tenés check-ins registrados."
           action={
-            <Button onPress={() => setShowForm(true)}>
+            <Button onPress={() => setFormTarget("new")}>
               Registrar check-in
             </Button>
           }
@@ -462,7 +490,10 @@ function WellbeingTab() {
           keyExtractor={(c) => c.id}
           contentContainerStyle={[cardContentStyle, styles.wellbeingListContent]}
           renderItem={({ item }) => (
-            <DailyCheckInListItem checkIn={item} />
+            <DailyCheckInListItem
+              checkIn={item}
+              onEdit={(checkIn) => setFormTarget(checkIn)}
+            />
           )}
           ListFooterComponent={
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
@@ -470,9 +501,14 @@ function WellbeingTab() {
         />
       )}
 
-      <WellbeingFAB onPress={() => setShowForm(true)} />
+      <WellbeingFAB onPress={() => setFormTarget("new")} />
 
-      {showForm && <DailyCheckInForm onClose={() => setShowForm(false)} />}
+      {formTarget !== null && (
+        <DailyCheckInForm
+          onClose={() => setFormTarget(null)}
+          initialValues={formTarget === "new" ? undefined : formTarget}
+        />
+      )}
     </View>
   );
 }
@@ -533,6 +569,11 @@ function makeStyles(t: ThemeContextValue) {
     tabActive:          { borderBottomColor: t.brand.fg },
     tabActiveNotif:     { borderBottomColor: t.accent.notifFg },
     tabContent:         { flex: 1 },
+    viewToggleRow:      { flexDirection: "row", gap: spacing[2], paddingHorizontal: spacing[4], paddingTop: spacing[3] },
+    viewToggleChip:     { flex: 1, paddingVertical: spacing[2], borderRadius: radii.md, alignItems: "center", borderWidth: 1, borderColor: t.border.medium, backgroundColor: t.surface.bg },
+    viewToggleChipActive: { backgroundColor: t.brand.fg, borderColor: t.brand.fg },
+    viewToggleText:     { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.secondary },
+    viewToggleTextActive: { color: colors.white },
     wellbeingListContent: { paddingBottom: spacing[12] + 56 },
     addRow:             { flexDirection: "row", justifyContent: "flex-end", padding: spacing[4] },
     addBtn:             { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: t.brand.fg, paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md },

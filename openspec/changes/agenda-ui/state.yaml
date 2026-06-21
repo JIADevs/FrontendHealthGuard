@@ -43,11 +43,23 @@ phases:
     slice_2:
       status: blocked
   verify:
-    status: pending
+    status: done
+    scope: slice_1_only
+    date: "2026-06-21"
+    verdict: "PASS WITH WARNINGS"
+    artifact: openspec/changes/agenda-ui/verify-report.md
+    critical: 0
+    warnings: 1
+    suggestions: 2
+    scenarios_compliant: "17/17 (S1)"
+    scenarios_na: "5 (S2-deferred)"
+    new_tsc_errors: 0
+    pre_existing_tsc_errors: 59
+    warning_summary: "RF-MB-16: DailyCheckInListItem has onEdit prop but no edit button rendered (S1 spec requires disabled/hidden button)"
   archive:
     status: pending
 
-next_recommended: sdd-verify (slice_1)
+next_recommended: sdd-archive (slice_1)
 
 slices:
   slice_1:

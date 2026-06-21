@@ -39,7 +39,6 @@ import {
     type BackpackCreate,
     type CustomTagCreate,
     type DailyCheckInCreate,
-    type DailyCheckInUpdate,
     type DailyCheckInPage,
 } from "./schemas";
 

@@ -57,7 +57,10 @@ import {
   User,
   Check,
   Heart,
+  List,
 } from "lucide-react-native";
+
+type AgendaTab = "calendar" | "appointments" | "medications" | "wellbeing";
 import { DailyCheckInListItem, DailyCheckInForm, WellbeingFAB } from "../components/agenda";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -69,13 +72,18 @@ const STATUSES = ["PROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI"] as const;
 export function AgendaScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const [tab, setTab] = useState<"appointments" | "medications" | "wellbeing">("appointments");
+  const [tab, setTab] = useState<AgendaTab>("calendar");
 
-  // Allow navigating with initialTab param (e.g. from Dashboard → Medicamentos or push CHECKIN)
+  // Allow navigating with initialTab param (e.g. Dashboard → Calendario, push CHECKIN → Bienestar)
   const route = require("@react-navigation/native").useRoute();
   useEffect(() => {
-    const initialTab = route.params?.initialTab;
-    if (initialTab === "medications" || initialTab === "appointments" || initialTab === "wellbeing") {
+    const initialTab = route.params?.initialTab as AgendaTab | undefined;
+    if (
+      initialTab === "calendar" ||
+      initialTab === "medications" ||
+      initialTab === "appointments" ||
+      initialTab === "wellbeing"
+    ) {
       setTab(initialTab);
     }
   }, [route.params?.initialTab]);
@@ -88,10 +96,22 @@ export function AgendaScreen() {
 
       <View style={styles.tabs}>
         <TouchableOpacity
+          style={[styles.tab, tab === "calendar" && styles.tabActive]}
+          onPress={() => setTab("calendar")}
+        >
+          <CalendarDays
+            size={14}
+            color={tab === "calendar" ? t.brand.fg : t.text.secondary}
+          />
+          <Typography variant="label" color={tab === "calendar" ? "inherit" : "secondary"}>
+            <Text style={tab === "calendar" ? { color: t.brand.fg } : undefined}>Calendario</Text>
+          </Typography>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[styles.tab, tab === "appointments" && styles.tabActive]}
           onPress={() => setTab("appointments")}
         >
-          <CalendarDays
+          <List
             size={14}
             color={tab === "appointments" ? t.brand.fg : t.text.secondary}
           />
@@ -125,7 +145,9 @@ export function AgendaScreen() {
         </TouchableOpacity>
       </View>
 
-      {tab === "appointments" ? (
+      {tab === "calendar" ? (
+        <CalendarTab />
+      ) : tab === "appointments" ? (
         <AppointmentsTab />
       ) : tab === "medications" ? (
         <MedicationsTab />
@@ -133,6 +155,20 @@ export function AgendaScreen() {
         <WellbeingTab />
       )}
     </SafeAreaView>
+  );
+}
+
+// ─── calendar tab ─────────────────────────────────────────────────────────────
+
+function CalendarTab() {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const navigation = require("@react-navigation/native").useNavigation();
+
+  return (
+    <View style={styles.tabContent}>
+      <HeluAgendaCalendar onNewAppointment={() => navigation.navigate("AppointmentForm")} />
+    </View>
   );
 }
 
@@ -145,7 +181,6 @@ function AppointmentsTab() {
 
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
-  const [viewMode, setViewMode] = useState<"calendario" | "lista">("calendario");
 
   const appts = useAppointmentsQuery("", page, 10);
   const statusMut = useUpdateAppointmentStatusMutation();
@@ -181,29 +216,6 @@ function AppointmentsTab() {
 
   return (
     <View style={styles.tabContent}>
-      <View style={styles.viewToggleRow}>
-        <TouchableOpacity
-          style={[styles.viewToggleChip, viewMode === "calendario" && styles.viewToggleChipActive]}
-          onPress={() => setViewMode("calendario")}
-        >
-          <Text style={[styles.viewToggleText, viewMode === "calendario" && styles.viewToggleTextActive]}>
-            Calendario
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.viewToggleChip, viewMode === "lista" && styles.viewToggleChipActive]}
-          onPress={() => setViewMode("lista")}
-        >
-          <Text style={[styles.viewToggleText, viewMode === "lista" && styles.viewToggleTextActive]}>
-            Lista
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {viewMode === "calendario" ? (
-        <HeluAgendaCalendar onNewAppointment={() => navigation.navigate("AppointmentForm")} />
-      ) : (
-        <>
       <View style={styles.addRow}>
         <TouchableOpacity
           style={styles.addBtn}
@@ -300,8 +312,6 @@ function AppointmentsTab() {
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
         />
-      )}
-        </>
       )}
     </View>
   );
@@ -569,11 +579,6 @@ function makeStyles(t: ThemeContextValue) {
     tabActive:          { borderBottomColor: t.brand.fg },
     tabActiveNotif:     { borderBottomColor: t.accent.notifFg },
     tabContent:         { flex: 1 },
-    viewToggleRow:      { flexDirection: "row", gap: spacing[2], paddingHorizontal: spacing[4], paddingTop: spacing[3] },
-    viewToggleChip:     { flex: 1, paddingVertical: spacing[2], borderRadius: radii.md, alignItems: "center", borderWidth: 1, borderColor: t.border.medium, backgroundColor: t.surface.bg },
-    viewToggleChipActive: { backgroundColor: t.brand.fg, borderColor: t.brand.fg },
-    viewToggleText:     { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.secondary },
-    viewToggleTextActive: { color: colors.white },
     wellbeingListContent: { paddingBottom: spacing[12] + 56 },
     addRow:             { flexDirection: "row", justifyContent: "flex-end", padding: spacing[4] },
     addBtn:             { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: t.brand.fg, paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md },

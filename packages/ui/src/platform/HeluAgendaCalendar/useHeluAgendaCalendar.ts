@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from "react";
-import { useCalendarEventsQuery } from "@helu/api/hooks";
+import { useCalendarEventsQuery } from "@helu/api/reactQueryHooks";
 import {
     filterEventsForDates,
     mapCalendarApiToEvents,

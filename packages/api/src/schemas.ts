@@ -390,7 +390,29 @@ export const DailyCheckInCreateSchema = z.object({
     notes:      z.string().optional(),
 });
 
+export const DailyCheckInUpdateSchema = DailyCheckInCreateSchema.partial();
+
 export const DailyCheckInPageSchema = createPageSchema(DailyCheckInSchema);
+
+const CalendarDayPayloadSchema = z.object({
+    appointments: z.array(AppointmentSchema).default([]),
+    medications:  z.array(MedicationSchema).default([]),
+    symptoms:     z.array(z.unknown()).default([]),
+    checkIns:     z.array(DailyCheckInSchema).default([]),
+});
+
+export const CalendarDaySchema = CalendarDayPayloadSchema.extend({
+    date: z.string(),
+});
+
+export type CalendarDay = z.infer<typeof CalendarDaySchema>;
+
+export function parseCalendarEventsResponse(data: unknown): CalendarDay[] {
+    const record = z.record(z.string(), CalendarDayPayloadSchema).parse(data);
+    return Object.entries(record)
+        .map(([date, day]) => CalendarDaySchema.parse({ date, ...day }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+}
 
 // --- Inferred types ---
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
@@ -425,5 +447,6 @@ export type TreatmentPage = z.infer<typeof TreatmentPageSchema>;
 export type ReminderConfig = z.infer<typeof ReminderConfigSchema>;
 export type DailyCheckIn = z.infer<typeof DailyCheckInSchema>;
 export type DailyCheckInCreate = z.infer<typeof DailyCheckInCreateSchema>;
+export type DailyCheckInUpdate = z.infer<typeof DailyCheckInUpdateSchema>;
 export type DailyCheckInPage = z.infer<typeof DailyCheckInPageSchema>;
 

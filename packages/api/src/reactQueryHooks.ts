@@ -67,6 +67,8 @@ import {
     // Daily Check-Ins
     getDailyCheckIns,
     createDailyCheckIn,
+    updateDailyCheckIn,
+    deleteDailyCheckIn,
 } from "./endpoints";
 import type {
     DocumentCreate,
@@ -77,6 +79,7 @@ import type {
     BackpackCreate,
     UserUpdate,
     DailyCheckInCreate,
+    DailyCheckInUpdate,
 } from "./schemas";
 import type { ShareStatusFilter } from "./shares/schemas";
 import { invalidateBackpackQueries } from "./backpackQueryUtils";
@@ -595,6 +598,31 @@ export function useCreateDailyCheckInMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (payload: DailyCheckInCreate) => createDailyCheckIn(payload),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["daily-checkins"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
+            qc.invalidateQueries({ queryKey: ["me"] });
+        },
+    });
+}
+
+export function useUpdateDailyCheckInMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: DailyCheckInUpdate }) =>
+            updateDailyCheckIn(id, payload),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["daily-checkins"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
+            qc.invalidateQueries({ queryKey: ["me"] });
+        },
+    });
+}
+
+export function useDeleteDailyCheckInMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => deleteDailyCheckIn(id),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["daily-checkins"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });

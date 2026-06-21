@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
+import { spacing, fontSize, useAppTheme } from "@helu/ui";
 import { Card } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import type { DailyCheckIn } from "@helu/api";
@@ -25,15 +25,16 @@ export function DailyCheckInListItem({ checkIn }: DailyCheckInListItemProps) {
     });
 
     return (
-        <Card
-            title={`${emoji} ${label}`}
-            subtitle={localDate}
+        <View
+            accessible
             accessibilityLabel={`Check-in de bienestar: ${label}, ${localDate}`}
         >
-            {checkIn.notes ? (
-                <Text style={styles.notes}>{checkIn.notes}</Text>
-            ) : null}
-        </Card>
+            <Card title={`${emoji} ${label}`} subtitle={localDate}>
+                {checkIn.notes ? (
+                    <Text style={styles.notes}>{checkIn.notes}</Text>
+                ) : null}
+            </Card>
+        </View>
     );
 }
 

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { spacing, fontSize, useAppTheme, Card, ActionButton } from "@helu/ui";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Pencil } from "lucide-react-native";
+import { spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import type { DailyCheckIn } from "@helu/api";
 import { MOOD_CONFIG } from "./moodConfig";
@@ -14,51 +15,90 @@ export function DailyCheckInListItem({ checkIn, onEdit }: DailyCheckInListItemPr
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
 
-    const { label, emoji } = MOOD_CONFIG[checkIn.mood];
-    const localDate = new Date(checkIn.recordedAt).toLocaleString("es-CO", {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
+    const { label, emoji, circleBg } = MOOD_CONFIG[checkIn.mood];
+    const timeLabel = new Date(checkIn.recordedAt).toLocaleString("es-AR", {
         hour: "2-digit",
         minute: "2-digit",
     });
 
     return (
         <View
+            style={styles.row}
             accessible
-            accessibilityLabel={`Check-in de bienestar: ${label}, ${localDate}`}
+            accessibilityLabel={`Check-in de bienestar: ${label}, ${timeLabel}`}
         >
-            <Card
-                title={`${emoji} ${label}`}
-                subtitle={localDate}
-                actions={
-                    <View style={styles.cardActions}>
-                        <ActionButton
-                            action="edit"
-                            size="sm"
-                            disabled={!onEdit}
-                            onPress={() => onEdit?.(checkIn)}
-                        />
-                    </View>
-                }
-            >
+            <View style={[styles.emojiCircle, { backgroundColor: circleBg }]}>
+                <Text style={styles.emoji}>{emoji}</Text>
+            </View>
+
+            <View style={styles.body}>
+                <Text style={styles.moodLabel}>{label}</Text>
+                <Text style={styles.time}>{timeLabel}</Text>
                 {checkIn.notes ? (
-                    <Text style={styles.notes}>{checkIn.notes}</Text>
+                    <Text style={styles.notes} numberOfLines={4}>
+                        {checkIn.notes}
+                    </Text>
                 ) : null}
-            </Card>
+            </View>
+
+            {onEdit ? (
+                <TouchableOpacity
+                    style={styles.editBtn}
+                    onPress={() => onEdit(checkIn)}
+                    accessibilityLabel="Editar check-in"
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                    <Pencil size={16} color={t.text.secondary} />
+                </TouchableOpacity>
+            ) : null}
         </View>
     );
 }
 
-function makeStyles(_t: ThemeContextValue) {
+function makeStyles(t: ThemeContextValue) {
     return StyleSheet.create({
-        cardActions: {
-            gap: spacing[2],
+        row: {
+            flexDirection: "row",
+            alignItems: "flex-start",
+            gap: spacing[3],
+            paddingVertical: spacing[3],
+            paddingHorizontal: spacing[4],
+        },
+        emojiCircle: {
+            width: 44,
+            height: 44,
+            borderRadius: radii.full,
+            alignItems: "center",
+            justifyContent: "center",
+        },
+        emoji: {
+            fontSize: fontSize.xl,
+        },
+        body: {
+            flex: 1,
+            gap: spacing[1],
+        },
+        moodLabel: {
+            fontSize: fontSize.base,
+            fontWeight: fontWeight.semibold,
+            color: t.text.primary,
+        },
+        time: {
+            fontSize: fontSize.sm,
+            color: t.text.secondary,
         },
         notes: {
             fontSize: fontSize.sm,
-            color: _t.text.secondary,
+            color: t.text.secondary,
             marginTop: spacing[1],
+            lineHeight: 20,
+        },
+        editBtn: {
+            width: 32,
+            height: 32,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: radii.sm,
         },
     });
 }

@@ -57,9 +57,15 @@ phases:
     pre_existing_tsc_errors: 59
     warning_summary: "RF-MB-16: DailyCheckInListItem has onEdit prop but no edit button rendered (S1 spec requires disabled/hidden button)"
   archive:
-    status: pending
+    status: done
+    date: "2026-06-21"
+    location: openspec/changes/archive/2026-06-21-agenda-ui/
+    artifact: openspec/changes/archive/2026-06-21-agenda-ui/archive-report.md
+    verdict: PASS_WITH_WARNINGS
+    slice_1: closed
+    slice_2: deferred_pending_backend_gates
 
-next_recommended: sdd-archive (slice_1)
+next_recommended: none (change closed — start /sdd-new agenda-ui-s2 when backend gates clear)
 
 slices:
   slice_1:

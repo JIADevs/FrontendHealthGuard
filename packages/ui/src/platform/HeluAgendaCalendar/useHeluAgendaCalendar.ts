@@ -8,7 +8,15 @@ import {
     formatWeekLabel,
     todayLocalDateKey,
 } from "./calendarDateUtils";
-import { INITIAL_FUTURE_DAYS, INITIAL_PAST_DAYS, VIEW_MODE_NAV_STEP } from "./calendarConstants";
+import {
+    INITIAL_FUTURE_DAYS,
+    INITIAL_PAST_DAYS,
+    THREE_DAY_BUFFER_FUTURE_DAYS,
+    THREE_DAY_BUFFER_PAST_DAYS,
+    VIEW_MODE_NAV_STEP,
+    WEEK_BUFFER_FUTURE_DAYS,
+    WEEK_BUFFER_PAST_DAYS,
+} from "./calendarConstants";
 import {
     filterEventsForDates,
     mapCalendarApiToEvents,
@@ -40,6 +48,16 @@ function expandRangeToCoverDate(
     };
 }
 
+function mergeRanges(
+    a: { start: string; end: string },
+    b: { start: string; end: string },
+): { start: string; end: string } {
+    return {
+        start: a.start < b.start ? a.start : b.start,
+        end: a.end > b.end ? a.end : b.end,
+    };
+}
+
 function visibleWindow(viewMode: CalendarViewMode, selectedDate: string) {
     switch (viewMode) {
         case "day":
@@ -55,24 +73,27 @@ function visibleWindow(viewMode: CalendarViewMode, selectedDate: string) {
     }
 }
 
-/** Reuse the day-mode cache when a fixed window already fits inside it. */
-function resolveFetchRange(
+/** Prefetch window for week / 3-day modes so arrow nav stays inside cache. */
+function bufferedFetchRange(
     viewMode: CalendarViewMode,
-    rangeStart: string,
-    rangeEnd: string,
-    windowStart: string,
-    windowEnd: string,
+    selectedDate: string,
 ): { start: string; end: string } {
-    if (viewMode === "day") {
-        return { start: rangeStart, end: rangeEnd };
+    const { start: windowStart, end: windowEnd } = visibleWindow(viewMode, selectedDate);
+
+    switch (viewMode) {
+        case "threeDay":
+            return {
+                start: addLocalDays(windowStart, -THREE_DAY_BUFFER_PAST_DAYS),
+                end: addLocalDays(windowEnd, THREE_DAY_BUFFER_FUTURE_DAYS),
+            };
+        case "week":
+            return {
+                start: addLocalDays(windowStart, -WEEK_BUFFER_PAST_DAYS),
+                end: addLocalDays(windowEnd, WEEK_BUFFER_FUTURE_DAYS),
+            };
+        default:
+            return { start: windowStart, end: windowEnd };
     }
-    if (windowStart >= rangeStart && windowEnd <= rangeEnd) {
-        return { start: rangeStart, end: rangeEnd };
-    }
-    return {
-        start: windowStart < rangeStart ? windowStart : rangeStart,
-        end: windowEnd > rangeEnd ? windowEnd : rangeEnd,
-    };
 }
 
 export function useHeluAgendaCalendar(initialDate?: string) {
@@ -83,15 +104,18 @@ export function useHeluAgendaCalendar(initialDate?: string) {
     const [rangeStart, setRangeStart] = useState(initialDayRange.start);
     const [rangeEnd, setRangeEnd] = useState(initialDayRange.end);
 
-    const { dates: gridDates, start: windowStart, end: windowEnd } = useMemo(
-        () => visibleWindow(viewMode, selectedDate),
+    const gridDates = useMemo(
+        () => visibleWindow(viewMode, selectedDate).dates,
         [viewMode, selectedDate],
     );
 
-    const fetchRange = useMemo(
-        () => resolveFetchRange(viewMode, rangeStart, rangeEnd, windowStart, windowEnd),
-        [viewMode, rangeStart, rangeEnd, windowStart, windowEnd],
-    );
+    const fetchRange = useMemo(() => {
+        if (viewMode === "day") {
+            return { start: rangeStart, end: rangeEnd };
+        }
+        const buffered = bufferedFetchRange(viewMode, selectedDate);
+        return mergeRanges({ start: rangeStart, end: rangeEnd }, buffered);
+    }, [viewMode, selectedDate, rangeStart, rangeEnd]);
 
     const calendarQuery = useCalendarEventsQuery(fetchRange.start, fetchRange.end);
 
@@ -103,10 +127,13 @@ export function useHeluAgendaCalendar(initialDate?: string) {
             setRangeEnd(next.end);
             return;
         }
-        if (windowStart >= rangeStart && windowEnd <= rangeEnd) return;
-        setRangeStart(windowStart < rangeStart ? windowStart : rangeStart);
-        setRangeEnd(windowEnd > rangeEnd ? windowEnd : rangeEnd);
-    }, [viewMode, selectedDate, windowStart, windowEnd, rangeStart, rangeEnd]);
+
+        const buffered = bufferedFetchRange(viewMode, selectedDate);
+        const next = mergeRanges({ start: rangeStart, end: rangeEnd }, buffered);
+        if (next.start === rangeStart && next.end === rangeEnd) return;
+        setRangeStart(next.start);
+        setRangeEnd(next.end);
+    }, [viewMode, selectedDate, rangeStart, rangeEnd]);
 
     const events: AgendaEvent[] = useMemo(() => {
         if (!calendarQuery.data) return [];
@@ -121,15 +148,27 @@ export function useHeluAgendaCalendar(initialDate?: string) {
 
     const navStep = VIEW_MODE_NAV_STEP[viewMode];
 
+    const applyFixedWindowRange = useCallback(
+        (mode: Exclude<CalendarViewMode, "day">, date: string) => {
+            const buffered = bufferedFetchRange(mode, date);
+            setRangeStart((prev) => (buffered.start < prev ? buffered.start : prev));
+            setRangeEnd((prev) => (buffered.end > prev ? buffered.end : prev));
+        },
+        [],
+    );
+
     const setViewMode = useCallback(
         (mode: CalendarViewMode) => {
             setViewModeState(mode);
-            if (mode !== "day") return;
-            const next = expandRangeToCoverDate(selectedDate, rangeStart, rangeEnd);
-            if (next.start !== rangeStart) setRangeStart(next.start);
-            if (next.end !== rangeEnd) setRangeEnd(next.end);
+            if (mode === "day") {
+                const next = expandRangeToCoverDate(selectedDate, rangeStart, rangeEnd);
+                if (next.start !== rangeStart) setRangeStart(next.start);
+                if (next.end !== rangeEnd) setRangeEnd(next.end);
+                return;
+            }
+            applyFixedWindowRange(mode, selectedDate);
         },
-        [rangeEnd, rangeStart, selectedDate],
+        [applyFixedWindowRange, rangeEnd, rangeStart, selectedDate],
     );
 
     const goToToday = useCallback(() => {
@@ -157,13 +196,15 @@ export function useHeluAgendaCalendar(initialDate?: string) {
         [rangeEnd, rangeStart, viewMode],
     );
 
+    const isInitialLoading = calendarQuery.isLoading && !calendarQuery.data;
+
     return {
         selectedDate,
         viewMode,
         gridDates,
         events,
         headerLabel,
-        isLoading: calendarQuery.isLoading,
+        isLoading: isInitialLoading,
         isError: calendarQuery.isError,
         refetch: calendarQuery.refetch,
         setViewMode,

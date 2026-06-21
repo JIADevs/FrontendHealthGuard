@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { spacing, fontSize, useAppTheme } from "@helu/ui";
-import { Card } from "@helu/ui";
+import { spacing, fontSize, useAppTheme, Card, ActionButton } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import type { DailyCheckIn } from "@helu/api";
 import { MOOD_CONFIG } from "./moodConfig";
@@ -11,7 +10,7 @@ interface DailyCheckInListItemProps {
     onEdit?: (checkIn: DailyCheckIn) => void;
 }
 
-export function DailyCheckInListItem({ checkIn }: DailyCheckInListItemProps) {
+export function DailyCheckInListItem({ checkIn, onEdit }: DailyCheckInListItemProps) {
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
 
@@ -29,7 +28,20 @@ export function DailyCheckInListItem({ checkIn }: DailyCheckInListItemProps) {
             accessible
             accessibilityLabel={`Check-in de bienestar: ${label}, ${localDate}`}
         >
-            <Card title={`${emoji} ${label}`} subtitle={localDate}>
+            <Card
+                title={`${emoji} ${label}`}
+                subtitle={localDate}
+                actions={
+                    <View style={styles.cardActions}>
+                        <ActionButton
+                            action="edit"
+                            size="sm"
+                            disabled={!onEdit}
+                            onPress={() => onEdit?.(checkIn)}
+                        />
+                    </View>
+                }
+            >
                 {checkIn.notes ? (
                     <Text style={styles.notes}>{checkIn.notes}</Text>
                 ) : null}
@@ -38,11 +50,14 @@ export function DailyCheckInListItem({ checkIn }: DailyCheckInListItemProps) {
     );
 }
 
-function makeStyles(t: ThemeContextValue) {
+function makeStyles(_t: ThemeContextValue) {
     return StyleSheet.create({
+        cardActions: {
+            gap: spacing[2],
+        },
         notes: {
             fontSize: fontSize.sm,
-            color: t.text.secondary,
+            color: _t.text.secondary,
             marginTop: spacing[1],
         },
     });

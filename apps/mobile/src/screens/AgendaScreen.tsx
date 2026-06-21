@@ -56,7 +56,7 @@ import {
   Check,
   Heart,
 } from "lucide-react-native";
-import { DailyCheckInListItem, DailyCheckInForm } from "../components/agenda";
+import { DailyCheckInListItem, DailyCheckInForm, WellbeingFAB } from "../components/agenda";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -433,16 +433,6 @@ function WellbeingTab() {
 
   return (
     <View style={styles.tabContent}>
-      <View style={styles.addRow}>
-        <TouchableOpacity
-          style={[styles.addBtn, { backgroundColor: t.accent.notifFg }]}
-          onPress={() => setShowForm(true)}
-        >
-          <Plus size={16} color={colors.white} />
-          <Text style={styles.addBtnText}>+ Registrar</Text>
-        </TouchableOpacity>
-      </View>
-
       {query.isLoading ? (
         <View style={styles.center}>
           <Spinner size="lg" />
@@ -470,7 +460,7 @@ function WellbeingTab() {
         <FlatList
           data={items}
           keyExtractor={(c) => c.id}
-          contentContainerStyle={cardContentStyle}
+          contentContainerStyle={[cardContentStyle, styles.wellbeingListContent]}
           renderItem={({ item }) => (
             <DailyCheckInListItem checkIn={item} />
           )}
@@ -479,6 +469,8 @@ function WellbeingTab() {
           }
         />
       )}
+
+      <WellbeingFAB onPress={() => setShowForm(true)} />
 
       {showForm && <DailyCheckInForm onClose={() => setShowForm(false)} />}
     </View>
@@ -541,6 +533,7 @@ function makeStyles(t: ThemeContextValue) {
     tabActive:          { borderBottomColor: t.brand.fg },
     tabActiveNotif:     { borderBottomColor: t.accent.notifFg },
     tabContent:         { flex: 1 },
+    wellbeingListContent: { paddingBottom: spacing[12] + 56 },
     addRow:             { flexDirection: "row", justifyContent: "flex-end", padding: spacing[4] },
     addBtn:             { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: t.brand.fg, paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md },
     addBtnText:         { color: colors.white, fontWeight: fontWeight.semibold, fontSize: fontSize.sm },

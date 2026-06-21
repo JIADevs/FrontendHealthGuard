@@ -19,11 +19,18 @@ const VIEW_OPTIONS: { mode: CalendarViewMode; label: string }[] = [
     { mode: "day", label: "Día" },
     { mode: "threeDay", label: "3 días" },
     { mode: "week", label: "Semana" },
+    { mode: "month", label: "Mes" },
 ];
 
 function navAccessibilityLabel(viewMode: CalendarViewMode, direction: "previous" | "next"): string {
     const unit =
-        viewMode === "day" ? "día" : viewMode === "threeDay" ? "3 días" : "semana";
+        viewMode === "day"
+            ? "día"
+            : viewMode === "threeDay"
+              ? "3 días"
+              : viewMode === "week"
+                ? "semana"
+                : "mes";
     return direction === "previous" ? `${unit} anterior` : `${unit} siguiente`;
 }
 

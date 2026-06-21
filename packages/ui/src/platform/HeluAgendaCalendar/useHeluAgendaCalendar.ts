@@ -2,15 +2,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCalendarEventsQuery } from "@helu/api/reactQueryHooks";
 import {
     addLocalDays,
+    addMonths,
     buildThreeDayDates,
     buildWeekDates,
+    endOfMonth,
     formatMonthYear,
     formatWeekLabel,
+    startOfMonth,
     todayLocalDateKey,
 } from "./calendarDateUtils";
 import {
     INITIAL_FUTURE_DAYS,
     INITIAL_PAST_DAYS,
+    MONTH_BUFFER_MONTHS,
     THREE_DAY_BUFFER_FUTURE_DAYS,
     THREE_DAY_BUFFER_PAST_DAYS,
     VIEW_MODE_NAV_STEP,
@@ -22,6 +26,7 @@ import {
     mapCalendarApiToEvents,
     type AgendaEvent,
 } from "./mapCalendarApiToEvents";
+import { buildDayActivityMap } from "./dayActivityIndicators";
 
 export type CalendarViewMode = keyof typeof VIEW_MODE_NAV_STEP;
 
@@ -70,10 +75,15 @@ function visibleWindow(viewMode: CalendarViewMode, selectedDate: string) {
             const dates = buildWeekDates(selectedDate);
             return { dates, start: dates[0], end: dates[dates.length - 1] };
         }
+        case "month": {
+            const start = startOfMonth(selectedDate);
+            const end = endOfMonth(selectedDate);
+            return { dates: [], start, end };
+        }
     }
 }
 
-/** Prefetch window for week / 3-day modes so arrow nav stays inside cache. */
+/** Prefetch window for fixed layouts so arrow nav stays inside cache. */
 function bufferedFetchRange(
     viewMode: CalendarViewMode,
     selectedDate: string,
@@ -91,6 +101,11 @@ function bufferedFetchRange(
                 start: addLocalDays(windowStart, -WEEK_BUFFER_PAST_DAYS),
                 end: addLocalDays(windowEnd, WEEK_BUFFER_FUTURE_DAYS),
             };
+        case "month":
+            return {
+                start: startOfMonth(addMonths(selectedDate, -MONTH_BUFFER_MONTHS)),
+                end: endOfMonth(addMonths(selectedDate, MONTH_BUFFER_MONTHS)),
+            };
         default:
             return { start: windowStart, end: windowEnd };
     }
@@ -104,10 +119,10 @@ export function useHeluAgendaCalendar(initialDate?: string) {
     const [rangeStart, setRangeStart] = useState(initialDayRange.start);
     const [rangeEnd, setRangeEnd] = useState(initialDayRange.end);
 
-    const gridDates = useMemo(
-        () => visibleWindow(viewMode, selectedDate).dates,
-        [viewMode, selectedDate],
-    );
+    const gridDates = useMemo(() => {
+        const window = visibleWindow(viewMode, selectedDate);
+        return window.dates;
+    }, [viewMode, selectedDate]);
 
     const fetchRange = useMemo(() => {
         if (viewMode === "day") {
@@ -135,14 +150,19 @@ export function useHeluAgendaCalendar(initialDate?: string) {
         setRangeEnd(next.end);
     }, [viewMode, selectedDate, rangeStart, rangeEnd]);
 
+    const dayActivity = useMemo(
+        () => buildDayActivityMap(calendarQuery.data ?? []),
+        [calendarQuery.data],
+    );
+
     const events: AgendaEvent[] = useMemo(() => {
-        if (!calendarQuery.data) return [];
+        if (!calendarQuery.data || viewMode === "month") return [];
         const mapped = mapCalendarApiToEvents(calendarQuery.data);
         return filterEventsForDates(mapped, gridDates);
-    }, [calendarQuery.data, gridDates]);
+    }, [calendarQuery.data, gridDates, viewMode]);
 
     const headerLabel = useMemo(() => {
-        if (viewMode === "day") return formatMonthYear(selectedDate);
+        if (viewMode === "day" || viewMode === "month") return formatMonthYear(selectedDate);
         return formatWeekLabel(gridDates);
     }, [gridDates, selectedDate, viewMode]);
 
@@ -176,17 +196,25 @@ export function useHeluAgendaCalendar(initialDate?: string) {
     }, []);
 
     const goPrevious = useCallback(() => {
+        if (viewMode === "month") {
+            setSelectedDate((prev) => addMonths(prev, -1));
+            return;
+        }
         setSelectedDate((prev) => addLocalDays(prev, -navStep));
-    }, [navStep]);
+    }, [navStep, viewMode]);
 
     const goNext = useCallback(() => {
+        if (viewMode === "month") {
+            setSelectedDate((prev) => addMonths(prev, 1));
+            return;
+        }
         setSelectedDate((prev) => addLocalDays(prev, navStep));
-    }, [navStep]);
+    }, [navStep, viewMode]);
 
     const selectDate = useCallback(
         (date: string) => {
             setSelectedDate(date);
-            if (viewMode === "week") {
+            if (viewMode === "week" || viewMode === "month") {
                 setViewModeState("day");
                 const next = expandRangeToCoverDate(date, rangeStart, rangeEnd);
                 if (next.start !== rangeStart) setRangeStart(next.start);
@@ -203,6 +231,7 @@ export function useHeluAgendaCalendar(initialDate?: string) {
         viewMode,
         gridDates,
         events,
+        dayActivity,
         headerLabel,
         isLoading: isInitialLoading,
         isError: calendarQuery.isError,

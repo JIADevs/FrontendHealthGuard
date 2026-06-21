@@ -7,5 +7,8 @@ export {
     filterEventsForDates,
     eventLabel,
     eventHourFraction,
+    eventKey,
 } from "./mapCalendarApiToEvents";
 export type { AgendaEvent } from "./mapCalendarApiToEvents";
+export type { DayActivityIndicators } from "./dayActivityIndicators";
+export { buildDayActivityMap } from "./dayActivityIndicators";

@@ -75,3 +75,71 @@ export function formatWeekLabel(weekDates: string[]): string {
     const right = last.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
     return `${left} – ${right}`;
 }
+
+export function startOfMonth(isoDate: string): string {
+    const [y, m] = isoDate.split("-").map(Number);
+    return `${y}-${String(m).padStart(2, "0")}-01`;
+}
+
+export function endOfMonth(isoDate: string): string {
+    const [y, m] = isoDate.split("-").map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    return `${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+}
+
+export function addMonths(isoDate: string, delta: number): string {
+    const [y, m, d] = isoDate.split("-").map(Number);
+    const target = new Date(y, m - 1 + delta, 1);
+    const maxDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+    target.setDate(Math.min(d, maxDay));
+    return localDateKey(target);
+}
+
+export type MonthGridCell =
+    | { kind: "empty" }
+    | {
+          kind: "day";
+          date: string;
+          dayNumber: number;
+          isToday: boolean;
+          isSelected: boolean;
+      };
+
+const WEEKDAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
+export function monthWeekdayLabels(): readonly string[] {
+    return WEEKDAY_LABELS;
+}
+
+/** Monday-start month grid cells (includes leading/trailing padding). */
+export function buildMonthGrid(monthAnchor: string): MonthGridCell[] {
+    const monthStart = startOfMonth(monthAnchor);
+    const [y, m] = monthStart.split("-").map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const today = todayLocalDateKey();
+
+    const firstDow = new Date(`${monthStart}T12:00:00`).getDay();
+    const leadingEmpty = firstDow === 0 ? 6 : firstDow - 1;
+
+    const cells: MonthGridCell[] = [];
+    for (let i = 0; i < leadingEmpty; i++) {
+        cells.push({ kind: "empty" });
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        cells.push({
+            kind: "day",
+            date,
+            dayNumber: day,
+            isToday: date === today,
+            isSelected: false,
+        });
+    }
+
+    while (cells.length % 7 !== 0) {
+        cells.push({ kind: "empty" });
+    }
+
+    return cells;
+}

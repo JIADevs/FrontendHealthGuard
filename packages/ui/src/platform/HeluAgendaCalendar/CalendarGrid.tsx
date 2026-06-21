@@ -10,12 +10,13 @@ import {
 import { spacing, fontSize, fontWeight, radii } from "../../tokens/tokens";
 import { useAppTheme } from "../../tokens/ThemeProvider";
 import type { ThemeContextValue } from "../../tokens/ThemeProvider";
-import { eventHourFraction, type AgendaEvent } from "./mapCalendarApiToEvents";
+import type { AgendaEvent } from "./mapCalendarApiToEvents";
 import { formatDayShort, localDateKeyFromISO } from "./calendarDateUtils";
 import type { CalendarViewMode } from "./useHeluAgendaCalendar";
 import { EventBlock } from "./EventBlock";
+import { CALENDAR_HOUR_HEIGHT, layoutDayEvents } from "./eventDayLayout";
 
-const HOUR_HEIGHT = 52;
+const HOUR_HEIGHT = CALENDAR_HOUR_HEIGHT;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const TIME_COLUMN_WIDTH = 44;
 const GRID_HORIZONTAL_PADDING = spacing[3];
@@ -52,7 +53,9 @@ export function CalendarGrid({
             const key =
                 event.type === "checkin"
                     ? localDateKeyFromISO(event.data.recordedAt)
-                    : (event.data.date?.slice(0, 10) ?? "");
+                    : event.type === "medication"
+                      ? event.dayKey
+                      : (event.data.date?.slice(0, 10) ?? "");
             if (map.has(key)) map.get(key)!.push(event);
         }
         return map;
@@ -103,6 +106,11 @@ function DayColumn({ date, selectedDate, events, compact, styles, onSelectDate }
     const { weekday, day, isToday } = formatDayShort(date);
     const isSelected = date === selectedDate;
 
+    const eventLayouts = useMemo(
+        () => layoutDayEvents(events, HOUR_HEIGHT, compact),
+        [events, compact],
+    );
+
     return (
         <View style={styles.dayColumn}>
             <TouchableOpacity
@@ -138,14 +146,21 @@ function DayColumn({ date, selectedDate, events, compact, styles, onSelectDate }
                 {HOURS.map((hour) => (
                     <View key={hour} style={styles.hourLane} />
                 ))}
-                {events.map((event, idx) => {
-                    const top = eventHourFraction(event) * HOUR_HEIGHT;
-                    return (
-                        <View key={`${event.type}-${idx}`} style={[styles.eventPosition, { top }]}>
-                            <EventBlock event={event} compact={compact} />
-                        </View>
-                    );
-                })}
+                {eventLayouts.map((layout) => (
+                    <View
+                        key={layout.key}
+                        style={[
+                            styles.eventPosition,
+                            {
+                                top: layout.top,
+                                left: `${layout.leftFraction * 100}%`,
+                                width: `${layout.widthFraction * 100}%`,
+                            },
+                        ]}
+                    >
+                        <EventBlock event={layout.event} compact={compact} />
+                    </View>
+                ))}
             </View>
         </View>
     );
@@ -228,8 +243,7 @@ function makeStyles(t: ThemeContextValue, columnWidth: number, isCompact: boolea
         },
         eventPosition: {
             position: "absolute",
-            left: isCompact ? 0 : spacing[1],
-            right: isCompact ? 0 : spacing[1],
+            paddingHorizontal: 1,
         },
     });
 }

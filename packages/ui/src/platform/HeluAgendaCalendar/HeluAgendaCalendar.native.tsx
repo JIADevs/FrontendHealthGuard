@@ -4,6 +4,7 @@ import { fontSize } from "../../tokens/tokens";
 import { useAppTheme } from "../../tokens/ThemeProvider";
 import { DaySelector } from "./DaySelector";
 import { CalendarGrid } from "./CalendarGrid";
+import { MonthGridView } from "./MonthGridView";
 import { AgendaCalendarFAB } from "./AgendaCalendarFAB";
 import { useHeluAgendaCalendar } from "./useHeluAgendaCalendar";
 
@@ -37,6 +38,13 @@ export function HeluAgendaCalendar({ onNewAppointment, initialDate }: HeluAgenda
                         No se pudieron cargar los eventos del calendario.
                     </Text>
                 </View>
+            ) : calendar.viewMode === "month" ? (
+                <MonthGridView
+                    monthAnchor={calendar.selectedDate}
+                    selectedDate={calendar.selectedDate}
+                    dayActivity={calendar.dayActivity}
+                    onSelectDate={calendar.selectDate}
+                />
             ) : (
                 <CalendarGrid
                     viewMode={calendar.viewMode}

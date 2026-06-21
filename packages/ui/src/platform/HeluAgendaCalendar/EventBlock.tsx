@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Stethoscope, FlaskConical } from "lucide-react-native";
+import { Stethoscope, FlaskConical, Pill } from "lucide-react-native";
 import { spacing, fontSize, fontWeight, radii } from "../../tokens/tokens";
 import { useAppTheme } from "../../tokens/ThemeProvider";
 import type { ThemeContextValue } from "../../tokens/ThemeProvider";
@@ -23,7 +23,9 @@ export function EventBlock({ event, compact = false }: EventBlockProps) {
                   hour: "2-digit",
                   minute: "2-digit",
               })
-            : event.data.time?.slice(0, 5) ?? "";
+            : event.type === "medication"
+              ? `${event.data.dosage}${event.data.dosage ? " · " : ""}${event.intakeTime}`
+              : event.data.time?.slice(0, 5) ?? "";
 
     return (
         <View style={styles.block}>
@@ -33,6 +35,9 @@ export function EventBlock({ event, compact = false }: EventBlockProps) {
                 ) : null}
                 {!compact && event.type === "exam" ? (
                     <FlaskConical size={14} color={t.text.secondary} />
+                ) : null}
+                {!compact && event.type === "medication" ? (
+                    <Pill size={14} color={t.accent.medFg} />
                 ) : null}
                 {event.type === "checkin" ? (
                     <Text style={styles.emoji}>{MOOD_EMOJI[event.data.mood]}</Text>
@@ -52,14 +57,18 @@ function makeStyles(t: ThemeContextValue, type: AgendaEvent["type"], compact: bo
             ? t.brand.tintMed
             : type === "exam"
               ? t.surface.bgCard
-              : t.accent.notifBg;
+              : type === "medication"
+                ? t.accent.medBg
+                : t.accent.notifBg;
 
     const border =
         type === "appointment"
             ? t.brand.fg
             : type === "exam"
               ? t.border.medium
-              : t.accent.notifFg;
+              : type === "medication"
+                ? t.accent.medFg
+                : t.accent.notifFg;
 
     return StyleSheet.create({
         block: {

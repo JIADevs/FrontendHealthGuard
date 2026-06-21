@@ -9,11 +9,12 @@ import { MOOD_EMOJI } from "./moodEmoji";
 
 interface EventBlockProps {
     event: AgendaEvent;
+    compact?: boolean;
 }
 
-export function EventBlock({ event }: EventBlockProps) {
+export function EventBlock({ event, compact = false }: EventBlockProps) {
     const t = useAppTheme();
-    const styles = useMemo(() => makeStyles(t, event.type), [t, event.type]);
+    const styles = useMemo(() => makeStyles(t, event.type, compact), [t, event.type, compact]);
 
     const title = eventLabel(event);
     const subtitle =
@@ -27,25 +28,25 @@ export function EventBlock({ event }: EventBlockProps) {
     return (
         <View style={styles.block}>
             <View style={styles.row}>
-                {event.type === "appointment" ? (
+                {!compact && event.type === "appointment" ? (
                     <Stethoscope size={14} color={t.brand.fg} />
                 ) : null}
-                {event.type === "exam" ? (
+                {!compact && event.type === "exam" ? (
                     <FlaskConical size={14} color={t.text.secondary} />
                 ) : null}
                 {event.type === "checkin" ? (
                     <Text style={styles.emoji}>{MOOD_EMOJI[event.data.mood]}</Text>
                 ) : null}
-                <Text style={styles.title} numberOfLines={1}>
+                <Text style={styles.title} numberOfLines={compact ? 2 : 1}>
                     {title}
                 </Text>
             </View>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+            {!compact && subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
     );
 }
 
-function makeStyles(t: ThemeContextValue, type: AgendaEvent["type"]) {
+function makeStyles(t: ThemeContextValue, type: AgendaEvent["type"], compact: boolean) {
     const bg =
         type === "appointment"
             ? t.brand.tintMed
@@ -66,21 +67,21 @@ function makeStyles(t: ThemeContextValue, type: AgendaEvent["type"]) {
             borderLeftWidth: 3,
             borderLeftColor: border,
             borderRadius: radii.sm,
-            paddingHorizontal: spacing[2],
-            paddingVertical: spacing[1],
+            paddingHorizontal: compact ? spacing[1] : spacing[2],
+            paddingVertical: compact ? 2 : spacing[1],
             marginBottom: spacing[1],
         },
         row: {
             flexDirection: "row",
             alignItems: "center",
-            gap: spacing[1],
+            gap: compact ? 2 : spacing[1],
         },
         emoji: {
-            fontSize: fontSize.sm,
+            fontSize: compact ? fontSize.xs : fontSize.sm,
         },
         title: {
             flex: 1,
-            fontSize: fontSize.xs,
+            fontSize: compact ? 10 : fontSize.xs,
             fontWeight: fontWeight.semibold,
             color: t.text.primary,
         },

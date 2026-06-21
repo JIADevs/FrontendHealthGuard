@@ -5,6 +5,7 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
+    useWindowDimensions,
     type NativeScrollEvent,
     type NativeSyntheticEvent,
 } from "react-native";
@@ -14,12 +15,16 @@ import type { ThemeContextValue } from "../../tokens/ThemeProvider";
 import { eventHourFraction, type AgendaEvent } from "./mapCalendarApiToEvents";
 import { addLocalDays, formatDayShort, localDateKeyFromISO } from "./calendarDateUtils";
 import { DAY_COLUMN_WIDTH } from "./calendarConstants";
+import type { CalendarViewMode } from "./useHeluAgendaCalendar";
 import { EventBlock } from "./EventBlock";
 
 const HOUR_HEIGHT = 52;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const TIME_COLUMN_WIDTH = 44;
+const GRID_HORIZONTAL_PADDING = spacing[3];
 
 interface CalendarGridProps {
+    viewMode: CalendarViewMode;
     events: AgendaEvent[];
     dates: string[];
     selectedDate: string;
@@ -31,6 +36,7 @@ interface CalendarGridProps {
 }
 
 export function CalendarGrid({
+    viewMode,
     events,
     dates,
     selectedDate,
@@ -41,7 +47,16 @@ export function CalendarGrid({
     onScrollTargetHandled,
 }: CalendarGridProps) {
     const t = useAppTheme();
-    const styles = useMemo(() => makeStyles(t), [t]);
+    const { width: screenWidth } = useWindowDimensions();
+    const isWeekView = viewMode === "week";
+    const weekColumnWidth =
+        (screenWidth - TIME_COLUMN_WIDTH - GRID_HORIZONTAL_PADDING * 2) / 7;
+    const columnWidth = isWeekView ? weekColumnWidth : DAY_COLUMN_WIDTH;
+    const styles = useMemo(
+        () => makeStyles(t, columnWidth, isWeekView),
+        [t, columnWidth, isWeekView],
+    );
+
     const horizontalRef = useRef<ScrollView>(null);
     const initialOffsetRef = useRef(
         Math.max(0, dates.indexOf(initialScrollDate)) * DAY_COLUMN_WIDTH,
@@ -65,22 +80,24 @@ export function CalendarGrid({
 
     const scrollToDate = useCallback(
         (dateKey: string, animated = true) => {
+            if (isWeekView) return;
             const index = dates.indexOf(dateKey);
             if (index < 0) return;
             const x = index * DAY_COLUMN_WIDTH;
             scrollXRef.current = x;
             horizontalRef.current?.scrollTo({ x, animated });
         },
-        [dates],
+        [dates, isWeekView],
     );
 
     useEffect(() => {
-        if (!scrollTarget) return;
+        if (!scrollTarget || isWeekView) return;
         scrollToDate(scrollTarget, true);
         onScrollTargetHandled();
-    }, [scrollTarget, scrollToDate, onScrollTargetHandled]);
+    }, [scrollTarget, scrollToDate, onScrollTargetHandled, isWeekView]);
 
     useEffect(() => {
+        if (isWeekView) return;
         const prevFirst = prevFirstDateRef.current;
         const newFirst = dates[0];
         if (newFirst < prevFirst) {
@@ -95,7 +112,7 @@ export function CalendarGrid({
             horizontalRef.current?.scrollTo({ x: nextX, animated: false });
         }
         prevFirstDateRef.current = newFirst;
-    }, [dates]);
+    }, [dates, isWeekView]);
 
     const handleScrollBeginDrag = useCallback(() => {
         edgeDetectionEnabledRef.current = true;
@@ -123,6 +140,18 @@ export function CalendarGrid({
         [dates, onSelectDate],
     );
 
+    const dayColumns = dates.map((date) => (
+        <DayColumn
+            key={date}
+            date={date}
+            selectedDate={selectedDate}
+            events={eventsByDate.get(date) ?? []}
+            compact={isWeekView}
+            styles={styles}
+            onSelectDate={onSelectDate}
+        />
+    ));
+
     return (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator>
             <View style={styles.gridRow}>
@@ -137,94 +166,106 @@ export function CalendarGrid({
                     ))}
                 </View>
 
-                <ScrollView
-                    ref={horizontalRef}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentOffset={{ x: initialOffsetRef.current, y: 0 }}
-                    onScrollBeginDrag={handleScrollBeginDrag}
-                    onScroll={handleHorizontalScroll}
-                    scrollEventThrottle={16}
-                    onMomentumScrollEnd={handleMomentumEnd}
-                    decelerationRate="fast"
-                    snapToInterval={DAY_COLUMN_WIDTH}
-                    snapToAlignment="start"
-                >
-                    {dates.map((date) => {
-                        const { weekday, day, isToday } = formatDayShort(date);
-                        const isSelected = date === selectedDate;
-
-                        return (
-                            <View key={date} style={styles.dayColumn}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.dayHeader,
-                                        isSelected && styles.dayHeaderSelected,
-                                        isToday && !isSelected && styles.dayHeaderToday,
-                                    ]}
-                                    onPress={() => onSelectDate(date)}
-                                    accessibilityLabel={`${weekday} ${day}`}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.weekdayLabel,
-                                            isSelected && styles.dayHeaderTextOnBrand,
-                                            isToday && !isSelected && styles.dayHeaderTextToday,
-                                        ]}
-                                    >
-                                        {weekday}
-                                    </Text>
-                                    <Text
-                                        style={[
-                                            styles.dayNumber,
-                                            isSelected && styles.dayHeaderTextOnBrand,
-                                            isToday && !isSelected && styles.dayHeaderTextToday,
-                                        ]}
-                                    >
-                                        {day}
-                                    </Text>
-                                </TouchableOpacity>
-
-                                <View style={styles.lanes}>
-                                    {HOURS.map((hour) => (
-                                        <View key={hour} style={styles.hourLane} />
-                                    ))}
-                                    {(eventsByDate.get(date) ?? []).map((event, idx) => {
-                                        const top = eventHourFraction(event) * HOUR_HEIGHT;
-                                        return (
-                                            <View
-                                                key={`${event.type}-${idx}`}
-                                                style={[styles.eventPosition, { top }]}
-                                            >
-                                                <EventBlock event={event} />
-                                            </View>
-                                        );
-                                    })}
-                                </View>
-                            </View>
-                        );
-                    })}
-                </ScrollView>
+                {isWeekView ? (
+                    <View style={styles.weekRow}>{dayColumns}</View>
+                ) : (
+                    <ScrollView
+                        ref={horizontalRef}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentOffset={{ x: initialOffsetRef.current, y: 0 }}
+                        onScrollBeginDrag={handleScrollBeginDrag}
+                        onScroll={handleHorizontalScroll}
+                        scrollEventThrottle={16}
+                        onMomentumScrollEnd={handleMomentumEnd}
+                        decelerationRate="fast"
+                        snapToInterval={DAY_COLUMN_WIDTH}
+                        snapToAlignment="start"
+                    >
+                        {dayColumns}
+                    </ScrollView>
+                )}
             </View>
         </ScrollView>
     );
 }
 
-function makeStyles(t: ThemeContextValue) {
+interface DayColumnProps {
+    date: string;
+    selectedDate: string;
+    events: AgendaEvent[];
+    compact: boolean;
+    styles: ReturnType<typeof makeStyles>;
+    onSelectDate: (date: string) => void;
+}
+
+function DayColumn({ date, selectedDate, events, compact, styles, onSelectDate }: DayColumnProps) {
+    const { weekday, day, isToday } = formatDayShort(date);
+    const isSelected = date === selectedDate;
+
+    return (
+        <View style={styles.dayColumn}>
+            <TouchableOpacity
+                style={[
+                    styles.dayHeader,
+                    isSelected && styles.dayHeaderSelected,
+                    isToday && !isSelected && styles.dayHeaderToday,
+                ]}
+                onPress={() => onSelectDate(date)}
+                accessibilityLabel={`${weekday} ${day}`}
+            >
+                <Text
+                    style={[
+                        styles.weekdayLabel,
+                        isSelected && styles.dayHeaderTextOnBrand,
+                        isToday && !isSelected && styles.dayHeaderTextToday,
+                    ]}
+                >
+                    {weekday}
+                </Text>
+                <Text
+                    style={[
+                        styles.dayNumber,
+                        isSelected && styles.dayHeaderTextOnBrand,
+                        isToday && !isSelected && styles.dayHeaderTextToday,
+                    ]}
+                >
+                    {day}
+                </Text>
+            </TouchableOpacity>
+
+            <View style={styles.lanes}>
+                {HOURS.map((hour) => (
+                    <View key={hour} style={styles.hourLane} />
+                ))}
+                {events.map((event, idx) => {
+                    const top = eventHourFraction(event) * HOUR_HEIGHT;
+                    return (
+                        <View key={`${event.type}-${idx}`} style={[styles.eventPosition, { top }]}>
+                            <EventBlock event={event} compact={compact} />
+                        </View>
+                    );
+                })}
+            </View>
+        </View>
+    );
+}
+
+function makeStyles(t: ThemeContextValue, columnWidth: number, isWeekView: boolean) {
     return StyleSheet.create({
         scrollContent: {
             paddingBottom: spacing[12] + 56,
         },
         gridRow: {
             flexDirection: "row",
-            paddingLeft: spacing[3],
+            paddingLeft: GRID_HORIZONTAL_PADDING,
             paddingTop: spacing[2],
         },
         timeColumn: {
-            width: 44,
+            width: TIME_COLUMN_WIDTH,
         },
         timeHeaderSpacer: {
-            height: 56,
+            height: isWeekView ? 48 : 56,
             marginBottom: spacing[2],
         },
         hourCell: {
@@ -235,12 +276,16 @@ function makeStyles(t: ThemeContextValue) {
             fontSize: fontSize.xs,
             color: t.text.secondary,
         },
+        weekRow: {
+            flex: 1,
+            flexDirection: "row",
+        },
         dayColumn: {
-            width: DAY_COLUMN_WIDTH,
-            paddingHorizontal: spacing[1],
+            width: columnWidth,
+            paddingHorizontal: isWeekView ? 1 : spacing[1],
         },
         dayHeader: {
-            height: 56,
+            height: isWeekView ? 48 : 56,
             alignItems: "center",
             justifyContent: "center",
             marginBottom: spacing[2],
@@ -254,13 +299,13 @@ function makeStyles(t: ThemeContextValue) {
             borderColor: t.brand.fg,
         },
         weekdayLabel: {
-            fontSize: fontSize.xs,
+            fontSize: isWeekView ? 10 : fontSize.xs,
             fontWeight: fontWeight.medium,
             color: t.text.secondary,
             textTransform: "capitalize",
         },
         dayNumber: {
-            fontSize: fontSize.lg,
+            fontSize: isWeekView ? fontSize.sm : fontSize.lg,
             fontWeight: fontWeight.bold,
             color: t.text.primary,
         },
@@ -283,8 +328,8 @@ function makeStyles(t: ThemeContextValue) {
         },
         eventPosition: {
             position: "absolute",
-            left: spacing[1],
-            right: spacing[1],
+            left: isWeekView ? 0 : spacing[1],
+            right: isWeekView ? 0 : spacing[1],
         },
     });
 }

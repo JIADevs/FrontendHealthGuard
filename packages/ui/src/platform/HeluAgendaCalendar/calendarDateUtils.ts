@@ -43,3 +43,31 @@ export function formatDayShort(isoDate: string): { weekday: string; day: string;
     const day = String(d.getDate());
     return { weekday, day, isToday: isoDate === todayLocalDateKey() };
 }
+
+/** Monday-start week containing `isoDate`. */
+export function startOfWeek(isoDate: string): string {
+    const d = new Date(`${isoDate}T12:00:00`);
+    const weekday = d.getDay();
+    const mondayOffset = weekday === 0 ? -6 : 1 - weekday;
+    return addLocalDays(isoDate, mondayOffset);
+}
+
+export function buildWeekDates(isoDate: string): string[] {
+    const start = startOfWeek(isoDate);
+    return Array.from({ length: 7 }, (_, i) => addLocalDays(start, i));
+}
+
+export function formatWeekLabel(weekDates: string[]): string {
+    if (weekDates.length === 0) return "";
+    const first = new Date(`${weekDates[0]}T12:00:00`);
+    const last = new Date(`${weekDates[weekDates.length - 1]}T12:00:00`);
+    const sameMonth = first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear();
+
+    if (sameMonth) {
+        return `${first.getDate()} – ${last.getDate()} ${first.toLocaleDateString("es-CO", { month: "long", year: "numeric" })}`;
+    }
+
+    const left = first.toLocaleDateString("es-CO", { day: "numeric", month: "short" });
+    const right = last.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
+    return `${left} – ${right}`;
+}

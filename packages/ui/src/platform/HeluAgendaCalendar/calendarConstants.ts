@@ -1,4 +1,7 @@
-/** Fixed width for each day column in the horizontal calendar grid. */
+/** Days in a week view (Mon–Sun). */
+export const WEEK_LENGTH = 7;
+
+/** Fixed width for each day column in day (scroll) mode. */
 export const DAY_COLUMN_WIDTH = 112;
 
 /** Days loaded before the anchor when the calendar mounts. */

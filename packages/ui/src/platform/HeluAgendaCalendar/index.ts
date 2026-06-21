@@ -1,7 +1,6 @@
 export { HeluAgendaCalendar } from "./HeluAgendaCalendar.native";
 export type { HeluAgendaCalendarProps } from "./HeluAgendaCalendar.native";
 export { useHeluAgendaCalendar } from "./useHeluAgendaCalendar";
-export type { ViewRange } from "./useHeluAgendaCalendar";
 export {
     mapCalendarApiToEvents,
     filterEventsForDates,

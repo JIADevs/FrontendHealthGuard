@@ -19,12 +19,9 @@ export function HeluAgendaCalendar({ onNewAppointment, initialDate }: HeluAgenda
     return (
         <View style={styles.root}>
             <DaySelector
-                viewRange={calendar.viewRange}
-                visibleDates={calendar.visibleDates}
-                onViewRangeChange={calendar.setViewRange}
-                onPrevious={calendar.goPrevious}
-                onNext={calendar.goNext}
-                onSelectDate={calendar.selectDate}
+                monthLabel={calendar.monthLabel}
+                onPrevious={calendar.goPreviousWeek}
+                onNext={calendar.goNextWeek}
                 onGoToday={calendar.goToToday}
             />
 
@@ -39,7 +36,16 @@ export function HeluAgendaCalendar({ onNewAppointment, initialDate }: HeluAgenda
                     </Text>
                 </View>
             ) : (
-                <CalendarGrid events={calendar.events} dates={calendar.visibleDates} />
+                <CalendarGrid
+                    events={calendar.events}
+                    dates={calendar.visibleDates}
+                    selectedDate={calendar.selectedDate}
+                    initialScrollDate={calendar.initialScrollDate}
+                    onSelectDate={calendar.selectDate}
+                    onHorizontalScroll={calendar.handleHorizontalScroll}
+                    scrollTarget={calendar.scrollTarget}
+                    onScrollTargetHandled={calendar.clearScrollTarget}
+                />
             )}
 
             <AgendaCalendarFAB onPress={onNewAppointment} />

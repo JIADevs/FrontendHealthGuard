@@ -21,3 +21,25 @@ export function addLocalDays(isoDate: string, delta: number): string {
     date.setDate(date.getDate() + delta);
     return localDateKey(date);
 }
+
+export function buildLocalDateRange(start: string, end: string): string[] {
+    const dates: string[] = [];
+    let current = start;
+    while (current <= end) {
+        dates.push(current);
+        current = addLocalDays(current, 1);
+    }
+    return dates;
+}
+
+export function formatMonthYear(isoDate: string): string {
+    const d = new Date(`${isoDate}T12:00:00`);
+    return d.toLocaleDateString("es-CO", { month: "long", year: "numeric" });
+}
+
+export function formatDayShort(isoDate: string): { weekday: string; day: string; isToday: boolean } {
+    const d = new Date(`${isoDate}T12:00:00`);
+    const weekday = d.toLocaleDateString("es-CO", { weekday: "short" }).replace(".", "");
+    const day = String(d.getDate());
+    return { weekday, day, isToday: isoDate === todayLocalDateKey() };
+}

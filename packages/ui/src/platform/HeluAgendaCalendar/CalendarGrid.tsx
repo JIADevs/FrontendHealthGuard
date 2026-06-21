@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import {
     View,
     Text,
@@ -6,15 +6,12 @@ import {
     ScrollView,
     TouchableOpacity,
     useWindowDimensions,
-    type NativeScrollEvent,
-    type NativeSyntheticEvent,
 } from "react-native";
 import { spacing, fontSize, fontWeight, radii } from "../../tokens/tokens";
 import { useAppTheme } from "../../tokens/ThemeProvider";
 import type { ThemeContextValue } from "../../tokens/ThemeProvider";
 import { eventHourFraction, type AgendaEvent } from "./mapCalendarApiToEvents";
-import { addLocalDays, formatDayShort, localDateKeyFromISO } from "./calendarDateUtils";
-import { DAY_COLUMN_WIDTH } from "./calendarConstants";
+import { formatDayShort, localDateKeyFromISO } from "./calendarDateUtils";
 import type { CalendarViewMode } from "./useHeluAgendaCalendar";
 import { EventBlock } from "./EventBlock";
 
@@ -28,11 +25,7 @@ interface CalendarGridProps {
     events: AgendaEvent[];
     dates: string[];
     selectedDate: string;
-    initialScrollDate: string;
     onSelectDate: (date: string) => void;
-    onHorizontalScroll: (firstVisibleIndex: number) => void;
-    scrollTarget: string | null;
-    onScrollTargetHandled: () => void;
 }
 
 export function CalendarGrid({
@@ -40,30 +33,17 @@ export function CalendarGrid({
     events,
     dates,
     selectedDate,
-    initialScrollDate,
     onSelectDate,
-    onHorizontalScroll,
-    scrollTarget,
-    onScrollTargetHandled,
 }: CalendarGridProps) {
     const t = useAppTheme();
     const { width: screenWidth } = useWindowDimensions();
-    const isWeekView = viewMode === "week";
-    const weekColumnWidth =
-        (screenWidth - TIME_COLUMN_WIDTH - GRID_HORIZONTAL_PADDING * 2) / 7;
-    const columnWidth = isWeekView ? weekColumnWidth : DAY_COLUMN_WIDTH;
+    const isCompact = viewMode !== "day";
+    const columnWidth =
+        (screenWidth - TIME_COLUMN_WIDTH - GRID_HORIZONTAL_PADDING * 2) / dates.length;
     const styles = useMemo(
-        () => makeStyles(t, columnWidth, isWeekView),
-        [t, columnWidth, isWeekView],
+        () => makeStyles(t, columnWidth, isCompact),
+        [t, columnWidth, isCompact],
     );
-
-    const horizontalRef = useRef<ScrollView>(null);
-    const initialOffsetRef = useRef(
-        Math.max(0, dates.indexOf(initialScrollDate)) * DAY_COLUMN_WIDTH,
-    );
-    const scrollXRef = useRef(initialOffsetRef.current);
-    const prevFirstDateRef = useRef(dates[0]);
-    const edgeDetectionEnabledRef = useRef(false);
 
     const eventsByDate = useMemo(() => {
         const map = new Map<string, AgendaEvent[]>();
@@ -77,80 +57,6 @@ export function CalendarGrid({
         }
         return map;
     }, [events, dates]);
-
-    const scrollToDate = useCallback(
-        (dateKey: string, animated = true) => {
-            if (isWeekView) return;
-            const index = dates.indexOf(dateKey);
-            if (index < 0) return;
-            const x = index * DAY_COLUMN_WIDTH;
-            scrollXRef.current = x;
-            horizontalRef.current?.scrollTo({ x, animated });
-        },
-        [dates, isWeekView],
-    );
-
-    useEffect(() => {
-        if (!scrollTarget || isWeekView) return;
-        scrollToDate(scrollTarget, true);
-        onScrollTargetHandled();
-    }, [scrollTarget, scrollToDate, onScrollTargetHandled, isWeekView]);
-
-    useEffect(() => {
-        if (isWeekView) return;
-        const prevFirst = prevFirstDateRef.current;
-        const newFirst = dates[0];
-        if (newFirst < prevFirst) {
-            let added = 0;
-            let cursor = newFirst;
-            while (cursor < prevFirst) {
-                added += 1;
-                cursor = addLocalDays(cursor, 1);
-            }
-            const nextX = scrollXRef.current + added * DAY_COLUMN_WIDTH;
-            scrollXRef.current = nextX;
-            horizontalRef.current?.scrollTo({ x: nextX, animated: false });
-        }
-        prevFirstDateRef.current = newFirst;
-    }, [dates, isWeekView]);
-
-    const handleScrollBeginDrag = useCallback(() => {
-        edgeDetectionEnabledRef.current = true;
-    }, []);
-
-    const handleHorizontalScroll = useCallback(
-        (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-            const offsetX = event.nativeEvent.contentOffset.x;
-            scrollXRef.current = offsetX;
-            if (!edgeDetectionEnabledRef.current) return;
-            const firstVisibleIndex = Math.floor(offsetX / DAY_COLUMN_WIDTH);
-            onHorizontalScroll(firstVisibleIndex);
-        },
-        [onHorizontalScroll],
-    );
-
-    const handleMomentumEnd = useCallback(
-        (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-            if (!edgeDetectionEnabledRef.current) return;
-            const offsetX = event.nativeEvent.contentOffset.x;
-            const index = Math.round(offsetX / DAY_COLUMN_WIDTH);
-            const clamped = Math.max(0, Math.min(index, dates.length - 1));
-            onSelectDate(dates[clamped]);
-        },
-        [dates, onSelectDate],
-    );
-
-    const dayColumns = dates.map((date) => (
-        <DayColumn
-            key={date}
-            date={date}
-            selectedDate={selectedDate}
-            events={eventsByDate.get(date) ?? []}
-            compact={isWeekView}
-            styles={styles}
-            onSelectDate={onSelectDate}
-        />
-    ));
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator>
@@ -166,25 +72,19 @@ export function CalendarGrid({
                     ))}
                 </View>
 
-                {isWeekView ? (
-                    <View style={styles.weekRow}>{dayColumns}</View>
-                ) : (
-                    <ScrollView
-                        ref={horizontalRef}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentOffset={{ x: initialOffsetRef.current, y: 0 }}
-                        onScrollBeginDrag={handleScrollBeginDrag}
-                        onScroll={handleHorizontalScroll}
-                        scrollEventThrottle={16}
-                        onMomentumScrollEnd={handleMomentumEnd}
-                        decelerationRate="fast"
-                        snapToInterval={DAY_COLUMN_WIDTH}
-                        snapToAlignment="start"
-                    >
-                        {dayColumns}
-                    </ScrollView>
-                )}
+                <View style={styles.columnsRow}>
+                    {dates.map((date) => (
+                        <DayColumn
+                            key={date}
+                            date={date}
+                            selectedDate={selectedDate}
+                            events={eventsByDate.get(date) ?? []}
+                            compact={isCompact}
+                            styles={styles}
+                            onSelectDate={onSelectDate}
+                        />
+                    ))}
+                </View>
             </View>
         </ScrollView>
     );
@@ -251,7 +151,7 @@ function DayColumn({ date, selectedDate, events, compact, styles, onSelectDate }
     );
 }
 
-function makeStyles(t: ThemeContextValue, columnWidth: number, isWeekView: boolean) {
+function makeStyles(t: ThemeContextValue, columnWidth: number, isCompact: boolean) {
     return StyleSheet.create({
         scrollContent: {
             paddingBottom: spacing[12] + 56,
@@ -265,7 +165,7 @@ function makeStyles(t: ThemeContextValue, columnWidth: number, isWeekView: boole
             width: TIME_COLUMN_WIDTH,
         },
         timeHeaderSpacer: {
-            height: isWeekView ? 48 : 56,
+            height: isCompact ? 48 : 56,
             marginBottom: spacing[2],
         },
         hourCell: {
@@ -276,16 +176,16 @@ function makeStyles(t: ThemeContextValue, columnWidth: number, isWeekView: boole
             fontSize: fontSize.xs,
             color: t.text.secondary,
         },
-        weekRow: {
+        columnsRow: {
             flex: 1,
             flexDirection: "row",
         },
         dayColumn: {
             width: columnWidth,
-            paddingHorizontal: isWeekView ? 1 : spacing[1],
+            paddingHorizontal: isCompact ? 1 : spacing[1],
         },
         dayHeader: {
-            height: isWeekView ? 48 : 56,
+            height: isCompact ? 48 : 56,
             alignItems: "center",
             justifyContent: "center",
             marginBottom: spacing[2],
@@ -299,13 +199,13 @@ function makeStyles(t: ThemeContextValue, columnWidth: number, isWeekView: boole
             borderColor: t.brand.fg,
         },
         weekdayLabel: {
-            fontSize: isWeekView ? 10 : fontSize.xs,
+            fontSize: isCompact ? 10 : fontSize.xs,
             fontWeight: fontWeight.medium,
             color: t.text.secondary,
             textTransform: "capitalize",
         },
         dayNumber: {
-            fontSize: isWeekView ? fontSize.sm : fontSize.lg,
+            fontSize: isCompact ? fontSize.sm : fontSize.lg,
             fontWeight: fontWeight.bold,
             color: t.text.primary,
         },
@@ -328,8 +228,8 @@ function makeStyles(t: ThemeContextValue, columnWidth: number, isWeekView: boole
         },
         eventPosition: {
             position: "absolute",
-            left: isWeekView ? 0 : spacing[1],
-            right: isWeekView ? 0 : spacing[1],
+            left: isCompact ? 0 : spacing[1],
+            right: isCompact ? 0 : spacing[1],
         },
     });
 }

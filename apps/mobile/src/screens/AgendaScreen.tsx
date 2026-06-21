@@ -7,6 +7,7 @@ import {
   FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRoute, useNavigation } from "@react-navigation/native";
 import Toast from "react-native-toast-message";
 import {
   useAppointmentsQuery,
@@ -57,103 +58,100 @@ import {
   User,
   Check,
   Heart,
-  List,
+  Menu,
+  ChevronLeft,
 } from "lucide-react-native";
 
-type AgendaTab = "calendar" | "appointments" | "medications" | "wellbeing";
-import { DailyCheckInListItem, DailyCheckInForm, WellbeingFAB } from "../components/agenda";
+import {
+  DailyCheckInListItem,
+  DailyCheckInForm,
+  WellbeingFAB,
+  AgendaMenuSheet,
+  type AgendaView,
+} from "../components/agenda";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 const STATUSES = ["PROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI"] as const;
+
+const LIST_VIEW_TITLES: Record<Exclude<AgendaView, "calendar">, string> = {
+  appointments: "Citas",
+  medications: "Medicamentos",
+  wellbeing: "Bienestar",
+};
+
+function isAgendaView(value: string | undefined): value is AgendaView {
+  return (
+    value === "calendar" ||
+    value === "appointments" ||
+    value === "medications" ||
+    value === "wellbeing"
+  );
+}
 
 // ─── main screen ──────────────────────────────────────────────────────────────
 
 export function AgendaScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const [tab, setTab] = useState<AgendaTab>("calendar");
+  const route = useRoute();
+  const [view, setView] = useState<AgendaView>("calendar");
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  // Allow navigating with initialTab param (e.g. Dashboard → Calendario, push CHECKIN → Bienestar)
-  const route = require("@react-navigation/native").useRoute();
   useEffect(() => {
-    const initialTab = route.params?.initialTab as AgendaTab | undefined;
-    if (
-      initialTab === "calendar" ||
-      initialTab === "medications" ||
-      initialTab === "appointments" ||
-      initialTab === "wellbeing"
-    ) {
-      setTab(initialTab);
+    const initialTab = (route.params as { initialTab?: string } | undefined)?.initialTab;
+    if (isAgendaView(initialTab)) {
+      setView(initialTab);
     }
-  }, [route.params?.initialTab]);
+  }, [(route.params as { initialTab?: string } | undefined)?.initialTab]);
+
+  const isListView = view !== "calendar";
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Typography variant="h2">Agenda Médica</Typography>
+        {isListView ? (
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => setView("calendar")}
+            accessibilityLabel="Volver al calendario"
+          >
+            <ChevronLeft size={22} color={t.brand.fg} />
+            <Text style={styles.backLabel}>Calendario</Text>
+          </TouchableOpacity>
+        ) : (
+          <Typography variant="h2">Agenda Médica</Typography>
+        )}
+
+        {isListView ? (
+          <Typography variant="h3">{LIST_VIEW_TITLES[view]}</Typography>
+        ) : (
+          <TouchableOpacity
+            style={styles.menuBtn}
+            onPress={() => setMenuOpen(true)}
+            accessibilityLabel="Abrir menú de agenda"
+          >
+            <Menu size={22} color={t.text.primary} />
+          </TouchableOpacity>
+        )}
       </View>
 
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tab, tab === "calendar" && styles.tabActive]}
-          onPress={() => setTab("calendar")}
-        >
-          <CalendarDays
-            size={14}
-            color={tab === "calendar" ? t.brand.fg : t.text.secondary}
-          />
-          <Typography variant="label" color={tab === "calendar" ? "inherit" : "secondary"}>
-            <Text style={tab === "calendar" ? { color: t.brand.fg } : undefined}>Calendario</Text>
-          </Typography>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, tab === "appointments" && styles.tabActive]}
-          onPress={() => setTab("appointments")}
-        >
-          <List
-            size={14}
-            color={tab === "appointments" ? t.brand.fg : t.text.secondary}
-          />
-          <Typography variant="label" color={tab === "appointments" ? "inherit" : "secondary"}>
-            <Text style={tab === "appointments" ? { color: t.brand.fg } : undefined}>Citas</Text>
-          </Typography>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, tab === "medications" && styles.tabActive]}
-          onPress={() => setTab("medications")}
-        >
-          <Pill
-            size={14}
-            color={tab === "medications" ? t.brand.fg : t.text.secondary}
-          />
-          <Typography variant="label" color={tab === "medications" ? "inherit" : "secondary"}>
-            <Text style={tab === "medications" ? { color: t.brand.fg } : undefined}>Medicamentos</Text>
-          </Typography>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, tab === "wellbeing" && styles.tabActiveNotif]}
-          onPress={() => setTab("wellbeing")}
-        >
-          <Heart
-            size={14}
-            color={tab === "wellbeing" ? t.accent.notifFg : t.text.secondary}
-          />
-          <Typography variant="label" color={tab === "wellbeing" ? "inherit" : "secondary"}>
-            <Text style={tab === "wellbeing" ? { color: t.accent.notifFg } : undefined}>Bienestar</Text>
-          </Typography>
-        </TouchableOpacity>
-      </View>
-
-      {tab === "calendar" ? (
+      {view === "calendar" ? (
         <CalendarTab />
-      ) : tab === "appointments" ? (
+      ) : view === "appointments" ? (
         <AppointmentsTab />
-      ) : tab === "medications" ? (
+      ) : view === "medications" ? (
         <MedicationsTab />
       ) : (
         <WellbeingTab />
       )}
+
+      <AgendaMenuSheet
+        visible={menuOpen}
+        activeView={view}
+        onClose={() => setMenuOpen(false)}
+        onSelect={setView}
+      />
     </SafeAreaView>
   );
 }
@@ -163,11 +161,11 @@ export function AgendaScreen() {
 function CalendarTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const navigation = require("@react-navigation/native").useNavigation();
+  const navigation = useNavigation();
 
   return (
     <View style={styles.tabContent}>
-      <HeluAgendaCalendar onNewAppointment={() => navigation.navigate("AppointmentForm")} />
+      <HeluAgendaCalendar onNewAppointment={() => navigation.navigate("AppointmentForm" as never)} />
     </View>
   );
 }
@@ -573,11 +571,19 @@ function MedicationFormModal({
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container:          { flex: 1, backgroundColor: t.surface.bg },
-    header:             { padding: spacing[6], paddingBottom: spacing[4], backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium },
-    tabs:               { flexDirection: "row", backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium, paddingHorizontal: spacing[4] },
-    tab:                { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], paddingVertical: spacing[3], borderBottomWidth: 2, borderBottomColor: "transparent" },
-    tabActive:          { borderBottomColor: t.brand.fg },
-    tabActiveNotif:     { borderBottomColor: t.accent.notifFg },
+    header:             {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[4],
+      backgroundColor: t.surface.bgCard,
+      borderBottomWidth: 1,
+      borderBottomColor: t.border.medium,
+    },
+    backBtn:            { flexDirection: "row", alignItems: "center", gap: spacing[1], flex: 1 },
+    backLabel:          { fontSize: fontSize.base, fontWeight: fontWeight.medium, color: t.brand.fg },
+    menuBtn:            { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: radii.md },
     tabContent:         { flex: 1 },
     wellbeingListContent: { paddingBottom: spacing[12] + 56 },
     addRow:             { flexDirection: "row", justifyContent: "flex-end", padding: spacing[4] },

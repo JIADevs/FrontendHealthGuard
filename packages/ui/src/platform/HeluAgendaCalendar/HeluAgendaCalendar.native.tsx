@@ -43,11 +43,7 @@ export function HeluAgendaCalendar({ onNewAppointment, initialDate }: HeluAgenda
                     events={calendar.events}
                     dates={calendar.gridDates}
                     selectedDate={calendar.selectedDate}
-                    initialScrollDate={calendar.initialScrollDate}
                     onSelectDate={calendar.selectDate}
-                    onHorizontalScroll={calendar.handleHorizontalScroll}
-                    scrollTarget={calendar.scrollTarget}
-                    onScrollTargetHandled={calendar.clearScrollTarget}
                 />
             )}
 

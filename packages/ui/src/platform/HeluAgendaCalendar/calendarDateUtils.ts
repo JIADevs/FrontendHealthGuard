@@ -52,6 +52,10 @@ export function startOfWeek(isoDate: string): string {
     return addLocalDays(isoDate, mondayOffset);
 }
 
+export function buildThreeDayDates(isoDate: string): string[] {
+    return [addLocalDays(isoDate, -1), isoDate, addLocalDays(isoDate, 1)];
+}
+
 export function buildWeekDates(isoDate: string): string[] {
     const start = startOfWeek(isoDate);
     return Array.from({ length: 7 }, (_, i) => addLocalDays(start, i));

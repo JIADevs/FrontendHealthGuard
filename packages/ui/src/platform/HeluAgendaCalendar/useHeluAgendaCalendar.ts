@@ -1,26 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCalendarEventsQuery } from "@helu/api/reactQueryHooks";
 import {
     addLocalDays,
-    buildLocalDateRange,
+    buildThreeDayDates,
     buildWeekDates,
     formatMonthYear,
     formatWeekLabel,
     todayLocalDateKey,
 } from "./calendarDateUtils";
-import {
-    EXTEND_DAYS,
-    EXTEND_EDGE_THRESHOLD,
-    INITIAL_FUTURE_DAYS,
-    INITIAL_PAST_DAYS,
-} from "./calendarConstants";
+import { INITIAL_FUTURE_DAYS, INITIAL_PAST_DAYS, VIEW_MODE_NAV_STEP } from "./calendarConstants";
 import {
     filterEventsForDates,
     mapCalendarApiToEvents,
     type AgendaEvent,
 } from "./mapCalendarApiToEvents";
 
-export type CalendarViewMode = "day" | "week";
+export type CalendarViewMode = keyof typeof VIEW_MODE_NAV_STEP;
 
 function dayFetchRange(anchor: string): { start: string; end: string } {
     return {
@@ -29,23 +24,54 @@ function dayFetchRange(anchor: string): { start: string; end: string } {
     };
 }
 
-/** Reuse the day-mode cache when the week already fits inside it. */
+/** Keep the cached range when the date fits; only expand outward — never shrink. */
+function expandRangeToCoverDate(
+    date: string,
+    rangeStart: string,
+    rangeEnd: string,
+): { start: string; end: string } {
+    if (date >= rangeStart && date <= rangeEnd) {
+        return { start: rangeStart, end: rangeEnd };
+    }
+    const ideal = dayFetchRange(date);
+    return {
+        start: date < rangeStart ? ideal.start : rangeStart,
+        end: date > rangeEnd ? ideal.end : rangeEnd,
+    };
+}
+
+function visibleWindow(viewMode: CalendarViewMode, selectedDate: string) {
+    switch (viewMode) {
+        case "day":
+            return { dates: [selectedDate], start: selectedDate, end: selectedDate };
+        case "threeDay": {
+            const dates = buildThreeDayDates(selectedDate);
+            return { dates, start: dates[0], end: dates[dates.length - 1] };
+        }
+        case "week": {
+            const dates = buildWeekDates(selectedDate);
+            return { dates, start: dates[0], end: dates[dates.length - 1] };
+        }
+    }
+}
+
+/** Reuse the day-mode cache when a fixed window already fits inside it. */
 function resolveFetchRange(
     viewMode: CalendarViewMode,
     rangeStart: string,
     rangeEnd: string,
-    weekStart: string,
-    weekEnd: string,
+    windowStart: string,
+    windowEnd: string,
 ): { start: string; end: string } {
     if (viewMode === "day") {
         return { start: rangeStart, end: rangeEnd };
     }
-    if (weekStart >= rangeStart && weekEnd <= rangeEnd) {
+    if (windowStart >= rangeStart && windowEnd <= rangeEnd) {
         return { start: rangeStart, end: rangeEnd };
     }
     return {
-        start: weekStart < rangeStart ? weekStart : rangeStart,
-        end: weekEnd > rangeEnd ? weekEnd : rangeEnd,
+        start: windowStart < rangeStart ? windowStart : rangeStart,
+        end: windowEnd > rangeEnd ? windowEnd : rangeEnd,
     };
 }
 
@@ -53,31 +79,34 @@ export function useHeluAgendaCalendar(initialDate?: string) {
     const anchor = initialDate ?? todayLocalDateKey();
     const [selectedDate, setSelectedDate] = useState(anchor);
     const [viewMode, setViewModeState] = useState<CalendarViewMode>("day");
-    const [scrollTarget, setScrollTarget] = useState<string | null>(null);
     const initialDayRange = dayFetchRange(anchor);
     const [rangeStart, setRangeStart] = useState(initialDayRange.start);
     const [rangeEnd, setRangeEnd] = useState(initialDayRange.end);
-    const extendingRef = useRef(false);
 
-    const weekDates = useMemo(() => buildWeekDates(selectedDate), [selectedDate]);
-    const weekStart = weekDates[0];
-    const weekEnd = weekDates[weekDates.length - 1];
-
-    const fetchRange = useMemo(
-        () => resolveFetchRange(viewMode, rangeStart, rangeEnd, weekStart, weekEnd),
-        [viewMode, rangeStart, rangeEnd, weekStart, weekEnd],
+    const { dates: gridDates, start: windowStart, end: windowEnd } = useMemo(
+        () => visibleWindow(viewMode, selectedDate),
+        [viewMode, selectedDate],
     );
 
-    const gridDates = viewMode === "week" ? weekDates : buildLocalDateRange(rangeStart, rangeEnd);
+    const fetchRange = useMemo(
+        () => resolveFetchRange(viewMode, rangeStart, rangeEnd, windowStart, windowEnd),
+        [viewMode, rangeStart, rangeEnd, windowStart, windowEnd],
+    );
 
     const calendarQuery = useCalendarEventsQuery(fetchRange.start, fetchRange.end);
 
     useEffect(() => {
-        if (viewMode !== "week") return;
-        if (weekStart >= rangeStart && weekEnd <= rangeEnd) return;
-        setRangeStart(weekStart < rangeStart ? weekStart : rangeStart);
-        setRangeEnd(weekEnd > rangeEnd ? weekEnd : rangeEnd);
-    }, [viewMode, weekStart, weekEnd, rangeStart, rangeEnd]);
+        if (viewMode === "day") {
+            const next = expandRangeToCoverDate(selectedDate, rangeStart, rangeEnd);
+            if (next.start === rangeStart && next.end === rangeEnd) return;
+            setRangeStart(next.start);
+            setRangeEnd(next.end);
+            return;
+        }
+        if (windowStart >= rangeStart && windowEnd <= rangeEnd) return;
+        setRangeStart(windowStart < rangeStart ? windowStart : rangeStart);
+        setRangeEnd(windowEnd > rangeEnd ? windowEnd : rangeEnd);
+    }, [viewMode, selectedDate, windowStart, windowEnd, rangeStart, rangeEnd]);
 
     const events: AgendaEvent[] = useMemo(() => {
         if (!calendarQuery.data) return [];
@@ -85,99 +114,47 @@ export function useHeluAgendaCalendar(initialDate?: string) {
         return filterEventsForDates(mapped, gridDates);
     }, [calendarQuery.data, gridDates]);
 
-    const headerLabel = useMemo(
-        () => (viewMode === "week" ? formatWeekLabel(weekDates) : formatMonthYear(selectedDate)),
-        [selectedDate, viewMode, weekDates],
-    );
+    const headerLabel = useMemo(() => {
+        if (viewMode === "day") return formatMonthYear(selectedDate);
+        return formatWeekLabel(gridDates);
+    }, [gridDates, selectedDate, viewMode]);
 
-    const extendForward = useCallback(() => {
-        setRangeEnd((prev) => addLocalDays(prev, EXTEND_DAYS));
-    }, []);
-
-    const extendBackward = useCallback(() => {
-        setRangeStart((prev) => addLocalDays(prev, -EXTEND_DAYS));
-    }, []);
-
-    useEffect(() => {
-        extendingRef.current = false;
-    }, [gridDates.length]);
-
-    const handleHorizontalScroll = useCallback(
-        (firstVisibleIndex: number) => {
-            if (viewMode !== "day" || extendingRef.current) return;
-
-            const nearEnd = firstVisibleIndex >= gridDates.length - EXTEND_EDGE_THRESHOLD - 1;
-            const nearStart = firstVisibleIndex <= EXTEND_EDGE_THRESHOLD;
-
-            if (!nearEnd && !nearStart) return;
-
-            extendingRef.current = true;
-            if (nearEnd) extendForward();
-            if (nearStart) extendBackward();
-        },
-        [extendBackward, extendForward, gridDates.length, viewMode],
-    );
-
-    const clearScrollTarget = useCallback(() => {
-        setScrollTarget(null);
-    }, []);
+    const navStep = VIEW_MODE_NAV_STEP[viewMode];
 
     const setViewMode = useCallback(
         (mode: CalendarViewMode) => {
             setViewModeState(mode);
-            if (mode === "week") {
-                setScrollTarget(null);
-                return;
-            }
-            const { start, end } = dayFetchRange(selectedDate);
-            setRangeStart(start);
-            setRangeEnd(end);
-            setScrollTarget(selectedDate);
+            if (mode !== "day") return;
+            const next = expandRangeToCoverDate(selectedDate, rangeStart, rangeEnd);
+            if (next.start !== rangeStart) setRangeStart(next.start);
+            if (next.end !== rangeEnd) setRangeEnd(next.end);
         },
-        [selectedDate],
+        [rangeEnd, rangeStart, selectedDate],
     );
 
     const goToToday = useCallback(() => {
-        const today = todayLocalDateKey();
-        setSelectedDate(today);
-        if (viewMode === "week") {
-            setScrollTarget(null);
-            return;
-        }
-        const { start, end } = dayFetchRange(today);
-        setRangeStart(start);
-        setRangeEnd(end);
-        setScrollTarget(today);
-    }, [viewMode]);
+        setSelectedDate(todayLocalDateKey());
+    }, []);
 
     const goPrevious = useCallback(() => {
-        const next = addLocalDays(selectedDate, -7);
-        setSelectedDate(next);
-        if (viewMode === "day") {
-            setScrollTarget(next);
-        }
-    }, [selectedDate, viewMode]);
+        setSelectedDate((prev) => addLocalDays(prev, -navStep));
+    }, [navStep]);
 
     const goNext = useCallback(() => {
-        const next = addLocalDays(selectedDate, 7);
-        setSelectedDate(next);
-        if (viewMode === "day") {
-            setScrollTarget(next);
-        }
-    }, [selectedDate, viewMode]);
+        setSelectedDate((prev) => addLocalDays(prev, navStep));
+    }, [navStep]);
 
     const selectDate = useCallback(
         (date: string) => {
             setSelectedDate(date);
             if (viewMode === "week") {
                 setViewModeState("day");
-                const { start, end } = dayFetchRange(date);
-                setRangeStart(start);
-                setRangeEnd(end);
+                const next = expandRangeToCoverDate(date, rangeStart, rangeEnd);
+                if (next.start !== rangeStart) setRangeStart(next.start);
+                if (next.end !== rangeEnd) setRangeEnd(next.end);
             }
-            setScrollTarget(date);
         },
-        [viewMode],
+        [rangeEnd, rangeStart, viewMode],
     );
 
     return {
@@ -186,8 +163,6 @@ export function useHeluAgendaCalendar(initialDate?: string) {
         gridDates,
         events,
         headerLabel,
-        scrollTarget,
-        initialScrollDate: anchor,
         isLoading: calendarQuery.isLoading,
         isError: calendarQuery.isError,
         refetch: calendarQuery.refetch,
@@ -196,7 +171,5 @@ export function useHeluAgendaCalendar(initialDate?: string) {
         goToToday,
         goPrevious,
         goNext,
-        handleHorizontalScroll,
-        clearScrollTarget,
     };
 }

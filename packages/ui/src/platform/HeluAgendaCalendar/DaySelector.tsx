@@ -17,8 +17,15 @@ interface DaySelectorProps {
 
 const VIEW_OPTIONS: { mode: CalendarViewMode; label: string }[] = [
     { mode: "day", label: "Día" },
+    { mode: "threeDay", label: "3 días" },
     { mode: "week", label: "Semana" },
 ];
+
+function navAccessibilityLabel(viewMode: CalendarViewMode, direction: "previous" | "next"): string {
+    const unit =
+        viewMode === "day" ? "día" : viewMode === "threeDay" ? "3 días" : "semana";
+    return direction === "previous" ? `${unit} anterior` : `${unit} siguiente`;
+}
 
 export function DaySelector({
     headerLabel,
@@ -30,19 +37,23 @@ export function DaySelector({
 }: DaySelectorProps) {
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
-    const prevLabel = viewMode === "week" ? "Semana anterior" : "Período anterior";
-    const nextLabel = viewMode === "week" ? "Semana siguiente" : "Período siguiente";
 
     return (
         <View style={styles.container}>
             <View style={styles.navRow}>
-                <TouchableOpacity onPress={onPrevious} accessibilityLabel={prevLabel}>
+                <TouchableOpacity
+                    onPress={onPrevious}
+                    accessibilityLabel={navAccessibilityLabel(viewMode, "previous")}
+                >
                     <ChevronLeft size={22} color={t.text.primary} />
                 </TouchableOpacity>
 
                 <Text style={styles.headerLabel}>{capitalize(headerLabel)}</Text>
 
-                <TouchableOpacity onPress={onNext} accessibilityLabel={nextLabel}>
+                <TouchableOpacity
+                    onPress={onNext}
+                    accessibilityLabel={navAccessibilityLabel(viewMode, "next")}
+                >
                     <ChevronRight size={22} color={t.text.primary} />
                 </TouchableOpacity>
             </View>
@@ -110,10 +121,11 @@ function makeStyles(t: ThemeContextValue) {
         },
         modeRow: {
             flexDirection: "row",
-            gap: spacing[2],
+            gap: spacing[1],
+            flexShrink: 1,
         },
         modeChip: {
-            paddingHorizontal: spacing[3],
+            paddingHorizontal: spacing[2],
             paddingVertical: spacing[1],
             borderRadius: radii.full,
             borderWidth: 1,

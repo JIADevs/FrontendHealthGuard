@@ -15,6 +15,7 @@ import {
   useMedicationsQuery,
   useDeleteMedicationMutation,
   useConfirmIntakeMutation,
+  useDailyCheckInsQuery,
 } from "@helu/api/hooks";
 import {
   isApiError,
@@ -53,7 +54,9 @@ import {
   MapPin,
   User,
   Check,
+  Heart,
 } from "lucide-react-native";
+import { DailyCheckInListItem, DailyCheckInForm } from "../components/agenda";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -64,13 +67,13 @@ const STATUSES = ["PROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI"] as const;
 export function AgendaScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const [tab, setTab] = useState<"appointments" | "medications">("appointments");
+  const [tab, setTab] = useState<"appointments" | "medications" | "wellbeing">("appointments");
 
-  // Allow navigating with initialTab param (e.g. from Dashboard → Medicamentos)
+  // Allow navigating with initialTab param (e.g. from Dashboard → Medicamentos or push CHECKIN)
   const route = require("@react-navigation/native").useRoute();
   useEffect(() => {
     const initialTab = route.params?.initialTab;
-    if (initialTab === "medications" || initialTab === "appointments") {
+    if (initialTab === "medications" || initialTab === "appointments" || initialTab === "wellbeing") {
       setTab(initialTab);
     }
   }, [route.params?.initialTab]);
@@ -106,9 +109,27 @@ export function AgendaScreen() {
             <Text style={tab === "medications" ? { color: t.brand.fg } : undefined}>Medicamentos</Text>
           </Typography>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, tab === "wellbeing" && styles.tabActiveNotif]}
+          onPress={() => setTab("wellbeing")}
+        >
+          <Heart
+            size={14}
+            color={tab === "wellbeing" ? t.accent.notifFg : t.text.secondary}
+          />
+          <Typography variant="label" color={tab === "wellbeing" ? "inherit" : "secondary"}>
+            <Text style={tab === "wellbeing" ? { color: t.accent.notifFg } : undefined}>Bienestar</Text>
+          </Typography>
+        </TouchableOpacity>
       </View>
 
-      {tab === "appointments" ? <AppointmentsTab /> : <MedicationsTab />}
+      {tab === "appointments" ? (
+        <AppointmentsTab />
+      ) : tab === "medications" ? (
+        <MedicationsTab />
+      ) : (
+        <WellbeingTab />
+      )}
     </SafeAreaView>
   );
 }
@@ -397,6 +418,73 @@ function MedicationsTab() {
   );
 }
 
+// ─── wellbeing tab ────────────────────────────────────────────────────────────
+
+function WellbeingTab() {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+
+  const [page, setPage] = useState(1);
+  const [showForm, setShowForm] = useState(false);
+
+  const query = useDailyCheckInsQuery({ page, limit: 10 });
+  const totalPages = query.data?.totalPages ?? 1;
+  const items = query.data?.items ?? [];
+
+  return (
+    <View style={styles.tabContent}>
+      <View style={styles.addRow}>
+        <TouchableOpacity
+          style={[styles.addBtn, { backgroundColor: t.accent.notifFg }]}
+          onPress={() => setShowForm(true)}
+        >
+          <Plus size={16} color={colors.white} />
+          <Text style={styles.addBtnText}>+ Registrar</Text>
+        </TouchableOpacity>
+      </View>
+
+      {query.isLoading ? (
+        <View style={styles.center}>
+          <Spinner size="lg" />
+        </View>
+      ) : query.isError ? (
+        <View style={styles.center}>
+          <Text style={styles.errorText}>
+            Error al cargar check-ins. Verificá tu conexión.
+          </Text>
+          <TouchableOpacity onPress={() => query.refetch()}>
+            <Text style={styles.retryText}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={<Heart size={48} color={t.border.medium} />}
+          message="No tenés check-ins registrados."
+          action={
+            <Button onPress={() => setShowForm(true)}>
+              Registrar check-in
+            </Button>
+          }
+        />
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(c) => c.id}
+          contentContainerStyle={cardContentStyle}
+          renderItem={({ item }) => (
+            <DailyCheckInListItem checkIn={item} />
+          )}
+          ListFooterComponent={
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          }
+        />
+      )}
+
+      {showForm && <DailyCheckInForm onClose={() => setShowForm(false)} />}
+    </View>
+  );
+}
+
 // ─── medication form modal ────────────────────────────────────────────────────
 
 function MedicationFormModal({
@@ -451,6 +539,7 @@ function makeStyles(t: ThemeContextValue) {
     tabs:               { flexDirection: "row", backgroundColor: t.surface.bgCard, borderBottomWidth: 1, borderBottomColor: t.border.medium, paddingHorizontal: spacing[4] },
     tab:                { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[2], paddingVertical: spacing[3], borderBottomWidth: 2, borderBottomColor: "transparent" },
     tabActive:          { borderBottomColor: t.brand.fg },
+    tabActiveNotif:     { borderBottomColor: t.accent.notifFg },
     tabContent:         { flex: 1 },
     addRow:             { flexDirection: "row", justifyContent: "flex-end", padding: spacing[4] },
     addBtn:             { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: t.brand.fg, paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md },
@@ -470,6 +559,7 @@ function makeStyles(t: ThemeContextValue) {
 
     fieldLabel:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: spacing[2] },
     errorText:          { color: t.status.errorFg, fontSize: fontSize.sm, marginTop: spacing[3], backgroundColor: t.status.errorBg, padding: spacing[3], borderRadius: radii.sm },
+    retryText:          { color: t.brand.fg, fontSize: fontSize.sm, fontWeight: fontWeight.semibold, marginTop: spacing[2] },
     typeRow:            { flexDirection: "row", gap: spacing[2] },
     typePill:           { flex: 1, paddingVertical: spacing[2], borderRadius: radii.md, alignItems: "center", backgroundColor: t.surface.bg, borderWidth: 1, borderColor: t.border.medium },
     typePillActive:     { backgroundColor: t.brand.fg, borderColor: t.brand.fg },

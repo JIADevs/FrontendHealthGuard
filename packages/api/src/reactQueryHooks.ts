@@ -64,6 +64,9 @@ import {
     // User
     getMe,
     updateMe,
+    // Daily Check-Ins
+    getDailyCheckIns,
+    createDailyCheckIn,
 } from "./endpoints";
 import type {
     DocumentCreate,
@@ -73,6 +76,7 @@ import type {
     DoctorCreate,
     BackpackCreate,
     UserUpdate,
+    DailyCheckInCreate,
 } from "./schemas";
 import type { ShareStatusFilter } from "./shares/schemas";
 import { invalidateBackpackQueries } from "./backpackQueryUtils";
@@ -124,6 +128,9 @@ export const QK = {
 
     documentSharesActive: () => ["document-shares-active"] as const,
     shares: (status: ShareStatusFilter = "all") => ["shares", status] as const,
+
+    dailyCheckIns: (page = 1, startDate?: string, endDate?: string) =>
+        ["daily-checkins", page, startDate ?? null, endDate ?? null] as const,
 } as const;
 
 // ─── Documents ─────────────────────────────────────────
@@ -565,5 +572,33 @@ export function useUpdateProfileMutation() {
     return useMutation({
         mutationFn: (userData: UserUpdate) => updateMe(userData),
         onSettled: () => qc.invalidateQueries({ queryKey: QK.profile() }),
+    });
+}
+
+// ─── Daily Check-Ins ───────────────────────────────────
+
+export function useDailyCheckInsQuery(params?: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+}) {
+    return useQuery({
+        queryKey: QK.dailyCheckIns(params?.page, params?.startDate, params?.endDate),
+        queryFn: () => getDailyCheckIns(params),
+        staleTime: 5_000,
+        placeholderData: keepPreviousData,
+    });
+}
+
+export function useCreateDailyCheckInMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: DailyCheckInCreate) => createDailyCheckIn(payload),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["daily-checkins"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
+            qc.invalidateQueries({ queryKey: ["me"] });
+        },
     });
 }

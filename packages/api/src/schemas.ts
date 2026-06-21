@@ -370,6 +370,28 @@ export const BackpackCreateSchema = z.object({
     type: z.enum(["CUSTOM", "TEMPORARY_SHARE"]).default("CUSTOM"),
 });
 
+// --- Daily Check-Ins ---
+
+export const MOOD_ENUM_VALUES = ["excellent", "good", "okay", "bad", "awful"] as const;
+export type MoodEnum = typeof MOOD_ENUM_VALUES[number];
+
+export const DailyCheckInSchema = z.object({
+    id:         z.string().uuid(),
+    userId:     z.string().uuid(),
+    createdBy:  z.string().uuid().nullable().optional(),
+    mood:       z.enum(["excellent", "good", "okay", "bad", "awful"]),
+    recordedAt: z.string(),
+    notes:      z.string().nullable().optional(),
+});
+
+export const DailyCheckInCreateSchema = z.object({
+    mood:       z.enum(["excellent", "good", "okay", "bad", "awful"]),
+    recordedAt: z.string(),
+    notes:      z.string().optional(),
+});
+
+export const DailyCheckInPageSchema = createPageSchema(DailyCheckInSchema);
+
 // --- Inferred types ---
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 export type SignupRequest = z.infer<typeof SignupRequestSchema>;
@@ -401,4 +423,7 @@ export type CustomTagCreate = z.infer<typeof CustomTagCreateSchema>;
 export type Treatment = z.infer<typeof TreatmentSchema>;
 export type TreatmentPage = z.infer<typeof TreatmentPageSchema>;
 export type ReminderConfig = z.infer<typeof ReminderConfigSchema>;
+export type DailyCheckIn = z.infer<typeof DailyCheckInSchema>;
+export type DailyCheckInCreate = z.infer<typeof DailyCheckInCreateSchema>;
+export type DailyCheckInPage = z.infer<typeof DailyCheckInPageSchema>;
 

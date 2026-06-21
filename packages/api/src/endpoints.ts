@@ -24,6 +24,8 @@ import {
     BackpackPageSchema,
     BackpackSchema,
     ClassificationSuggestionSchema,
+    DailyCheckInSchema,
+    DailyCheckInPageSchema,
     type LoginRequest,
     type SignupRequest,
     type UserUpdate,
@@ -33,6 +35,8 @@ import {
     type DoctorCreate,
     type BackpackCreate,
     type CustomTagCreate,
+    type DailyCheckInCreate,
+    type DailyCheckInPage,
 } from "./schemas";
 
 // ─── Auth ──────────────────────────────────────────────
@@ -388,6 +392,23 @@ export async function classifyDocumentFromUri(uri: string, name: string, mimeTyp
         timeout: 120_000,
     });
     return ClassificationSuggestionSchema.parse(data);
+}
+
+// ─── Daily Check-Ins ───────────────────────────────────
+
+export async function getDailyCheckIns(params?: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+}): Promise<DailyCheckInPage> {
+    const { data } = await apiClient.get("/daily-checkins/", { params });
+    return DailyCheckInPageSchema.parse(data);
+}
+
+export async function createDailyCheckIn(payload: DailyCheckInCreate) {
+    const { data } = await apiClient.post("/daily-checkins/", payload);
+    return DailyCheckInSchema.parse(data);
 }
 
 // ─── Backpacks ─────────────────────────────────────────

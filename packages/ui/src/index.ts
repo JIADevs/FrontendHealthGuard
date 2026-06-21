@@ -60,3 +60,6 @@ export * from './containers/Card/Card.native';
 // ─── Composed ────────────────────────────────────────────────────────────────
 export * from './composed/ConfirmModal/ConfirmModal.types';
 export * from './composed/ConfirmModal/ConfirmModal.native';
+
+// ─── Platform ────────────────────────────────────────────────────────────────
+export * from './platform/HeluAgendaCalendar';

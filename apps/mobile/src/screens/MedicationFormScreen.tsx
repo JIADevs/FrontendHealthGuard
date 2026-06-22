@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { ArrowLeft, Pill, Check, X, Search, Bell } from "lucide-react-native";
+import { ArrowLeft, Pill, Check, X, Search, Bell, Info, CalendarDays } from "lucide-react-native";
 import {
   radii,
   spacing,
@@ -25,8 +25,13 @@ import {
   ConfirmModal,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { useMedicationFormCore, useMedicationsQuery } from "@helu/api/hooks";
-import type { Medication, PharmaceuticalForm, DoseUnit, FrequencyUnit } from "@helu/api";
+import {
+  useMedicationFormCore,
+  useMedicationsQuery,
+  useMedicationByIdQuery,
+  useMedicationCycleEditCore,
+} from "@helu/api/hooks";
+import type { Medication, MedicationCycle, PharmaceuticalForm, DoseUnit, FrequencyUnit } from "@helu/api";
 
 type ReminderMode = "none" | "at_time" | "before";
 
@@ -107,9 +112,8 @@ function findFuzzySuggestion(typed: string, meds: Medication[]): Medication | nu
   return best?.med ?? null;
 }
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
+// ─── ChipRow ─────────────────────────────────────────────────────────────────
 
-/** Fila de chips de selección única */
 function ChipRow<T extends string>({
   options,
   labels,
@@ -154,13 +158,82 @@ function ChipRow<T extends string>({
   );
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
+// ─── Screen router ────────────────────────────────────────────────────────────
 
 export function MedicationFormScreen() {
-  const navigation = useNavigation();
   const route = useRoute();
-  const params = route.params as { medicationId?: string; medicationName?: string } | undefined;
+  const params = route.params as {
+    cycleId?: string;
+    medicationId?: string;
+    medicationName?: string;
+  } | undefined;
 
+  if (params?.cycleId && params?.medicationId) {
+    return (
+      <EditGate
+        cycleId={params.cycleId}
+        medicationId={params.medicationId}
+        medicationName={params.medicationName ?? ""}
+      />
+    );
+  }
+
+  return (
+    <CreateFlow
+      medicationId={params?.medicationId}
+      medicationName={params?.medicationName}
+    />
+  );
+}
+
+// ─── Edit gate (fetches cycle, then renders form) ─────────────────────────────
+
+function EditGate({
+  cycleId,
+  medicationId,
+  medicationName,
+}: {
+  cycleId: string;
+  medicationId: string;
+  medicationName: string;
+}) {
+  const navigation = useNavigation();
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+
+  const { data: med, isLoading } = useMedicationByIdQuery(medicationId);
+  const cycle = med?.cycles.find((c: MedicationCycle) => c.id === cycleId);
+
+  if (isLoading || !cycle) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <ArrowLeft size={22} color={t.text.primary} />
+          </TouchableOpacity>
+          <Typography variant="h3" style={styles.headerTitle}>Editar Ciclo</Typography>
+          <View style={styles.backBtn} />
+        </View>
+        <View style={styles.center}>
+          <Text style={{ color: t.text.secondary }}>Cargando ciclo…</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return <EditFlow cycle={cycle} medicationName={medicationName} />;
+}
+
+// ─── Create flow ──────────────────────────────────────────────────────────────
+
+function CreateFlow({
+  medicationId,
+  medicationName: initialMedName,
+}: {
+  medicationId?: string;
+  medicationName?: string;
+}) {
+  const navigation = useNavigation();
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
 
@@ -173,15 +246,14 @@ export function MedicationFormScreen() {
 
   const form = useMedicationFormCore({
     adapters: {
-      onSaveSuccess: () =>
-        Toast.show({ type: "success", text1: "Ciclo registrado" }),
+      onSaveSuccess: () => Toast.show({ type: "success", text1: "Ciclo registrado" }),
       afterSave: () => navigation.goBack(),
     },
   });
 
   useEffect(() => {
-    if (params?.medicationId && params?.medicationName) {
-      form.selectExistingMedication(params.medicationId, params.medicationName);
+    if (medicationId && initialMedName) {
+      form.selectExistingMedication(medicationId, initialMedName);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -232,7 +304,6 @@ export function MedicationFormScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <ArrowLeft size={22} color={t.text.primary} />
@@ -241,28 +312,18 @@ export function MedicationFormScreen() {
         <View style={styles.backBtn} />
       </View>
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView
-          style={styles.flex}
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
-          {/* ── Medicamento ─────────────────────────────────────────────────── */}
+          {/* ── Medicamento ── */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionIcon, { backgroundColor: t.accent.medBg }]}>
                 <Pill size={16} color={t.accent.medFg} />
               </View>
-              <Text style={[styles.sectionTitle, { color: t.text.primary }]}>
-                Medicamento
-              </Text>
+              <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Medicamento</Text>
             </View>
 
-            {/* Nombre */}
             <View>
               <View style={styles.searchRow}>
                 <View style={styles.searchInputWrap}>
@@ -303,13 +364,9 @@ export function MedicationFormScreen() {
                       onPress={() => handleSelectSuggestion(med)}
                     >
                       <Pill size={14} color={t.accent.medFg} style={styles.suggestionIcon} />
-                      <Text style={[styles.suggestionText, { color: t.text.primary }]}>
-                        {med.name}
-                      </Text>
+                      <Text style={[styles.suggestionText, { color: t.text.primary }]}>{med.name}</Text>
                       {med.dosage ? (
-                        <Text style={[styles.suggestionSub, { color: t.text.secondary }]}>
-                          {med.dosage}
-                        </Text>
+                        <Text style={[styles.suggestionSub, { color: t.text.secondary }]}>{med.dosage}</Text>
                       ) : null}
                     </TouchableOpacity>
                   ))}
@@ -317,117 +374,23 @@ export function MedicationFormScreen() {
               )}
             </View>
 
-            {/* Forma farmacéutica */}
             <View>
-              <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>
-                Forma farmacéutica
-              </Text>
+              <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>Forma farmacéutica</Text>
               <ChipRow
                 options={["TABLET", "CAPSULE", "CREAM", "PASTE", "SYRUP", "DROPS", "INJECTION", "POWDER", "SPRAY"] as const}
                 labels={PHARMA_FORM_LABELS}
                 value={form.pharmaceuticalForm}
                 onChange={form.setPharmaceuticalForm}
-                t={t}
-                styles={styles}
+                t={t} styles={styles}
               />
             </View>
           </View>
 
-          {/* ── Prescripción ─────────────────────────────────────────────────── */}
+          <PrescriptionSection form={form} t={t} styles={styles} />
+
+          {/* ── Periodo ── */}
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: t.text.primary }]}>
-              Prescripción
-            </Text>
-
-            {/* Concentración */}
-            <TextField
-              label="Concentración (opcional)"
-              value={form.concentration}
-              onChange={form.setConcentration}
-              placeholder="Ej: 500mg, 10mg/5ml"
-            />
-
-            {/* Dosis: cantidad + unidad */}
-            <View>
-              <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>
-                Dosis por toma
-              </Text>
-              <View style={styles.rowGap}>
-                <View style={styles.dosageAmountWrap}>
-                  <TextField
-                    label="Cantidad"
-                    value={form.doseAmount}
-                    onChange={form.setDoseAmount}
-                    placeholder="Ej: 1, 2.5"
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-              </View>
-              <ChipRow
-                options={["TABLET", "ML", "DROPS", "GRAMS", "MG", "UNITS"] as const}
-                labels={DOSE_UNIT_LABELS}
-                value={form.doseUnit}
-                onChange={form.setDoseUnit}
-                t={t}
-                styles={styles}
-              />
-            </View>
-
-            {/* Frecuencia */}
-            <View>
-              <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>
-                Frecuencia
-              </Text>
-              <View style={styles.rowGap}>
-                <View style={styles.dosageAmountWrap}>
-                  <TextField
-                    label="Cada cuánto"
-                    value={form.frequency}
-                    onChange={form.setFrequency}
-                    placeholder="Ej: 8"
-                    keyboardType="number-pad"
-                  />
-                </View>
-              </View>
-              <ChipRow
-                options={["HOUR", "DAY", "WEEK", "MONTH", "YEAR"] as const}
-                labels={FREQUENCY_UNIT_LABELS}
-                value={form.frequencyUnit}
-                onChange={(v) => { if (v) form.setFrequencyUnit(v as FrequencyUnit); }}
-                t={t}
-                styles={styles}
-              />
-            </View>
-
-            {/* Precio */}
-            <TextField
-              label="Precio (opcional)"
-              value={form.price}
-              onChange={form.setPrice}
-              placeholder="Ej: 25000"
-              keyboardType="decimal-pad"
-            />
-
-            <TextField
-              label="Razón / indicación (opcional)"
-              value={form.reason}
-              onChange={form.setReason}
-              placeholder="Ej: Control del dolor"
-            />
-            <TextField
-              label="Notas adicionales (opcional)"
-              value={form.notes}
-              onChange={form.setNotes}
-              placeholder="Ej: Tomar con comida"
-              multiline
-            />
-          </View>
-
-          {/* ── Periodo ───────────────────────────────────────────────────────── */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: t.text.primary }]}>
-              Periodo del ciclo
-            </Text>
+            <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Periodo del ciclo</Text>
             <DateTimePicker
               label="Fecha y hora de inicio"
               value={
@@ -448,108 +411,20 @@ export function MedicationFormScreen() {
             />
           </View>
 
-          {/* ── Recordatorios ─────────────────────────────────────────────────── */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIcon, { backgroundColor: t.accent.medBg }]}>
-                <Bell size={16} color={t.accent.medFg} />
-              </View>
-              <Text style={[styles.sectionTitle, { color: t.text.primary }]}>
-                Recordatorios
-              </Text>
-            </View>
+          <RemindersSection form={form} t={t} styles={styles} />
 
-            {/* Modo */}
-            <View style={styles.reminderModeRow}>
-              {(["none", "at_time", "before"] as ReminderMode[]).map((mode) => {
-                const label =
-                  mode === "none"    ? "Sin recordatorio" :
-                  mode === "at_time" ? "Al momento de la toma" :
-                  "Antes de la toma";
-                const selected = form.reminderMode === mode;
-                return (
-                  <TouchableOpacity
-                    key={mode}
-                    style={[
-                      styles.reminderModeBtn,
-                      { borderColor: selected ? t.accent.medFg : t.border.medium },
-                      selected && { backgroundColor: t.accent.medBg },
-                    ]}
-                    onPress={() => form.setReminderMode(mode)}
-                  >
-                    <Text
-                      style={[
-                        styles.reminderModeBtnText,
-                        { color: selected ? t.accent.medFg : t.text.secondary },
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Presets de tiempo cuando modo = "before" */}
-            {form.reminderMode === "before" && (
-              <View>
-                <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>
-                  ¿Con cuánta anticipación?
-                </Text>
-                <View style={styles.chipRow}>
-                  {REMINDER_PRESET_MINUTES.map(({ label, value }) => {
-                    const selected = form.reminderOffsets.includes(value);
-                    return (
-                      <TouchableOpacity
-                        key={value}
-                        style={[
-                          styles.chip,
-                          { borderColor: selected ? t.accent.medFg : t.border.medium },
-                          selected && { backgroundColor: t.accent.medBg },
-                        ]}
-                        onPress={() => form.toggleReminderOffset(value)}
-                      >
-                        <Text
-                          style={[
-                            styles.chipText,
-                            { color: selected ? t.accent.medFg : t.text.secondary },
-                          ]}
-                        >
-                          {label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
-          </View>
-
-          {/* Error */}
           {form.error && (
             <View style={[styles.errorBox, { backgroundColor: t.status.errorBg }]}>
-              <Text style={[styles.errorText, { color: t.status.errorFg }]}>
-                {form.error}
-              </Text>
+              <Text style={[styles.errorText, { color: t.status.errorFg }]}>{form.error}</Text>
             </View>
           )}
         </ScrollView>
 
-        {/* Footer */}
         <View style={[styles.footer, { borderTopColor: t.border.medium, backgroundColor: t.surface.bgCard }]}>
-          <Button
-            variant="secondary"
-            onPress={() => navigation.goBack()}
-            style={styles.footerBtn}
-          >
+          <Button variant="secondary" onPress={() => navigation.goBack()} style={styles.footerBtn}>
             Cancelar
           </Button>
-          <Button
-            onPress={handlePressSave}
-            disabled={form.saving}
-            loading={form.saving}
-            style={styles.footerBtn}
-          >
+          <Button onPress={handlePressSave} disabled={form.saving} loading={form.saving} style={styles.footerBtn}>
             Registrar
           </Button>
         </View>
@@ -569,12 +444,326 @@ export function MedicationFormScreen() {
   );
 }
 
+// ─── Edit flow ────────────────────────────────────────────────────────────────
+
+function EditFlow({
+  cycle,
+  medicationName,
+}: {
+  cycle: MedicationCycle;
+  medicationName: string;
+}) {
+  const navigation = useNavigation();
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+
+  const form = useMedicationCycleEditCore({
+    cycle,
+    adapters: {
+      onSaveSuccess: () => Toast.show({ type: "success", text1: "Ciclo actualizado" }),
+      afterSave: () => navigation.goBack(),
+    },
+  });
+
+  const startDateLabel = new Date(cycle.startDate).toLocaleDateString("es-CO", {
+    day: "2-digit", month: "long", year: "numeric",
+  });
+  const startTimeLabel = cycle.firstIntakeTime
+    ? new Date(cycle.firstIntakeTime).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })
+    : "";
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <ArrowLeft size={22} color={t.text.primary} />
+        </TouchableOpacity>
+        <Typography variant="h3" style={styles.headerTitle}>Editar Ciclo</Typography>
+        <View style={styles.backBtn} />
+      </View>
+
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+
+          {/* ── Medicamento (read-only) ── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: t.accent.medBg }]}>
+                <Pill size={16} color={t.accent.medFg} />
+              </View>
+              <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Medicamento</Text>
+            </View>
+            <View style={[styles.readonlyBox, { backgroundColor: t.accent.medBg }]}>
+              <Text style={[styles.readonlyLabel, { color: t.accent.medFg }]}>Nombre</Text>
+              <Text style={[styles.readonlyValue, { color: t.accent.medFg }]}>{medicationName}</Text>
+            </View>
+            <View>
+              <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>Forma farmacéutica</Text>
+              <ChipRow
+                options={["TABLET", "CAPSULE", "CREAM", "PASTE", "SYRUP", "DROPS", "INJECTION", "POWDER", "SPRAY"] as const}
+                labels={PHARMA_FORM_LABELS}
+                value={form.pharmaceuticalForm}
+                onChange={form.setPharmaceuticalForm}
+                t={t} styles={styles}
+              />
+            </View>
+          </View>
+
+          <PrescriptionSection form={form} t={t} styles={styles} />
+
+          {/* ── Periodo ── */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Periodo del ciclo</Text>
+
+            <View style={[styles.readonlyBox, { backgroundColor: t.surface.bg }]}>
+              <View style={styles.readonlyRow}>
+                <CalendarDays size={14} color={t.text.muted} />
+                <Text style={[styles.readonlyLabel, { color: t.text.muted }]}>
+                  Inicio del ciclo (no editable)
+                </Text>
+              </View>
+              <Text style={[styles.readonlyValue, { color: t.text.primary }]}>
+                {startDateLabel}{startTimeLabel ? ` · ${startTimeLabel}` : ""}
+              </Text>
+              <View style={styles.infoRow}>
+                <Info size={12} color={t.text.muted} />
+                <Text style={[styles.infoText, { color: t.text.muted }]}>
+                  Para cambiar la fecha de inicio, crea un nuevo ciclo.
+                </Text>
+              </View>
+            </View>
+
+            <DateTimePicker
+              label="Fecha de fin (opcional)"
+              value={form.endDate ?? ""}
+              onChange={(v) => form.setEndDate(v.slice(0, 10))}
+            />
+          </View>
+
+          <RemindersSection form={form} t={t} styles={styles} />
+
+          {form.error && (
+            <View style={[styles.errorBox, { backgroundColor: t.status.errorBg }]}>
+              <Text style={[styles.errorText, { color: t.status.errorFg }]}>{form.error}</Text>
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={[styles.footer, { borderTopColor: t.border.medium, backgroundColor: t.surface.bgCard }]}>
+          <Button variant="secondary" onPress={() => navigation.goBack()} style={styles.footerBtn}>
+            Cancelar
+          </Button>
+          <Button onPress={form.handleSave} disabled={form.saving} loading={form.saving} style={styles.footerBtn}>
+            Guardar
+          </Button>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+// ─── Shared sections ──────────────────────────────────────────────────────────
+
+type SharedFormSlice = {
+  concentration: string;
+  setConcentration: (v: string) => void;
+  doseAmount: string;
+  setDoseAmount: (v: string) => void;
+  doseUnit: DoseUnit | "";
+  setDoseUnit: (v: DoseUnit | "") => void;
+  frequency: string;
+  setFrequency: (v: string) => void;
+  frequencyUnit: FrequencyUnit;
+  setFrequencyUnit: (v: FrequencyUnit) => void;
+  price: string;
+  setPrice: (v: string) => void;
+  reason: string;
+  setReason: (v: string) => void;
+  notes: string;
+  setNotes: (v: string) => void;
+  reminderMode: ReminderMode;
+  setReminderMode: (v: ReminderMode) => void;
+  reminderOffsets: number[];
+  toggleReminderOffset: (minutes: number) => void;
+};
+
+function PrescriptionSection({
+  form,
+  t,
+  styles,
+}: {
+  form: SharedFormSlice;
+  t: ThemeContextValue;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Prescripción</Text>
+
+      <TextField
+        label="Concentración (opcional)"
+        value={form.concentration}
+        onChange={form.setConcentration}
+        placeholder="Ej: 500mg, 10mg/5ml"
+      />
+
+      <View>
+        <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>Dosis por toma</Text>
+        <View style={styles.rowGap}>
+          <View style={styles.dosageAmountWrap}>
+            <TextField
+              label="Cantidad"
+              value={form.doseAmount}
+              onChange={form.setDoseAmount}
+              placeholder="Ej: 1, 2.5"
+              keyboardType="decimal-pad"
+            />
+          </View>
+        </View>
+        <ChipRow
+          options={["TABLET", "ML", "DROPS", "GRAMS", "MG", "UNITS"] as const}
+          labels={DOSE_UNIT_LABELS}
+          value={form.doseUnit}
+          onChange={form.setDoseUnit}
+          t={t} styles={styles}
+        />
+      </View>
+
+      <View>
+        <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>Frecuencia</Text>
+        <View style={styles.rowGap}>
+          <View style={styles.dosageAmountWrap}>
+            <TextField
+              label="Cada cuánto"
+              value={form.frequency}
+              onChange={form.setFrequency}
+              placeholder="Ej: 8"
+              keyboardType="number-pad"
+            />
+          </View>
+        </View>
+        <ChipRow
+          options={["HOUR", "DAY", "WEEK", "MONTH", "YEAR"] as const}
+          labels={FREQUENCY_UNIT_LABELS}
+          value={form.frequencyUnit}
+          onChange={(v) => { if (v) form.setFrequencyUnit(v as FrequencyUnit); }}
+          t={t} styles={styles}
+        />
+      </View>
+
+      <TextField
+        label="Precio (opcional)"
+        value={form.price}
+        onChange={form.setPrice}
+        placeholder="Ej: 25000"
+        keyboardType="decimal-pad"
+      />
+      <TextField
+        label="Razón / indicación (opcional)"
+        value={form.reason}
+        onChange={form.setReason}
+        placeholder="Ej: Control del dolor"
+      />
+      <TextField
+        label="Notas adicionales (opcional)"
+        value={form.notes}
+        onChange={form.setNotes}
+        placeholder="Ej: Tomar con comida"
+        multiline
+      />
+    </View>
+  );
+}
+
+function RemindersSection({
+  form,
+  t,
+  styles,
+}: {
+  form: SharedFormSlice;
+  t: ThemeContextValue;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <View style={[styles.sectionIcon, { backgroundColor: t.accent.medBg }]}>
+          <Bell size={16} color={t.accent.medFg} />
+        </View>
+        <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Recordatorios</Text>
+      </View>
+
+      <View style={styles.reminderModeRow}>
+        {(["none", "at_time", "before"] as ReminderMode[]).map((mode) => {
+          const label =
+            mode === "none"    ? "Sin recordatorio" :
+            mode === "at_time" ? "Al momento de la toma" :
+            "Antes de la toma";
+          const selected = form.reminderMode === mode;
+          return (
+            <TouchableOpacity
+              key={mode}
+              style={[
+                styles.reminderModeBtn,
+                { borderColor: selected ? t.accent.medFg : t.border.medium },
+                selected && { backgroundColor: t.accent.medBg },
+              ]}
+              onPress={() => form.setReminderMode(mode)}
+            >
+              <Text
+                style={[
+                  styles.reminderModeBtnText,
+                  { color: selected ? t.accent.medFg : t.text.secondary },
+                ]}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {form.reminderMode === "before" && (
+        <View>
+          <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>¿Con cuánta anticipación?</Text>
+          <View style={styles.chipRow}>
+            {REMINDER_PRESET_MINUTES.map(({ label, value }) => {
+              const selected = form.reminderOffsets.includes(value);
+              return (
+                <TouchableOpacity
+                  key={value}
+                  style={[
+                    styles.chip,
+                    { borderColor: selected ? t.accent.medFg : t.border.medium },
+                    selected && { backgroundColor: t.accent.medBg },
+                  ]}
+                  onPress={() => form.toggleReminderOffset(value)}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      { color: selected ? t.accent.medFg : t.text.secondary },
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container:        { flex: 1, backgroundColor: t.surface.bg },
     flex:             { flex: 1 },
+    center:           { flex: 1, alignItems: "center", justifyContent: "center" },
     header:           {
       flexDirection: "row",
       alignItems: "center",
@@ -626,12 +815,7 @@ function makeStyles(t: ThemeContextValue) {
     },
     selectedChipText: { fontSize: fontSize.xs, fontWeight: fontWeight.medium },
 
-    suggestions:      {
-      borderWidth: 1,
-      borderRadius: radii.md,
-      marginTop: spacing[1],
-      overflow: "hidden",
-    },
+    suggestions:      { borderWidth: 1, borderRadius: radii.md, marginTop: spacing[1], overflow: "hidden" },
     suggestionItem:   {
       flexDirection: "row",
       alignItems: "center",
@@ -645,34 +829,32 @@ function makeStyles(t: ThemeContextValue) {
     suggestionSub:    { fontSize: fontSize.xs },
 
     chipRow:          { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
-    chip:             {
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[2],
-      borderRadius: radii.full,
-      borderWidth: 1,
-    },
+    chip:             { paddingHorizontal: spacing[3], paddingVertical: spacing[2], borderRadius: radii.full, borderWidth: 1 },
     chipText:         { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
 
     rowGap:           { flexDirection: "row", gap: spacing[2], marginBottom: spacing[2] },
     dosageAmountWrap: { flex: 1 },
 
-    reminderModeRow:  { gap: spacing[2] },
-    reminderModeBtn:  {
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[2],
+    readonlyBox:      {
       borderRadius: radii.md,
+      padding: spacing[3],
+      gap: spacing[1],
       borderWidth: 1,
+      borderColor: t.border.light,
     },
+    readonlyRow:      { flexDirection: "row", alignItems: "center", gap: spacing[1] },
+    readonlyLabel:    { fontSize: fontSize.xs, fontWeight: fontWeight.medium, opacity: 0.8 },
+    readonlyValue:    { fontSize: fontSize.base, fontWeight: fontWeight.semibold },
+    infoRow:          { flexDirection: "row", alignItems: "flex-start", gap: spacing[1], marginTop: spacing[1] },
+    infoText:         { fontSize: fontSize.xs, flex: 1, lineHeight: 16 },
+
+    reminderModeRow:  { gap: spacing[2] },
+    reminderModeBtn:  { paddingHorizontal: spacing[3], paddingVertical: spacing[2], borderRadius: radii.md, borderWidth: 1 },
     reminderModeBtnText: { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
 
     errorBox:         { padding: spacing[3], borderRadius: radii.sm },
     errorText:        { fontSize: fontSize.sm },
-    footer:           {
-      flexDirection: "row",
-      gap: spacing[3],
-      padding: spacing[4],
-      borderTopWidth: 1,
-    },
+    footer:           { flexDirection: "row", gap: spacing[3], padding: spacing[4], borderTopWidth: 1 },
     footerBtn:        { flex: 1 },
   });
 }

@@ -19,8 +19,7 @@ import {
   X,
   Clock,
   CalendarDays,
-  AlertCircle,
-  Trash2,
+  CheckCircle,
 } from "lucide-react-native";
 import {
   radii,
@@ -32,6 +31,7 @@ import {
   ConfirmModal,
   Spinner,
   EmptyState,
+  ActionButton,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import {
@@ -227,7 +227,7 @@ export function MedicationDetailScreen() {
                   })
                 }
                 onEdit={() =>
-                  (navigation as any).navigate("MedicationCycleEdit", {
+                  (navigation as any).navigate("MedicationForm", {
                     cycleId: cycle.id,
                     medicationId: id,
                     medicationName: med?.name ?? "",
@@ -288,10 +288,12 @@ function CycleCard({
   const active = isCycleActive(cycle);
 
   return (
-    <View style={[styles.cycleCard, { borderColor: t.border.light }]}>
-      {/* Tappable header + body → navigate to detail */}
-      <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
-      {/* Encabezado del ciclo */}
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      style={[styles.cycleCard, { borderColor: t.border.light }]}
+    >
+      {/* Encabezado: badge izquierda, iconos derecha */}
       <View style={styles.cycleHeader}>
         <View
           style={[
@@ -315,17 +317,31 @@ function CycleCard({
           </Text>
         </View>
 
-        <View style={styles.cycleMeta}>
+        <View style={styles.cycleIconActions}>
+          <ActionButton action="edit" size="sm" onPress={onEdit} />
+          {active && (
+            <TouchableOpacity
+              style={[styles.finalizeIconBtn, { backgroundColor: t.status.warningBg ?? "#FFF3CD" }]}
+              activeOpacity={0.7}
+              onPress={onFinalize}
+            >
+              <CheckCircle size={14} color={t.status.warningFg ?? "#856404"} strokeWidth={2} />
+            </TouchableOpacity>
+          )}
+          <ActionButton action="delete" size="sm" onPress={onDelete} />
+        </View>
+      </View>
+
+      {/* Datos principales */}
+      <View style={styles.cycleBody}>
+        <View style={styles.cycleRow}>
           <CalendarDays size={12} color={t.text.secondary} />
           <Text style={[styles.cycleMetaText, { color: t.text.secondary }]}>
             {formatDate(cycle.startDate)}
             {cycle.endDate ? ` → ${formatDate(cycle.endDate)}` : " → en curso"}
           </Text>
         </View>
-      </View>
 
-      {/* Datos principales */}
-      <View style={styles.cycleBody}>
         <View style={styles.cycleRow}>
           <Pill size={14} color={t.accent.medFg} />
           <Text style={[styles.cycleMain, { color: t.text.primary }]}>
@@ -363,37 +379,7 @@ function CycleCard({
           </View>
         ) : null}
       </View>
-
-      </TouchableOpacity>
-
-      {/* Acciones */}
-      <View style={[styles.cycleActions, { borderTopColor: t.border.light }]}>
-        <TouchableOpacity style={styles.cycleActionBtn} onPress={onEdit}>
-          <Pencil size={14} color={t.text.secondary} />
-          <Text style={[styles.cycleActionText, { color: t.text.secondary }]}>Editar</Text>
-        </TouchableOpacity>
-
-        {active && (
-          <TouchableOpacity
-            style={[styles.cycleActionBtn, styles.cycleActionBtnRight, { borderLeftColor: t.border.light }]}
-            onPress={onFinalize}
-          >
-            <AlertCircle size={14} color={t.status.warningFg ?? t.text.secondary} />
-            <Text style={[styles.cycleActionText, { color: t.status.warningFg ?? t.text.secondary }]}>
-              Finalizar
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={[styles.cycleActionBtn, styles.cycleActionBtnRight, { borderLeftColor: t.border.light }]}
-          onPress={onDelete}
-        >
-          <Trash2 size={14} color={t.status.errorFg} />
-          <Text style={[styles.cycleActionText, { color: t.status.errorFg }]}>Eliminar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -477,22 +463,7 @@ function makeStyles(t: ThemeContextValue) {
     cycleSub:       { fontSize: fontSize.sm },
     cycleNote:      { fontSize: fontSize.sm, lineHeight: 18 },
 
-    cycleActions:   {
-      flexDirection: "row",
-      borderTopWidth: 1,
-    },
-    cycleActionBtn: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: spacing[1],
-      paddingVertical: spacing[3],
-    },
-    cycleActionBtnRight: {
-      borderLeftWidth: 1,
-      borderLeftColor: undefined,
-    },
-    cycleActionText: { fontSize: fontSize.sm },
+    cycleIconActions: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
+    finalizeIconBtn:  { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   });
 }

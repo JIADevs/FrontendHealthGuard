@@ -61,6 +61,7 @@ import {
   MapPin,
   User,
   Check,
+  CheckCircle,
   Heart,
   Menu,
   ChevronLeft,
@@ -621,18 +622,17 @@ function CyclesList() {
             const { cycle, medicationId, medicationName } = item;
             const active = isCycleActive(cycle);
             return (
-              <View style={[styles.cycleCard, { borderColor: t.border.light }]}>
-                {/* Encabezado + datos → navega al detalle */}
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() =>
-                    navigation.navigate("CycleDetail" as never, {
-                      cycleId: cycle.id,
-                      medicationId,
-                      medicationName,
-                    } as never)
-                  }
-                >
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={[styles.cycleCard, { borderColor: t.border.light }]}
+                onPress={() =>
+                  navigation.navigate("CycleDetail" as never, {
+                    cycleId: cycle.id,
+                    medicationId,
+                    medicationName,
+                  } as never)
+                }
+              >
                 {/* Encabezado */}
                 <View style={styles.cycleCardHeader}>
                   <View style={styles.cycleCardTitleRow}>
@@ -641,16 +641,43 @@ function CyclesList() {
                       {medicationName}
                     </Text>
                   </View>
-                  <View style={[
-                    styles.cycleBadge,
-                    { backgroundColor: active ? (t.status.successBg ?? t.accent.medBg) : t.surface.bg },
-                  ]}>
-                    <Text style={[
-                      styles.cycleBadgeText,
-                      { color: active ? (t.status.successFg ?? t.accent.medFg) : t.text.muted },
+                  <View style={styles.cycleCardRight}>
+                    <View style={[
+                      styles.cycleBadge,
+                      { backgroundColor: active ? (t.status.successBg ?? t.accent.medBg) : t.surface.bg },
                     ]}>
-                      {active ? "Activo" : "Finalizado"}
-                    </Text>
+                      <Text style={[
+                        styles.cycleBadgeText,
+                        { color: active ? (t.status.successFg ?? t.accent.medFg) : t.text.muted },
+                      ]}>
+                        {active ? "Activo" : "Finalizado"}
+                      </Text>
+                    </View>
+                    <ActionButton
+                      action="edit"
+                      size="sm"
+                      onPress={() =>
+                        navigation.navigate("MedicationForm", {
+                          cycleId: cycle.id,
+                          medicationId,
+                          medicationName,
+                        })
+                      }
+                    />
+                    {active && (
+                      <TouchableOpacity
+                        style={[styles.finalizeIconBtn, { backgroundColor: t.status.warningBg ?? "#FFF3CD" }]}
+                        activeOpacity={0.7}
+                        onPress={() => setFinalizingItem(item)}
+                      >
+                        <CheckCircle size={14} color={t.status.warningFg ?? "#856404"} strokeWidth={2} />
+                      </TouchableOpacity>
+                    )}
+                    <ActionButton
+                      action="delete"
+                      size="sm"
+                      onPress={() => setDeletingItem(item)}
+                    />
                   </View>
                 </View>
 
@@ -675,42 +702,7 @@ function CyclesList() {
                     </Text>
                   ) : null}
                 </View>
-                </TouchableOpacity>
-
-                {/* Acciones rápidas */}
-                <View style={[styles.cycleCardActions, { borderTopColor: t.border.light }]}>
-                  <TouchableOpacity
-                    style={styles.cycleAction}
-                    onPress={() =>
-                      navigation.navigate("MedicationCycleEdit", {
-                        cycleId: cycle.id,
-                        medicationId,
-                        medicationName,
-                      })
-                    }
-                  >
-                    <Text style={[styles.cycleActionLabel, { color: t.text.secondary }]}>Editar</Text>
-                  </TouchableOpacity>
-
-                  {active && (
-                    <TouchableOpacity
-                      style={[styles.cycleAction, styles.cycleActionBorder, { borderColor: t.border.light }]}
-                      onPress={() => setFinalizingItem(item)}
-                    >
-                      <Text style={[styles.cycleActionLabel, { color: t.status.warningFg ?? t.text.secondary }]}>
-                        Finalizar
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-
-                  <TouchableOpacity
-                    style={[styles.cycleAction, styles.cycleActionBorder, { borderColor: t.border.light }]}
-                    onPress={() => setDeletingItem(item)}
-                  >
-                    <Text style={[styles.cycleActionLabel, { color: t.status.errorFg }]}>Eliminar</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              </TouchableOpacity>
             );
           }}
         />
@@ -959,15 +951,13 @@ function makeStyles(t: ThemeContextValue) {
     cycleCardMedName:   { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, flex: 1 },
     cycleBadge:         { paddingHorizontal: spacing[2], paddingVertical: 2, borderRadius: radii.full },
     cycleBadgeText:     { fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
-    cycleCardBody:      { paddingHorizontal: spacing[3], paddingBottom: spacing[2], gap: spacing[1] },
+    cycleCardBody:      { paddingHorizontal: spacing[3], paddingBottom: spacing[3], gap: spacing[1] },
     cycleCardDosage:    { fontSize: fontSize.base, fontWeight: fontWeight.medium },
     cycleCardFreq:      { fontSize: fontSize.sm, fontWeight: fontWeight.normal },
     cycleCardDates:     { fontSize: fontSize.xs },
     cycleCardNote:      { fontSize: fontSize.xs },
-    cycleCardActions:   { flexDirection: "row", borderTopWidth: 1 },
-    cycleAction:        { flex: 1, alignItems: "center", paddingVertical: spacing[3] },
-    cycleActionBorder:  { borderLeftWidth: 1 },
-    cycleActionLabel:   { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
+    cycleCardRight:     { flexDirection: "row", alignItems: "center", gap: spacing[2] },
+    finalizeIconBtn:    { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
 
     fieldLabel:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: spacing[2] },
     errorText:          { color: t.status.errorFg, fontSize: fontSize.sm, marginTop: spacing[3], backgroundColor: t.status.errorBg, padding: spacing[3], borderRadius: radii.sm },

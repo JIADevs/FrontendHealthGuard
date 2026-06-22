@@ -23,7 +23,6 @@ import { AppointmentFormScreen } from "../screens/AppointmentFormScreen";
 import { DoctorFormScreen } from "../screens/DoctorFormScreen";
 import { MedicationFormScreen } from "../screens/MedicationFormScreen";
 import { MedicationDetailScreen } from "../screens/MedicationDetailScreen";
-import { MedicationCycleEditScreen } from "../screens/MedicationCycleEditScreen";
 import { CycleDetailScreen } from "../screens/CycleDetailScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
@@ -42,9 +41,8 @@ export type RootStackParamList = {
   AppointmentDetail: { id: string };
   AppointmentForm: { id?: string } | undefined;
   DoctorForm: undefined;
-  MedicationForm: { medicationId?: string; medicationName?: string } | undefined;
+  MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string } | undefined;
   MedicationDetail: { id: string };
-  MedicationCycleEdit: { cycleId: string; medicationId: string; medicationName: string };
   CycleDetail: { cycleId: string; medicationId: string; medicationName: string };
   Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
   DocumentUpload: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
@@ -274,11 +272,6 @@ export function RootNavigator() {
           <Stack.Screen
             name="MedicationDetail"
             component={MedicationDetailScreen}
-            options={{ headerShown: false, animation: "slide_from_right" }}
-          />
-          <Stack.Screen
-            name="MedicationCycleEdit"
-            component={MedicationCycleEditScreen}
             options={{ headerShown: false, animation: "slide_from_right" }}
           />
           <Stack.Screen

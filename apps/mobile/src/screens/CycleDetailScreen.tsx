@@ -171,7 +171,7 @@ export function CycleDetailScreen() {
       variant: "outline",
       icon: <Pencil size={18} color={t.text.primary} />,
       onPress: () =>
-        (navigation as any).navigate("MedicationCycleEdit", {
+        (navigation as any).navigate("MedicationForm", {
           cycleId,
           medicationId,
           medicationName,
@@ -200,7 +200,7 @@ export function CycleDetailScreen() {
             icon: Pencil,
             label: "Editar",
             onPress: () =>
-              (navigation as any).navigate("MedicationCycleEdit", {
+              (navigation as any).navigate("MedicationForm", {
                 cycleId,
                 medicationId,
                 medicationName,

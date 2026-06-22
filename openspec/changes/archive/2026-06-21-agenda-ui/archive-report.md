@@ -142,5 +142,56 @@ before S2 ships:
 
 ## Next Recommended Action
 
-`/sdd-new agenda-ui-s2` when backend gates clear. Start fresh from S2 spec (already in main
-specs at `openspec/specs/`) with updated backend constraints and `ask-on-risk` delivery strategy.
+~~`/sdd-new agenda-ui-s2` when backend gates clear.~~ **Completed on branch `agenda` (2026-06-21).**
+See **Post-Archive Addendum** below. Main specs at `openspec/specs/` are updated to SHIPPED status.
+
+---
+
+## Post-Archive Addendum (2026-06-21)
+
+Slice 2 and subsequent calendar UX work shipped on branch `agenda` after backend gates cleared.
+Main specs (`openspec/specs/`) updated to reflect current implementation.
+
+### Backend gates — resolved
+
+| Gate | Status |
+|------|--------|
+| `PATCH /daily-checkins/{id}` | Shipped |
+| `DELETE /daily-checkins/{id}` | Shipped |
+| `checkIns` in `CalendarDayResponse` | Shipped |
+| `CalendarDaySchema` Zod validation | Shipped |
+
+### Additional commits (post-archive)
+
+| Commit | Description |
+|--------|-------------|
+| `0169664` | API check-in update/delete + CalendarDaySchema |
+| `1da3f83` | Check-in edit/delete form modes |
+| `94861cc` | Initial HeluAgendaCalendar |
+| `6057ccf` | Check-ins on calendar (local dates) |
+| `34b4335` | Day-column scroll |
+| `4f71ce0` | Week view + cache reuse |
+| `ccd9050` | 3-day view + calendar-first menu (replaces top tabs) |
+| `02a95b7` | Wellbeing journal UI + infinite scroll |
+| `3ca1997` | Fetch buffers + stale-while-revalidate |
+| `ea01227` | Month view, medication intakes, collision lanes |
+| `14c4c77` | Agenda FAB + add sheet |
+| `39cbf1a` | UTC recordedAt on submit + form copy fix |
+
+### Key UX changes documented in main specs
+
+1. **Calendar-first navigation** — `AgendaMenuSheet` replaces permanent top tabs.
+2. **Four calendar views** — day, 3-day, week, month (month = activity dots only).
+3. **Agenda FAB** — multi-action add sheet (cita / medicamento / check-in) in `AgendaScreen`.
+4. **Wellbeing journal** — infinite scroll, day grouping, `WellbeingHeader`.
+5. **Timezone contract** — picker local → `toUtcIsoFromPickerValue` → API UTC.
+6. **Medication intakes** — client-computed timeline slots from cycle schedule.
+7. **Collision lanes** — overlapping events render side-by-side in day columns.
+
+### Specs updated
+
+| File | Change |
+|------|--------|
+| `openspec/specs/mobile/agenda-calendar.spec.md` | Rewritten — S2 shipped, full calendar + nav spec |
+| `openspec/specs/mobile/bienestar.spec.md` | Rewritten — journal UI, edit/delete, timezone |
+| `openspec/specs/shared-api/daily-checkin.spec.md` | S2 requirements marked shipped + RF-SA-16 |

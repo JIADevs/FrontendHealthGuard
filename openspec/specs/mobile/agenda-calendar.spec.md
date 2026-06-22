@@ -1,25 +1,20 @@
-# Spec: mobile — HeluAgendaCalendar
+# Spec: mobile — HeluAgendaCalendar & Agenda navigation
 
 **Domain:** mobile (`packages/ui/src/platform/HeluAgendaCalendar/`, `apps/mobile`)
-**Source change:** agenda-ui
-**Slice:** S2 — fully deferred (blocked on backend `checkIns` in `CalendarDayResponse` and `PATCH`/`DELETE /daily-checkins/{id}`)
+**Source change:** agenda-ui (S1 archived 2026-06-21; S2 shipped on branch `agenda`)
+**Status:** SHIPPED (mobile native)
 **Last updated:** 2026-06-21
-
-> **Note:** All requirements and scenarios in this file are `[S2 — deferred]` unless explicitly
-> marked otherwise. No implementation work on this spec is expected until the backend gates are
-> cleared. The Citas tab Calendario/Lista toggle and `HeluAgendaCalendar` grid are part of this
-> slice.
 
 ---
 
-## Backend Gates (must all be satisfied before any S2 work begins)
+## Overview
 
-| Gate | Backend endpoint / field | Status |
-|------|--------------------------|--------|
-| Edit check-in | `PATCH /daily-checkins/{id}` + streak recalc | Missing |
-| Delete check-in | `DELETE /daily-checkins/{id}` + streak recalc | Missing |
-| Check-ins in calendar | `checkIns: List[DailyCheckIn]` in `CalendarDayResponse` | Missing |
-| Calendar events endpoint | `GET /calendar/events?startDate=&endDate=` | Exists, no Zod |
+The Agenda screen is **calendar-first**: `HeluAgendaCalendar` fills the default view. Citas,
+Medicamentos, and Bienestar are reachable via `AgendaMenuSheet` (hamburger menu). The calendar FAB
+lives in `AgendaScreen`, not inside the UI package component.
+
+`HeluAgendaCalendar` is implemented as a **custom native component** (no external calendar
+library). There is no `.web.tsx` implementation yet.
 
 ---
 
@@ -27,189 +22,243 @@
 
 ### AgendaEvent model
 
-#### RF-AC-1 — AgendaEvent union type [S2 — deferred]
+#### RF-AC-1 — AgendaEvent union type [shipped]
 
-The `packages/ui` package MUST define an `AgendaEvent` discriminated union:
+`packages/ui/src/platform/HeluAgendaCalendar/mapCalendarApiToEvents.ts` defines:
 
 ```ts
 type AgendaEvent =
-  | { type: "appointment"; data: Appointment }
-  | { type: "exam";        data: Appointment }   // type === "EXAM" from backend
-  | { type: "checkin";     data: DailyCheckIn };
+  | { type: "appointment"; data: Appointment; sortKey: number }
+  | { type: "exam";        data: Appointment; sortKey: number }
+  | { type: "checkin";     data: DailyCheckIn; sortKey: number }
+  | { type: "medication";  data: Medication; dayKey: string; intakeTime: string; sortKey: number };
 ```
 
-`mapCalendarApiToEvents(days: CalendarDay[]): AgendaEvent[]` MUST flatten all events from all
-days into a list sorted by datetime.
+`mapCalendarApiToEvents(days: CalendarDay[]): AgendaEvent[]` flattens all days into a list sorted
+by `sortKey`. Medication intakes are **computed client-side** from `firstIntakeTime` +
+`frequency` (`medicationIntakeUtils.ts`).
 
-#### RF-AC-2 — Appointments vs exams visual differentiation [S2 — deferred]
+#### RF-AC-2 — Appointments vs exams visual differentiation [shipped]
 
-`EventBlock` variants MUST visually distinguish `appointment` (primary accent color + stethoscope
-icon) from `exam` (secondary color + lab/beaker icon). This is a closed product decision (PRD
-§Decisiones de producto).
+`EventBlock` renders `appointment` (primary accent + stethoscope) and `exam` (secondary + lab
+icon) as distinct variants.
 
-#### RF-AC-3 — CheckIn EventBlock [S2 — deferred]
+#### RF-AC-3 — CheckIn EventBlock [shipped]
 
-A `checkin` event MUST render as an `EventBlock` variant with mood emoji + label. It MUST be
-visually distinct from appointment/exam blocks (e.g., tertiary background color).
+`checkin` events render with mood emoji (`moodEmoji.ts`) + label `"Check-in"`. Visually distinct
+from appointment/exam/medication blocks.
+
+#### RF-AC-4 — Medication intake EventBlock [shipped]
+
+`medication` events render with amber styling and pill icon. Positioned at computed intake time
+for each active medication cycle day.
+
+#### RF-AC-5 — Symptoms excluded from grid [shipped]
+
+`mapCalendarApiToEvents` MUST NOT include symptoms in `AgendaEvent[]`.
 
 ---
 
 ### CalendarDaySchema (API layer)
 
-#### RF-AC-4 — CalendarDaySchema in shared-api [S2 — deferred]
+#### RF-AC-6 — CalendarDaySchema dependency [shipped]
 
-See `openspec/specs/shared-api/daily-checkin.spec.md` RF-SA-14. The calendar schema is owned by the shared-api
-spec; this file references it as a dependency.
+See `openspec/specs/shared-api/daily-checkin.spec.md` RF-SA-14. `useCalendarEventsQuery`
+validates responses via `parseCalendarEventsResponse`.
 
 ---
 
 ### HeluAgendaCalendar component
 
-#### RF-AC-5 — HeluAgendaCalendar is a custom component [S2 — deferred]
+#### RF-AC-7 — Custom implementation, native only [shipped]
 
-`packages/ui/src/platform/HeluAgendaCalendar/` MUST be a fully custom implementation.
-No external calendar library (including Solid Calendar or react-native-calendars) MAY be used as
-a runtime dependency. UX inspiration from Solid Calendar is acceptable; code dependency is not.
+`packages/ui/src/platform/HeluAgendaCalendar/` is fully custom. No `react-native-calendars`,
+Solid Calendar, or equivalent runtime dependency.
 
-#### RF-AC-6 — Default view: 1-day, today [S2 — deferred]
+#### RF-AC-8 — View modes [shipped]
 
-On first render, `HeluAgendaCalendar` MUST default to the 1-day view showing today's events.
-The selected day view range (1d / 3d / 7d) MUST NOT be persisted to storage in MVP v1 — it
-resets to 1d on every app launch.
+| Mode | Key | Label | Columns | Nav step |
+|------|-----|-------|---------|----------|
+| Day | `day` | Día | 1 (24h timeline) | ±1 day |
+| 3-day | `threeDay` | 3 días | 3 (anchor−1…+1) | ±3 days |
+| Week | `week` | Semana | 7 (Mon–Sun) | ±7 days |
+| Month | `month` | Mes | Month grid + dots | ±1 month |
 
-#### RF-AC-7 — Component tree structure [S2 — deferred]
+- Default view: **day**, showing today.
+- View range is **not persisted** between app launches (resets to day/today).
+- Tapping a day in week or month view switches to **day** view with that date selected.
+- Month view shows activity dots only (no hourly event blocks).
 
-The component tree MUST be organized as:
+#### RF-AC-9 — Component tree [shipped]
 
 ```
 packages/ui/src/platform/HeluAgendaCalendar/
-├── HeluAgendaCalendar.tsx          ← root; accepts date + events array
-├── CalendarGrid.tsx                ← time-column grid with hourly lanes
-├── EventBlock.tsx                  ← appointment / exam / checkin variant
-├── DaySelector.tsx                 ← 1d / 3d / 7d toggle + day navigation
-├── FAB.tsx                         ← floating action button for quick actions
-├── useHeluAgendaCalendar.ts        ← hook: state, derived view window, event mapping
-├── mapCalendarApiToEvents.ts       ← pure function: CalendarDay[] → AgendaEvent[]
-└── index.ts                        ← re-exports HeluAgendaCalendar + types
+├── HeluAgendaCalendar.native.tsx   ← root (DaySelector + grid or month)
+├── useHeluAgendaCalendar.ts        ← state, fetch range, cache merge, nav
+├── DaySelector.tsx                 ← view chips + arrows + "Hoy"
+├── CalendarGrid.tsx                ← hourly timeline, day columns, collision lanes
+├── MonthGridView.tsx               ← month grid, activity dots, legend
+├── EventBlock.tsx                  ← appointment / exam / checkin / medication
+├── eventDayLayout.ts               ← side-by-side overlap lanes
+├── mapCalendarApiToEvents.ts       ← CalendarDay[] → AgendaEvent[]
+├── calendarDateUtils.ts            ← local YYYY-MM-DD keys, week/month helpers
+├── calendarConstants.ts            ← buffer sizes, nav steps
+├── dayActivityIndicators.ts        ← hasAppointments / hasMedications / hasCheckIn
+├── medicationIntakeUtils.ts        ← intake slot generation
+├── moodEmoji.ts
+└── index.ts
 ```
 
-#### RF-AC-8 — useHeluAgendaCalendar hook [S2 — deferred]
+> **Note:** `AgendaCalendarFAB.tsx` exists but is **unused**. The live FAB is
+> `apps/mobile/src/components/agenda/AgendaFAB.tsx`.
+
+#### RF-AC-10 — useHeluAgendaCalendar hook [shipped]
 
 The hook MUST:
-- Accept `initialDate?: string` (ISO 8601 date, defaults to today).
-- Manage `selectedDate`, `viewRange` (1 | 3 | 7 days), and `visibleDates` (derived array).
-- Expose `events: AgendaEvent[]` derived via `mapCalendarApiToEvents` from the
-  `useCalendarEventsQuery` data for the visible date window.
-- Expose `setSelectedDate`, `setViewRange`, `goToToday`, `goPrevious`, `goNext`.
+- Accept `initialDate?: string` (defaults to today, local `YYYY-MM-DD`).
+- Manage `selectedDate`, `viewMode`, and derived `visibleDates`.
+- Fetch via `useCalendarEventsQuery` with **range expansion** (never shrinks day-mode cache).
+- Apply **stale-while-revalidate** (`placeholderData: keepPreviousData`, `staleTime: 60_000`).
+- Expose `selectDate`, `setViewMode`, `goToToday`, `goPrevious`, `goNext`.
 
-#### RF-AC-9 — CalendarGrid renders time lanes [S2 — deferred]
+Fetch buffers (`calendarConstants.ts`):
+- Day mode initial: −7 / +28 days from anchor.
+- Week: ±7 / +21 day buffer around visible week.
+- 3-day: ±3 / +6 day buffer.
+- Month: ±1 month around anchor month.
 
-`CalendarGrid` MUST render hourly time lanes (00:00–23:00). Events MUST be positioned within
-their corresponding time slots. Events outside 08:00–20:00 SHOULD still be accessible (scroll).
+#### RF-AC-11 — CalendarGrid time lanes [shipped]
 
-#### RF-AC-10 — DaySelector toggle [S2 — deferred]
+`CalendarGrid` renders hourly lanes (00:00–23:00). Events position by `eventHourFraction`.
+Overlapping events in the same column use **collision lanes** (`eventDayLayout.ts`).
 
-`DaySelector` MUST render a toggle for `1d` / `3d` / `7d` view ranges and left/right navigation
-arrows to move the visible window. Tapping a day in the 3d or 7d view MUST set
-`selectedDate` to that day and collapse to 1d detail.
+Check-ins filter to visible dates via `localDateKeyFromISO(recordedAt)` (device local TZ).
 
-#### RF-AC-11 — FAB for quick actions [S2 — deferred]
+#### RF-AC-12 — Month activity indicators [shipped]
 
-`FAB` in `HeluAgendaCalendar` MUST provide a floating action button for quick entry (e.g., add
-appointment, add check-in). The specific actions MUST be configurable via props. In the Citas tab
-context, the FAB MUST at minimum offer `"Nueva cita"`.
+`MonthGridView` shows per-day dots:
+- Pink — appointments or exams
+- Amber — medications
+- Green — check-in
 
-#### RF-AC-12 — No symptoms in grid v1 [S2 — deferred]
-
-`mapCalendarApiToEvents` MUST NOT include symptoms in the returned `AgendaEvent[]` in v1. This
-is a closed product decision.
+Legend labels: Citas, Medicamentos, Check-in.
 
 ---
 
-### Citas tab — Calendario/Lista toggle
+### AgendaScreen navigation
 
-#### RF-AC-13 — Citas tab adds Calendario/Lista toggle [S2 — deferred]
+#### RF-AC-13 — Calendar-first layout [shipped]
 
-The `AppointmentsTab` section in `AgendaScreen` MUST add a secondary toggle:
-`"Calendario"` | `"Lista"`. Default: `"Calendario"` (1d today with `HeluAgendaCalendar`).
-`"Lista"` preserves the existing flat paginated appointments list.
+`AgendaScreen` default view is `"calendar"`. Top tabs were replaced by:
+- **Calendar view:** title `"Agenda Médica"` + menu icon → `AgendaMenuSheet`
+- **List views:** back header `"← Calendario"` + section title (Citas / Medicamentos / Bienestar)
 
-#### RF-AC-14 — Lista view preserved as-is [S2 — deferred]
+`AgendaView = "calendar" | "appointments" | "medications" | "wellbeing"`.
 
-Switching to `"Lista"` MUST render the existing appointments list unchanged — no regression.
+Deep link: `route.params.initialTab` (e.g. CHECKIN push → `"wellbeing"`).
+
+#### RF-AC-14 — AgendaMenuSheet [shipped]
+
+Bottom sheet with: Calendario, Citas, Medicamentos, Bienestar. Active item highlighted.
+
+#### RF-AC-15 — Agenda FAB + add sheet [shipped]
+
+`CalendarTab` renders:
+- `HeluAgendaCalendar` (no FAB inside UI package)
+- `AgendaFAB` → opens `AgendaAddSheet`
+
+`AgendaAddSheet` options:
+- **Nueva cita** → navigate to `AppointmentForm`
+- **Nuevo medicamento** → `MedicationFormModal`
+- **Registrar check-in** → `DailyCheckInForm`
+
+#### RF-AC-16 — Citas list preserved [shipped]
+
+`AppointmentsTab` keeps the existing paginated FlatList with status pills and CRUD navigation.
+No Calendario/Lista toggle inside Citas — calendar is the separate default view.
 
 ---
 
 ## Acceptance Scenarios
 
-### SC-AC-1: HeluAgendaCalendar renders today's events by default [S2 — deferred]
+### SC-AC-1: Calendar renders today's events by default [shipped]
 
-**Given** the user navigates to the Citas tab  
-**When** the tab renders with `HeluAgendaCalendar` in default state  
-**Then** the calendar shows today's date in 1-day view  
-**And** all appointments, exams, and check-ins for today are visible as `EventBlock` items  
-**Note:** Deferred — requires backend `checkIns` in calendar response + Zod validation.
+**Given** the user opens Agenda  
+**When** the screen loads  
+**Then** `HeluAgendaCalendar` shows today in 1-day view  
+**And** today's appointments, exams, check-ins, and medication intakes appear as `EventBlock` items
 
-### SC-AC-2: Appointment and exam blocks are visually distinct [S2 — deferred]
+### SC-AC-2: Appointment and exam blocks are visually distinct [shipped]
 
-**Given** the calendar day contains both a `type: APPOINTMENT` and a `type: EXAM` record  
-**When** they render as `EventBlock` components  
-**Then** appointment block uses primary accent color + stethoscope icon  
-**And** exam block uses secondary color + lab icon  
-**And** the user can distinguish them at a glance  
-**Note:** Deferred.
+**Given** a day has both APPOINTMENT and EXAM records  
+**When** they render  
+**Then** the user can distinguish them by color and icon at a glance
 
-### SC-AC-3: Check-in blocks render in the grid [S2 — deferred]
+### SC-AC-3: Check-in blocks appear at local recordedAt hour [shipped]
 
-**Given** the user has registered two check-ins today  
-**When** the calendar day is fetched and `mapCalendarApiToEvents` processes it  
-**Then** two `checkin` EventBlocks appear in the time lane at their `recordedAt` times  
-**Note:** Deferred — requires `checkIns` in `CalendarDayResponse`.
+**Given** the user registered a check-in at 3:00 PM local time  
+**When** the calendar day is fetched  
+**Then** a `checkin` EventBlock appears in the 15:00 lane on the correct local day
 
-### SC-AC-4: View range toggle changes visible window [S2 — deferred]
+### SC-AC-4: View range toggle changes visible window [shipped]
 
-**Given** the calendar is in 1d view  
-**When** the user taps `"3d"` in `DaySelector`  
-**Then** three day columns render with their respective events  
-**And** the previously selected date remains centered
+**Given** the calendar is in day view  
+**When** the user taps `"3 días"` or `"Semana"`  
+**Then** three or seven day columns render with respective events
 
-### SC-AC-5: Navigation arrows move the visible window [S2 — deferred]
+### SC-AC-5: Navigation arrows move the visible window [shipped]
 
-**Given** the calendar is in 1d view showing today  
+**Given** day view showing today  
 **When** the user taps the right arrow  
-**Then** tomorrow's events are shown  
-**When** they tap the left arrow  
-**Then** today's events are restored
+**Then** tomorrow's events appear (step = 1 day; 3 days in 3-day mode; 7 in week mode)
 
-### SC-AC-6: FAB opens new appointment flow [S2 — deferred]
+### SC-AC-6: Month view shows activity dots [shipped]
 
-**Given** the user is viewing the Citas tab in Calendario mode  
-**When** they tap the FAB  
-**Then** the new appointment form opens (existing flow)
+**Given** the user switches to `"Mes"`  
+**When** the month grid renders  
+**Then** days with events show colored dots (citas / medicamentos / check-in)  
+**And** tapping a day opens day view for that date
 
-### SC-AC-7: Citas tab Lista view preserved [S2 — deferred]
+### SC-AC-7: FAB opens add sheet with three actions [shipped]
 
-**Given** the user is on the Citas tab in Calendario mode  
-**When** they tap the `"Lista"` toggle  
-**Then** the existing flat paginated appointments list renders with no regressions  
-**And** all existing appointment CRUD actions still work
+**Given** the user is on the calendar view  
+**When** they tap `AgendaFAB`  
+**Then** `AgendaAddSheet` offers cita, medicamento, and check-in entry points
 
-### SC-AC-8: mapCalendarApiToEvents excludes symptoms [S2 — deferred]
+### SC-AC-8: Overlapping events render in parallel lanes [shipped]
 
-**Given** a `CalendarDay` contains `symptoms`, `appointments`, `exams`, and `checkIns`  
-**When** `mapCalendarApiToEvents([day])` is called  
-**Then** the result contains only `appointment`, `exam`, and `checkin` events  
-**And** no `symptom` events appear in the grid
+**Given** two events overlap in time on the same day column  
+**When** `CalendarGrid` lays them out  
+**Then** both remain visible side-by-side (collision lanes)
 
-### SC-AC-9: View range does not persist between sessions [S2 — deferred]
+### SC-AC-9: View range does not persist between sessions [shipped]
 
-**Given** the user set the calendar to 7d view  
-**When** they close and reopen the app  
-**Then** the calendar defaults to 1d view again (no persistence in MVP)
+**Given** the user set week view  
+**When** they restart the app  
+**Then** the calendar defaults to day view / today again
 
-### SC-AC-10: No external calendar library at runtime [S2 — deferred]
+### SC-AC-10: No external calendar library at runtime [shipped]
 
-**Given** `HeluAgendaCalendar` is fully implemented  
-**When** the bundle is analyzed  
-**Then** no `react-native-calendars`, `solid-calendar`, or equivalent external calendar library
-appears in the production dependency tree
+**Given** the production bundle is analyzed  
+**Then** no external calendar library appears in dependencies
+
+### SC-AC-11: Menu navigates to list views [shipped]
+
+**Given** the user is on the calendar  
+**When** they open `AgendaMenuSheet` and tap `"Citas"`  
+**Then** the appointments list renders with a back-to-calendar header
+
+---
+
+## Implementation commits (branch `agenda`, selected)
+
+| Commit | Description |
+|--------|-------------|
+| `94861cc` | Initial `HeluAgendaCalendar` platform component |
+| `6057ccf` | Check-ins on calendar using local dates |
+| `34b4335` | Day-column scroll |
+| `4f71ce0` | Week view + fetch cache reuse |
+| `ccd9050` | 3-day view + calendar-first menu |
+| `3ca1997` | Week/3-day buffers + stale-while-revalidate |
+| `ea01227` | Month view, medication intakes, collision lanes |
+| `14c4c77` | Agenda FAB + add sheet |

@@ -1,9 +1,17 @@
-# Spec: mobile — Tab Bienestar (Daily Check-In UI)
+# Spec: mobile — Bienestar (Daily Check-In UI)
 
 **Domain:** mobile (`apps/mobile`)
-**Source change:** agenda-ui
-**Slice:** S1 (tab, list, create, push fix, all module components) — SHIPPED; S2 (edit/delete wiring) — DEFERRED (backend-blocked)
+**Source change:** agenda-ui (S1 archived 2026-06-21; S2+ shipped on branch `agenda`)
+**Status:** SHIPPED
 **Last updated:** 2026-06-21
+
+---
+
+## Overview
+
+Bienestar is one of four views in `AgendaScreen`, reached via `AgendaMenuSheet` (not a top tab).
+The list uses a **journal-style** layout grouped by local day with **infinite scroll**. Check-in
+create/edit/delete and calendar integration are fully wired.
 
 ---
 
@@ -11,304 +19,266 @@
 
 ### Navigation
 
-#### RF-MB-1 — Third permanent Bienestar tab [S1 — shipped]
+#### RF-MB-1 — Bienestar as AgendaMenuSheet destination [shipped]
 
-`AgendaScreen` MUST render a third permanent tab with key `"wellbeing"` alongside the existing
-`"appointments"` and `"medications"` tabs. The tab MUST be visible at all times — not
-feature-flagged.
+`AgendaScreen` view `"wellbeing"` renders `WellbeingTab`. Entry points:
+- `AgendaMenuSheet` → Bienestar
+- CHECKIN push notification → `initialTab: "wellbeing"`
+- `AgendaAddSheet` → Registrar check-in (from calendar FAB)
 
-#### RF-MB-2 — TabParamList extended [S1 — shipped]
+#### RF-MB-2 — TabParamList deep link [shipped]
 
-`TabParamList.Agenda.initialTab` in `TabNavigator.tsx` MUST be extended to include `"wellbeing"`:
+`TabNavigator` → `Agenda: { initialTab?: "calendar" | "appointments" | "medications" | "wellbeing" }`.
 
-```ts
-initialTab: "appointments" | "medications" | "wellbeing"
-```
+#### RF-MB-3 — Back navigation to calendar [shipped]
 
-The existing `"appointments"` default MUST be preserved.
-
-#### RF-MB-3 — Tab label and icon [S1 — shipped]
-
-The Bienestar tab MUST display a short label and icon consistent with the existing tabs, fitting
-on a 375 px wide screen without overflow. Label: `"Bienestar"`. Icon: heart or wellness glyph
-from the existing icon set.
+List views (including Bienestar) show `"← Calendario"` in the header to return to calendar-first view.
 
 ---
 
 ### MoodPicker component
 
-#### RF-MB-4 — MoodPicker controlled component [S1 — shipped]
+#### RF-MB-4 — MoodPicker controlled component [shipped]
 
-`apps/mobile/src/components/agenda/MoodPicker.tsx` MUST be a controlled component with:
-- `value: MoodEnum | null`
-- `onChange: (mood: MoodEnum) => void`
+`MoodPicker.tsx`: `value: MoodEnum | null`, `onChange: (mood: MoodEnum) => void`.
 
-`MoodEnum` = `"excellent" | "good" | "okay" | "bad" | "awful"`.
+#### RF-MB-5 — Five mood chips [shipped]
 
-#### RF-MB-5 — MoodPicker renders five mood chips [S1 — shipped]
+Excelente, Bien, Regular, Mal, Muy mal (`moodConfig.ts`).
 
-The component MUST render exactly five tappable chips in order: Excelente, Bien, Regular, Mal,
-Muy mal (Spanish UI labels; enum values remain English per backend contract).
+#### RF-MB-6 — Selected state [shipped]
 
-#### RF-MB-6 — MoodPicker selected state [S1 — shipped]
+Selected chip uses accent notification tint; unselected chips are muted.
 
-The selected chip MUST use the design-system `palette.accent.notification` tint (or equivalent
-semantic token) to visually distinguish the active mood. Unselected chips use a neutral/muted
-style.
+#### RF-MB-7 — Accessibility [shipped]
 
-#### RF-MB-7 — MoodPicker accessibility [S1 — shipped]
-
-Each chip MUST have an `accessibilityLabel` that includes the mood label and its selection state
-(e.g., `"Excelente, seleccionado"` / `"Excelente, no seleccionado"`).
+Each chip has `accessibilityLabel` with mood + selection state.
 
 ---
 
 ### DailyCheckInForm component
 
-#### RF-MB-8 — DailyCheckInForm wraps create flow [S1 — shipped]
+#### RF-MB-8 — Create and edit modes [shipped]
 
-`apps/mobile/src/components/agenda/DailyCheckInForm.tsx` MUST be a modal form that:
-- Contains `MoodPicker` (required field).
-- Contains an optional `TextField` for notes.
-- Contains an optional `DateTimePicker` for `recordedAt` (defaults to `new Date().toISOString()`).
-- Has a submit button labeled "Registrar".
-- Has a cancel/close action.
+`DailyCheckInForm.tsx` modal:
+- **Create:** title `"Nuevo check-in"`, submit `"Registrar"`
+- **Edit:** title `"Editar check-in"`, submit `"Guardar"`, destructive `"Eliminar"`
 
-#### RF-MB-9 — Form submit calls createDailyCheckIn mutation [S1 — shipped]
+Fields:
+- `MoodPicker` (required) — label **"¿Cómo te sientes hoy?"**
+- `TextField` notes (optional)
+- `DateTimePicker` for `recordedAt` (optional) — label `"Fecha y hora (opcional)"`
 
-On submit, the form MUST call `useCreateDailyCheckInMutation().mutate(payload)` where `payload`
-conforms to `DailyCheckInCreate`.
+#### RF-MB-9 — Mutations [shipped]
 
-#### RF-MB-10 — Submit loading state [S1 — shipped]
+- Create: `useCreateDailyCheckInMutation`
+- Edit: `useUpdateDailyCheckInMutation`
+- Delete: `useDeleteDailyCheckInMutation` (via `ConfirmModal`)
 
-While `isPending === true` (mutation in flight), the submit button MUST show a loading indicator
-(spinner or disabled state with visual feedback). The button MUST be non-interactive during the
-pending state. (Required by `frontend-mutation-feedback` skill.)
+#### RF-MB-10 — Submit loading state [shipped]
 
-#### RF-MB-11 — Submit success toast [S1 — shipped]
+Submit button shows loading / is disabled while `isPending`.
 
-On `onSuccess`, the form MUST:
-1. Dismiss the modal.
-2. Show a success toast (via `react-native-toast-message`): `"Check-in registrado"`.
+#### RF-MB-11 — Success toasts [shipped]
 
-(Required by `frontend-mutation-feedback` skill.)
+- Create: `"Check-in registrado"`
+- Update: `"Check-in actualizado"`
+- Delete: `"Check-in eliminado"`
 
-#### RF-MB-12 — Submit error toast [S1 — shipped]
+#### RF-MB-12 — Error toasts [shipped]
 
-On `onError`, the form MUST show an error toast with a user-readable message (e.g.,
-`"No se pudo registrar el check-in"`). The modal MUST remain open so the user can retry.
+User-readable error messages; modal stays open on create/update failure.
 
-(Required by `frontend-mutation-feedback` skill.)
+#### RF-MB-13 — recordedAt timezone contract [shipped]
 
-#### RF-MB-13 — recordedAt timezone [S1 — shipped]
+Picker stores **local** `YYYY-MM-DDTHH:mm` via `toISOLocal` (`@helu/ui`).
 
-`recordedAt` MUST default to `new Date().toISOString()` (UTC). Display of dates in the list
-MUST convert to the user's local timezone via `toLocaleString()` or equivalent.
+On submit, `toUtcIsoFromPickerValue(recordedAt)` converts to UTC ISO before API call.
+Backend treats naive datetimes as UTC — local→UTC conversion is mandatory for correct calendar
+hour placement.
 
-#### RF-MB-14 — DailyCheckInForm edit mode [S2 — deferred]
+On edit hydrate: `pickerValueFromUtcIso(initialValues.recordedAt)`.
 
-When `initialValues: DailyCheckIn` is provided, the form MUST:
-- Pre-populate all fields from `initialValues`.
-- Call `useUpdateDailyCheckInMutation` on submit instead of create.
-- Display a destructive "Eliminar" button that opens a `ConfirmModal` before calling
-  `useDeleteDailyCheckInMutation`.
+Default create value: `toISOLocal(new Date())`.
 
-**Gate:** backend PATCH/DELETE endpoints + `useUpdateDailyCheckInMutation` + 
-`useDeleteDailyCheckInMutation` from `@helu/api`.
+Helpers live in `packages/ui/src/forms/DateTimePicker/DateTimePicker.utils.ts`.
+
+#### RF-MB-14 — Delete confirmation [shipped]
+
+`ConfirmModal`: `"¿Eliminar check-in?"` / `"Esta acción no se puede deshacer."`
 
 ---
 
 ### DailyCheckInListItem component
 
-#### RF-MB-15 — DailyCheckInListItem renders check-in data [S1 — shipped]
+#### RF-MB-15 — Journal row layout [shipped]
 
-`apps/mobile/src/components/agenda/DailyCheckInListItem.tsx` MUST render:
-- Mood emoji + Spanish label (e.g., 😊 Bien).
-- `recordedAt` formatted as local date + time.
-- Notes text (if present).
+Renders mood emoji circle, Spanish label, local time (`es-AR`, hour:minute), optional notes
+(up to 4 lines).
 
-#### RF-MB-16 — DailyCheckInListItem edit affordance [S1 — partial / S2 — deferred]
+#### RF-MB-16 — Edit affordance [shipped]
 
-The component MUST accept an `onEdit?: (checkIn: DailyCheckIn) => void` prop. In S1 this prop is
-not wired (button rendered but disabled or hidden). In S2, `WellbeingTab` wires it.
-
-**S1 implementation note:** `onEdit` prop accepted in interface. Edit button placeholder pending
-before S2 ships (WARNING-1 in verify-report — low-priority).
+When `onEdit` is provided, pencil button opens `DailyCheckInForm` with `initialValues`.
 
 ---
 
-### WellbeingTab (in AgendaScreen)
+### WellbeingTab
 
-#### RF-MB-17 — WellbeingTab shows paginated list [S1 — shipped]
+#### RF-MB-17 — Infinite scroll journal list [shipped]
 
-The `WellbeingTab` section of `AgendaScreen` MUST render a `FlatList` of `DailyCheckInListItem`
-components driven by `useDailyCheckInsQuery`. Pagination MUST be implemented (next-page on scroll
-end or explicit pagination controls).
+`WellbeingTab` uses `SectionList` driven by `useWellbeingScreen`:
+- Data: `useInfiniteDailyCheckIns` (page size 15)
+- Grouped by local day via `groupCheckInsByDay`
+- Section headers: `"Hoy"`, `"Ayer"`, or long `es-AR` date (capitalized)
+- Pull-to-refresh + scroll-end loads next page
 
-#### RF-MB-18 — WellbeingTab empty state [S1 — shipped]
+#### RF-MB-18 — WellbeingHeader [shipped]
 
-When `items` is empty and no query is loading, MUST render an `EmptyState` component
-(from `@helu/ui`) with a CTA label `"Registrar check-in"` that opens `DailyCheckInForm`.
+Hero strip at top of Bienestar list (title/subtitle branding).
 
-#### RF-MB-19 — WellbeingTab create CTA [S1 — shipped]
+#### RF-MB-19 — Empty state [shipped]
 
-A `"+ Registrar"` button or `ActionButton` MUST always be visible (above or below the list) to
-open `DailyCheckInForm` regardless of list state.
+When no check-ins and not loading: `EmptyState` with CTA `"Registrar check-in"`.
 
-#### RF-MB-20 — WellbeingTab loading state [S1 — shipped]
+#### RF-MB-20 — WellbeingFAB [shipped]
 
-While `isLoading === true` (initial fetch), MUST render a `Spinner` or skeleton placeholder
-consistent with the existing tab pattern in `AgendaScreen`.
+Floating action button opens new check-in form (separate from calendar `AgendaFAB`).
 
-#### RF-MB-21 — WellbeingTab error state [S1 — shipped]
+#### RF-MB-21 — Loading / error states [shipped]
 
-If `isError === true`, MUST render a user-visible error message with a retry affordance.
+Initial load: `Spinner`. Error: message + retry via refetch.
 
-#### RF-MB-22 — Multiple check-ins per day allowed [S1 — shipped]
+#### RF-MB-22 — Multiple check-ins per day [shipped]
 
-The list MUST display all check-ins including multiple entries for the same calendar day —
-no deduplication or limit per day in the UI.
+All entries shown; no deduplication per day.
 
-#### RF-MB-23 — WellbeingTab delegation context [S1 — shipped]
+#### RF-MB-23 — Delegation context [shipped]
 
-When `activePatientId` is set in the auth store, the `X-Patient-Context` header is injected
-automatically by the Axios interceptor. The tab MUST not add any special delegation logic;
-the existing interceptor handles it transparently.
+`X-Patient-Context` injected by Axios interceptor when `activePatientId` is set.
 
 ---
 
 ### Push notifications
 
-#### RF-MB-24 — CHECKIN push tap navigates to Bienestar [S1 — shipped]
+#### RF-MB-24 — CHECKIN push → Bienestar [shipped]
 
-`apps/mobile/src/hooks/usePushNotifications.ts` → `handleNotificationTap` MUST handle the
-`"CHECKIN"` type by navigating to the Agenda screen with `initialTab: "wellbeing"`:
+`usePushNotifications` → `"CHECKIN"` navigates to Agenda with `initialTab: "wellbeing"`.
 
-```ts
-case "CHECKIN":
-  navigateTo("Agenda", { initialTab: "wellbeing" });
-  break;
-```
+#### RF-MB-25 — TabParamList precedes push fix [shipped]
 
-Currently ALL notification types (including `CHECKIN`) route to `Notifications` — this MUST be
-fixed in S1.
-
-#### RF-MB-25 — TabParamList update precedes push fix [S1 — shipped]
-
-RF-MB-2 (extending `TabParamList`) MUST be implemented before RF-MB-24. The TypeScript compiler
-MUST accept `{ initialTab: "wellbeing" }` without error before the push handler change is
-shipped.
+TypeScript accepts `{ initialTab: "wellbeing" }` before push handler uses it.
 
 ---
 
 ### Module structure
 
-#### RF-MB-26 — Module components in components/agenda/ [S1 — shipped]
-
-All new UI components MUST reside in `apps/mobile/src/components/agenda/`. The directory MUST
-have an `index.ts` that re-exports all public symbols:
+#### RF-MB-26 — components/agenda/ barrel [shipped]
 
 ```ts
 export { MoodPicker } from "./MoodPicker";
 export { DailyCheckInForm } from "./DailyCheckInForm";
 export { DailyCheckInListItem } from "./DailyCheckInListItem";
+export { WellbeingFAB } from "./WellbeingFAB";
+export { WellbeingHeader } from "./WellbeingHeader";
+export { AgendaFAB } from "./AgendaFAB";
+export { AgendaAddSheet } from "./AgendaAddSheet";
+export { AgendaMenuSheet, type AgendaView } from "./AgendaMenuSheet";
 ```
 
-Screens MUST import from `components/agenda` — not from individual component files.
+#### RF-MB-27 — AgendaScreen composes only [shipped]
 
-#### RF-MB-27 — AgendaScreen composes, does not implement [S1 — shipped]
-
-`AgendaScreen.tsx` MUST only compose module components and wire hooks. No inline JSX that
-duplicates logic already in `DailyCheckInForm` or `DailyCheckInListItem`.
+`AgendaScreen.tsx` wires hooks and module components; no duplicated form/list logic.
 
 ---
 
 ## Acceptance Scenarios
 
-### SC-MB-1: Bienestar tab is visible on app load [S1 — shipped]
+### SC-MB-1: Bienestar reachable from menu [shipped]
 
-**Given** the user opens the app and navigates to the Agenda screen  
-**When** the screen renders  
-**Then** three tabs are visible: `"Citas"`, `"Medicamentos"`, and `"Bienestar"`  
-**And** the default active tab is `"Citas"` (existing behavior preserved)
+**Given** the user is on the calendar  
+**When** they open the menu and tap Bienestar  
+**Then** the journal list renders with back-to-calendar header
 
-### SC-MB-2: User can open and complete the create form [S1 — shipped]
+### SC-MB-2: User completes create form [shipped]
 
-**Given** the user is on the Bienestar tab  
-**When** they tap `"+ Registrar"`  
-**Then** `DailyCheckInForm` opens as a modal  
-**And** they can select a mood, optionally add notes, optionally change `recordedAt`  
-**And** the submit button is labeled `"Registrar"`
+**Given** the user opens `DailyCheckInForm`  
+**When** they select mood and tap Registrar  
+**Then** `recordedAt` is sent as UTC ISO  
+**And** success toast appears and list/calendar invalidate
 
-### SC-MB-3: Submit shows loading then success toast [S1 — shipped]
+### SC-MB-3: Submit loading then success [shipped]
 
-**Given** the user fills the form and taps `"Registrar"`  
-**When** the mutation is in flight  
-**Then** the button shows a spinner and is non-interactive  
-**When** the mutation succeeds  
-**Then** the modal closes and a `"Check-in registrado"` toast appears  
-**And** the list refreshes (due to `["daily-checkins"]` invalidation)
+**Given** the user submits the form  
+**When** mutation is in flight  
+**Then** button is non-interactive with loading state  
+**When** it succeeds  
+**Then** modal closes and toast appears
 
-### SC-MB-4: Submit error keeps modal open [S1 — shipped]
+### SC-MB-4: Submit error keeps modal open [shipped]
 
-**Given** the network is unavailable  
-**When** the user taps `"Registrar"` and the mutation fails  
-**Then** the modal remains open  
-**And** an error toast appears with a user-readable message  
-**And** no duplicate check-in is created
+**Given** the network fails  
+**When** submit is attempted  
+**Then** modal stays open and error toast shows
 
-### SC-MB-5: Multiple check-ins same day appear in list [S1 — shipped]
+### SC-MB-5: Multiple same-day check-ins in list [shipped]
 
-**Given** the user has already registered one check-in today  
-**When** they create a second check-in on the same day  
-**Then** both entries appear in the `WellbeingTab` list, sorted by `recordedAt` descending
+**Given** two check-ins on the same local day  
+**Then** both appear under one section header, sorted by time within the section
 
-### SC-MB-6: Empty state shows CTA [S1 — shipped]
+### SC-MB-6: Empty state CTA [shipped]
 
-**Given** the user has no check-ins  
-**When** the `WellbeingTab` finishes loading  
-**Then** an `EmptyState` with `"Registrar check-in"` CTA is visible  
-**And** tapping it opens `DailyCheckInForm`
+**Given** no check-ins exist  
+**When** loading completes  
+**Then** empty state with register CTA is visible
 
-### SC-MB-7: CHECKIN push opens Bienestar tab [S1 — shipped]
+### SC-MB-7: CHECKIN push opens Bienestar [shipped]
 
-**Given** the user receives a `CHECKIN` push notification  
-**When** they tap the notification  
-**Then** the app navigates to `AgendaScreen` with `initialTab: "wellbeing"` active  
-**And** the Bienestar tab content is visible (not the Notifications screen)
+**Given** a CHECKIN notification  
+**When** the user taps it  
+**Then** Agenda opens with wellbeing view active
 
-### SC-MB-8: Delegated patient context loads correct check-ins [S1 — shipped]
+### SC-MB-8: Delegated patient context [shipped]
 
-**Given** a manager has set `activePatientId = "patient-uuid"` in the auth store  
-**When** the `WellbeingTab` calls `useDailyCheckInsQuery`  
-**Then** all requests include `X-Patient-Context: patient-uuid` (injected by Axios interceptor)  
-**And** the list shows only that patient's check-ins
+**Given** `activePatientId` is set  
+**Then** list queries include `X-Patient-Context` and show that patient's data
 
-### SC-MB-9: Streak updates after create [S1 — shipped]
+### SC-MB-9: Streak updates after create [shipped]
 
-**Given** the user creates a check-in  
-**When** the mutation succeeds and `["me"]` is invalidated  
-**Then** the next render of any streak-displaying UI reflects the updated `currentStreak` from
-the refetched profile
+**Given** a check-in is created  
+**Then** `["me"]` invalidation refreshes streak fields on profile
 
-### SC-MB-10: Pagination loads next page [S1 — shipped]
+### SC-MB-10: Infinite scroll loads next page [shipped]
 
-**Given** the user has more than one page of check-ins  
-**When** they scroll to the end of the list (or tap "Next")  
-**Then** page 2 loads without clearing page 1 data (keepPreviousData behavior)
+**Given** more than 15 check-ins exist  
+**When** the user scrolls to the end  
+**Then** the next page appends without clearing prior items
 
-### SC-MB-11: Form edit mode pre-populates fields [S2 — deferred]
+### SC-MB-11: Edit pre-populates fields [shipped]
 
-**Given** the user taps the edit affordance on a `DailyCheckInListItem`  
-**When** `DailyCheckInForm` opens with `initialValues` set to that check-in  
-**Then** mood, notes, and `recordedAt` fields are pre-populated  
-**Note:** Deferred — requires backend PATCH + update mutation.
+**Given** the user taps edit on a list item  
+**Then** mood, notes, and local `recordedAt` are pre-filled in the form
 
-### SC-MB-12: Delete requires confirmation [S2 — deferred]
+### SC-MB-12: Delete requires confirmation [shipped]
 
-**Given** the user is in edit mode on a check-in  
-**When** they tap `"Eliminar"`  
-**Then** a `ConfirmModal` appears asking for confirmation  
-**When** they confirm  
-**Then** `useDeleteDailyCheckInMutation` is called and the item is removed from the list  
-**Note:** Deferred — requires backend DELETE + delete mutation.
+**Given** edit mode  
+**When** the user taps Eliminar and confirms  
+**Then** the check-in is deleted and removed from list/calendar
+
+### SC-MB-13: Calendar hour matches submitted local time [shipped]
+
+**Given** the user sets check-in time to 3:00 PM local  
+**When** they view the calendar day  
+**Then** the check-in block appears at 15:00 local (not offset by timezone)
+
+---
+
+## Implementation commits (branch `agenda`, selected)
+
+| Commit | Description |
+|--------|-------------|
+| `1cd9f93` | MoodPicker, DailyCheckInListItem, DailyCheckInForm (S1) |
+| `971727e` | WellbeingTab + CHECKIN push (S1) |
+| `0169664` | API update/delete + CalendarDaySchema |
+| `1da3f83` | Check-in edit/delete form modes |
+| `02a95b7` | Journal UI, infinite scroll, WellbeingHeader |
+| `39cbf1a` | UTC recordedAt on submit + form copy |

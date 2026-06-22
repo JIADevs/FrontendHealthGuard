@@ -7,11 +7,14 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  Pressable,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { ArrowLeft, Pill, Check, X, Search, Bell, Info, CalendarDays } from "lucide-react-native";
+import { ArrowLeft, Pill, Check, X, Search, Bell, Info, CalendarDays, Plus, Activity } from "lucide-react-native";
 import {
   radii,
   spacing,
@@ -30,8 +33,9 @@ import {
   useMedicationsQuery,
   useMedicationByIdQuery,
   useMedicationCycleEditCore,
+  useTreatmentsQuery,
 } from "@helu/api/hooks";
-import type { Medication, MedicationCycle, PharmaceuticalForm, DoseUnit, FrequencyUnit } from "@helu/api";
+import type { Medication, MedicationCycle, PharmaceuticalForm, DoseUnit, FrequencyUnit, Treatment } from "@helu/api";
 
 type ReminderMode = "none" | "at_time" | "before";
 
@@ -154,6 +158,188 @@ function ChipRow<T extends string>({
           </TouchableOpacity>
         );
       })}
+    </View>
+  );
+}
+
+// ─── ChipTag ─────────────────────────────────────────────────────────────────
+
+function ChipTag({ label, onRemove, t }: { label: string; onRemove: () => void; t: ThemeContextValue }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: t.brand.tint, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 }}>
+      <Text style={{ fontSize: fontSize.xs, fontWeight: fontWeight.medium, color: t.brand.fg }}>{label}</Text>
+      <TouchableOpacity onPress={onRemove} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+        <X size={12} color={t.brand.fg} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// ─── PickerModal ──────────────────────────────────────────────────────────────
+
+function PickerModal({
+  visible, onClose, title, items, selected, onToggle,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  items: { id: string; label: string; sub?: string }[];
+  selected: string[];
+  onToggle: (id: string) => void;
+}) {
+  const t = useAppTheme();
+  const [search, setSearch] = useState("");
+
+  useEffect(() => { if (!visible) setSearch(""); }, [visible]);
+
+  const filtered = search.trim()
+    ? items.filter((item) => item.label.toLowerCase().includes(search.toLowerCase()))
+    : items;
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={pickerStyles.overlay} onPress={onClose}>
+        <Pressable style={[pickerStyles.sheet, { backgroundColor: t.surface.bgCard }]} onPress={() => {}}>
+          <View style={pickerStyles.header}>
+            <Text style={[pickerStyles.title, { color: t.text.primary }]}>{title}</Text>
+            <TouchableOpacity onPress={onClose}>
+              <X size={22} color={t.text.primary} />
+            </TouchableOpacity>
+          </View>
+          <View style={[pickerStyles.divider, { backgroundColor: t.border.light }]} />
+          <View style={[pickerStyles.searchRow, { borderColor: t.border.medium }]}>
+            <Search size={16} color={t.text.secondary} />
+            <TextInput
+              style={[pickerStyles.searchInput, { color: t.text.primary }]}
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Buscar..."
+              placeholderTextColor={t.text.secondary}
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch("")}>
+                <X size={16} color={t.text.secondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+          <ScrollView style={pickerStyles.scroll} contentContainerStyle={{ gap: spacing[2], paddingBottom: spacing[2] }}>
+            {filtered.length === 0 && (
+              <Text style={{ color: t.text.secondary, textAlign: "center", paddingVertical: spacing[4] }}>
+                No hay tratamientos disponibles
+              </Text>
+            )}
+            {filtered.map((item) => {
+              const isSelected = selected.includes(item.id);
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[pickerStyles.itemRow, { borderColor: t.border.light, backgroundColor: isSelected ? t.brand.tint : t.surface.bg }]}
+                  onPress={() => onToggle(item.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[pickerStyles.itemLabel, { color: t.text.primary }]} numberOfLines={1}>{item.label}</Text>
+                    {item.sub && <Text style={[pickerStyles.itemSub, { color: t.text.secondary }]}>{item.sub}</Text>}
+                  </View>
+                  <View style={[pickerStyles.toggleBtn, { backgroundColor: isSelected ? t.brand.fg : t.border.medium }]}>
+                    {isSelected ? <X size={18} color="#fff" /> : <Plus size={18} color="#fff" />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <TouchableOpacity style={[pickerStyles.closeBtn, { backgroundColor: t.brand.solid }]} onPress={onClose}>
+            <Text style={{ color: "#fff", fontSize: fontSize.base, fontWeight: fontWeight.semibold }}>Cerrar</Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const pickerStyles = StyleSheet.create({
+  overlay:    { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  sheet:      { borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl, padding: spacing[4], maxHeight: "80%", gap: spacing[3] },
+  header:     { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  title:      { fontSize: fontSize.lg, fontWeight: fontWeight.semibold },
+  divider:    { height: 1 },
+  searchRow:  { flexDirection: "row", alignItems: "center", gap: spacing[2], borderWidth: 1, borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+  searchInput:{ flex: 1, fontSize: fontSize.sm },
+  scroll:     { flexGrow: 0, maxHeight: 360 },
+  itemRow:    { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: spacing[3], borderRadius: radii.md, borderWidth: 1 },
+  itemLabel:  { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
+  itemSub:    { fontSize: fontSize.xs, marginTop: 2 },
+  toggleBtn:  { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  closeBtn:   { borderRadius: radii.md, padding: spacing[3], alignItems: "center" },
+});
+
+// ─── TreatmentsSection ───────────────────────────────────────────────────────
+
+function TreatmentsSection({
+  treatmentIds,
+  setTreatmentIds,
+  t,
+  styles,
+}: {
+  treatmentIds: string[];
+  setTreatmentIds: (v: string[]) => void;
+  t: ThemeContextValue;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  const [showPicker, setShowPicker] = useState(false);
+  const { data: treatmentsPage } = useTreatmentsQuery(1, 100);
+  const treatmentItems = (treatmentsPage?.items ?? []).map((tr: Treatment) => ({
+    id: tr.id,
+    label: tr.name,
+    sub: tr.status === "ACTIVE" ? "Activo" : tr.status === "COMPLETED" ? "Completado" : "Inactivo",
+  }));
+
+  function labelForId(id: string) {
+    return treatmentItems.find((i: { id: string }) => i.id === id)?.label ?? id.slice(0, 8);
+  }
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <View style={[styles.sectionIcon, { backgroundColor: t.brand.tint }]}>
+          <Activity size={16} color={t.brand.fg} />
+        </View>
+        <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Tratamientos</Text>
+      </View>
+
+      {treatmentIds.length > 0 && (
+        <View style={styles.chipRow}>
+          {treatmentIds.map((id) => (
+            <View key={id}>
+              <ChipTag
+                label={labelForId(id)}
+                onRemove={() => setTreatmentIds(treatmentIds.filter((x) => x !== id))}
+                t={t}
+              />
+            </View>
+          ))}
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.addButton} onPress={() => setShowPicker(true)}>
+        <Plus size={16} color={t.brand.fg} />
+        <Text style={[styles.addButtonText, { color: t.brand.fg }]}>Agregar tratamiento</Text>
+      </TouchableOpacity>
+
+      <PickerModal
+        visible={showPicker}
+        onClose={() => setShowPicker(false)}
+        title="Tratamientos"
+        items={treatmentItems}
+        selected={treatmentIds}
+        onToggle={(id) =>
+          setTreatmentIds(
+            treatmentIds.includes(id)
+              ? treatmentIds.filter((x) => x !== id)
+              : [...treatmentIds, id],
+          )
+        }
+      />
     </View>
   );
 }
@@ -413,6 +599,13 @@ function CreateFlow({
 
           <RemindersSection form={form} t={t} styles={styles} />
 
+          <TreatmentsSection
+            treatmentIds={form.treatmentIds}
+            setTreatmentIds={form.setTreatmentIds}
+            t={t}
+            styles={styles}
+          />
+
           {form.error && (
             <View style={[styles.errorBox, { backgroundColor: t.status.errorBg }]}>
               <Text style={[styles.errorText, { color: t.status.errorFg }]}>{form.error}</Text>
@@ -541,6 +734,13 @@ function EditFlow({
           </View>
 
           <RemindersSection form={form} t={t} styles={styles} />
+
+          <TreatmentsSection
+            treatmentIds={form.treatmentIds}
+            setTreatmentIds={form.setTreatmentIds}
+            t={t}
+            styles={styles}
+          />
 
           {form.error && (
             <View style={[styles.errorBox, { backgroundColor: t.status.errorBg }]}>
@@ -851,6 +1051,9 @@ function makeStyles(t: ThemeContextValue) {
     reminderModeRow:  { gap: spacing[2] },
     reminderModeBtn:  { paddingHorizontal: spacing[3], paddingVertical: spacing[2], borderRadius: radii.md, borderWidth: 1 },
     reminderModeBtnText: { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
+
+    addButton:        { flexDirection: "row", alignItems: "center", gap: spacing[2], paddingVertical: spacing[2] },
+    addButtonText:    { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
 
     errorBox:         { padding: spacing[3], borderRadius: radii.sm },
     errorText:        { fontSize: fontSize.sm },

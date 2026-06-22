@@ -29,6 +29,7 @@ export interface CycleEditFormState {
   endDate: string;
   reminderMode: ReminderMode;
   reminderOffsets: number[];
+  treatmentIds: string[];
   error: string | null;
   saving: boolean;
 }
@@ -46,6 +47,7 @@ export interface CycleEditFormActions {
   setEndDate: (v: string) => void;
   setReminderMode: (v: ReminderMode) => void;
   toggleReminderOffset: (minutes: number) => void;
+  setTreatmentIds: (v: string[]) => void;
   clearError: () => void;
   handleSave: () => void;
 }
@@ -100,6 +102,7 @@ export function useMedicationCycleEditCore({
   const [reminderOffsets, setReminderOffsets] = useState<number[]>(
     cycle.reminderOffsets.filter((o) => o > 0)
   );
+  const [treatmentIds, setTreatmentIds] = useState<string[]>(cycle.treatmentIds ?? []);
   const [error, setError] = useState<string | null>(null);
 
   const updateMut = useUpdateMedicationCycleMutation();
@@ -146,6 +149,7 @@ export function useMedicationCycleEditCore({
           notes: notes.trim() || null,
           endDate: endDate || null,
           reminderOffsets: resolvedOffsets,
+          treatmentIds,
         },
       },
       {
@@ -165,11 +169,11 @@ export function useMedicationCycleEditCore({
   return {
     pharmaceuticalForm, concentration, doseAmount, doseUnit, dosage,
     frequency, frequencyUnit, price, reason, notes, endDate,
-    reminderMode, reminderOffsets,
+    reminderMode, reminderOffsets, treatmentIds,
     error, saving,
     setPharmaceuticalForm, setConcentration, setDoseAmount, setDoseUnit,
     setFrequency, setFrequencyUnit, setPrice, setReason, setNotes, setEndDate,
-    setReminderMode, toggleReminderOffset,
+    setReminderMode, toggleReminderOffset, setTreatmentIds,
     clearError: () => setError(null),
     handleSave,
   };

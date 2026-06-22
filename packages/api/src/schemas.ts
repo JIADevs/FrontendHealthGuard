@@ -313,7 +313,7 @@ const coerceDecimal = z.preprocess(
 export const MedicationCycleSchema = z.object({
     id: z.string().uuid(),
     medicationId: z.string().uuid(),
-    treatmentId: z.string().uuid().nullable().optional(),
+    treatmentIds: z.array(z.string().uuid()).default([]),
     replacesCycleId: z.string().uuid().nullable().optional(),
     dosage: z.string(),
     frequency: z.number(),
@@ -372,7 +372,7 @@ export const MedicationSchema = z
             endDate: cycle?.endDate ?? null,
             indications: cycle?.notes ?? null,
             reminderOffsets: cycle?.reminderOffsets ?? [],
-            treatmentId: cycle?.treatmentId ?? null,
+            treatmentIds: cycle?.treatmentIds ?? [],
             nextIntakeTime: cycle?.nextIntakeTime ?? null,
         };
     });
@@ -403,7 +403,7 @@ export const MedicationCycleCreateSchema = z.object({
     firstIntakeTime: z.string(),
     nextIntakeTime: z.string().optional(),
     reminderOffsets: z.array(z.number()).default([]),
-    treatmentId: z.string().uuid().optional(),
+    treatmentIds: z.array(z.string().uuid()).default([]),
     replacesCycleId: z.string().uuid().optional(),
 });
 
@@ -421,7 +421,7 @@ export const MedicationCycleUpdateSchema = z.object({
     endDate: z.string().nullable().optional(),
     nextIntakeTime: z.string().nullable().optional(),
     reminderOffsets: z.array(z.number()).optional(),
-    treatmentId: z.string().uuid().nullable().optional(),
+    treatmentIds: z.array(z.string().uuid()).optional(),
 });
 
 // --- Notifications ---

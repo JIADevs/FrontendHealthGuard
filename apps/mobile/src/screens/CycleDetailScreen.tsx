@@ -11,6 +11,7 @@ import {
   Activity,
   Pencil,
   Trash2,
+  Stethoscope,
 } from "lucide-react-native";
 import {
   colors,
@@ -27,6 +28,7 @@ import {
   useMedicationByIdQuery,
   useUpdateMedicationCycleMutation,
   useDeleteMedicationCycleMutation,
+  useTreatmentsQuery,
 } from "@helu/api/hooks";
 import { isApiError, type MedicationCycle } from "@helu/api";
 import { DetailHeader } from "../components/DetailHeader";
@@ -213,9 +215,14 @@ export function CycleDetailScreen() {
   const { data: med, isLoading } = useMedicationByIdQuery(medicationId);
   const updateMut = useUpdateMedicationCycleMutation();
   const deleteMut = useDeleteMedicationCycleMutation();
+  const { data: treatmentsPage } = useTreatmentsQuery(1, 100);
 
   const cycle = med?.cycles.find((c: MedicationCycle) => c.id === cycleId);
   const active = cycle ? isCycleActive(cycle) : false;
+
+  const linkedTreatments = (treatmentsPage?.items ?? []).filter(
+    (tr) => cycle?.treatmentIds?.includes(tr.id),
+  );
 
   function handleFinalize() {
     const today = new Date().toISOString().slice(0, 10);
@@ -352,6 +359,32 @@ export function CycleDetailScreen() {
         {/* Info grid 2×2: dose | frequency / start | end */}
         <InfoGrid cycle={cycle} t={t} styles={styles} />
 
+        {/* Linked treatments */}
+        {linkedTreatments.length > 0 && (
+          <View style={[styles.treatmentsCard, { backgroundColor: t.surface.bgCard, borderColor: t.border.light }]}>
+            <View style={styles.treatmentsHeader}>
+              <Stethoscope size={16} color={t.brand.fg} />
+              <Text style={[styles.treatmentsTitle, { color: t.text.primary }]}>Tratamientos</Text>
+            </View>
+            {linkedTreatments.map((tr) => (
+              <View key={tr.id} style={[styles.treatmentRow, { borderTopColor: t.border.light }]}>
+                <View style={[styles.treatmentDot, { backgroundColor: tr.status === "ACTIVE" ? "#4ade80" : t.border.medium }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.treatmentName, { color: t.text.primary }]}>{tr.name}</Text>
+                  {tr.description ? (
+                    <Text style={[styles.treatmentSub, { color: t.text.secondary }]} numberOfLines={1}>
+                      {tr.description}
+                    </Text>
+                  ) : null}
+                </View>
+                <Text style={[styles.treatmentStatus, { color: t.text.muted }]}>
+                  {tr.status === "ACTIVE" ? "Activo" : tr.status === "COMPLETED" ? "Completado" : "Inactivo"}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* Optional details */}
         {hasOptionalDetails && (
           <>
@@ -472,6 +505,16 @@ function makeStyles(t: ThemeContextValue) {
     gridCellSub:   { fontSize: fontSize.xs, lineHeight: 16 },
     gridVDivider:  { width: 1 },
     gridHDivider:  { height: 1 },
+
+    // Linked treatments
+    treatmentsCard:   { borderRadius: radii.lg, borderWidth: 1, overflow: "hidden", gap: 0 },
+    treatmentsHeader: { flexDirection: "row", alignItems: "center", gap: spacing[2], padding: spacing[3] },
+    treatmentsTitle:  { fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+    treatmentRow:     { flexDirection: "row", alignItems: "center", gap: spacing[2], paddingHorizontal: spacing[3], paddingVertical: spacing[2], borderTopWidth: 1 },
+    treatmentDot:     { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
+    treatmentName:    { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
+    treatmentSub:     { fontSize: fontSize.xs, marginTop: 1 },
+    treatmentStatus:  { fontSize: fontSize.xs },
 
     // Optional details
     sectionTitle: { fontSize: fontSize.base, fontWeight: fontWeight.bold },

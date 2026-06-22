@@ -42,6 +42,8 @@ export interface MedicationFormState {
   reminderMode: ReminderMode;
   /** Offsets en minutos cuando reminderMode === "before" */
   reminderOffsets: number[];
+  /** IDs de tratamientos asociados al ciclo */
+  treatmentIds: string[];
   /** ID del medicamento existente seleccionado por búsqueda; null = crear uno nuevo. */
   selectedMedicationId: string | null;
   error: string | null;
@@ -65,6 +67,7 @@ export interface MedicationFormActions {
   setPrice: (v: string) => void;
   setReminderMode: (v: ReminderMode) => void;
   toggleReminderOffset: (minutes: number) => void;
+  setTreatmentIds: (v: string[]) => void;
   /** Selecciona un medicamento existente; rellena nombre e impide crear uno nuevo. */
   selectExistingMedication: (id: string, name: string) => void;
   /** Limpia la selección de medicamento existente (al editar el nombre manualmente). */
@@ -138,6 +141,7 @@ export function useMedicationFormCore({
   const [price, setPrice] = useState((activeCycle as any)?.price?.toString() ?? "");
   const [reminderMode, setReminderMode] = useState<ReminderMode>("at_time");
   const [reminderOffsets, setReminderOffsets] = useState<number[]>([30]);
+  const [treatmentIds, setTreatmentIds] = useState<string[]>([]);
   const [selectedMedicationId, setSelectedMedicationId] = useState<string | null>(
     isEdit ? initial!.id : null,
   );
@@ -186,6 +190,7 @@ export function useMedicationFormCore({
       endDate: endDate || undefined,
       firstIntakeTime: `${startDate}T${firstIntakeTime}:00`,
       reminderOffsets: resolvedOffsets,
+      treatmentIds,
     };
   }
 
@@ -265,12 +270,12 @@ export function useMedicationFormCore({
   return {
     name, pharmaceuticalForm, concentration, doseAmount, doseUnit, dosage,
     frequency, frequencyUnit, startDate, firstIntakeTime, endDate,
-    reason, notes, price, reminderMode, reminderOffsets,
+    reason, notes, price, reminderMode, reminderOffsets, treatmentIds,
     selectedMedicationId,
     error, saving, isEdit,
     setName, setPharmaceuticalForm, setConcentration, setDoseAmount, setDoseUnit,
     setFrequency, setFrequencyUnit, setStartDate, setFirstIntakeTime, setEndDate,
-    setReason, setNotes, setPrice, setReminderMode, toggleReminderOffset,
+    setReason, setNotes, setPrice, setReminderMode, toggleReminderOffset, setTreatmentIds,
     selectExistingMedication, clearSelectedMedication,
     clearError: () => setError(null),
     handleSave,

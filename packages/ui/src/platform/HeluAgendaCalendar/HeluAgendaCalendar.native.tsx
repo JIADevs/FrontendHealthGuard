@@ -5,15 +5,13 @@ import { useAppTheme } from "../../tokens/ThemeProvider";
 import { DaySelector } from "./DaySelector";
 import { CalendarGrid } from "./CalendarGrid";
 import { MonthGridView } from "./MonthGridView";
-import { AgendaCalendarFAB } from "./AgendaCalendarFAB";
 import { useHeluAgendaCalendar } from "./useHeluAgendaCalendar";
 
 export interface HeluAgendaCalendarProps {
-    onNewAppointment: () => void;
     initialDate?: string;
 }
 
-export function HeluAgendaCalendar({ onNewAppointment, initialDate }: HeluAgendaCalendarProps) {
+export function HeluAgendaCalendar({ initialDate }: HeluAgendaCalendarProps) {
     const calendar = useHeluAgendaCalendar(initialDate);
     const t = useAppTheme();
 
@@ -54,8 +52,6 @@ export function HeluAgendaCalendar({ onNewAppointment, initialDate }: HeluAgenda
                     onSelectDate={calendar.selectDate}
                 />
             )}
-
-            <AgendaCalendarFAB onPress={onNewAppointment} />
         </View>
     );
 }

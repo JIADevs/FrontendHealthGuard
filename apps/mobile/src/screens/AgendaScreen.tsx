@@ -71,6 +71,8 @@ import {
   WellbeingFAB,
   WellbeingHeader,
   AgendaMenuSheet,
+  AgendaFAB,
+  AgendaAddSheet,
   type AgendaView,
 } from "../components/agenda";
 
@@ -168,10 +170,34 @@ function CalendarTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const navigation = useNavigation();
+  const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [medicationFormOpen, setMedicationFormOpen] = useState(false);
+  const [checkInFormOpen, setCheckInFormOpen] = useState(false);
 
   return (
     <View style={styles.tabContent}>
-      <HeluAgendaCalendar onNewAppointment={() => navigation.navigate("AppointmentForm" as never)} />
+      <HeluAgendaCalendar />
+
+      <AgendaFAB onPress={() => setAddSheetOpen(true)} />
+
+      <AgendaAddSheet
+        visible={addSheetOpen}
+        onClose={() => setAddSheetOpen(false)}
+        onAddAppointment={() => navigation.navigate("AppointmentForm" as never)}
+        onAddMedication={() => setMedicationFormOpen(true)}
+        onAddCheckIn={() => setCheckInFormOpen(true)}
+      />
+
+      {medicationFormOpen ? (
+        <MedicationFormModal
+          initial={null}
+          onClose={() => setMedicationFormOpen(false)}
+        />
+      ) : null}
+
+      {checkInFormOpen ? (
+        <DailyCheckInForm onClose={() => setCheckInFormOpen(false)} />
+      ) : null}
     </View>
   );
 }

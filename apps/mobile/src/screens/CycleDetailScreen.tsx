@@ -55,6 +55,46 @@ function formatShort(iso: string): string {
   });
 }
 
+const DOSE_UNIT_LABELS: Record<string, string> = {
+  TABLET: "tableta(s)",
+  ML:     "ml",
+  DROPS:  "gotas",
+  GRAMS:  "gramos",
+  MG:     "mg",
+  UNITS:  "unidad(es)",
+};
+
+function formatFrequencyShort(freq: number, unit: string): string {
+  if (unit === "HOUR") return `${freq}h`;
+  const labels: Record<string, [string, string]> = {
+    DAY:   ["día",    "días"],
+    WEEK:  ["sem",    "sems"],
+    MONTH: ["mes",    "meses"],
+    YEAR:  ["año",    "años"],
+  };
+  const [s, p] = labels[unit] ?? [unit.toLowerCase(), unit.toLowerCase()];
+  return `${freq} ${freq === 1 ? s : p}`;
+}
+
+function formatFrequency(freq: number, unit: string): string {
+  const labels: Record<string, [string, string]> = {
+    HOUR:  ["hora",    "horas"],
+    DAY:   ["día",     "días"],
+    WEEK:  ["semana",  "semanas"],
+    MONTH: ["mes",     "meses"],
+    YEAR:  ["año",     "años"],
+  };
+  const [s, p] = labels[unit] ?? [unit.toLowerCase(), unit.toLowerCase()];
+  return `cada ${freq} ${freq === 1 ? s : p}`;
+}
+
+function formatDose(doseAmount: number | null | undefined, doseUnit: string | null | undefined): string {
+  const unitLabel = doseUnit ? (DOSE_UNIT_LABELS[doseUnit] ?? doseUnit.toLowerCase()) : "";
+  if (doseAmount != null && unitLabel) return `${doseAmount} ${unitLabel}`;
+  if (doseAmount != null) return String(doseAmount);
+  return unitLabel;
+}
+
 // ─── Detail cell ──────────────────────────────────────────────────────────────
 
 function DetailCell({
@@ -226,7 +266,9 @@ export function CycleDetailScreen() {
             <View style={styles.heroInfo}>
               <Text style={styles.heroMedName}>{medicationName}</Text>
               <Text style={styles.heroDosage}>
-                {cycle.dosage} · cada {cycle.frequency}h
+                {formatDose(cycle.doseAmount, cycle.doseUnit) || cycle.dosage}
+                {" · "}
+                {formatFrequency(cycle.frequency, cycle.frequencyUnit)}
               </Text>
             </View>
           </View>
@@ -258,7 +300,7 @@ export function CycleDetailScreen() {
 
           <View style={styles.statItem}>
             <Activity size={16} color={t.text.secondary} />
-            <Text style={[styles.statMain, { color: t.text.primary }]}>{cycle.frequency}h</Text>
+            <Text style={[styles.statMain, { color: t.text.primary }]}>{formatFrequencyShort(cycle.frequency, cycle.frequencyUnit)}</Text>
             <Text style={[styles.statSub, { color: t.text.secondary }]}>Frecuencia</Text>
           </View>
 
@@ -277,11 +319,27 @@ export function CycleDetailScreen() {
         <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Detalles</Text>
 
         <View style={styles.grid}>
-          <DetailCell
-            label="Dosis"
-            value={cycle.dosage}
-            icon={<Pill size={18} color={t.accent.medFg} />}
-          />
+          {(cycle.doseAmount != null || cycle.doseUnit) ? (
+            <DetailCell
+              label="Cantidad a tomar"
+              value={formatDose(cycle.doseAmount, cycle.doseUnit)}
+              icon={<Pill size={18} color={t.accent.medFg} />}
+            />
+          ) : (
+            <DetailCell
+              label="Dosis"
+              value={cycle.dosage}
+              icon={<Pill size={18} color={t.accent.medFg} />}
+            />
+          )}
+
+          {cycle.concentration ? (
+            <DetailCell
+              label="Concentración"
+              value={cycle.concentration}
+              icon={<Pill size={18} color={t.text.secondary} />}
+            />
+          ) : null}
 
           <DetailCell
             label="Inicio del ciclo"

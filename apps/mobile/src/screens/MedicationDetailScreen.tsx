@@ -463,7 +463,7 @@ function makeStyles(t: ThemeContextValue) {
     cycleSub:       { fontSize: fontSize.sm },
     cycleNote:      { fontSize: fontSize.sm, lineHeight: 18 },
 
-    cycleIconActions: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
+    cycleIconActions: { flexDirection: "column", alignItems: "center", gap: spacing[1] },
     finalizeIconBtn:  { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   });
 }

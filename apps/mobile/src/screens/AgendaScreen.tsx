@@ -463,7 +463,7 @@ function MedicationsList() {
               >
                 <Card
                   title={m.name}
-                  subtitle={cycle ? `${cycle.dosage} — cada ${cycle.frequency}h` : "Sin ciclo activo"}
+                  subtitle={cycle ? `${formatDose(cycle.doseAmount, cycle.doseUnit, cycle.dosage)} — ${formatFrequency(cycle.frequency, cycle.frequencyUnit)}` : "Sin ciclo activo"}
                   icon={<Pill size={20} color={t.status.warningFg} />}
                   iconBackground={t.status.warningBg}
                   actions={
@@ -531,6 +531,34 @@ type CycleItem = {
 function isCycleActive(cycle: MedicationCycle): boolean {
   if (!cycle.endDate) return true;
   return new Date(cycle.endDate) >= new Date();
+}
+
+const DOSE_UNIT_LABELS_ES: Record<string, string> = {
+  TABLET: "tableta(s)",
+  ML:     "ml",
+  DROPS:  "gotas",
+  GRAMS:  "gramos",
+  MG:     "mg",
+  UNITS:  "unidad(es)",
+};
+
+function formatFrequency(freq: number, unit: string): string {
+  const labels: Record<string, [string, string]> = {
+    HOUR:  ["hora",    "horas"],
+    DAY:   ["día",     "días"],
+    WEEK:  ["semana",  "semanas"],
+    MONTH: ["mes",     "meses"],
+    YEAR:  ["año",     "años"],
+  };
+  const [s, p] = labels[unit] ?? [unit.toLowerCase(), unit.toLowerCase()];
+  return `cada ${freq} ${freq === 1 ? s : p}`;
+}
+
+function formatDose(doseAmount: number | null | undefined, doseUnit: string | null | undefined, fallback: string): string {
+  const unitLabel = doseUnit ? (DOSE_UNIT_LABELS_ES[doseUnit] ?? doseUnit.toLowerCase()) : "";
+  if (doseAmount != null && unitLabel) return `${doseAmount} ${unitLabel}`;
+  if (doseAmount != null) return String(doseAmount);
+  return fallback;
 }
 
 function CyclesList() {
@@ -653,40 +681,42 @@ function CyclesList() {
                         {active ? "Activo" : "Finalizado"}
                       </Text>
                     </View>
-                    <ActionButton
-                      action="edit"
-                      size="sm"
-                      onPress={() =>
-                        navigation.navigate("MedicationForm", {
-                          cycleId: cycle.id,
-                          medicationId,
-                          medicationName,
-                        })
-                      }
-                    />
-                    {active && (
-                      <TouchableOpacity
-                        style={[styles.finalizeIconBtn, { backgroundColor: t.status.warningBg ?? "#FFF3CD" }]}
-                        activeOpacity={0.7}
-                        onPress={() => setFinalizingItem(item)}
-                      >
-                        <CheckCircle size={14} color={t.status.warningFg ?? "#856404"} strokeWidth={2} />
-                      </TouchableOpacity>
-                    )}
-                    <ActionButton
-                      action="delete"
-                      size="sm"
-                      onPress={() => setDeletingItem(item)}
-                    />
+                    <View style={styles.cycleCardActions}>
+                      <ActionButton
+                        action="edit"
+                        size="sm"
+                        onPress={() =>
+                          navigation.navigate("MedicationForm", {
+                            cycleId: cycle.id,
+                            medicationId,
+                            medicationName,
+                          })
+                        }
+                      />
+                      {active && (
+                        <TouchableOpacity
+                          style={[styles.finalizeIconBtn, { backgroundColor: t.status.warningBg ?? "#FFF3CD" }]}
+                          activeOpacity={0.7}
+                          onPress={() => setFinalizingItem(item)}
+                        >
+                          <CheckCircle size={14} color={t.status.warningFg ?? "#856404"} strokeWidth={2} />
+                        </TouchableOpacity>
+                      )}
+                      <ActionButton
+                        action="delete"
+                        size="sm"
+                        onPress={() => setDeletingItem(item)}
+                      />
+                    </View>
                   </View>
                 </View>
 
                 {/* Datos */}
                 <View style={styles.cycleCardBody}>
                   <Text style={[styles.cycleCardDosage, { color: t.text.primary }]}>
-                    {cycle.dosage}
+                    {formatDose(cycle.doseAmount, cycle.doseUnit, cycle.dosage)}
                     <Text style={[styles.cycleCardFreq, { color: t.text.secondary }]}>
-                      {" · cada "}{cycle.frequency}h
+                      {" · "}{formatFrequency(cycle.frequency, cycle.frequencyUnit)}
                     </Text>
                   </Text>
                   <Text style={[styles.cycleCardDates, { color: t.text.secondary }]}>
@@ -957,6 +987,7 @@ function makeStyles(t: ThemeContextValue) {
     cycleCardDates:     { fontSize: fontSize.xs },
     cycleCardNote:      { fontSize: fontSize.xs },
     cycleCardRight:     { flexDirection: "row", alignItems: "center", gap: spacing[2] },
+    cycleCardActions:   { flexDirection: "column", alignItems: "center", gap: spacing[1] },
     finalizeIconBtn:    { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
 
     fieldLabel:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: spacing[2] },

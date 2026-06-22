@@ -6,6 +6,9 @@ import {
     Button,
     TextField,
     DateTimePicker,
+    toISOLocal,
+    toUtcIsoFromPickerValue,
+    pickerValueFromUtcIso,
     ConfirmModal,
     spacing,
     fontSize,
@@ -35,8 +38,10 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
 
     const [mood, setMood] = useState<MoodEnum | null>(initialValues?.mood ?? null);
     const [notes, setNotes] = useState(initialValues?.notes ?? "");
-    const [recordedAt, setRecordedAt] = useState(
-        initialValues?.recordedAt ?? new Date().toISOString(),
+    const [recordedAt, setRecordedAt] = useState(() =>
+        initialValues?.recordedAt
+            ? pickerValueFromUtcIso(initialValues.recordedAt)
+            : toISOLocal(new Date()),
     );
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -44,7 +49,7 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
         if (!initialValues) return;
         setMood(initialValues.mood);
         setNotes(initialValues.notes ?? "");
-        setRecordedAt(initialValues.recordedAt);
+        setRecordedAt(pickerValueFromUtcIso(initialValues.recordedAt));
     }, [initialValues]);
 
     const createMutation = useCreateDailyCheckInMutation();
@@ -59,7 +64,7 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
 
         const payload = {
             mood,
-            recordedAt,
+            recordedAt: toUtcIsoFromPickerValue(recordedAt),
             notes: notes.trim() || undefined,
         };
 
@@ -143,7 +148,7 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
                 }
             >
                 <View style={styles.section}>
-                    <Text style={styles.label}>¿Cómo te sentís hoy?</Text>
+                    <Text style={styles.label}>¿Cómo te sientes hoy?</Text>
                     <MoodPicker value={mood} onChange={setMood} />
                 </View>
 

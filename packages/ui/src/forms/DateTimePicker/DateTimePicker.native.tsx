@@ -5,14 +5,10 @@ import { CalendarDays } from 'lucide-react-native';
 import { colors, palette, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { DateTimePickerProps } from './DateTimePicker.types';
+import { toISOLocal } from './DateTimePicker.utils';
 
 function toDate(value: string): Date {
   return value ? new Date(value) : new Date();
-}
-
-function toISOLocal(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function formatDisplay(value: string): string {

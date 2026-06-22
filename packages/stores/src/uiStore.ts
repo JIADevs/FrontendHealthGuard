@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { resolvePersistStorage } from "./persistStorage";
 
 type Theme = "light" | "dark" | "system";
 
@@ -20,13 +21,7 @@ export const useUiStore = create<UiState>()(
         }),
         {
             name: "ui-store",
-            storage: createJSONStorage(() =>
-                typeof window !== "undefined" ? localStorage : {
-                    getItem: () => null,
-                    setItem: () => { },
-                    removeItem: () => { },
-                }
-            ),
+            storage: createJSONStorage(() => resolvePersistStorage("UiStore")),
         }
     )
 );

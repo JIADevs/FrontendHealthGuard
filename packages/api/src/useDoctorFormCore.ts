@@ -9,7 +9,7 @@ import { useState } from "react";
 import {
   useCreateDoctorMutation,
   useUpdateDoctorMutation,
-} from "./hooks";
+} from "./reactQueryHooks";
 import { isApiError } from "./errors";
 import type { Doctor } from "./schemas";
 

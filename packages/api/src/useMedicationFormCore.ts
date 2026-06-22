@@ -10,7 +10,7 @@ import {
   useCreateMedicationMutation,
   useCreateMedicationCycleMutation,
   useUpdateMedicationMutation,
-} from "./hooks";
+} from "./reactQueryHooks";
 import { isApiError } from "./errors";
 import type { Medication } from "./schemas";
 

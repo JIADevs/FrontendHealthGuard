@@ -25,6 +25,11 @@ import {
     BackpackPageSchema,
     BackpackSchema,
     ClassificationSuggestionSchema,
+    DailyCheckInSchema,
+    DailyCheckInPageSchema,
+    parseCalendarEventsResponse,
+    type CalendarDay,
+    type DailyCheckInUpdate,
     type LoginRequest,
     type SignupRequest,
     type UserUpdate,
@@ -34,6 +39,8 @@ import {
     type DoctorCreate,
     type BackpackCreate,
     type CustomTagCreate,
+    type DailyCheckInCreate,
+    type DailyCheckInPage,
 } from "./schemas";
 
 // ─── Auth ──────────────────────────────────────────────
@@ -367,11 +374,11 @@ export async function registerDeviceToken(
 
 // ─── Calendar ──────────────────────────────────────────
 
-export async function getCalendarEvents(startDate: string, endDate: string) {
-    const { data } = await apiClient.get("/calendar/", {
+export async function getCalendarEvents(startDate: string, endDate: string): Promise<CalendarDay[]> {
+    const { data } = await apiClient.get("/calendar/events", {
         params: { startDate, endDate },
     });
-    return data;
+    return parseCalendarEventsResponse(data);
 }
 
 // ─── AI Classification ────────────────────────────────
@@ -394,6 +401,32 @@ export async function classifyDocumentFromUri(uri: string, name: string, mimeTyp
         timeout: 120_000,
     });
     return ClassificationSuggestionSchema.parse(data);
+}
+
+// ─── Daily Check-Ins ───────────────────────────────────
+
+export async function getDailyCheckIns(params?: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+}): Promise<DailyCheckInPage> {
+    const { data } = await apiClient.get("/daily-checkins/", { params });
+    return DailyCheckInPageSchema.parse(data);
+}
+
+export async function createDailyCheckIn(payload: DailyCheckInCreate) {
+    const { data } = await apiClient.post("/daily-checkins/", payload);
+    return DailyCheckInSchema.parse(data);
+}
+
+export async function updateDailyCheckIn(id: string, payload: DailyCheckInUpdate) {
+    const { data } = await apiClient.patch(`/daily-checkins/${id}`, payload);
+    return DailyCheckInSchema.parse(data);
+}
+
+export async function deleteDailyCheckIn(id: string) {
+    await apiClient.delete(`/daily-checkins/${id}`);
 }
 
 // ─── Backpacks ─────────────────────────────────────────

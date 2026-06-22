@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { env } from "@helu/config";
+import { getApiUrl } from "@helu/config";
 import { parseApiError } from "./errors";
 
 // --- Dependency Injection for Auth ---
@@ -86,13 +86,17 @@ function snakelizeKeys(obj: unknown): unknown {
 }
 
 export const apiClient = axios.create({
-    baseURL: env.API_URL + "/api/v1",
     timeout: 15_000,
     headers: { "Content-Type": "application/json" },
 });
 
+function apiV1BaseUrl(): string {
+    return `${getApiUrl()}/api/v1`;
+}
+
 // --- Request interceptor ---
 apiClient.interceptors.request.use((config) => {
+    config.baseURL = config.baseURL ?? apiV1BaseUrl();
     const token = _tokenProvider ? _tokenProvider() : getWebToken();
     const patientContext = _patientProvider ? _patientProvider() : getWebPatient();
     
@@ -154,7 +158,7 @@ apiClient.interceptors.response.use(
                 if (!refreshToken) throw new Error("No refresh token");
 
                 const { data } = await axios.post(
-                    `${env.API_URL}/api/v1/auth/refresh`,
+                    `${getApiUrl()}/api/v1/auth/refresh`,
                     { refresh_token: refreshToken }
                 );
 

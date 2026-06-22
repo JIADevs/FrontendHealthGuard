@@ -15,7 +15,7 @@ import {
   useCreateBackpackMutation,
   useUpdateBackpackMutation,
   useDeleteBackpackMutation,
-} from "./hooks";
+} from "./reactQueryHooks";
 import { isApiError } from "./errors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

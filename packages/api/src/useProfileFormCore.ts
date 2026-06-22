@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { useProfileQuery, useUpdateProfileMutation } from "./hooks";
+import { useProfileQuery, useUpdateProfileMutation } from "./reactQueryHooks";
 import { isApiError } from "./errors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

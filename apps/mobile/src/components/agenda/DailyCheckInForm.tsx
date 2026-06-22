@@ -152,18 +152,20 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
                     <MoodPicker value={mood} onChange={setMood} />
                 </View>
 
-                <TextField
-                    label="Notas (opcional)"
-                    value={notes}
-                    onChange={setNotes}
-                    placeholder="¿Algo más que quieras registrar?"
-                />
+                <View style={styles.fields}>
+                    <TextField
+                        label="Notas (opcional)"
+                        value={notes}
+                        onChange={setNotes}
+                        placeholder="¿Algo más que quieras registrar?"
+                    />
 
-                <DateTimePicker
-                    label="Fecha y hora (opcional)"
-                    value={recordedAt}
-                    onChange={setRecordedAt}
-                />
+                    <DateTimePicker
+                        label="Fecha y hora (opcional)"
+                        value={recordedAt}
+                        onChange={setRecordedAt}
+                    />
+                </View>
             </Modal>
 
             {showDeleteConfirm && (
@@ -186,6 +188,9 @@ function makeStyles(t: ThemeContextValue) {
     return StyleSheet.create({
         section: {
             marginBottom: spacing[4],
+        },
+        fields: {
+            gap: spacing[4],
         },
         label: {
             fontSize: fontSize.sm,

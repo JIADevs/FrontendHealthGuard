@@ -49,6 +49,7 @@ export interface MedicationFormActions {
   clearSelectedMedication: () => void;
   clearError: () => void;
   handleSave: () => void;
+  handleSaveWithExistingMedication: (medicationId: string) => void;
 }
 
 export interface MedicationFormAdapters {
@@ -167,6 +168,35 @@ export function useMedicationFormCore({
     });
   }
 
+  function handleSaveWithExistingMedication(medicationId: string) {
+    if (!dosage.trim() || !frequency || !startDate || !firstIntakeTime) {
+      setError("Completa todos los campos obligatorios.");
+      return;
+    }
+    setError(null);
+
+    const cyclePayload = {
+      dosage,
+      frequency: Number.parseInt(frequency, 10),
+      reason: reason.trim() || undefined,
+      notes: notes.trim() || undefined,
+      startDate,
+      endDate: endDate || undefined,
+      firstIntakeTime: `${startDate}T${firstIntakeTime}:00`,
+      reminderOffsets: [60, 30, 15, 5],
+    };
+
+    createCycleMut.mutate(
+      { medicationId, cycle: cyclePayload },
+      {
+        onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
+        onError: (err) => {
+          setError(isApiError(err) ? err.message : "Error guardando el ciclo.");
+        },
+      },
+    );
+  }
+
   return {
     name, dosage, frequency, startDate, firstIntakeTime, endDate, reason, notes,
     selectedMedicationId,
@@ -176,5 +206,6 @@ export function useMedicationFormCore({
     selectExistingMedication, clearSelectedMedication,
     clearError: () => setError(null),
     handleSave,
+    handleSaveWithExistingMedication,
   };
 }

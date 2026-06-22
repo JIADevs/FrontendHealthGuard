@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -22,10 +22,50 @@ import {
   TextField,
   DateTimePicker,
   Typography,
+  ConfirmModal,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { useMedicationFormCore, useMedicationsQuery } from "@helu/api/hooks";
 import type { Medication } from "@helu/api";
+
+// ─── Fuzzy name matching ──────────────────────────────────────────────────────
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, (_, i) =>
+    Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  );
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i]![j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1]![j - 1]!
+        : 1 + Math.min(dp[i - 1]![j]!, dp[i]![j - 1]!, dp[i - 1]![j - 1]!);
+  return dp[m]![n]!;
+}
+
+function normalizeName(s: string): string {
+  return s.toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function findFuzzySuggestion(typed: string, meds: Medication[]): Medication | null {
+  const norm = normalizeName(typed);
+  if (!norm) return null;
+  let best: { med: Medication; dist: number } | null = null;
+  for (const med of meds) {
+    const normMed = normalizeName(med.name);
+    if (norm === normMed) return null;
+    const dist = levenshtein(norm, normMed);
+    const threshold = Math.max(2, Math.floor(Math.max(norm.length, normMed.length) * 0.25));
+    if (dist <= threshold && (!best || dist < best.dist)) {
+      best = { med, dist };
+    }
+  }
+  return best?.med ?? null;
+}
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -38,6 +78,8 @@ export function MedicationFormScreen() {
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [fuzzySuggestion, setFuzzySuggestion] = useState<Medication | null>(null);
+  const skipFuzzyRef = useRef(false);
 
   const { data: medsPage } = useMedicationsQuery(1, 100);
   const allMeds: Medication[] = medsPage?.items ?? [];
@@ -77,6 +119,31 @@ export function MedicationFormScreen() {
   }
 
   const hasSuggestions = showSuggestions && filteredSuggestions.length > 0 && !form.selectedMedicationId;
+
+  function handlePressSave() {
+    if (form.selectedMedicationId || skipFuzzyRef.current) {
+      form.handleSave();
+      return;
+    }
+    const suggestion = findFuzzySuggestion(form.name, allMeds);
+    if (suggestion) {
+      setFuzzySuggestion(suggestion);
+      return;
+    }
+    form.handleSave();
+  }
+
+  function handleAcceptSuggestion() {
+    if (!fuzzySuggestion) return;
+    form.selectExistingMedication(fuzzySuggestion.id, fuzzySuggestion.name);
+    setFuzzySuggestion(null);
+  }
+
+  function handleRejectSuggestion() {
+    setFuzzySuggestion(null);
+    skipFuzzyRef.current = true;
+    form.handleSave();
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -245,7 +312,7 @@ export function MedicationFormScreen() {
             Cancelar
           </Button>
           <Button
-            onPress={form.handleSave}
+            onPress={handlePressSave}
             disabled={form.saving}
             loading={form.saving}
             style={styles.footerBtn}
@@ -254,6 +321,17 @@ export function MedicationFormScreen() {
           </Button>
         </View>
       </KeyboardAvoidingView>
+
+      {fuzzySuggestion && (
+        <ConfirmModal
+          title="¿Quisiste decir...?"
+          message={`Encontramos "${fuzzySuggestion.name}", similar a "${form.name}". ¿Deseas usar este medicamento existente?`}
+          confirmLabel={`Usar "${fuzzySuggestion.name}"`}
+          cancelLabel="Crear nuevo"
+          onConfirm={handleAcceptSuggestion}
+          onCancel={handleRejectSuggestion}
+        />
+      )}
     </SafeAreaView>
   );
 }

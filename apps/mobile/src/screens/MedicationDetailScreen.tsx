@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -20,17 +19,15 @@ import {
   X,
   Clock,
   CalendarDays,
-  ChevronRight,
   AlertCircle,
+  Trash2,
 } from "lucide-react-native";
 import {
-  colors,
   radii,
   spacing,
   fontSize,
   fontWeight,
   useAppTheme,
-  Button,
   Typography,
   ConfirmModal,
   Spinner,
@@ -41,6 +38,7 @@ import {
   useMedicationByIdQuery,
   useUpdateMedicationMutation,
   useUpdateMedicationCycleMutation,
+  useDeleteMedicationCycleMutation,
 } from "@helu/api/hooks";
 import { isApiError, type MedicationCycle } from "@helu/api";
 
@@ -77,11 +75,13 @@ export function MedicationDetailScreen() {
   const { data: med, isLoading } = useMedicationByIdQuery(id);
   const updateMedMut = useUpdateMedicationMutation();
   const updateCycleMut = useUpdateMedicationCycleMutation();
+  const deleteCycleMut = useDeleteMedicationCycleMutation();
 
   // Inline name edit
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState("");
   const [finalizingCycleId, setFinalizingCycleId] = useState<string | null>(null);
+  const [deletingCycleId, setDeletingCycleId] = useState<string | null>(null);
 
   function startEditName() {
     setNameValue(med?.name ?? "");
@@ -127,6 +127,23 @@ export function MedicationDetailScreen() {
         },
       },
     );
+  }
+
+  function handleDeleteCycle() {
+    if (!deletingCycleId) return;
+    deleteCycleMut.mutate(deletingCycleId, {
+      onSuccess: () => {
+        setDeletingCycleId(null);
+        Toast.show({ type: "success", text1: "Ciclo eliminado" });
+      },
+      onError: (err) => {
+        Toast.show({
+          type: "error",
+          text1: "Error al eliminar",
+          text2: isApiError(err) ? err.message : "Intenta de nuevo",
+        });
+      },
+    });
   }
 
   const sorted = useMemo(
@@ -202,6 +219,13 @@ export function MedicationDetailScreen() {
                 cycle={cycle}
                 t={t}
                 styles={styles}
+                onPress={() =>
+                  (navigation as any).navigate("CycleDetail", {
+                    cycleId: cycle.id,
+                    medicationId: id,
+                    medicationName: med?.name ?? "",
+                  })
+                }
                 onEdit={() =>
                   (navigation as any).navigate("MedicationCycleEdit", {
                     cycleId: cycle.id,
@@ -210,6 +234,7 @@ export function MedicationDetailScreen() {
                   })
                 }
                 onFinalize={() => setFinalizingCycleId(cycle.id)}
+                onDelete={() => setDeletingCycleId(cycle.id)}
               />
             ))
           )}
@@ -226,6 +251,17 @@ export function MedicationDetailScreen() {
           onCancel={() => setFinalizingCycleId(null)}
         />
       )}
+
+      {deletingCycleId && (
+        <ConfirmModal
+          title="Eliminar ciclo"
+          message="¿Eliminar este ciclo? Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          loading={deleteCycleMut.isPending}
+          onConfirm={handleDeleteCycle}
+          onCancel={() => setDeletingCycleId(null)}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -236,19 +272,25 @@ function CycleCard({
   cycle,
   t,
   styles,
+  onPress,
   onEdit,
   onFinalize,
+  onDelete,
 }: {
   cycle: MedicationCycle;
   t: ThemeContextValue;
   styles: ReturnType<typeof makeStyles>;
+  onPress: () => void;
   onEdit: () => void;
   onFinalize: () => void;
+  onDelete: () => void;
 }) {
   const active = isCycleActive(cycle);
 
   return (
     <View style={[styles.cycleCard, { borderColor: t.border.light }]}>
+      {/* Tappable header + body → navigate to detail */}
+      <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
       {/* Encabezado del ciclo */}
       <View style={styles.cycleHeader}>
         <View
@@ -322,6 +364,8 @@ function CycleCard({
         ) : null}
       </View>
 
+      </TouchableOpacity>
+
       {/* Acciones */}
       <View style={[styles.cycleActions, { borderTopColor: t.border.light }]}>
         <TouchableOpacity style={styles.cycleActionBtn} onPress={onEdit}>
@@ -331,7 +375,7 @@ function CycleCard({
 
         {active && (
           <TouchableOpacity
-            style={[styles.cycleActionBtn, styles.cycleActionBtnRight]}
+            style={[styles.cycleActionBtn, styles.cycleActionBtnRight, { borderLeftColor: t.border.light }]}
             onPress={onFinalize}
           >
             <AlertCircle size={14} color={t.status.warningFg ?? t.text.secondary} />
@@ -340,6 +384,14 @@ function CycleCard({
             </Text>
           </TouchableOpacity>
         )}
+
+        <TouchableOpacity
+          style={[styles.cycleActionBtn, styles.cycleActionBtnRight, { borderLeftColor: t.border.light }]}
+          onPress={onDelete}
+        >
+          <Trash2 size={14} color={t.status.errorFg} />
+          <Text style={[styles.cycleActionText, { color: t.status.errorFg }]}>Eliminar</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

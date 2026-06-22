@@ -84,7 +84,6 @@ const STATUSES = ["PROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI"] as const;
 const LIST_VIEW_TITLES: Record<Exclude<AgendaView, "calendar">, string> = {
   appointments: "Citas",
   medications: "Medicamentos",
-  cycles: "Ciclos",
   wellbeing: "Bienestar",
 };
 
@@ -93,7 +92,6 @@ function isAgendaView(value: string | undefined): value is AgendaView {
     value === "calendar" ||
     value === "appointments" ||
     value === "medications" ||
-    value === "cycles" ||
     value === "wellbeing"
   );
 }
@@ -153,8 +151,6 @@ export function AgendaScreen() {
         <AppointmentsTab />
       ) : view === "medications" ? (
         <MedicationsTab />
-      ) : view === "cycles" ? (
-        <CyclesTab />
       ) : (
         <WellbeingTab />
       )}
@@ -352,9 +348,41 @@ function AppointmentsTab() {
   );
 }
 
-// ─── medications tab ──────────────────────────────────────────────────────────
+// ─── medications tab (sub-tabs: Medicamentos / Ciclos) ───────────────────────
 
 function MedicationsTab() {
+  const [subTab, setSubTab] = useState<"meds" | "cycles">("meds");
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+
+  return (
+    <View style={styles.tabContent}>
+      <View style={styles.subTabBar}>
+        <TouchableOpacity
+          style={[styles.subTab, subTab === "meds" && styles.subTabActive]}
+          onPress={() => setSubTab("meds")}
+        >
+          <Text style={[styles.subTabText, subTab === "meds" && styles.subTabTextActive]}>
+            Medicamentos
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.subTab, subTab === "cycles" && styles.subTabActive]}
+          onPress={() => setSubTab("cycles")}
+        >
+          <Text style={[styles.subTabText, subTab === "cycles" && styles.subTabTextActive]}>
+            Ciclos
+          </Text>
+        </TouchableOpacity>
+      </View>
+      {subTab === "meds" ? <MedicationsList /> : <CyclesList />}
+    </View>
+  );
+}
+
+// ─── medications list ─────────────────────────────────────────────────────────
+
+function MedicationsList() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const navigation = require("@react-navigation/native").useNavigation();
@@ -400,7 +428,7 @@ function MedicationsTab() {
   const items = meds.data?.items ?? [];
 
   return (
-    <View style={styles.tabContent}>
+    <View style={{ flex: 1 }}>
       <View style={styles.addRow}>
         <TouchableOpacity
           style={styles.addBtn}
@@ -491,7 +519,7 @@ function MedicationsTab() {
 }
 
 
-// ─── cycles tab ───────────────────────────────────────────────────────────────
+// ─── cycles list ─────────────────────────────────────────────────────────────
 
 type CycleItem = {
   cycle: MedicationCycle;
@@ -504,7 +532,7 @@ function isCycleActive(cycle: MedicationCycle): boolean {
   return new Date(cycle.endDate) >= new Date();
 }
 
-function CyclesTab() {
+function CyclesList() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const navigation = require("@react-navigation/native").useNavigation();
@@ -564,7 +592,7 @@ function CyclesTab() {
   }
 
   return (
-    <View style={styles.tabContent}>
+    <View style={{ flex: 1 }}>
       <View style={styles.addRow}>
         <TouchableOpacity
           style={styles.addBtn}
@@ -594,6 +622,17 @@ function CyclesTab() {
             const active = isCycleActive(cycle);
             return (
               <View style={[styles.cycleCard, { borderColor: t.border.light }]}>
+                {/* Encabezado + datos → navega al detalle */}
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() =>
+                    navigation.navigate("CycleDetail" as never, {
+                      cycleId: cycle.id,
+                      medicationId,
+                      medicationName,
+                    } as never)
+                  }
+                >
                 {/* Encabezado */}
                 <View style={styles.cycleCardHeader}>
                   <View style={styles.cycleCardTitleRow}>
@@ -636,6 +675,7 @@ function CyclesTab() {
                     </Text>
                   ) : null}
                 </View>
+                </TouchableOpacity>
 
                 {/* Acciones rápidas */}
                 <View style={[styles.cycleCardActions, { borderTopColor: t.border.light }]}>
@@ -867,6 +907,11 @@ function makeStyles(t: ThemeContextValue) {
     menuBtn:            { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: radii.md },
     headerSpacer:       { width: 40 },
     tabContent:         { flex: 1 },
+    subTabBar:          { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: t.border.medium, backgroundColor: t.surface.bgCard },
+    subTab:             { flex: 1, alignItems: "center", paddingVertical: spacing[3], borderBottomWidth: 2, borderBottomColor: "transparent" },
+    subTabActive:       { borderBottomColor: t.brand.fg },
+    subTabText:         { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: t.text.secondary },
+    subTabTextActive:   { fontWeight: fontWeight.semibold, color: t.brand.fg },
     wellbeingListContent: { paddingBottom: spacing[12] + 56 },
     wellbeingSectionHeader: {
       paddingHorizontal: spacing[4],

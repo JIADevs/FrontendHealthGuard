@@ -9,6 +9,10 @@
         "./hooks": {
             "types": "./src/hooks.ts",
             "default": "./src/hooks.ts"
+        },
+        "./reactQueryHooks": {
+            "types": "./src/reactQueryHooks.ts",
+            "default": "./src/reactQueryHooks.ts"
         }
     },
     "dependencies": {

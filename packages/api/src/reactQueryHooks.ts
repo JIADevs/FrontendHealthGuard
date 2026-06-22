@@ -13,6 +13,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
+import { ZodError } from "zod";
 import {
     // Documents
     getDocuments,
@@ -64,6 +65,11 @@ import {
     // User
     getMe,
     updateMe,
+    // Daily Check-Ins
+    getDailyCheckIns,
+    createDailyCheckIn,
+    updateDailyCheckIn,
+    deleteDailyCheckIn,
 } from "./endpoints";
 import type {
     DocumentCreate,
@@ -73,6 +79,8 @@ import type {
     DoctorCreate,
     BackpackCreate,
     UserUpdate,
+    DailyCheckInCreate,
+    DailyCheckInUpdate,
 } from "./schemas";
 import type { ShareStatusFilter } from "./shares/schemas";
 import { invalidateBackpackQueries } from "./backpackQueryUtils";
@@ -124,6 +132,9 @@ export const QK = {
 
     documentSharesActive: () => ["document-shares-active"] as const,
     shares: (status: ShareStatusFilter = "all") => ["shares", status] as const,
+
+    dailyCheckIns: (page = 1, startDate?: string, endDate?: string) =>
+        ["daily-checkins", page, startDate ?? null, endDate ?? null] as const,
 } as const;
 
 // ─── Documents ─────────────────────────────────────────
@@ -547,6 +558,10 @@ export function useCalendarEventsQuery(startDate: string, endDate: string) {
         queryFn: () => getCalendarEvents(startDate, endDate),
         enabled: !!startDate && !!endDate,
         staleTime: 60_000,
+        placeholderData: keepPreviousData,
+        // Zod parse failures are not transient — default retry: 3 caused 4 identical GETs.
+        retry: (failureCount, error) =>
+            !(error instanceof ZodError) && failureCount < 2,
     });
 }
 
@@ -565,5 +580,58 @@ export function useUpdateProfileMutation() {
     return useMutation({
         mutationFn: (userData: UserUpdate) => updateMe(userData),
         onSettled: () => qc.invalidateQueries({ queryKey: QK.profile() }),
+    });
+}
+
+// ─── Daily Check-Ins ───────────────────────────────────
+
+export function useDailyCheckInsQuery(params?: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+}) {
+    return useQuery({
+        queryKey: QK.dailyCheckIns(params?.page, params?.startDate, params?.endDate),
+        queryFn: () => getDailyCheckIns(params),
+        staleTime: 5_000,
+        placeholderData: keepPreviousData,
+    });
+}
+
+export function useCreateDailyCheckInMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: DailyCheckInCreate) => createDailyCheckIn(payload),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["daily-checkins"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
+            qc.invalidateQueries({ queryKey: ["me"] });
+        },
+    });
+}
+
+export function useUpdateDailyCheckInMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: DailyCheckInUpdate }) =>
+            updateDailyCheckIn(id, payload),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["daily-checkins"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
+            qc.invalidateQueries({ queryKey: ["me"] });
+        },
+    });
+}
+
+export function useDeleteDailyCheckInMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => deleteDailyCheckIn(id),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["daily-checkins"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
+            qc.invalidateQueries({ queryKey: ["me"] });
+        },
     });
 }

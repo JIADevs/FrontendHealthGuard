@@ -5,7 +5,7 @@ import * as Device from "expo-device";
 import type * as ExpoNotifications from "expo-notifications";
 import { registerDeviceToken } from "@helu/api";
 import { palette } from "@helu/ui";
-import { navigateTo } from "../navigation/navigationRef";
+import { navigationRef, navigateTo } from "../navigation/navigationRef";
 
 declare const __DEV__: boolean;
 
@@ -126,9 +126,16 @@ export const usePushNotifications = (authToken?: string | null): PushNotificatio
 
 function handleNotificationTap(data: Record<string, string>) {
   switch (data?.type) {
+    case "CHECKIN":
+      if (navigationRef.isReady()) {
+        navigationRef.navigate("MainTabs" as any, {
+          screen: "Agenda",
+          params: { initialTab: "wellbeing" },
+        } as any);
+      }
+      break;
     case "APPOINTMENT":
     case "MEDICATION":
-    case "CHECKIN":
     case "SYSTEM":
     case "INFO":
     default:

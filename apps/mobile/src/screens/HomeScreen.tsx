@@ -138,7 +138,7 @@ export function HomeScreen() {
           <View style={styles.dayCard}>
             <TouchableOpacity
               style={styles.dayItem}
-              onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "appointments" } } as any)}
+              onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "calendar" } } as any)}
               activeOpacity={0.7}
             >
               <View style={[styles.dayIconWrap, { backgroundColor: t.accent.calBg }]}>

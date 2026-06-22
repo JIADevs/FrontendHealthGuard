@@ -1,23 +1,11 @@
 // Support both Next.js and Expo environment variable conventions.
 // On Expo monorepos, `EXPO_PUBLIC_*` may not inline into workspace packages — read `expo.extra` too.
+import { readExpoExtraApiUrl } from "./readExpoExtraApiUrl";
 
 let runtimeApiUrl: string | null = null;
 
 export function setRuntimeApiUrl(url: string) {
     runtimeApiUrl = url.replace(/\/$/, "");
-}
-
-function readExpoExtraApiUrl(): string | undefined {
-    try {
-        const Constants = require("expo-constants").default as {
-            expoConfig?: { extra?: { apiUrl?: string; API_URL?: string } };
-        };
-        const extra = Constants.expoConfig?.extra;
-        const fromExtra = extra?.apiUrl ?? extra?.API_URL;
-        return typeof fromExtra === "string" && fromExtra.length > 0 ? fromExtra : undefined;
-    } catch {
-        return undefined;
-    }
 }
 
 export function getApiUrl(): string {

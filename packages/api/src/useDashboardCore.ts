@@ -14,8 +14,11 @@ import {
   useMedicationsQuery,
 } from "./reactQueryHooks";
 import { useAuthStore } from "@helu/stores";
-import { todayISODate } from "@helu/ui";
 import type { Appointment, Medication, Document } from "./schemas";
+
+function todayISODate(): string {
+  return new Date().toISOString().split("T")[0]!;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

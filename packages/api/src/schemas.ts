@@ -276,21 +276,60 @@ export const AppointmentCreateSchema = z.object({
     postBackpackIds: z.array(z.string().uuid()).default([]),
 });
 
-// --- Medications ---
-export const MedicationSchema = z.object({
+// --- Medications (identity + cycles; flat fields derived from active cycle for UI) ---
+
+export const MedicationCycleSchema = z.object({
     id: z.string().uuid(),
-    name: z.string(),
+    medicationId: z.string().uuid(),
+    treatmentId: z.string().uuid().nullable().optional(),
+    replacesCycleId: z.string().uuid().nullable().optional(),
     dosage: z.string(),
     frequency: z.number(),
+    reason: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
     startDate: z.string(),
-    firstIntakeTime: z.string(),
     endDate: z.string().nullable().optional(),
-    indications: z.string().nullable().optional(),
-    reminderOffsets: z.array(z.number()),
-    treatmentId: z.string().uuid().nullable().optional(),
-    createdBy: z.string().uuid().nullable().optional(),
+    firstIntakeTime: z.string(),
     nextIntakeTime: z.string().nullable().optional(),
+    reminderOffsets: z.array(z.number()).default([]),
 });
+
+export type MedicationCycle = z.infer<typeof MedicationCycleSchema>;
+
+function pickActiveMedicationCycle(cycles: MedicationCycle[]): MedicationCycle | undefined {
+    if (cycles.length === 0) return undefined;
+    const now = Date.now();
+    const active = cycles.find((cycle) => {
+        const start = new Date(cycle.startDate).getTime();
+        const end = cycle.endDate ? new Date(cycle.endDate).getTime() : Number.POSITIVE_INFINITY;
+        return start <= now && now <= end;
+    });
+    return active ?? cycles[cycles.length - 1];
+}
+
+export const MedicationSchema = z
+    .object({
+        id: z.string().uuid(),
+        userId: z.string().uuid().optional(),
+        name: z.string(),
+        createdBy: z.string().uuid().nullable().optional(),
+        cycles: z.array(MedicationCycleSchema).default([]),
+    })
+    .transform((med) => {
+        const cycle = pickActiveMedicationCycle(med.cycles);
+        return {
+            ...med,
+            dosage: cycle?.dosage ?? "",
+            frequency: cycle?.frequency ?? 0,
+            startDate: cycle?.startDate ?? "",
+            firstIntakeTime: cycle?.firstIntakeTime ?? "",
+            endDate: cycle?.endDate ?? null,
+            indications: cycle?.notes ?? null,
+            reminderOffsets: cycle?.reminderOffsets ?? [],
+            treatmentId: cycle?.treatmentId ?? null,
+            nextIntakeTime: cycle?.nextIntakeTime ?? null,
+        };
+    });
 
 export const MedicationPageSchema = createPageSchema(MedicationSchema);
 
@@ -370,6 +409,50 @@ export const BackpackCreateSchema = z.object({
     type: z.enum(["CUSTOM", "TEMPORARY_SHARE"]).default("CUSTOM"),
 });
 
+// --- Daily Check-Ins ---
+
+export const MOOD_ENUM_VALUES = ["excellent", "good", "okay", "bad", "awful"] as const;
+export type MoodEnum = typeof MOOD_ENUM_VALUES[number];
+
+export const DailyCheckInSchema = z.object({
+    id:         z.string().uuid(),
+    userId:     z.string().uuid(),
+    createdBy:  z.string().uuid().nullable().optional(),
+    mood:       z.enum(["excellent", "good", "okay", "bad", "awful"]),
+    recordedAt: z.string(),
+    notes:      z.string().nullable().optional(),
+});
+
+export const DailyCheckInCreateSchema = z.object({
+    mood:       z.enum(["excellent", "good", "okay", "bad", "awful"]),
+    recordedAt: z.string(),
+    notes:      z.string().optional(),
+});
+
+export const DailyCheckInUpdateSchema = DailyCheckInCreateSchema.partial();
+
+export const DailyCheckInPageSchema = createPageSchema(DailyCheckInSchema);
+
+const CalendarDayPayloadSchema = z.object({
+    appointments: z.array(AppointmentSchema).default([]),
+    medications:  z.array(MedicationSchema).default([]),
+    symptoms:     z.array(z.unknown()).default([]),
+    checkIns:     z.array(DailyCheckInSchema).default([]),
+});
+
+export const CalendarDaySchema = CalendarDayPayloadSchema.extend({
+    date: z.string(),
+});
+
+export type CalendarDay = z.infer<typeof CalendarDaySchema>;
+
+export function parseCalendarEventsResponse(data: unknown): CalendarDay[] {
+    const record = z.record(z.string(), CalendarDayPayloadSchema).parse(data);
+    return Object.entries(record)
+        .map(([date, day]) => CalendarDaySchema.parse({ date, ...day }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+}
+
 // --- Inferred types ---
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 export type SignupRequest = z.infer<typeof SignupRequestSchema>;
@@ -401,4 +484,8 @@ export type CustomTagCreate = z.infer<typeof CustomTagCreateSchema>;
 export type Treatment = z.infer<typeof TreatmentSchema>;
 export type TreatmentPage = z.infer<typeof TreatmentPageSchema>;
 export type ReminderConfig = z.infer<typeof ReminderConfigSchema>;
+export type DailyCheckIn = z.infer<typeof DailyCheckInSchema>;
+export type DailyCheckInCreate = z.infer<typeof DailyCheckInCreateSchema>;
+export type DailyCheckInUpdate = z.infer<typeof DailyCheckInUpdateSchema>;
+export type DailyCheckInPage = z.infer<typeof DailyCheckInPageSchema>;
 

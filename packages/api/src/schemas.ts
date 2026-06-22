@@ -363,7 +363,10 @@ export const MedicationSchema = z
         return {
             ...med,
             dosage: cycle?.dosage ?? "",
+            doseAmount: cycle?.doseAmount ?? null,
+            doseUnit: cycle?.doseUnit ?? null,
             frequency: cycle?.frequency ?? 0,
+            frequencyUnit: cycle?.frequencyUnit ?? "HOUR",
             startDate: cycle?.startDate ?? "",
             firstIntakeTime: cycle?.firstIntakeTime ?? "",
             endDate: cycle?.endDate ?? null,

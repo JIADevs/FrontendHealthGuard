@@ -81,10 +81,19 @@ export interface MedicationFormAdapters {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const DOSE_UNIT_ES: Record<string, string> = {
+  TABLET: "tableta(s)",
+  ML:     "ml",
+  DROPS:  "gotas",
+  GRAMS:  "gramos",
+  MG:     "mg",
+  UNITS:  "unidad(es)",
+};
+
 function buildDosageString(doseAmount: string, doseUnit: DoseUnit | "", concentration: string): string {
   const parts: string[] = [];
   if (doseAmount) parts.push(doseAmount);
-  if (doseUnit) parts.push(doseUnit.toLowerCase());
+  if (doseUnit) parts.push(DOSE_UNIT_ES[doseUnit] ?? doseUnit.toLowerCase());
   if (concentration) parts.push(concentration);
   return parts.join(" ").trim() || "—";
 }

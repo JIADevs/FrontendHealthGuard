@@ -43,15 +43,8 @@ function isCycleActive(cycle: MedicationCycle): boolean {
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-CO", {
     day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function formatShort(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-CO", {
-    day: "2-digit",
     month: "short",
+    year: "numeric",
   });
 }
 
@@ -63,18 +56,6 @@ const DOSE_UNIT_LABELS: Record<string, string> = {
   MG:     "mg",
   UNITS:  "unidad(es)",
 };
-
-function formatFrequencyShort(freq: number, unit: string): string {
-  if (unit === "HOUR") return `${freq}h`;
-  const labels: Record<string, [string, string]> = {
-    DAY:   ["día",    "días"],
-    WEEK:  ["sem",    "sems"],
-    MONTH: ["mes",    "meses"],
-    YEAR:  ["año",    "años"],
-  };
-  const [s, p] = labels[unit] ?? [unit.toLowerCase(), unit.toLowerCase()];
-  return `${freq} ${freq === 1 ? s : p}`;
-}
 
 function formatFrequency(freq: number, unit: string): string {
   const labels: Record<string, [string, string]> = {
@@ -88,11 +69,94 @@ function formatFrequency(freq: number, unit: string): string {
   return `cada ${freq} ${freq === 1 ? s : p}`;
 }
 
-function formatDose(doseAmount: number | null | undefined, doseUnit: string | null | undefined): string {
+function formatDose(
+  doseAmount: number | null | undefined,
+  doseUnit: string | null | undefined,
+): string {
   const unitLabel = doseUnit ? (DOSE_UNIT_LABELS[doseUnit] ?? doseUnit.toLowerCase()) : "";
   if (doseAmount != null && unitLabel) return `${doseAmount} ${unitLabel}`;
   if (doseAmount != null) return String(doseAmount);
   return unitLabel;
+}
+
+// ─── Info grid (2×2) ─────────────────────────────────────────────────────────
+
+function InfoGrid({
+  cycle,
+  t,
+  styles,
+}: {
+  cycle: MedicationCycle;
+  t: ThemeContextValue;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  const startTimeStr = cycle.firstIntakeTime
+    ? new Date(cycle.firstIntakeTime).toLocaleTimeString("es-CO", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+
+  return (
+    <View style={[styles.infoGrid, { backgroundColor: t.surface.bgCard, borderColor: t.border.light }]}>
+      {/* Row 1: Dose | Frequency */}
+      <View style={styles.gridRow}>
+        <View style={styles.gridCell}>
+          <View style={[styles.gridCellIcon, { backgroundColor: t.accent.medBg }]}>
+            <Pill size={14} color={t.accent.medFg} />
+          </View>
+          <Text style={[styles.gridCellLabel, { color: t.text.muted }]}>Dosis</Text>
+          <Text style={[styles.gridCellValue, { color: t.text.primary }]} numberOfLines={2}>
+            {formatDose(cycle.doseAmount, cycle.doseUnit) || cycle.dosage}
+          </Text>
+        </View>
+
+        <View style={[styles.gridVDivider, { backgroundColor: t.border.light }]} />
+
+        <View style={styles.gridCell}>
+          <View style={[styles.gridCellIcon, { backgroundColor: t.brand.tint }]}>
+            <Activity size={14} color={t.brand.fg} />
+          </View>
+          <Text style={[styles.gridCellLabel, { color: t.text.muted }]}>Frecuencia</Text>
+          <Text style={[styles.gridCellValue, { color: t.text.primary }]} numberOfLines={2}>
+            {formatFrequency(cycle.frequency, cycle.frequencyUnit)}
+          </Text>
+        </View>
+      </View>
+
+      <View style={[styles.gridHDivider, { backgroundColor: t.border.light }]} />
+
+      {/* Row 2: Start | End */}
+      <View style={styles.gridRow}>
+        <View style={styles.gridCell}>
+          <View style={[styles.gridCellIcon, { backgroundColor: t.accent.calBg }]}>
+            <CalendarDays size={14} color={t.accent.calFg} />
+          </View>
+          <Text style={[styles.gridCellLabel, { color: t.text.muted }]}>Inicio</Text>
+          <Text style={[styles.gridCellValue, { color: t.text.primary }]}>
+            {formatDate(cycle.startDate)}
+          </Text>
+          {startTimeStr ? (
+            <Text style={[styles.gridCellSub, { color: t.text.secondary }]}>
+              {startTimeStr}
+            </Text>
+          ) : null}
+        </View>
+
+        <View style={[styles.gridVDivider, { backgroundColor: t.border.light }]} />
+
+        <View style={styles.gridCell}>
+          <View style={[styles.gridCellIcon, { backgroundColor: t.accent.calBg }]}>
+            <CalendarDays size={14} color={t.accent.calFg} />
+          </View>
+          <Text style={[styles.gridCellLabel, { color: t.text.muted }]}>Fin</Text>
+          <Text style={[styles.gridCellValue, { color: t.text.primary }]}>
+            {cycle.endDate ? formatDate(cycle.endDate) : "En curso"}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
 }
 
 // ─── Detail cell ──────────────────────────────────────────────────────────────
@@ -232,6 +296,12 @@ export function CycleDetailScreen() {
     },
   ];
 
+  const hasOptionalDetails =
+    !!cycle.concentration ||
+    (!!cycle.nextIntakeTime && active) ||
+    !!cycle.reason ||
+    !!cycle.notes;
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <DetailHeader
@@ -257,20 +327,13 @@ export function CycleDetailScreen() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
 
-        {/* Hero card */}
+        {/* Hero: name + status badge only */}
         <View style={[styles.heroCard, { backgroundColor: t.brand.solid }]}>
           <View style={styles.heroTop}>
             <View style={[styles.heroIcon, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
               <Pill size={28} color={colors.white} />
             </View>
-            <View style={styles.heroInfo}>
-              <Text style={styles.heroMedName}>{medicationName}</Text>
-              <Text style={styles.heroDosage}>
-                {formatDose(cycle.doseAmount, cycle.doseUnit) || cycle.dosage}
-                {" · "}
-                {formatFrequency(cycle.frequency, cycle.frequencyUnit)}
-              </Text>
-            </View>
+            <Text style={styles.heroMedName} numberOfLines={2}>{medicationName}</Text>
           </View>
           <View style={styles.heroBadgeRow}>
             <View style={[
@@ -286,112 +349,60 @@ export function CycleDetailScreen() {
           </View>
         </View>
 
-        {/* Stats strip */}
-        <View style={[styles.statsStrip, { backgroundColor: t.surface.bgCard }]}>
-          <View style={styles.statItem}>
-            <CalendarDays size={16} color={t.text.secondary} />
-            <Text style={[styles.statMain, { color: t.text.primary }]}>
-              {formatShort(cycle.startDate)}
-            </Text>
-            <Text style={[styles.statSub, { color: t.text.secondary }]}>Inicio</Text>
-          </View>
+        {/* Info grid 2×2: dose | frequency / start | end */}
+        <InfoGrid cycle={cycle} t={t} styles={styles} />
 
-          <View style={[styles.statDivider, { backgroundColor: t.border.medium }]} />
+        {/* Optional details */}
+        {hasOptionalDetails && (
+          <>
+            <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Detalles</Text>
 
-          <View style={styles.statItem}>
-            <Activity size={16} color={t.text.secondary} />
-            <Text style={[styles.statMain, { color: t.text.primary }]}>{formatFrequencyShort(cycle.frequency, cycle.frequencyUnit)}</Text>
-            <Text style={[styles.statSub, { color: t.text.secondary }]}>Frecuencia</Text>
-          </View>
+            {/* Concentration + next intake: 2-column row */}
+            {(cycle.concentration || (cycle.nextIntakeTime && active)) && (
+              <View style={styles.detailRow}>
+                {cycle.concentration ? (
+                  <View style={styles.detailHalf}>
+                    <DetailCell
+                      label="Concentración"
+                      value={cycle.concentration}
+                      icon={<Pill size={18} color={t.text.secondary} />}
+                    />
+                  </View>
+                ) : null}
+                {cycle.nextIntakeTime && active ? (
+                  <View style={styles.detailHalf}>
+                    <DetailCell
+                      label="Próxima toma"
+                      value={new Date(cycle.nextIntakeTime).toLocaleString("es-CO", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                      icon={<Clock size={18} color={t.text.secondary} />}
+                    />
+                  </View>
+                ) : null}
+              </View>
+            )}
 
-          <View style={[styles.statDivider, { backgroundColor: t.border.medium }]} />
-
-          <View style={styles.statItem}>
-            <CalendarDays size={16} color={t.text.secondary} />
-            <Text style={[styles.statMain, { color: t.text.primary }]}>
-              {cycle.endDate ? formatShort(cycle.endDate) : "En curso"}
-            </Text>
-            <Text style={[styles.statSub, { color: t.text.secondary }]}>Fin</Text>
-          </View>
-        </View>
-
-        {/* Detail cells */}
-        <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Detalles</Text>
-
-        <View style={styles.grid}>
-          {(cycle.doseAmount != null || cycle.doseUnit) ? (
-            <DetailCell
-              label="Cantidad a tomar"
-              value={formatDose(cycle.doseAmount, cycle.doseUnit)}
-              icon={<Pill size={18} color={t.accent.medFg} />}
-            />
-          ) : (
-            <DetailCell
-              label="Dosis"
-              value={cycle.dosage}
-              icon={<Pill size={18} color={t.accent.medFg} />}
-            />
-          )}
-
-          {cycle.concentration ? (
-            <DetailCell
-              label="Concentración"
-              value={cycle.concentration}
-              icon={<Pill size={18} color={t.text.secondary} />}
-            />
-          ) : null}
-
-          <DetailCell
-            label="Inicio del ciclo"
-            value={[
-              formatDate(cycle.startDate),
-              cycle.firstIntakeTime
-                ? new Date(cycle.firstIntakeTime).toLocaleTimeString("es-CO", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : null,
-            ].filter(Boolean).join("\n")}
-            icon={<CalendarDays size={18} color={t.text.secondary} />}
-          />
-
-          {cycle.endDate ? (
-            <DetailCell
-              label="Fin del ciclo"
-              value={formatDate(cycle.endDate)}
-              icon={<CalendarDays size={18} color={t.text.secondary} />}
-            />
-          ) : null}
-
-          {cycle.nextIntakeTime && active ? (
-            <DetailCell
-              label="Próxima toma"
-              value={new Date(cycle.nextIntakeTime).toLocaleString("es-CO", {
-                day: "2-digit",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-              icon={<Clock size={18} color={t.text.secondary} />}
-            />
-          ) : null}
-
-          {cycle.reason ? (
-            <DetailCell
-              label="Razón / indicación"
-              value={cycle.reason}
-              icon={<FileText size={18} color={t.text.secondary} />}
-            />
-          ) : null}
-
-          {cycle.notes ? (
-            <DetailCell
-              label="Notas"
-              value={cycle.notes}
-              icon={<FileText size={18} color={t.text.secondary} />}
-            />
-          ) : null}
-        </View>
+            {/* Reason and notes: full width */}
+            {cycle.reason ? (
+              <DetailCell
+                label="Razón / indicación"
+                value={cycle.reason}
+                icon={<FileText size={18} color={t.text.secondary} />}
+              />
+            ) : null}
+            {cycle.notes ? (
+              <DetailCell
+                label="Notas"
+                value={cycle.notes}
+                icon={<FileText size={18} color={t.text.secondary} />}
+              />
+            ) : null}
+          </>
+        )}
 
       </ScrollView>
 
@@ -431,33 +442,40 @@ function makeStyles(t: ThemeContextValue) {
     scroll:    { flex: 1 },
     content:   { padding: spacing[4], gap: spacing[4], paddingBottom: spacing[8] },
 
-    // Hero
-    heroCard:     { borderRadius: radii.xl, padding: spacing[4], gap: spacing[3] },
-    heroTop:      { flexDirection: "row", alignItems: "center", gap: spacing[3] },
-    heroIcon:     {
+    // Hero (slimmed down — no dose/frequency text)
+    heroCard:      { borderRadius: radii.xl, padding: spacing[4], gap: spacing[3] },
+    heroTop:       { flexDirection: "row", alignItems: "center", gap: spacing[3] },
+    heroIcon:      {
       width: 52, height: 52, borderRadius: 26,
       justifyContent: "center", alignItems: "center", flexShrink: 0,
     },
-    heroInfo:     { flex: 1, gap: 4 },
-    heroMedName:  { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.white, lineHeight: 26 },
-    heroDosage:   { fontSize: fontSize.sm, color: "rgba(255,255,255,0.85)" },
-    heroBadgeRow: { flexDirection: "row", gap: spacing[2] },
-    heroBadge:    {
+    heroMedName:   { flex: 1, fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.white, lineHeight: 26 },
+    heroBadgeRow:  { flexDirection: "row", gap: spacing[2] },
+    heroBadge:     {
       flexDirection: "row", alignItems: "center", gap: spacing[1],
       paddingHorizontal: spacing[2], paddingVertical: 4, borderRadius: radii.full,
     },
-    heroBadgeDot: { width: 6, height: 6, borderRadius: 3 },
-    heroBadgeText:{ fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: colors.white },
+    heroBadgeDot:  { width: 6, height: 6, borderRadius: 3 },
+    heroBadgeText: { fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: colors.white },
 
-    // Stats strip
-    statsStrip:  { flexDirection: "row", borderRadius: radii.lg, overflow: "hidden" },
-    statItem:    { flex: 1, alignItems: "center", paddingVertical: spacing[3], paddingHorizontal: spacing[2], gap: 2 },
-    statMain:    { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, textAlign: "center" },
-    statSub:     { fontSize: fontSize.xs, textAlign: "center" },
-    statDivider: { width: 1, marginVertical: spacing[3] },
+    // Info grid 2×2
+    infoGrid:      { borderRadius: radii.lg, borderWidth: 1, overflow: "hidden" },
+    gridRow:       { flexDirection: "row" },
+    gridCell:      { flex: 1, padding: spacing[3], gap: 4 },
+    gridCellIcon:  {
+      width: 28, height: 28, borderRadius: radii.md,
+      alignItems: "center", justifyContent: "center",
+      marginBottom: spacing[1],
+    },
+    gridCellLabel: { fontSize: fontSize.xs },
+    gridCellValue: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, lineHeight: 18 },
+    gridCellSub:   { fontSize: fontSize.xs, lineHeight: 16 },
+    gridVDivider:  { width: 1 },
+    gridHDivider:  { height: 1 },
 
-    // Section
+    // Optional details
     sectionTitle: { fontSize: fontSize.base, fontWeight: fontWeight.bold },
-    grid:         { gap: spacing[2] },
+    detailRow:    { flexDirection: "row", gap: spacing[2] },
+    detailHalf:   { flex: 1 },
   });
 }

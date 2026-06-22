@@ -7,6 +7,22 @@ import type { ThemeContextValue } from "../../tokens/ThemeProvider";
 import { eventLabel, type AgendaEvent } from "./mapCalendarApiToEvents";
 import { MOOD_EMOJI } from "./moodEmoji";
 
+const DOSE_UNIT_ES: Record<string, string> = {
+    TABLET: "tableta(s)",
+    ML:     "ml",
+    DROPS:  "gotas",
+    GRAMS:  "gramos",
+    MG:     "mg",
+    UNITS:  "unidad(es)",
+};
+
+function formatMedDose(doseAmount: number | null | undefined, doseUnit: string | null | undefined, fallback: string): string {
+    const label = doseUnit ? (DOSE_UNIT_ES[doseUnit] ?? doseUnit.toLowerCase()) : "";
+    if (doseAmount != null && label) return `${doseAmount} ${label}`;
+    if (doseAmount != null) return String(doseAmount);
+    return fallback;
+}
+
 interface EventBlockProps {
     event: AgendaEvent;
     compact?: boolean;
@@ -17,15 +33,18 @@ export function EventBlock({ event, compact = false }: EventBlockProps) {
     const styles = useMemo(() => makeStyles(t, event.type, compact), [t, event.type, compact]);
 
     const title = eventLabel(event);
-    const subtitle =
-        event.type === "checkin"
-            ? new Date(event.data.recordedAt).toLocaleTimeString("es-CO", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-              })
-            : event.type === "medication"
-              ? `${event.data.dosage}${event.data.dosage ? " · " : ""}${event.intakeTime}`
-              : event.data.time?.slice(0, 5) ?? "";
+    let subtitle = "";
+    if (event.type === "checkin") {
+        subtitle = new Date(event.data.recordedAt).toLocaleTimeString("es-CO", {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    } else if (event.type === "medication") {
+        const dose = formatMedDose(event.data.doseAmount, event.data.doseUnit, event.data.dosage);
+        subtitle = dose ? `${dose} · ${event.intakeTime}` : event.intakeTime;
+    } else {
+        subtitle = event.data.time?.slice(0, 5) ?? "";
+    }
 
     return (
         <View style={styles.block}>

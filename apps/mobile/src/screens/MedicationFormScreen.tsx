@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { ArrowLeft, Pill, Check, X, Search } from "lucide-react-native";
+import { ArrowLeft, Pill, Check, X, Search, Bell } from "lucide-react-native";
 import {
   radii,
   spacing,
@@ -26,7 +26,47 @@ import {
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { useMedicationFormCore, useMedicationsQuery } from "@helu/api/hooks";
-import type { Medication } from "@helu/api";
+import type { Medication, PharmaceuticalForm, DoseUnit, FrequencyUnit } from "@helu/api";
+
+type ReminderMode = "none" | "at_time" | "before";
+
+// ─── Catalogues ───────────────────────────────────────────────────────────────
+
+const PHARMA_FORM_LABELS: Record<PharmaceuticalForm, string> = {
+  TABLET:    "Tableta",
+  CAPSULE:   "Cápsula",
+  CREAM:     "Crema",
+  PASTE:     "Pasta",
+  SYRUP:     "Jarabe",
+  DROPS:     "Gotas",
+  INJECTION: "Inyección",
+  POWDER:    "Polvo",
+  SPRAY:     "Spray",
+};
+
+const DOSE_UNIT_LABELS: Record<DoseUnit, string> = {
+  TABLET: "Tableta(s)",
+  ML:     "ml",
+  DROPS:  "Gotas",
+  GRAMS:  "Gramos",
+  MG:     "mg",
+  UNITS:  "Unidades",
+};
+
+const FREQUENCY_UNIT_LABELS: Record<FrequencyUnit, string> = {
+  HOUR:  "Hora(s)",
+  DAY:   "Día(s)",
+  WEEK:  "Semana(s)",
+  MONTH: "Mes(es)",
+  YEAR:  "Año(s)",
+};
+
+const REMINDER_PRESET_MINUTES = [
+  { label: "15 min", value: 15 },
+  { label: "30 min", value: 30 },
+  { label: "1 hora", value: 60 },
+  { label: "2 horas", value: 120 },
+];
 
 // ─── Fuzzy name matching ──────────────────────────────────────────────────────
 
@@ -67,6 +107,53 @@ function findFuzzySuggestion(typed: string, meds: Medication[]): Medication | nu
   return best?.med ?? null;
 }
 
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+/** Fila de chips de selección única */
+function ChipRow<T extends string>({
+  options,
+  labels,
+  value,
+  onChange,
+  t,
+  styles,
+}: {
+  options: readonly T[];
+  labels: Record<T, string>;
+  value: T | "";
+  onChange: (v: T | "") => void;
+  t: ThemeContextValue;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  return (
+    <View style={styles.chipRow}>
+      {options.map((opt) => {
+        const selected = value === opt;
+        return (
+          <TouchableOpacity
+            key={opt}
+            style={[
+              styles.chip,
+              { borderColor: selected ? t.accent.medFg : t.border.medium },
+              selected && { backgroundColor: t.accent.medBg },
+            ]}
+            onPress={() => onChange(selected ? "" : opt)}
+          >
+            <Text
+              style={[
+                styles.chipText,
+                { color: selected ? t.accent.medFg : t.text.secondary },
+              ]}
+            >
+              {labels[opt]}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export function MedicationFormScreen() {
@@ -92,12 +179,10 @@ export function MedicationFormScreen() {
     },
   });
 
-  // Pre-seleccionar medicamento si venimos desde MedicationDetailScreen
   useEffect(() => {
     if (params?.medicationId && params?.medicationName) {
       form.selectExistingMedication(params.medicationId, params.medicationName);
     }
-    // Solo al montar
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -165,7 +250,8 @@ export function MedicationFormScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Medicamento */}
+
+          {/* ── Medicamento ─────────────────────────────────────────────────── */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionIcon, { backgroundColor: t.accent.medBg }]}>
@@ -176,7 +262,7 @@ export function MedicationFormScreen() {
               </Text>
             </View>
 
-            {/* Nombre + búsqueda */}
+            {/* Nombre */}
             <View>
               <View style={styles.searchRow}>
                 <View style={styles.searchInputWrap}>
@@ -193,7 +279,6 @@ export function MedicationFormScreen() {
                 </View>
               </View>
 
-              {/* Chip de selección */}
               {form.selectedMedicationId && (
                 <View style={[styles.selectedChip, { backgroundColor: t.status.successBg ?? t.accent.medBg }]}>
                   <Check size={13} color={t.status.successFg ?? t.accent.medFg} />
@@ -209,7 +294,6 @@ export function MedicationFormScreen() {
                 </View>
               )}
 
-              {/* Lista de sugerencias */}
               {hasSuggestions && (
                 <View style={[styles.suggestions, { backgroundColor: t.surface.bgCard, borderColor: t.border.medium }]}>
                   {filteredSuggestions.slice(0, 5).map((med: Medication) => (
@@ -232,26 +316,98 @@ export function MedicationFormScreen() {
                 </View>
               )}
             </View>
+
+            {/* Forma farmacéutica */}
+            <View>
+              <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>
+                Forma farmacéutica
+              </Text>
+              <ChipRow
+                options={["TABLET", "CAPSULE", "CREAM", "PASTE", "SYRUP", "DROPS", "INJECTION", "POWDER", "SPRAY"] as const}
+                labels={PHARMA_FORM_LABELS}
+                value={form.pharmaceuticalForm}
+                onChange={form.setPharmaceuticalForm}
+                t={t}
+                styles={styles}
+              />
+            </View>
           </View>
 
-          {/* Prescripción */}
+          {/* ── Prescripción ─────────────────────────────────────────────────── */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: t.text.primary }]}>
               Prescripción
             </Text>
+
+            {/* Concentración */}
             <TextField
-              label="Dosis"
-              value={form.dosage}
-              onChange={form.setDosage}
-              placeholder="Ej: 500mg · 1 tableta"
+              label="Concentración (opcional)"
+              value={form.concentration}
+              onChange={form.setConcentration}
+              placeholder="Ej: 500mg, 10mg/5ml"
             />
+
+            {/* Dosis: cantidad + unidad */}
+            <View>
+              <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>
+                Dosis por toma
+              </Text>
+              <View style={styles.rowGap}>
+                <View style={styles.dosageAmountWrap}>
+                  <TextField
+                    label="Cantidad"
+                    value={form.doseAmount}
+                    onChange={form.setDoseAmount}
+                    placeholder="Ej: 1, 2.5"
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+              </View>
+              <ChipRow
+                options={["TABLET", "ML", "DROPS", "GRAMS", "MG", "UNITS"] as const}
+                labels={DOSE_UNIT_LABELS}
+                value={form.doseUnit}
+                onChange={form.setDoseUnit}
+                t={t}
+                styles={styles}
+              />
+            </View>
+
+            {/* Frecuencia */}
+            <View>
+              <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>
+                Frecuencia
+              </Text>
+              <View style={styles.rowGap}>
+                <View style={styles.dosageAmountWrap}>
+                  <TextField
+                    label="Cada cuánto"
+                    value={form.frequency}
+                    onChange={form.setFrequency}
+                    placeholder="Ej: 8"
+                    keyboardType="number-pad"
+                  />
+                </View>
+              </View>
+              <ChipRow
+                options={["HOUR", "DAY", "WEEK", "MONTH", "YEAR"] as const}
+                labels={FREQUENCY_UNIT_LABELS}
+                value={form.frequencyUnit}
+                onChange={(v) => { if (v) form.setFrequencyUnit(v as FrequencyUnit); }}
+                t={t}
+                styles={styles}
+              />
+            </View>
+
+            {/* Precio */}
             <TextField
-              label="Frecuencia (horas entre tomas)"
-              value={form.frequency}
-              onChange={form.setFrequency}
-              placeholder="Ej: 8"
-              keyboardType="number-pad"
+              label="Precio (opcional)"
+              value={form.price}
+              onChange={form.setPrice}
+              placeholder="Ej: 25000"
+              keyboardType="decimal-pad"
             />
+
             <TextField
               label="Razón / indicación (opcional)"
               value={form.reason}
@@ -262,12 +418,12 @@ export function MedicationFormScreen() {
               label="Notas adicionales (opcional)"
               value={form.notes}
               onChange={form.setNotes}
-              placeholder="Ej: Tomar con comida, ajuste de dosis por tolerancia"
+              placeholder="Ej: Tomar con comida"
               multiline
             />
           </View>
 
-          {/* Periodo */}
+          {/* ── Periodo ───────────────────────────────────────────────────────── */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: t.text.primary }]}>
               Periodo del ciclo
@@ -290,6 +446,83 @@ export function MedicationFormScreen() {
               value={form.endDate ?? ""}
               onChange={(v) => form.setEndDate(v.slice(0, 10))}
             />
+          </View>
+
+          {/* ── Recordatorios ─────────────────────────────────────────────────── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: t.accent.medBg }]}>
+                <Bell size={16} color={t.accent.medFg} />
+              </View>
+              <Text style={[styles.sectionTitle, { color: t.text.primary }]}>
+                Recordatorios
+              </Text>
+            </View>
+
+            {/* Modo */}
+            <View style={styles.reminderModeRow}>
+              {(["none", "at_time", "before"] as ReminderMode[]).map((mode) => {
+                const label =
+                  mode === "none"    ? "Sin recordatorio" :
+                  mode === "at_time" ? "Al momento de la toma" :
+                  "Antes de la toma";
+                const selected = form.reminderMode === mode;
+                return (
+                  <TouchableOpacity
+                    key={mode}
+                    style={[
+                      styles.reminderModeBtn,
+                      { borderColor: selected ? t.accent.medFg : t.border.medium },
+                      selected && { backgroundColor: t.accent.medBg },
+                    ]}
+                    onPress={() => form.setReminderMode(mode)}
+                  >
+                    <Text
+                      style={[
+                        styles.reminderModeBtnText,
+                        { color: selected ? t.accent.medFg : t.text.secondary },
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Presets de tiempo cuando modo = "before" */}
+            {form.reminderMode === "before" && (
+              <View>
+                <Text style={[styles.fieldLabel, { color: t.text.secondary }]}>
+                  ¿Con cuánta anticipación?
+                </Text>
+                <View style={styles.chipRow}>
+                  {REMINDER_PRESET_MINUTES.map(({ label, value }) => {
+                    const selected = form.reminderOffsets.includes(value);
+                    return (
+                      <TouchableOpacity
+                        key={value}
+                        style={[
+                          styles.chip,
+                          { borderColor: selected ? t.accent.medFg : t.border.medium },
+                          selected && { backgroundColor: t.accent.medBg },
+                        ]}
+                        onPress={() => form.toggleReminderOffset(value)}
+                      >
+                        <Text
+                          style={[
+                            styles.chipText,
+                            { color: selected ? t.accent.medFg : t.text.secondary },
+                          ]}
+                        >
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
           </View>
 
           {/* Error */}
@@ -366,6 +599,7 @@ function makeStyles(t: ThemeContextValue) {
     sectionHeader:    { flexDirection: "row", alignItems: "center", gap: spacing[2], marginBottom: spacing[1] },
     sectionIcon:      { width: 28, height: 28, borderRadius: radii.full, alignItems: "center", justifyContent: "center" },
     sectionTitle:     { fontSize: fontSize.base, fontWeight: fontWeight.semibold },
+    fieldLabel:       { fontSize: fontSize.sm, marginBottom: spacing[2] },
 
     searchRow:        { flexDirection: "row", alignItems: "flex-end", gap: spacing[2] },
     searchInputWrap:  { flex: 1 },
@@ -409,6 +643,27 @@ function makeStyles(t: ThemeContextValue) {
     suggestionIcon:   { flexShrink: 0 },
     suggestionText:   { flex: 1, fontSize: fontSize.sm },
     suggestionSub:    { fontSize: fontSize.xs },
+
+    chipRow:          { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
+    chip:             {
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[2],
+      borderRadius: radii.full,
+      borderWidth: 1,
+    },
+    chipText:         { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
+
+    rowGap:           { flexDirection: "row", gap: spacing[2], marginBottom: spacing[2] },
+    dosageAmountWrap: { flex: 1 },
+
+    reminderModeRow:  { gap: spacing[2] },
+    reminderModeBtn:  {
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[2],
+      borderRadius: radii.md,
+      borderWidth: 1,
+    },
+    reminderModeBtnText: { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
 
     errorBox:         { padding: spacing[3], borderRadius: radii.sm },
     errorText:        { fontSize: fontSize.sm },

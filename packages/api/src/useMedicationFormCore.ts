@@ -13,20 +13,35 @@ import {
   useUpdateMedicationMutation,
 } from "./reactQueryHooks";
 import { isApiError } from "./errors";
-import type { Medication } from "./schemas";
+import type { Medication, PharmaceuticalForm, DoseUnit, FrequencyUnit } from "./schemas";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/** Modo de recordatorio para el ciclo */
+export type ReminderMode = "none" | "at_time" | "before";
+
 export interface MedicationFormState {
   name: string;
+  pharmaceuticalForm: PharmaceuticalForm | "";
+  concentration: string;
+  doseAmount: string;
+  doseUnit: DoseUnit | "";
+  /** Texto libre de dosis — se auto-construye; se mantiene por compat con la API */
   dosage: string;
-  /** String para compatibilidad con inputs de texto; se parsea a int al guardar. */
+  /** Valor numérico de la frecuencia */
   frequency: string;
+  /** Unidad de la frecuencia */
+  frequencyUnit: FrequencyUnit;
   startDate: string;
   firstIntakeTime: string;
   endDate: string;
   reason: string;
   notes: string;
+  price: string;
+  /** Cómo se recuerda la toma */
+  reminderMode: ReminderMode;
+  /** Offsets en minutos cuando reminderMode === "before" */
+  reminderOffsets: number[];
   /** ID del medicamento existente seleccionado por búsqueda; null = crear uno nuevo. */
   selectedMedicationId: string | null;
   error: string | null;
@@ -36,13 +51,20 @@ export interface MedicationFormState {
 
 export interface MedicationFormActions {
   setName: (v: string) => void;
-  setDosage: (v: string) => void;
+  setPharmaceuticalForm: (v: PharmaceuticalForm | "") => void;
+  setConcentration: (v: string) => void;
+  setDoseAmount: (v: string) => void;
+  setDoseUnit: (v: DoseUnit | "") => void;
   setFrequency: (v: string) => void;
+  setFrequencyUnit: (v: FrequencyUnit) => void;
   setStartDate: (v: string) => void;
   setFirstIntakeTime: (v: string) => void;
   setEndDate: (v: string) => void;
   setReason: (v: string) => void;
   setNotes: (v: string) => void;
+  setPrice: (v: string) => void;
+  setReminderMode: (v: ReminderMode) => void;
+  toggleReminderOffset: (minutes: number) => void;
   /** Selecciona un medicamento existente; rellena nombre e impide crear uno nuevo. */
   selectExistingMedication: (id: string, name: string) => void;
   /** Limpia la selección de medicamento existente (al editar el nombre manualmente). */
@@ -55,6 +77,16 @@ export interface MedicationFormActions {
 export interface MedicationFormAdapters {
   onSaveSuccess: () => void;
   afterSave: () => void;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function buildDosageString(doseAmount: string, doseUnit: DoseUnit | "", concentration: string): string {
+  const parts: string[] = [];
+  if (doseAmount) parts.push(doseAmount);
+  if (doseUnit) parts.push(doseUnit.toLowerCase());
+  if (concentration) parts.push(concentration);
+  return parts.join(" ").trim() || "—";
 }
 
 // ─── Core hook ────────────────────────────────────────────────────────────────
@@ -70,8 +102,18 @@ export function useMedicationFormCore({
   const activeCycle = initial?.cycles?.[0];
 
   const [name, setName] = useState(initial?.name ?? "");
-  const [dosage, setDosage] = useState(activeCycle?.dosage ?? "");
+  const [pharmaceuticalForm, setPharmaceuticalForm] = useState<PharmaceuticalForm | "">(
+    (activeCycle as any)?.pharmaceuticalForm ?? ""
+  );
+  const [concentration, setConcentration] = useState((activeCycle as any)?.concentration ?? "");
+  const [doseAmount, setDoseAmount] = useState(
+    (activeCycle as any)?.doseAmount?.toString() ?? ""
+  );
+  const [doseUnit, setDoseUnit] = useState<DoseUnit | "">((activeCycle as any)?.doseUnit ?? "");
   const [frequency, setFrequency] = useState(activeCycle?.frequency?.toString() ?? "8");
+  const [frequencyUnit, setFrequencyUnit] = useState<FrequencyUnit>(
+    (activeCycle as any)?.frequencyUnit ?? "HOUR"
+  );
   const [startDate, setStartDate] = useState(
     activeCycle?.startDate ?? new Date().toISOString().split("T")[0]!,
   );
@@ -84,6 +126,9 @@ export function useMedicationFormCore({
   const [endDate, setEndDate] = useState(activeCycle?.endDate ?? "");
   const [reason, setReason] = useState(activeCycle?.reason ?? "");
   const [notes, setNotes] = useState(activeCycle?.notes ?? "");
+  const [price, setPrice] = useState((activeCycle as any)?.price?.toString() ?? "");
+  const [reminderMode, setReminderMode] = useState<ReminderMode>("at_time");
+  const [reminderOffsets, setReminderOffsets] = useState<number[]>([30]);
   const [selectedMedicationId, setSelectedMedicationId] = useState<string | null>(
     isEdit ? initial!.id : null,
   );
@@ -104,23 +149,45 @@ export function useMedicationFormCore({
     setSelectedMedicationId(null);
   }
 
-  function handleSave() {
-    if (!name.trim() || !dosage.trim() || !frequency || !startDate || !firstIntakeTime) {
-      setError("Completa todos los campos obligatorios.");
-      return;
-    }
-    setError(null);
+  function toggleReminderOffset(minutes: number) {
+    setReminderOffsets((prev) =>
+      prev.includes(minutes) ? prev.filter((m) => m !== minutes) : [...prev, minutes]
+    );
+  }
 
-    const cyclePayload = {
+  function buildCyclePayload() {
+    const dosage = buildDosageString(doseAmount, doseUnit, concentration);
+    let resolvedOffsets: number[];
+    if (reminderMode === "none") resolvedOffsets = [];
+    else if (reminderMode === "at_time") resolvedOffsets = [0];
+    else resolvedOffsets = reminderOffsets;
+
+    return {
       dosage,
       frequency: Number.parseInt(frequency, 10),
+      frequencyUnit,
+      pharmaceuticalForm: pharmaceuticalForm || undefined,
+      concentration: concentration.trim() || undefined,
+      doseAmount: doseAmount ? Number.parseFloat(doseAmount) : undefined,
+      doseUnit: doseUnit || undefined,
+      price: price ? Number.parseFloat(price) : undefined,
       reason: reason.trim() || undefined,
       notes: notes.trim() || undefined,
       startDate,
       endDate: endDate || undefined,
       firstIntakeTime: `${startDate}T${firstIntakeTime}:00`,
-      reminderOffsets: [60, 30, 15, 5],
+      reminderOffsets: resolvedOffsets,
     };
+  }
+
+  function handleSave() {
+    if (!name.trim() || !frequency || !startDate || !firstIntakeTime) {
+      setError("Completa todos los campos obligatorios.");
+      return;
+    }
+    setError(null);
+
+    const cyclePayload = buildCyclePayload();
 
     if (isEdit) {
       updateMedMut.mutate(
@@ -135,7 +202,6 @@ export function useMedicationFormCore({
       return;
     }
 
-    // Si se seleccionó un medicamento existente, solo crear el ciclo
     if (selectedMedicationId) {
       createCycleMut.mutate(
         { medicationId: selectedMedicationId, cycle: cyclePayload },
@@ -149,7 +215,6 @@ export function useMedicationFormCore({
       return;
     }
 
-    // Crear nuevo medicamento y su primer ciclo
     createMedMut.mutate(name, {
       onSuccess: (med) => {
         createCycleMut.mutate(
@@ -169,25 +234,14 @@ export function useMedicationFormCore({
   }
 
   function handleSaveWithExistingMedication(medicationId: string) {
-    if (!dosage.trim() || !frequency || !startDate || !firstIntakeTime) {
+    if (!frequency || !startDate || !firstIntakeTime) {
       setError("Completa todos los campos obligatorios.");
       return;
     }
     setError(null);
 
-    const cyclePayload = {
-      dosage,
-      frequency: Number.parseInt(frequency, 10),
-      reason: reason.trim() || undefined,
-      notes: notes.trim() || undefined,
-      startDate,
-      endDate: endDate || undefined,
-      firstIntakeTime: `${startDate}T${firstIntakeTime}:00`,
-      reminderOffsets: [60, 30, 15, 5],
-    };
-
     createCycleMut.mutate(
-      { medicationId, cycle: cyclePayload },
+      { medicationId, cycle: buildCyclePayload() },
       {
         onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
         onError: (err) => {
@@ -197,12 +251,17 @@ export function useMedicationFormCore({
     );
   }
 
+  const dosage = buildDosageString(doseAmount, doseUnit, concentration);
+
   return {
-    name, dosage, frequency, startDate, firstIntakeTime, endDate, reason, notes,
+    name, pharmaceuticalForm, concentration, doseAmount, doseUnit, dosage,
+    frequency, frequencyUnit, startDate, firstIntakeTime, endDate,
+    reason, notes, price, reminderMode, reminderOffsets,
     selectedMedicationId,
     error, saving, isEdit,
-    setName, setDosage, setFrequency, setStartDate, setFirstIntakeTime, setEndDate,
-    setReason, setNotes,
+    setName, setPharmaceuticalForm, setConcentration, setDoseAmount, setDoseUnit,
+    setFrequency, setFrequencyUnit, setStartDate, setFirstIntakeTime, setEndDate,
+    setReason, setNotes, setPrice, setReminderMode, toggleReminderOffset,
     selectExistingMedication, clearSelectedMedication,
     clearError: () => setError(null),
     handleSave,

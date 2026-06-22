@@ -293,7 +293,22 @@ export const MedicationDeliverySchema = z.object({
     source: z.string().nullable().optional(),
 });
 
+export const PHARMACEUTICAL_FORMS = ["TABLET", "CAPSULE", "CREAM", "PASTE", "SYRUP", "DROPS", "INJECTION", "POWDER", "SPRAY"] as const;
+export type PharmaceuticalForm = typeof PHARMACEUTICAL_FORMS[number];
+
+export const DOSE_UNITS = ["TABLET", "ML", "DROPS", "GRAMS", "MG", "UNITS"] as const;
+export type DoseUnit = typeof DOSE_UNITS[number];
+
+export const FREQUENCY_UNITS = ["HOUR", "DAY", "WEEK", "MONTH", "YEAR"] as const;
+export type FrequencyUnit = typeof FREQUENCY_UNITS[number];
+
 // --- Medications (identity + cycles; flat fields derived from active cycle for UI) ---
+
+// Coerces Decimal strings from Pydantic v2 serialization to number
+const coerceDecimal = z.preprocess(
+    (v: unknown) => (v == null ? v : Number(v)),
+    z.number().nullable().optional(),
+);
 
 export const MedicationCycleSchema = z.object({
     id: z.string().uuid(),
@@ -302,6 +317,13 @@ export const MedicationCycleSchema = z.object({
     replacesCycleId: z.string().uuid().nullable().optional(),
     dosage: z.string(),
     frequency: z.number(),
+    // Use z.string() for new enum fields so unexpected values don't crash parsing
+    frequencyUnit: z.string().default("HOUR"),
+    pharmaceuticalForm: z.string().nullable().optional(),
+    concentration: z.string().nullable().optional(),
+    doseAmount: coerceDecimal,
+    doseUnit: z.string().nullable().optional(),
+    price: coerceDecimal,
     reason: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
     startDate: z.string(),
@@ -365,6 +387,12 @@ export const MedicationUpdateSchema = z.object({
 export const MedicationCycleCreateSchema = z.object({
     dosage: z.string().min(1, "La dosis es obligatoria"),
     frequency: z.number().min(1),
+    frequencyUnit: z.enum(FREQUENCY_UNITS).default("HOUR"),
+    pharmaceuticalForm: z.enum(PHARMACEUTICAL_FORMS).optional(),
+    concentration: z.string().optional(),
+    doseAmount: z.number().optional(),
+    doseUnit: z.enum(DOSE_UNITS).optional(),
+    price: z.number().optional(),
     reason: z.string().optional(),
     notes: z.string().optional(),
     startDate: z.string(),
@@ -379,6 +407,12 @@ export const MedicationCycleCreateSchema = z.object({
 export const MedicationCycleUpdateSchema = z.object({
     dosage: z.string().min(1).optional(),
     frequency: z.number().min(1).optional(),
+    frequencyUnit: z.enum(FREQUENCY_UNITS).optional(),
+    pharmaceuticalForm: z.enum(PHARMACEUTICAL_FORMS).nullable().optional(),
+    concentration: z.string().nullable().optional(),
+    doseAmount: z.number().nullable().optional(),
+    doseUnit: z.enum(DOSE_UNITS).nullable().optional(),
+    price: z.number().nullable().optional(),
     reason: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
     endDate: z.string().nullable().optional(),

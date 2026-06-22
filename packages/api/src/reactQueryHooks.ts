@@ -494,7 +494,10 @@ export function useCreateMedicationCycleMutation() {
     return useMutation({
         mutationFn: ({ medicationId, cycle }: { medicationId: string; cycle: MedicationCycleCreate }) =>
             createMedicationCycle(medicationId, cycle),
-        onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
+        onSettled: (_data, _err, variables) => {
+            qc.invalidateQueries({ queryKey: ["medications"] });
+            qc.invalidateQueries({ queryKey: ["medication", variables.medicationId] });
+        },
     });
 }
 

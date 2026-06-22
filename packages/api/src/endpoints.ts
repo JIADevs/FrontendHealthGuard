@@ -21,6 +21,7 @@ import {
     DoctorPageSchema,
     MedicationPageSchema,
     MedicationSchema,
+    MedicationCycleSchema,
     NotificationPageSchema,
     BackpackPageSchema,
     BackpackSchema,
@@ -36,6 +37,7 @@ import {
     type DocumentCreate,
     type AppointmentCreate,
     type MedicationCycleCreate,
+    type MedicationCycleUpdate,
     type DoctorCreate,
     type BackpackCreate,
     type CustomTagCreate,
@@ -294,6 +296,11 @@ export async function getMedications(params: {
     return MedicationPageSchema.parse(data);
 }
 
+export async function getMedicationById(id: string) {
+    const { data } = await apiClient.get(`/medications/${id}`);
+    return MedicationSchema.parse(data);
+}
+
 export async function createMedication(name: string) {
     const { data } = await apiClient.post("/medications/", { name });
     return MedicationSchema.parse(data);
@@ -311,6 +318,15 @@ export async function updateMedication(id: string, name: string) {
 
 export async function deleteMedication(id: string) {
     await apiClient.delete(`/medications/${id}`);
+}
+
+export async function updateMedicationCycle(cycleId: string, cycle: MedicationCycleUpdate) {
+    const { data } = await apiClient.patch(`/medication-cycles/${cycleId}`, cycle);
+    return MedicationCycleSchema.parse(data);
+}
+
+export async function deleteMedicationCycle(cycleId: string) {
+    await apiClient.delete(`/medication-cycles/${cycleId}`);
 }
 
 export async function confirmIntake(cycleId: string) {

@@ -18,12 +18,15 @@ import {
   useUpdateAppointmentStatusMutation,
   useMedicationsQuery,
   useDeleteMedicationMutation,
+  useUpdateMedicationCycleMutation,
+  useDeleteMedicationCycleMutation,
   useConfirmIntakeMutation,
 } from "@helu/api/hooks";
 import {
   isApiError,
   type Appointment,
   type Medication,
+  type MedicationCycle,
   type DailyCheckIn,
 } from "@helu/api";
 
@@ -81,6 +84,7 @@ const STATUSES = ["PROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI"] as const;
 const LIST_VIEW_TITLES: Record<Exclude<AgendaView, "calendar">, string> = {
   appointments: "Citas",
   medications: "Medicamentos",
+  cycles: "Ciclos",
   wellbeing: "Bienestar",
 };
 
@@ -89,6 +93,7 @@ function isAgendaView(value: string | undefined): value is AgendaView {
     value === "calendar" ||
     value === "appointments" ||
     value === "medications" ||
+    value === "cycles" ||
     value === "wellbeing"
   );
 }
@@ -148,6 +153,8 @@ export function AgendaScreen() {
         <AppointmentsTab />
       ) : view === "medications" ? (
         <MedicationsTab />
+      ) : view === "cycles" ? (
+        <CyclesTab />
       ) : (
         <WellbeingTab />
       )}
@@ -400,7 +407,7 @@ function MedicationsTab() {
           onPress={() => navigation.navigate("MedicationForm")}
         >
           <Plus size={16} color={colors.white} />
-          <Text style={styles.addBtnText}>Nuevo Medicamento</Text>
+          <Text style={styles.addBtnText}>Nuevo Ciclo</Text>
         </TouchableOpacity>
       </View>
 
@@ -421,41 +428,46 @@ function MedicationsTab() {
           renderItem={({ item: m }) => {
             const cycle = m.cycles?.[0];
             return (
-              <Card
-                title={m.name}
-                subtitle={cycle ? `${cycle.dosage} — cada ${cycle.frequency}h` : "Sin ciclo activo"}
-                icon={<Pill size={20} color={t.status.warningFg} />}
-                iconBackground={t.status.warningBg}
-                actions={
-                  <View style={styles.cardActions}>
-                    <ActionButton action="delete" size="sm" onPress={() => setDeleteTarget(m)} />
-                  </View>
-                }
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate("MedicationDetail" as never, { id: m.id } as never)}
               >
-                {cycle?.reason ? (
-                  <Text style={styles.cardMetaText}>{cycle.reason}</Text>
-                ) : null}
-                {cycle?.nextIntakeTime ? (
-                  <View style={styles.cardMeta}>
-                    <Clock size={12} color={t.text.secondary} />
-                    <Text style={styles.cardMetaText}>
-                      {new Date(cycle.nextIntakeTime).toLocaleString("es-CO", {
-                        month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit",
-                      })}
-                    </Text>
-                  </View>
-                ) : null}
-                {cycle ? (
-                  <TouchableOpacity
-                    style={styles.intakeBtn}
-                    onPress={() => handleIntake(cycle.id)}
-                    disabled={intakeMut.isPending}
-                  >
-                    <Check size={13} color={colors.white} />
-                    <Text style={styles.intakeBtnText}>Tomado</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </Card>
+                <Card
+                  title={m.name}
+                  subtitle={cycle ? `${cycle.dosage} — cada ${cycle.frequency}h` : "Sin ciclo activo"}
+                  icon={<Pill size={20} color={t.status.warningFg} />}
+                  iconBackground={t.status.warningBg}
+                  actions={
+                    <View style={styles.cardActions}>
+                      <ActionButton action="delete" size="sm" onPress={() => setDeleteTarget(m)} />
+                    </View>
+                  }
+                >
+                  {cycle?.reason ? (
+                    <Text style={styles.cardMetaText}>{cycle.reason}</Text>
+                  ) : null}
+                  {cycle?.nextIntakeTime ? (
+                    <View style={styles.cardMeta}>
+                      <Clock size={12} color={t.text.secondary} />
+                      <Text style={styles.cardMetaText}>
+                        {new Date(cycle.nextIntakeTime).toLocaleString("es-CO", {
+                          month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit",
+                        })}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {cycle ? (
+                    <TouchableOpacity
+                      style={styles.intakeBtn}
+                      onPress={() => handleIntake(cycle.id)}
+                      disabled={intakeMut.isPending}
+                    >
+                      <Check size={13} color={colors.white} />
+                      <Text style={styles.intakeBtnText}>Tomado</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </Card>
+              </TouchableOpacity>
             );
           }}
           ListFooterComponent={
@@ -478,6 +490,216 @@ function MedicationsTab() {
   );
 }
 
+
+// ─── cycles tab ───────────────────────────────────────────────────────────────
+
+type CycleItem = {
+  cycle: MedicationCycle;
+  medicationId: string;
+  medicationName: string;
+};
+
+function isCycleActive(cycle: MedicationCycle): boolean {
+  if (!cycle.endDate) return true;
+  return new Date(cycle.endDate) >= new Date();
+}
+
+function CyclesTab() {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const navigation = require("@react-navigation/native").useNavigation();
+
+  const [finalizingItem, setFinalizingItem] = useState<CycleItem | null>(null);
+  const [deletingItem, setDeletingItem]     = useState<CycleItem | null>(null);
+
+  const meds     = useMedicationsQuery(1, 100);
+  const updateMut = useUpdateMedicationCycleMutation();
+  const deleteMut = useDeleteMedicationCycleMutation();
+
+  const cycleItems: CycleItem[] = useMemo(() => {
+    const all = meds.data?.items ?? [];
+    const flat: CycleItem[] = [];
+    for (const med of all) {
+      for (const cycle of med.cycles ?? []) {
+        flat.push({ cycle, medicationId: med.id, medicationName: med.name });
+      }
+    }
+    return flat.sort(
+      (a, b) => new Date(b.cycle.startDate).getTime() - new Date(a.cycle.startDate).getTime(),
+    );
+  }, [meds.data]);
+
+  function handleFinalize() {
+    if (!finalizingItem) return;
+    const today = new Date().toISOString().slice(0, 10);
+    updateMut.mutate(
+      { id: finalizingItem.cycle.id, cycle: { endDate: today } },
+      {
+        onSuccess: () => {
+          setFinalizingItem(null);
+          Toast.show({ type: "success", text1: "Ciclo finalizado" });
+        },
+        onError: (err) => Toast.show({
+          type: "error",
+          text1: "Error al finalizar",
+          text2: isApiError(err) ? err.message : "Intenta de nuevo",
+        }),
+      },
+    );
+  }
+
+  function handleDelete() {
+    if (!deletingItem) return;
+    deleteMut.mutate(deletingItem.cycle.id, {
+      onSuccess: () => {
+        setDeletingItem(null);
+        Toast.show({ type: "success", text1: "Ciclo eliminado" });
+      },
+      onError: (err) => Toast.show({
+        type: "error",
+        text1: "Error al eliminar",
+        text2: isApiError(err) ? err.message : "Intenta de nuevo",
+      }),
+    });
+  }
+
+  return (
+    <View style={styles.tabContent}>
+      <View style={styles.addRow}>
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => navigation.navigate("MedicationForm")}
+        >
+          <Plus size={16} color={colors.white} />
+          <Text style={styles.addBtnText}>Nuevo Ciclo</Text>
+        </TouchableOpacity>
+      </View>
+
+      {meds.isLoading ? (
+        <View style={styles.center}>
+          <Spinner size="lg" />
+        </View>
+      ) : cycleItems.length === 0 ? (
+        <EmptyState
+          icon={<Pill size={48} color={t.border.medium} />}
+          message="No hay ciclos registrados."
+        />
+      ) : (
+        <FlatList
+          data={cycleItems}
+          keyExtractor={(item) => item.cycle.id}
+          contentContainerStyle={[cardContentStyle, { paddingBottom: 24 }]}
+          renderItem={({ item }: { item: CycleItem }) => {
+            const { cycle, medicationId, medicationName } = item;
+            const active = isCycleActive(cycle);
+            return (
+              <View style={[styles.cycleCard, { borderColor: t.border.light }]}>
+                {/* Encabezado */}
+                <View style={styles.cycleCardHeader}>
+                  <View style={styles.cycleCardTitleRow}>
+                    <Pill size={14} color={t.accent.medFg} />
+                    <Text style={[styles.cycleCardMedName, { color: t.text.primary }]} numberOfLines={1}>
+                      {medicationName}
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.cycleBadge,
+                    { backgroundColor: active ? (t.status.successBg ?? t.accent.medBg) : t.surface.bg },
+                  ]}>
+                    <Text style={[
+                      styles.cycleBadgeText,
+                      { color: active ? (t.status.successFg ?? t.accent.medFg) : t.text.muted },
+                    ]}>
+                      {active ? "Activo" : "Finalizado"}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Datos */}
+                <View style={styles.cycleCardBody}>
+                  <Text style={[styles.cycleCardDosage, { color: t.text.primary }]}>
+                    {cycle.dosage}
+                    <Text style={[styles.cycleCardFreq, { color: t.text.secondary }]}>
+                      {" · cada "}{cycle.frequency}h
+                    </Text>
+                  </Text>
+                  <Text style={[styles.cycleCardDates, { color: t.text.secondary }]}>
+                    {new Date(cycle.startDate).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}
+                    {" → "}
+                    {cycle.endDate
+                      ? new Date(cycle.endDate).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })
+                      : "en curso"}
+                  </Text>
+                  {cycle.reason ? (
+                    <Text style={[styles.cycleCardNote, { color: t.text.muted }]} numberOfLines={1}>
+                      {cycle.reason}
+                    </Text>
+                  ) : null}
+                </View>
+
+                {/* Acciones rápidas */}
+                <View style={[styles.cycleCardActions, { borderTopColor: t.border.light }]}>
+                  <TouchableOpacity
+                    style={styles.cycleAction}
+                    onPress={() =>
+                      navigation.navigate("MedicationCycleEdit", {
+                        cycleId: cycle.id,
+                        medicationId,
+                        medicationName,
+                      })
+                    }
+                  >
+                    <Text style={[styles.cycleActionLabel, { color: t.text.secondary }]}>Editar</Text>
+                  </TouchableOpacity>
+
+                  {active && (
+                    <TouchableOpacity
+                      style={[styles.cycleAction, styles.cycleActionBorder, { borderColor: t.border.light }]}
+                      onPress={() => setFinalizingItem(item)}
+                    >
+                      <Text style={[styles.cycleActionLabel, { color: t.status.warningFg ?? t.text.secondary }]}>
+                        Finalizar
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  <TouchableOpacity
+                    style={[styles.cycleAction, styles.cycleActionBorder, { borderColor: t.border.light }]}
+                    onPress={() => setDeletingItem(item)}
+                  >
+                    <Text style={[styles.cycleActionLabel, { color: t.status.errorFg }]}>Eliminar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          }}
+        />
+      )}
+
+      {finalizingItem && (
+        <ConfirmModal
+          title="Finalizar ciclo"
+          message={`¿Finalizar el ciclo de "${finalizingItem.medicationName}"? Se establecerá hoy como fecha de fin.`}
+          confirmLabel="Finalizar"
+          loading={updateMut.isPending}
+          onConfirm={handleFinalize}
+          onCancel={() => setFinalizingItem(null)}
+        />
+      )}
+
+      {deletingItem && (
+        <ConfirmModal
+          title="Eliminar ciclo"
+          message={`¿Eliminar este ciclo de "${deletingItem.medicationName}"? Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          loading={deleteMut.isPending}
+          onConfirm={handleDelete}
+          onCancel={() => setDeletingItem(null)}
+        />
+      )}
+    </View>
+  );
+}
 
 // ─── wellbeing tab ────────────────────────────────────────────────────────────
 
@@ -684,6 +906,23 @@ function makeStyles(t: ThemeContextValue) {
     statusPillTextActive: { color: colors.white },
     intakeBtn:          { flexDirection: "row", alignItems: "center", gap: spacing[1], marginTop: spacing[1], backgroundColor: t.accent.notifFg, alignSelf: "flex-start", paddingHorizontal: spacing[3], paddingVertical: 4, borderRadius: radii.full },
     intakeBtnText:      { color: colors.white, fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
+
+    // Cycle card (CyclesTab)
+    cycleCard:          { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, overflow: "hidden", marginHorizontal: spacing[4], marginBottom: spacing[3] },
+    cycleCardHeader:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing[3], paddingTop: spacing[3], paddingBottom: spacing[1] },
+    cycleCardTitleRow:  { flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1, marginRight: spacing[2] },
+    cycleCardMedName:   { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, flex: 1 },
+    cycleBadge:         { paddingHorizontal: spacing[2], paddingVertical: 2, borderRadius: radii.full },
+    cycleBadgeText:     { fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
+    cycleCardBody:      { paddingHorizontal: spacing[3], paddingBottom: spacing[2], gap: spacing[1] },
+    cycleCardDosage:    { fontSize: fontSize.base, fontWeight: fontWeight.medium },
+    cycleCardFreq:      { fontSize: fontSize.sm, fontWeight: fontWeight.normal },
+    cycleCardDates:     { fontSize: fontSize.xs },
+    cycleCardNote:      { fontSize: fontSize.xs },
+    cycleCardActions:   { flexDirection: "row", borderTopWidth: 1 },
+    cycleAction:        { flex: 1, alignItems: "center", paddingVertical: spacing[3] },
+    cycleActionBorder:  { borderLeftWidth: 1 },
+    cycleActionLabel:   { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
 
     fieldLabel:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: spacing[2] },
     errorText:          { color: t.status.errorFg, fontSize: fontSize.sm, marginTop: spacing[3], backgroundColor: t.status.errorBg, padding: spacing[3], borderRadius: radii.sm },

@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   Pressable,
 } from "react-native";
-import { CalendarDays, List, Pill, Heart, Check } from "lucide-react-native";
+import { CalendarDays, List, Pill, Heart, Check, RefreshCw } from "lucide-react-native";
 import { spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
-export type AgendaView = "calendar" | "appointments" | "medications" | "wellbeing";
+export type AgendaView = "calendar" | "appointments" | "medications" | "cycles" | "wellbeing";
 
 interface AgendaMenuSheetProps {
   visible: boolean;
@@ -29,6 +29,7 @@ const MENU_ITEMS: {
   { view: "calendar", label: "Calendario", Icon: CalendarDays },
   { view: "appointments", label: "Citas", Icon: List },
   { view: "medications", label: "Medicamentos", Icon: Pill },
+  { view: "cycles", label: "Ciclos", Icon: RefreshCw },
   { view: "wellbeing", label: "Bienestar", Icon: Heart, accent: "notif" },
 ];
 

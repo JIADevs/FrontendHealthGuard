@@ -53,9 +53,13 @@ import {
     getTreatments,
     // Medications
     getMedications,
+    getMedicationById,
     createMedication,
+    createMedicationCycle,
     updateMedication,
     deleteMedication,
+    updateMedicationCycle,
+    deleteMedicationCycle,
     confirmIntake,
     // Notifications
     getNotifications,
@@ -76,6 +80,8 @@ import type {
     DocumentActiveShare,
     AppointmentCreate,
     MedicationCreate,
+    MedicationCycleCreate,
+    MedicationCycleUpdate,
     DoctorCreate,
     BackpackCreate,
     UserUpdate,
@@ -123,6 +129,7 @@ export const QK = {
     treatment:        (id: string)            => ["treatment", id] as const,
 
     medications:      (page = 1, limit = 20) => ["medications", page, limit] as const,
+    medication:       (id: string)           => ["medication", id] as const,
 
     notifications:    (page = 1)              => ["notifications", page] as const,
 
@@ -465,10 +472,28 @@ export function useMedicationsQuery(page = 1, limit = 20) {
     });
 }
 
+export function useMedicationByIdQuery(id: string) {
+    return useQuery({
+        queryKey: QK.medication(id),
+        queryFn: () => getMedicationById(id),
+        enabled: !!id,
+        staleTime: 5_000,
+    });
+}
+
 export function useCreateMedicationMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (med: MedicationCreate) => createMedication(med),
+        onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
+    });
+}
+
+export function useCreateMedicationCycleMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ medicationId, cycle }: { medicationId: string; cycle: MedicationCycleCreate }) =>
+            createMedicationCycle(medicationId, cycle),
         onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
     });
 }
@@ -486,6 +511,29 @@ export function useDeleteMedicationMutation() {
     return useMutation({
         mutationFn: (id: string) => deleteMedication(id),
         onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
+    });
+}
+
+export function useUpdateMedicationCycleMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, cycle }: { id: string; cycle: MedicationCycleUpdate }) =>
+            updateMedicationCycle(id, cycle),
+        onSettled: (_data, _err, vars) => {
+            qc.invalidateQueries({ queryKey: ["medications"] });
+            qc.invalidateQueries({ queryKey: ["medication"] });
+        },
+    });
+}
+
+export function useDeleteMedicationCycleMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => deleteMedicationCycle(id),
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: ["medications"] });
+            qc.invalidateQueries({ queryKey: ["medication"] });
+        },
     });
 }
 

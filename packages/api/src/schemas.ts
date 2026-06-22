@@ -376,6 +376,17 @@ export const MedicationCycleCreateSchema = z.object({
     replacesCycleId: z.string().uuid().optional(),
 });
 
+export const MedicationCycleUpdateSchema = z.object({
+    dosage: z.string().min(1).optional(),
+    frequency: z.number().min(1).optional(),
+    reason: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    endDate: z.string().nullable().optional(),
+    nextIntakeTime: z.string().nullable().optional(),
+    reminderOffsets: z.array(z.number()).optional(),
+    treatmentId: z.string().uuid().nullable().optional(),
+});
+
 // --- Notifications ---
 export const NotificationSchema = z.object({
     id: z.string().uuid(),
@@ -502,12 +513,12 @@ export type AppointmentPage = z.infer<typeof AppointmentPageSchema>;
 export type AppointmentCreate = z.infer<typeof AppointmentCreateSchema>;
 export type MedicationIntake = z.infer<typeof MedicationIntakeSchema>;
 export type MedicationDelivery = z.infer<typeof MedicationDeliverySchema>;
-export type MedicationCycle = z.infer<typeof MedicationCycleSchema>;
 export type Medication = z.infer<typeof MedicationSchema>;
 export type MedicationPage = z.infer<typeof MedicationPageSchema>;
 export type MedicationCreate = z.infer<typeof MedicationCreateSchema>;
 export type MedicationUpdate = z.infer<typeof MedicationUpdateSchema>;
 export type MedicationCycleCreate = z.infer<typeof MedicationCycleCreateSchema>;
+export type MedicationCycleUpdate = z.infer<typeof MedicationCycleUpdateSchema>;
 export type Notification = z.infer<typeof NotificationSchema>;
 export type NotificationPage = z.infer<typeof NotificationPageSchema>;
 export type ClassificationSuggestion = z.infer<typeof ClassificationSuggestionSchema>;

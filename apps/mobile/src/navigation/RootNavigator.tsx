@@ -22,6 +22,8 @@ import { AppointmentDetailScreen } from "../screens/AppointmentDetailScreen";
 import { AppointmentFormScreen } from "../screens/AppointmentFormScreen";
 import { DoctorFormScreen } from "../screens/DoctorFormScreen";
 import { MedicationFormScreen } from "../screens/MedicationFormScreen";
+import { MedicationDetailScreen } from "../screens/MedicationDetailScreen";
+import { MedicationCycleEditScreen } from "../screens/MedicationCycleEditScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { useAppTheme } from "@helu/ui";
@@ -39,7 +41,9 @@ export type RootStackParamList = {
   AppointmentDetail: { id: string };
   AppointmentForm: { id?: string } | undefined;
   DoctorForm: undefined;
-  MedicationForm: undefined;
+  MedicationForm: { medicationId?: string; medicationName?: string } | undefined;
+  MedicationDetail: { id: string };
+  MedicationCycleEdit: { cycleId: string; medicationId: string; medicationName: string };
   Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
   DocumentUpload: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
   DocumentDetail: WithBackTitle & { id: string; title?: string } | undefined;
@@ -263,6 +267,16 @@ export function RootNavigator() {
           <Stack.Screen
             name="MedicationForm"
             component={MedicationFormScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="MedicationDetail"
+            component={MedicationDetailScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="MedicationCycleEdit"
+            component={MedicationCycleEditScreen}
             options={{ headerShown: false, animation: "slide_from_right" }}
           />
         </>

@@ -3,7 +3,7 @@
 **Domain:** shared-api (`packages/api`)
 **Source change:** agenda-ui (S1 archived 2026-06-21; S2 shipped on branch `agenda`)
 **Status:** SHIPPED
-**Last updated:** 2026-06-21
+**Last updated:** 2026-06-22
 
 ---
 
@@ -129,13 +129,17 @@ places check-in blocks by **device local** date from `recordedAt` UTC ISO.
 Mobile `DailyCheckInForm` MUST convert picker local datetime to UTC ISO before POST/PATCH:
 
 ```ts
-recordedAt: toUtcIsoFromPickerValue(recordedAt)
+recordedAt: toUtcIsoFromPickerValue(clampPickerValueToMax(recordedAt))
 ```
+
+Before conversion, `clampPickerValueToMax` ensures the picker value does not exceed the current
+moment (no future check-ins). See `openspec/specs/mobile/bienestar.spec.md` RF-MB-28.
 
 Naive local strings (e.g. `2026-06-21T15:00`) sent without conversion are interpreted as UTC by
 the backend and produce incorrect calendar hour placement in non-UTC timezones.
 
-Helpers: `@helu/ui` → `toISOLocal`, `pickerValueFromUtcIso`, `toUtcIsoFromPickerValue`.
+Helpers: `@helu/ui` → `toISOLocal`, `pickerValueFromUtcIso`, `toUtcIsoFromPickerValue`,
+`clampPickerValueToMax`.
 
 ---
 
@@ -181,6 +185,13 @@ Each parsed `CalendarDay` has `checkIns: DailyCheckIn[]` populated from backend 
 
 `useCalendarEventsQuery` does not retry when response fails Zod validation (max 2 otherwise).
 
+### SC-SA-11: Mobile rejects future recordedAt before API call [shipped]
+
+**Given** `DailyCheckInForm` has a picker value after the current moment  
+**When** the user changes the value or submits  
+**Then** `clampPickerValueToMax` reduces it to now before `toUtcIsoFromPickerValue` runs  
+**And** the API never receives a future `recordedAt` from the mobile form
+
 ---
 
 ## Backend dependencies (verified)
@@ -203,3 +214,4 @@ Each parsed `CalendarDay` has `checkIns: DailyCheckIn[]` populated from backend 
 | `0169664` | Update/delete endpoints + CalendarDaySchema |
 | `61e0619` | Medication cycle schema + calendar Zod retry fix |
 | `39cbf1a` | UTC recordedAt contract documented in mobile form |
+| `70b0691` | `clampPickerValueToMax` + past-only recordedAt rule |

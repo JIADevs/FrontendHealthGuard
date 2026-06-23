@@ -3,7 +3,7 @@
 **Domain:** mobile (`apps/mobile`)
 **Source change:** agenda-ui (S1 archived 2026-06-21; S2+ shipped on branch `agenda`)
 **Status:** SHIPPED
-**Last updated:** 2026-06-21
+**Last updated:** 2026-06-22
 
 ---
 
@@ -102,6 +102,19 @@ On edit hydrate: `pickerValueFromUtcIso(initialValues.recordedAt)`.
 Default create value: `toISOLocal(new Date())`.
 
 Helpers live in `packages/ui/src/forms/DateTimePicker/DateTimePicker.utils.ts`.
+
+#### RF-MB-28 — recordedAt past-only constraint [shipped]
+
+Check-in `recordedAt` MUST allow **now and any past datetime** — **future dates/times are not
+allowed** (create and edit).
+
+Implementation in `DailyCheckInForm`:
+- `DateTimePicker` receives `maxDate={toISOLocal(new Date())}` (native `maximumDate`)
+- `clampPickerValueToMax(value)` runs on picker change, initial state, edit hydrate, and submit
+- No `minDate` — user may backdate check-ins arbitrarily into the past
+
+Product rule: a check-in records how the user felt at a moment that already happened; scheduling
+a future check-in is invalid.
 
 #### RF-MB-14 — Delete confirmation [shipped]
 
@@ -270,6 +283,14 @@ export { AgendaMenuSheet, type AgendaView } from "./AgendaMenuSheet";
 **When** they view the calendar day  
 **Then** the check-in block appears at 15:00 local (not offset by timezone)
 
+### SC-MB-14: Future recordedAt is blocked [shipped]
+
+**Given** the user opens `DailyCheckInForm`  
+**When** they open the fecha y hora picker  
+**Then** they cannot select a date or time after the current moment  
+**When** they submit with a value at or before now  
+**Then** the check-in is created/updated with that `recordedAt` in UTC ISO
+
 ---
 
 ## Implementation commits (branch `agenda`, selected)
@@ -282,3 +303,4 @@ export { AgendaMenuSheet, type AgendaView } from "./AgendaMenuSheet";
 | `1da3f83` | Check-in edit/delete form modes |
 | `02a95b7` | Journal UI, infinite scroll, WellbeingHeader |
 | `39cbf1a` | UTC recordedAt on submit + form copy |
+| `70b0691` | Block future dates on check-in recordedAt picker |

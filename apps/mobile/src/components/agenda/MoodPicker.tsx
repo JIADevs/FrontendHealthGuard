@@ -58,8 +58,8 @@ function makeStyles(t: ThemeContextValue) {
             minWidth: 60,
         },
         chipSelected: {
-            borderColor: t.accent.notifFg,
-            backgroundColor: t.accent.notifBg,
+            borderColor: t.brand.fg,
+            backgroundColor: t.brand.tint,
         },
         emoji: {
             fontSize: fontSize.xl,
@@ -72,7 +72,7 @@ function makeStyles(t: ThemeContextValue) {
             textAlign: "center",
         },
         labelSelected: {
-            color: t.accent.notifFg,
+            color: t.brand.fg,
             fontWeight: fontWeight.semibold,
         },
     });

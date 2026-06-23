@@ -103,8 +103,8 @@ export function AgendaAddSheet({
             accessibilityRole="button"
             accessibilityLabel="Registrar check-in"
           >
-            <View style={[styles.optionIcon, { backgroundColor: t.accent.notifBg }]}>
-              <Heart size={22} color={t.accent.notifFg} strokeWidth={2.25} />
+            <View style={[styles.optionIcon, { backgroundColor: t.brand.tint }]}>
+              <Heart size={22} color={t.brand.fg} strokeWidth={2.25} />
             </View>
             <Text style={styles.optionLabel}>Registrar check-in</Text>
           </TouchableOpacity>

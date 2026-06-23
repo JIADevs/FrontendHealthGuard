@@ -34,7 +34,7 @@ function makeStyles(t: ThemeContextValue) {
       width: 56,
       height: 56,
       borderRadius: radii.full,
-      backgroundColor: t.accent.notifFg,
+      backgroundColor: t.brand.solid,
       alignItems: "center",
       justifyContent: "center",
       elevation: 8,

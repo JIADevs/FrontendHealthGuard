@@ -24,12 +24,11 @@ const MENU_ITEMS: {
   view: AgendaView;
   label: string;
   Icon: typeof CalendarDays;
-  accent?: "notif";
 }[] = [
   { view: "calendar", label: "Calendario", Icon: CalendarDays },
   { view: "appointments", label: "Citas", Icon: List },
   { view: "medications", label: "Medicamentos", Icon: Pill },
-  { view: "wellbeing", label: "Bienestar", Icon: Heart, accent: "notif" },
+  { view: "wellbeing", label: "Bienestar", Icon: Heart },
 ];
 
 export function AgendaMenuSheet({
@@ -55,14 +54,9 @@ export function AgendaMenuSheet({
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={styles.handle} />
 
-          {MENU_ITEMS.map(({ view, label, Icon, accent }) => {
+          {MENU_ITEMS.map(({ view, label, Icon }) => {
             const isActive = activeView === view;
-            const iconColor =
-              accent === "notif" && isActive
-                ? t.accent.notifFg
-                : isActive
-                  ? t.brand.fg
-                  : t.text.secondary;
+            const iconColor = isActive ? t.brand.fg : t.text.secondary;
 
             return (
               <TouchableOpacity

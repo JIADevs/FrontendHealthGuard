@@ -24,7 +24,7 @@ export function WellbeingHeader({ total = 0, isLoading }: WellbeingHeaderProps) 
     return (
         <View style={styles.container}>
             <View style={styles.iconWrap}>
-                <Heart size={22} color={t.accent.notifFg} fill={t.accent.notifFg} />
+                <Heart size={22} color={t.brand.fg} fill={t.brand.fg} />
             </View>
             <View style={styles.textBlock}>
                 <Text style={styles.title}>Tu bienestar</Text>
@@ -42,16 +42,16 @@ function makeStyles(t: ThemeContextValue) {
             alignItems: "center",
             gap: spacing[4],
             paddingHorizontal: spacing[4],
-            paddingVertical: spacing[5],
-            backgroundColor: t.accent.notifBg,
+            paddingVertical: spacing[4],
+            backgroundColor: t.surface.bgCard,
             borderBottomWidth: 1,
-            borderBottomColor: t.border.light,
+            borderBottomColor: t.border.medium,
         },
         iconWrap: {
             width: 48,
             height: 48,
             borderRadius: radii.full,
-            backgroundColor: t.surface.bgCard,
+            backgroundColor: t.brand.tint,
             alignItems: "center",
             justifyContent: "center",
         },
@@ -71,7 +71,7 @@ function makeStyles(t: ThemeContextValue) {
         count: {
             fontSize: fontSize.xs,
             fontWeight: fontWeight.medium,
-            color: t.accent.notifFg,
+            color: t.text.secondary,
             marginTop: spacing[1],
         },
     });

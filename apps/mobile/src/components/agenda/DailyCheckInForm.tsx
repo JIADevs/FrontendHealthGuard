@@ -9,6 +9,7 @@ import {
     toISOLocal,
     toUtcIsoFromPickerValue,
     pickerValueFromUtcIso,
+    clampPickerValueToMax,
     ConfirmModal,
     spacing,
     fontSize,
@@ -38,18 +39,19 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
 
     const [mood, setMood] = useState<MoodEnum | null>(initialValues?.mood ?? null);
     const [notes, setNotes] = useState(initialValues?.notes ?? "");
-    const [recordedAt, setRecordedAt] = useState(() =>
-        initialValues?.recordedAt
+    const [recordedAt, setRecordedAt] = useState(() => {
+        const initial = initialValues?.recordedAt
             ? pickerValueFromUtcIso(initialValues.recordedAt)
-            : toISOLocal(new Date()),
-    );
+            : toISOLocal(new Date());
+        return clampPickerValueToMax(initial);
+    });
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
         if (!initialValues) return;
         setMood(initialValues.mood);
         setNotes(initialValues.notes ?? "");
-        setRecordedAt(pickerValueFromUtcIso(initialValues.recordedAt));
+        setRecordedAt(clampPickerValueToMax(pickerValueFromUtcIso(initialValues.recordedAt)));
     }, [initialValues]);
 
     const createMutation = useCreateDailyCheckInMutation();
@@ -64,7 +66,7 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
 
         const payload = {
             mood,
-            recordedAt: toUtcIsoFromPickerValue(recordedAt),
+            recordedAt: toUtcIsoFromPickerValue(clampPickerValueToMax(recordedAt)),
             notes: notes.trim() || undefined,
         };
 
@@ -163,7 +165,8 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
                     <DateTimePicker
                         label="Fecha y hora (opcional)"
                         value={recordedAt}
-                        onChange={setRecordedAt}
+                        onChange={(value) => setRecordedAt(clampPickerValueToMax(value))}
+                        maxDate={toISOLocal(new Date())}
                     />
                 </View>
             </Modal>

@@ -30,8 +30,8 @@ import {
   type DailyCheckIn,
 } from "@helu/api";
 
-import { useMedicationForm } from "../hooks/useMedicationForm";
 import { useWellbeingScreen } from "../hooks/useWellbeingScreen";
+import { MedicationFormModal } from "../components/MedicationFormModal";
 
 import {
   colors, palette,
@@ -46,6 +46,7 @@ import {
   Card,
   cardContentStyle,
   Typography,
+  Button,
   ActionButton,
   Spinner,
   ConfirmModal,
@@ -103,8 +104,12 @@ export function AgendaScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const route = useRoute();
+  const navigation = useNavigation();
   const [view, setView] = useState<AgendaView>("calendar");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [medicationFormOpen, setMedicationFormOpen] = useState(false);
+  const [checkInFormOpen, setCheckInFormOpen] = useState(false);
 
   useEffect(() => {
     const initialTab = (route.params as { initialTab?: string } | undefined)?.initialTab;
@@ -116,7 +121,7 @@ export function AgendaScreen() {
   const isListView = view !== "calendar";
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         {isListView ? (
           <TouchableOpacity
@@ -156,6 +161,31 @@ export function AgendaScreen() {
         <WellbeingTab />
       )}
 
+      {view === "calendar" ? (
+        <>
+          <AgendaFAB onPress={() => setAddSheetOpen(true)} />
+
+          <AgendaAddSheet
+            visible={addSheetOpen}
+            onClose={() => setAddSheetOpen(false)}
+            onAddAppointment={() => navigation.navigate("AppointmentForm" as never)}
+            onAddMedication={() => setMedicationFormOpen(true)}
+            onAddCheckIn={() => setCheckInFormOpen(true)}
+          />
+
+          {medicationFormOpen ? (
+            <MedicationFormModal
+              initial={null}
+              onClose={() => setMedicationFormOpen(false)}
+            />
+          ) : null}
+
+          {checkInFormOpen ? (
+            <DailyCheckInForm onClose={() => setCheckInFormOpen(false)} />
+          ) : null}
+        </>
+      ) : null}
+
       <AgendaMenuSheet
         visible={menuOpen}
         activeView={view}
@@ -171,35 +201,10 @@ export function AgendaScreen() {
 function CalendarTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const navigation = useNavigation();
-  const [addSheetOpen, setAddSheetOpen] = useState(false);
-  const [medicationFormOpen, setMedicationFormOpen] = useState(false);
-  const [checkInFormOpen, setCheckInFormOpen] = useState(false);
 
   return (
     <View style={styles.tabContent}>
       <HeluAgendaCalendar />
-
-      <AgendaFAB onPress={() => setAddSheetOpen(true)} />
-
-      <AgendaAddSheet
-        visible={addSheetOpen}
-        onClose={() => setAddSheetOpen(false)}
-        onAddAppointment={() => navigation.navigate("AppointmentForm" as never)}
-        onAddMedication={() => setMedicationFormOpen(true)}
-        onAddCheckIn={() => setCheckInFormOpen(true)}
-      />
-
-      {medicationFormOpen ? (
-        <MedicationFormModal
-          initial={null}
-          onClose={() => setMedicationFormOpen(false)}
-        />
-      ) : null}
-
-      {checkInFormOpen ? (
-        <DailyCheckInForm onClose={() => setCheckInFormOpen(false)} />
-      ) : null}
     </View>
   );
 }
@@ -862,52 +867,6 @@ function WellbeingTab() {
     </View>
   );
 }
-
-// ─── medication form modal ────────────────────────────────────────────────────
-
-function MedicationFormModal({
-  initial,
-  onClose,
-}: {
-  initial: Medication | null;
-  onClose: () => void;
-}) {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-  const form = useMedicationForm({ initial, onClose });
-
-  return (
-    <Modal
-      title={form.isEdit ? "Editar Medicamento" : "Nuevo Medicamento"}
-      onClose={onClose}
-      footer={
-        <>
-          <Button variant="secondary" onPress={onClose}>Cancelar</Button>
-          <Button onPress={form.handleSave} disabled={form.saving} loading={form.saving}>
-            {form.isEdit ? "Guardar Cambios" : "Registrar"}
-          </Button>
-        </>
-      }
-    >
-          <TextField label="Nombre del medicamento" value={form.name} onChange={form.setName} placeholder="Ej: Ibuprofeno 400mg" />
-          <TextField label="Dosis" value={form.dosage} onChange={form.setDosage} placeholder="Ej: 1 tableta" />
-          <TextField label="Frecuencia (horas)" value={form.frequency} onChange={form.setFrequency} placeholder="8" keyboardType="number-pad" />
-          <DateTimePicker
-            label="Inicio y primera toma"
-            value={form.startDate && form.firstIntakeTime ? `${form.startDate}T${form.firstIntakeTime}` : ""}
-            onChange={(v) => { form.setStartDate(v.slice(0, 10)); form.setFirstIntakeTime(v.slice(11, 16)); }}
-            required
-          />
-          <TextField label="Indicaciones (opcional)" value={form.indications} onChange={form.setIndications} placeholder="Ej: Tomar con alimentos" />
-
-          {form.error && <Text style={styles.errorText}>{form.error}</Text>}
-    </Modal>
-  );
-}
-
-
-// ConfirmModal is now available from @helu/ui — use <ConfirmModal /> when needed
-
 
 // ─── styles ───────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { palette, spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
+import { spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import type { MoodEnum } from "@helu/api";
 import { MOOD_CONFIG, MOOD_ORDER } from "./moodConfig";
@@ -17,18 +17,26 @@ export function MoodPicker({ value, onChange }: MoodPickerProps) {
     return (
         <View style={styles.row} accessibilityRole="radiogroup">
             {MOOD_ORDER.map((mood) => {
-                const { label, emoji } = MOOD_CONFIG[mood];
+                const { label, emoji, circleBg } = MOOD_CONFIG[mood];
                 const isSelected = value === mood;
                 return (
                     <TouchableOpacity
                         key={mood}
-                        style={[styles.chip, isSelected && styles.chipSelected]}
+                        style={styles.option}
                         onPress={() => onChange(mood)}
                         accessibilityRole="radio"
                         accessibilityLabel={isSelected ? `${label}, seleccionado` : `${label}, no seleccionado`}
                         accessibilityState={{ selected: isSelected }}
                     >
-                        <Text style={styles.emoji}>{emoji}</Text>
+                        <View
+                            style={[
+                                styles.emojiCircle,
+                                { backgroundColor: circleBg },
+                                isSelected && styles.emojiCircleSelected,
+                            ]}
+                        >
+                            <Text style={styles.emoji}>{emoji}</Text>
+                        </View>
                         <Text style={[styles.label, isSelected && styles.labelSelected]}>
                             {label}
                         </Text>
@@ -44,26 +52,28 @@ function makeStyles(t: ThemeContextValue) {
         row: {
             flexDirection: "row",
             flexWrap: "wrap",
-            gap: spacing[2],
+            justifyContent: "space-between",
+            gap: spacing[3],
         },
-        chip: {
-            flexDirection: "column",
+        option: {
             alignItems: "center",
-            paddingHorizontal: spacing[3],
-            paddingVertical: spacing[2],
-            borderRadius: radii.md,
-            borderWidth: 1,
-            borderColor: t.border.medium,
-            backgroundColor: t.surface.bg,
-            minWidth: 60,
+            gap: spacing[1],
+            minWidth: 56,
         },
-        chipSelected: {
+        emojiCircle: {
+            width: 44,
+            height: 44,
+            borderRadius: radii.full,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 2,
+            borderColor: "transparent",
+        },
+        emojiCircleSelected: {
             borderColor: t.brand.fg,
-            backgroundColor: t.brand.tint,
         },
         emoji: {
             fontSize: fontSize.xl,
-            marginBottom: spacing[1],
         },
         label: {
             fontSize: fontSize.xs,

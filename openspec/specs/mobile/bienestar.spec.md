@@ -116,6 +116,9 @@ Implementation in `DailyCheckInForm`:
 Product rule: a check-in records how the user felt at a moment that already happened; scheduling
 a future check-in is invalid.
 
+Backend enforces the same rule: `POST`/`PATCH /daily-checkins/` return **422** when `recorded_at`
+is after the current UTC instant (`ensure_not_future_utc` in `app/schemas/daily_checkin.py`).
+
 #### RF-MB-14 — Delete confirmation [shipped]
 
 `ConfirmModal`: `"¿Eliminar check-in?"` / `"Esta acción no se puede deshacer."`

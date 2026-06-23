@@ -138,8 +138,15 @@ moment (no future check-ins). See `openspec/specs/mobile/bienestar.spec.md` RF-M
 Naive local strings (e.g. `2026-06-21T15:00`) sent without conversion are interpreted as UTC by
 the backend and produce incorrect calendar hour placement in non-UTC timezones.
 
-Helpers: `@helu/ui` → `toISOLocal`, `pickerValueFromUtcIso`, `toUtcIsoFromPickerValue`,
-`clampPickerValueToMax`.
+#### RF-SA-17 — Backend rejects future recordedAt [shipped]
+
+`DailyCheckInCreate` and `DailyCheckInUpdate` MUST reject `recorded_at` values after the current
+UTC instant via Pydantic `field_validator` → HTTP **422**.
+
+Implementation: `app/schemas/daily_checkin.py` calls `ensure_not_future_utc` from
+`app/core/datetime_utils.py` (compares with `utc_now()` after `to_utc_aware` normalization).
+
+Past datetimes remain valid with no `min` bound. Defense in depth alongside mobile RF-MB-28.
 
 ---
 
@@ -191,6 +198,12 @@ Each parsed `CalendarDay` has `checkIns: DailyCheckIn[]` populated from backend 
 **When** the user changes the value or submits  
 **Then** `clampPickerValueToMax` reduces it to now before `toUtcIsoFromPickerValue` runs  
 **And** the API never receives a future `recordedAt` from the mobile form
+
+### SC-SA-12: Backend returns 422 for future recordedAt [shipped]
+
+**Given** a client sends `POST` or `PATCH /daily-checkins/` with `recorded_at` in the future  
+**When** the request is validated  
+**Then** the API responds with HTTP 422 and a field error on `recorded_at`
 
 ---
 

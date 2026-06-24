@@ -2,6 +2,11 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { getApiUrl } from "@helu/config";
 import { parseApiError } from "./errors";
 
+export type HeluRequestConfig = InternalAxiosRequestConfig & {
+    /** Manager-only endpoints must not send X-Patient-Context. */
+    skipPatientContext?: boolean;
+};
+
 // --- Dependency Injection for Auth ---
 let _tokenProvider: (() => string | null) | null = null;
 let _refreshTokenProvider: (() => string | null) | null = null;
@@ -104,7 +109,7 @@ apiClient.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
     
-    if (patientContext) {
+    if (patientContext && !(config as HeluRequestConfig).skipPatientContext) {
         config.headers["X-Patient-Context"] = patientContext;
     }
 

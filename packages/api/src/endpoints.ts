@@ -1,4 +1,4 @@
-import { apiClient } from "./client";
+import { apiClient, type HeluRequestConfig } from "./client";
 import { z } from "zod";
 import {
     listShares,
@@ -49,7 +49,9 @@ import {
     type DependentDelegation,
     type ManagerDelegation,
     type DelegationContextColors,
+    DelegationContextColorsSchema,
 } from "./schemas";
+import { isApiError } from "./errors";
 
 // ─── Auth ──────────────────────────────────────────────
 
@@ -506,19 +508,40 @@ export async function getManagers(): Promise<ManagerDelegation[]> {
     return z.array(ManagerDelegationSchema).parse(data);
 }
 
-export async function respondDelegation(id: string, action: "accept" | "reject"): Promise<DependentDelegation | ManagerDelegation> {
-    const { data } = await apiClient.patch(`/users/me/delegations/${id}/status`, undefined, {
+export async function respondDelegation(
+    id: string,
+    action: "accept" | "reject",
+): Promise<void> {
+    await apiClient.patch(`/users/me/delegations/${id}/status`, undefined, {
         params: { action },
     });
-    return DependentDelegationSchema.parse(data);
 }
 
 export async function revokeDelegation(id: string): Promise<void> {
     await apiClient.delete(`/users/me/delegations/${id}`);
 }
 
+export async function getDelegationContextColors(): Promise<DelegationContextColors> {
+    try {
+        const { data } = await apiClient.get<{ value: unknown }>(
+            "/users/me/preferences/delegation_context_colors",
+            { skipPatientContext: true } as HeluRequestConfig,
+        );
+        return DelegationContextColorsSchema.parse(data.value ?? {});
+    } catch (error) {
+        if (isApiError(error) && error.isNotFound) {
+            return {};
+        }
+        throw error;
+    }
+}
+
 export async function updateDelegationContextColors(colors: DelegationContextColors): Promise<void> {
-    await apiClient.put("/users/me/preferences/delegation_context_colors", { value: colors });
+    await apiClient.put(
+        "/users/me/preferences/delegation_context_colors",
+        { value: colors },
+        { skipPatientContext: true } as HeluRequestConfig,
+    );
 }
 
 export async function getBackpackDocuments(params: {

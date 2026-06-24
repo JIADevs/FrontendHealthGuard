@@ -561,21 +561,31 @@ const DelegationBaseSchema = z.object({
 
 export const DependentDelegationSchema = DelegationBaseSchema.extend({
     dependent: NestedDelegationProfileSchema,
-}).transform((d) => ({
-    ...d,
-    linkedUserEmail: d.linkedUserEmail ?? d.dependent?.email ?? "",
-    linkedUserName: d.dependent?.name ?? null,
-}));
+}).transform((d) => {
+    const inviteeEmail = (d.linkedUserEmail ?? "").toLowerCase();
+    return {
+        ...d,
+        inviteeEmail,
+        linkedUserEmail: d.dependent?.email ?? d.linkedUserEmail ?? "",
+        linkedUserName: d.dependent?.name ?? null,
+    };
+});
 
 export const ManagerDelegationSchema = DelegationBaseSchema.extend({
     manager: NestedDelegationProfileSchema,
-}).transform((d) => ({
-    ...d,
-    linkedUserEmail: d.linkedUserEmail ?? d.manager?.email ?? "",
-    linkedUserName: d.manager?.name ?? null,
-}));
+}).transform((d) => {
+    const inviteeEmail = (d.linkedUserEmail ?? "").toLowerCase();
+    return {
+        ...d,
+        inviteeEmail,
+        linkedUserEmail: d.manager?.email ?? d.linkedUserEmail ?? "",
+        linkedUserName: d.manager?.name ?? null,
+    };
+});
 
 export type DelegationContextColors = Record<string, string>;
+
+export const DelegationContextColorsSchema = z.record(z.string(), z.string());
 
 // --- Inferred types ---
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;

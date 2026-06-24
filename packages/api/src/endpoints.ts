@@ -389,10 +389,11 @@ export async function registerDeviceToken(
     token: string,
     deviceType: string
 ) {
-    const { data } = await apiClient.post("/notifications/devices", {
-        token,
-        deviceType,
-    });
+    const { data } = await apiClient.post(
+        "/notifications/devices",
+        { token, deviceType },
+        { skipPatientContext: true } as HeluRequestConfig,
+    );
     return data;
 }
 

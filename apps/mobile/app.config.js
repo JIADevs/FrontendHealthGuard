@@ -25,9 +25,24 @@ module.exports = () => {
   }
 
   const localGoogleServices = path.join(__dirname, "google-services.json");
-  const googleServicesFile =
-    process.env.GOOGLE_SERVICES_JSON ||
-    (fs.existsSync(localGoogleServices) ? "./google-services.json" : undefined);
+  const easGoogleServices = process.env.GOOGLE_SERVICES_JSON;
+  const hasLocalGoogleServices = fs.existsSync(localGoogleServices);
+  const googleServicesFile = hasLocalGoogleServices
+    ? "./google-services.json"
+    : easGoogleServices &&
+        fs.existsSync(
+          easGoogleServices.startsWith("./")
+            ? path.join(__dirname, easGoogleServices)
+            : easGoogleServices,
+        )
+      ? easGoogleServices
+      : undefined;
+
+  if (!googleServicesFile) {
+    console.warn(
+      "[app.config] google-services.json missing — FCM will not work in this build.",
+    );
+  }
 
   if (expo.android) {
     if (googleServicesFile) {

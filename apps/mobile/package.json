@@ -8,7 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "build:apk": "eas build -p android --profile preview",
-    "build:apk:local": "eas build -p android --profile preview --local"
+    "build:apk:local": "npx expo prebuild --platform android --clean && eas build -p android --profile preview --local"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

@@ -5,6 +5,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Mail, Lock } from "lucide-react-native";
 import { useAuthStore } from "@helu/stores";
 import { signup, login, isApiError } from "@helu/api";
+import { registerDevicePushToken } from "../services/pushTokenRegistration";
 import { spacing } from "@helu/ui";
 import {
   AuthScreenLayout,
@@ -35,6 +36,7 @@ export function SignupScreen() {
       await signup({ email, password });
       const tokens = await login({ email, password });
       setAuth(tokens.access_token, tokens.refresh_token);
+      void registerDevicePushToken();
     } catch (err) {
       if (isApiError(err)) {
         setError(err.message);

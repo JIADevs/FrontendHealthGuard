@@ -62,8 +62,8 @@ export default function App() {
   const setUnreadCount = useNotifStore((s) => s.setUnreadCount);
   const themePreference = useUiStore((s) => s.theme);
 
-  // Pasa el JWT para que el registro FCM ocurra solo después del login
-  usePushNotifications(token, queryClient);
+  // Register FCM token after auth is hydrated (JWT available for POST /notifications/devices).
+  usePushNotifications(token, queryClient, isHydrated);
 
   useEffect(() => {
     if (!useAuthStore.getState().isHydrated) {

@@ -23,6 +23,8 @@ import {
   fontWeight,
   useAppTheme,
 } from "@helu/ui";
+import { useManagedUsersQuery } from "@helu/api/hooks";
+import { getDefaultColor } from "../components/dependientes";
 
 export type TabParamList = {
   Documents: undefined;
@@ -40,6 +42,41 @@ const DocumentsScreenLight = withDocumentsTheme(DocumentsScreen);
 
 function CenterTabIcon({ focused }: { focused: boolean }) {
   const t = useAppTheme();
+  const isManaging = useAuthStore((s) => s.isManaging);
+  const activePatientId = useAuthStore((s) => s.activePatientId);
+  const managedQuery = useManagedUsersQuery();
+
+  if (isManaging && activePatientId) {
+    const managed = managedQuery.data ?? [];
+    const activeIdx = managed.findIndex(
+      (d) => (d.dependentUserId ?? d.id) === activePatientId,
+    );
+    const activeDelegate = managed[activeIdx];
+    const ringColor = getDefaultColor(activeIdx >= 0 ? activeIdx : 0);
+    const name = activeDelegate?.linkedUserName ?? activeDelegate?.linkedUserEmail ?? "";
+    const initials = name.slice(0, 2).toUpperCase() || "??";
+
+    return (
+      <View
+        style={[
+          styles.centerTab,
+          {
+            backgroundColor: focused ? t.brand.fg : t.text.muted,
+            borderWidth: 3,
+            borderColor: ringColor,
+            shadowColor: ringColor,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.4,
+            shadowRadius: 8,
+            elevation: 6,
+          },
+        ]}
+      >
+        <Text style={styles.centerTabInitials}>{initials}</Text>
+      </View>
+    );
+  }
+
   return (
     <View
       style={[
@@ -158,6 +195,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: -20,
+  },
+  centerTabInitials: {
+    color: colors.white,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    lineHeight: 16,
   },
   profileAvatar: {
     width: 28,

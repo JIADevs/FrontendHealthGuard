@@ -2,6 +2,7 @@ import { useMemo, useCallback } from "react";
 import { View, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Pill,
@@ -14,7 +15,12 @@ import {
   Settings,
 } from "lucide-react-native";
 import { useAuthStore } from "@helu/stores";
-import { useProfileQuery, useMedicationsQuery } from "@helu/api/hooks";
+import {
+  useProfileQuery,
+  useMedicationsQuery,
+  useManagedUsersQuery,
+  useManagersQuery,
+} from "@helu/api/hooks";
 import { palette, spacing, useAppTheme, Typography } from "@helu/ui";
 import { ProfileCard, MenuItem, MenuSection } from "../components/more";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -28,11 +34,26 @@ export function MoreScreen() {
   const logout = useAuthStore((s) => s.logout);
   const profile = useProfileQuery();
   const medications = useMedicationsQuery();
+  const managedQuery = useManagedUsersQuery();
+  const managersQuery = useManagersQuery();
+
+  useFocusEffect(
+    useCallback(() => {
+      managedQuery.refetch();
+      managersQuery.refetch();
+    }, []),
+  );
 
   const activeMedsCount = useMemo(() => {
     if (!medications.data?.items) return 0;
     return medications.data.items.filter((m: any) => m.active).length;
   }, [medications.data]);
+
+  const pendingDelegationsCount = useMemo(() => {
+    const managedPending = (managedQuery.data ?? []).filter((d) => d.status === "PENDING").length;
+    const managersPending = (managersQuery.data ?? []).filter((m) => m.status === "PENDING").length;
+    return managedPending + managersPending;
+  }, [managedQuery.data, managersQuery.data]);
 
   const initials =
     profile.data?.name
@@ -89,7 +110,8 @@ export function MoreScreen() {
           <MenuItem
             icon={<Users size={20} color={palette.brand[600]} />}
             label="Dependientes"
-            onPress={showComingSoon}
+            badge={pendingDelegationsCount > 0 ? pendingDelegationsCount : undefined}
+            onPress={() => navigation.navigate("Dependientes", { backTitle: "Más" })}
             last
           />
         </MenuSection>

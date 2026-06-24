@@ -4,6 +4,7 @@ import { palette, spacing, fontSize, fontWeight, radii, useAppTheme } from "@hel
 import { useRespondDelegationMutation } from "@helu/api/hooks";
 import type { ThemeContextValue } from "@helu/ui";
 import type { DependentDelegation, ManagerDelegation } from "@helu/api";
+import { DelegationRelationshipCaption } from "./DelegationRelationshipCaption";
 
 interface DelegationRequestCardProps {
     delegation: DependentDelegation | ManagerDelegation;
@@ -29,6 +30,7 @@ export function DelegationRequestCard({ delegation }: DelegationRequestCardProps
                         {email}
                     </Text>
                 ) : null}
+                <DelegationRelationshipCaption delegation={delegation} perspective="inbound" />
             </View>
             <View style={styles.actions}>
                 <TouchableOpacity
@@ -82,6 +84,7 @@ function makeStyles(t: ThemeContextValue) {
         actions: {
             flexDirection: "row",
             gap: spacing[2],
+            alignSelf: "center",
         },
         btn: {
             paddingVertical: spacing[1],

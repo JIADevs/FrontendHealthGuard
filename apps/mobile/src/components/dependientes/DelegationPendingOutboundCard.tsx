@@ -5,6 +5,7 @@ import { useRevokeDelegationMutation } from "@helu/api/hooks";
 import type { ThemeContextValue } from "@helu/ui";
 import type { DependentDelegation, ManagerDelegation } from "@helu/api";
 import { DelegationRevokeConfirm } from "./DelegationRevokeConfirm";
+import { DelegationRelationshipCaption } from "./DelegationRelationshipCaption";
 
 interface DelegationPendingOutboundCardProps {
     delegation: DependentDelegation | ManagerDelegation;
@@ -38,6 +39,7 @@ export function DelegationPendingOutboundCard({ delegation }: DelegationPendingO
                             {email}
                         </Text>
                     ) : null}
+                    <DelegationRelationshipCaption delegation={delegation} perspective="outbound" />
                     <Text style={[styles.status, { color: t.text.muted }]}>Esperando respuesta</Text>
                 </View>
                 <TouchableOpacity
@@ -94,12 +96,14 @@ function makeStyles(t: ThemeContextValue) {
             marginTop: 2,
         },
         status: {
-            fontSize: fontSize.xs,
-            marginTop: spacing[1],
+            fontSize: fontSize.sm,
+            lineHeight: fontSize.sm,
+            marginTop: 2,
         },
         revokeBtn: {
             paddingHorizontal: spacing[3],
             paddingVertical: spacing[1],
+            alignSelf: "center",
         },
         revokeBtnText: {
             fontSize: fontSize.sm,

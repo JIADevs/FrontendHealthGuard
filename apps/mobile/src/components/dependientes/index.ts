@@ -1,3 +1,4 @@
+export { DelegationRelationshipCaption } from "./DelegationRelationshipCaption";
 export { DelegationRequestCard } from "./DelegationRequestCard";
 export { DelegationRevokeConfirm } from "./DelegationRevokeConfirm";
 export { DelegationPendingOutboundCard } from "./DelegationPendingOutboundCard";

@@ -15,7 +15,7 @@ const MODES: { relationship: DelegationRelationship; label: string; sublabel: st
     {
         relationship: "I_WANT_TO_MANAGE_THEM",
         label: "Invitar dependiente",
-        sublabel: "Vas a gestionar su cuenta de salud",
+        sublabel: "Gestionarás su cuenta de salud",
         Icon: UserPlus,
     },
     {

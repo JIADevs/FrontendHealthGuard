@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCreateDelegationMutation } from "@helu/api/hooks";
+import { getDelegationInviteErrorMessage } from "@helu/api";
 import { palette, spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
 import Toast from "react-native-toast-message";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -40,8 +41,8 @@ export function DependientesInviteScreen() {
         ? "Email del dependiente"
         : "Email del cuidador";
     const description = isDependent
-        ? "Ingresá el email de la persona cuya cuenta querés gestionar."
-        : "Ingresá el email de la persona que va a gestionar tu cuenta.";
+        ? "Ingresa el email de la persona cuya cuenta quieres gestionar."
+        : "Ingresa el email de la persona que va a gestionar tu cuenta.";
 
     const validate = (): boolean => {
         if (!email.trim()) {
@@ -71,11 +72,10 @@ export function DependientesInviteScreen() {
                     navigation.goBack();
                 },
                 onError: (error) => {
-                    const apiError = error as { message?: string };
                     Toast.show({
                         type: "error",
                         text1: "Error al enviar",
-                        text2: apiError.message ?? "Intentá de nuevo",
+                        text2: getDelegationInviteErrorMessage(error),
                     });
                 },
             },

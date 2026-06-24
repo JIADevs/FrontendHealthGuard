@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import { View, ScrollView, Alert } from "react-native";
+import { View, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "@react-navigation/native";
@@ -15,6 +15,7 @@ import {
   Settings,
 } from "lucide-react-native";
 import { useAuthStore } from "@helu/stores";
+import { isDelegationInbound } from "@helu/api";
 import {
   useProfileQuery,
   useMedicationsQuery,
@@ -32,7 +33,9 @@ export function MoreScreen() {
   const t = useAppTheme();
 
   const logout = useAuthStore((s) => s.logout);
+  const storeUserEmail = useAuthStore((s) => s.user?.email);
   const profile = useProfileQuery();
+  const userEmail = (profile.data?.email ?? storeUserEmail ?? "").toLowerCase();
   const medications = useMedicationsQuery();
   const managedQuery = useManagedUsersQuery();
   const managersQuery = useManagersQuery();
@@ -50,10 +53,17 @@ export function MoreScreen() {
   }, [medications.data]);
 
   const pendingDelegationsCount = useMemo(() => {
-    const managedPending = (managedQuery.data ?? []).filter((d) => d.status === "PENDING").length;
-    const managersPending = (managersQuery.data ?? []).filter((m) => m.status === "PENDING").length;
-    return managedPending + managersPending;
-  }, [managedQuery.data, managersQuery.data]);
+    const inboundManaged = (managedQuery.data ?? []).filter(
+      (d) => d.status === "PENDING" && isDelegationInbound(d, userEmail),
+    ).length;
+    const inboundManagers = (managersQuery.data ?? []).filter(
+      (m) => m.status === "PENDING" && isDelegationInbound(m, userEmail),
+    ).length;
+    return inboundManaged + inboundManagers;
+  }, [managedQuery.data, managersQuery.data, userEmail]);
+
+  const profileLoading =
+    profile.isPending || (profile.isFetching && !profile.data);
 
   const initials =
     profile.data?.name
@@ -87,12 +97,28 @@ export function MoreScreen() {
           <Typography variant="h2">Más</Typography>
         </View>
 
-        <ProfileCard
-          initials={initials}
-          name={profile.data?.name || "Sin nombre"}
-          email={profile.data?.email ?? ""}
-          onPress={() => navigation.navigate("Profile", { backTitle: "Más" })}
-        />
+        {profileLoading ? (
+          <View
+            style={{
+              padding: spacing[4],
+              borderRadius: 12,
+              backgroundColor: t.surface.bgCard,
+              marginBottom: spacing[4],
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 84,
+            }}
+          >
+            <ActivityIndicator size="small" color={palette.brand[500]} />
+          </View>
+        ) : (
+          <ProfileCard
+            initials={initials}
+            name={profile.data?.name || "Sin nombre"}
+            email={profile.data?.email ?? ""}
+            onPress={() => navigation.navigate("Profile", { backTitle: "Más" })}
+          />
+        )}
 
         {/* Funciones */}
         <MenuSection>

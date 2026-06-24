@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useLayoutEffect } from "react";
 import {
     View,
     ScrollView,
@@ -16,18 +16,21 @@ import { useAuthStore } from "@helu/stores";
 import {
     useManagedUsersQuery,
     useManagersQuery,
+    useDelegationContextColorsQuery,
     useUpdateDelegationColorsMutation,
+    useProfileQuery,
 } from "@helu/api/hooks";
-import { palette, spacing, fontSize, fontWeight, radii, useAppTheme, Typography } from "@helu/ui";
+import { palette, spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
 import {
     DelegationRequestCard,
+    DelegationPendingOutboundCard,
     ManagerCard,
     ManagedPatientCard,
     DelegationInviteModeSheet,
-    getDefaultColor,
 } from "../components/dependientes";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import type { DelegationRelationship, DelegationContextColors } from "@helu/api";
+import { isDelegationInbound } from "@helu/api";
 
 export function DependientesScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -36,19 +39,24 @@ export function DependientesScreen() {
 
     const managedQuery = useManagedUsersQuery();
     const managersQuery = useManagersQuery();
+    const contextColorsQuery = useDelegationContextColorsQuery();
     const updateColors = useUpdateDelegationColorsMutation();
 
     const switchPatientContext = useAuthStore((s) => s.switchPatientContext);
     const activePatientId = useAuthStore((s) => s.activePatientId);
     const isManaging = useAuthStore((s) => s.isManaging);
+    const storeUserEmail = useAuthStore((s) => s.user?.email);
+    const profile = useProfileQuery();
+    const userEmail = (profile.data?.email ?? storeUserEmail ?? "").toLowerCase();
 
     const [inviteSheetVisible, setInviteSheetVisible] = useState(false);
-    const [contextColors, setContextColors] = useState<DelegationContextColors>({});
+    const contextColors = contextColorsQuery.data ?? {};
 
     useFocusEffect(
         useCallback(() => {
             managedQuery.refetch();
             managersQuery.refetch();
+            void contextColorsQuery.refetch();
         }, []),
     );
 
@@ -61,6 +69,8 @@ export function DependientesScreen() {
         ...managed.filter((d) => d.status === "PENDING"),
         ...managers.filter((m) => m.status === "PENDING"),
     ];
+    const pendingInbound = pendingItems.filter((d) => isDelegationInbound(d, userEmail));
+    const pendingOutbound = pendingItems.filter((d) => !isDelegationInbound(d, userEmail));
 
     const isLoading = managedQuery.isLoading || managersQuery.isLoading;
 
@@ -74,7 +84,6 @@ export function DependientesScreen() {
 
     const handleColorsUpdate = useCallback(
         (updated: DelegationContextColors) => {
-            setContextColors(updated);
             updateColors.mutate(updated);
         },
         [updateColors],
@@ -87,9 +96,25 @@ export function DependientesScreen() {
         [navigation],
     );
 
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <TouchableOpacity
+                    style={[styles.inviteBtn, { backgroundColor: palette.brand[500] }]}
+                    onPress={() => setInviteSheetVisible(true)}
+                    accessibilityLabel="Invitar"
+                    accessibilityRole="button"
+                >
+                    <UserPlus size={18} color="#fff" />
+                    <Text style={styles.inviteBtnText}>Invitar</Text>
+                </TouchableOpacity>
+            ),
+        });
+    }, [navigation, styles.inviteBtn, styles.inviteBtnText]);
+
     if (isLoading) {
         return (
-            <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["top"]}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["bottom"]}>
                 <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
                     <ActivityIndicator size="large" color={palette.brand[500]} />
                 </View>
@@ -98,26 +123,16 @@ export function DependientesScreen() {
     }
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["top"]}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["bottom"]}>
             <ScrollView contentContainerStyle={{ padding: spacing[4], paddingBottom: spacing[10] }}>
-                <View style={styles.header}>
-                    <Typography variant="h2">Dependientes</Typography>
-                    <TouchableOpacity
-                        style={[styles.inviteBtn, { backgroundColor: palette.brand[500] }]}
-                        onPress={() => setInviteSheetVisible(true)}
-                        accessibilityLabel="Invitar"
-                        accessibilityRole="button"
-                    >
-                        <UserPlus size={18} color="#fff" />
-                        <Text style={styles.inviteBtnText}>Invitar</Text>
-                    </TouchableOpacity>
-                </View>
-
                 {/* "Mi cuenta" row — only when managing */}
                 {isManaging && (
                     <TouchableOpacity
                         style={[styles.myAccountRow, { backgroundColor: t.surface.bgCard, borderColor: t.border.light }]}
-                        onPress={() => switchPatientContext(null)}
+                        onPress={() => {
+                            switchPatientContext(null);
+                            navigation.navigate("MainTabs");
+                        }}
                         accessibilityLabel="Volver a mi cuenta"
                         accessibilityRole="button"
                     >
@@ -130,7 +145,7 @@ export function DependientesScreen() {
                 {/* Section: Personas que gestiono */}
                 <SectionHeader title="Personas que gestiono" />
                 {activeDelegations.length === 0 ? (
-                    <EmptyState message="Todavía no gestionás la cuenta de nadie." theme={t} />
+                    <EmptyState message="Todavía no gestionas la cuenta de nadie." theme={t} />
                 ) : (
                     activeDelegations.map((d, idx) => (
                         <ManagedPatientCard
@@ -155,12 +170,17 @@ export function DependientesScreen() {
 
                 {/* Section: Solicitudes pendientes */}
                 <SectionHeader title="Solicitudes pendientes" />
-                {pendingItems.length === 0 ? (
-                    <EmptyState message="No tenés invitaciones pendientes." theme={t} />
+                {pendingInbound.length === 0 && pendingOutbound.length === 0 ? (
+                    <EmptyState message="No tienes invitaciones pendientes." theme={t} />
                 ) : (
-                    pendingItems.map((item) => (
-                        <DelegationRequestCard key={item.id} delegation={item} />
-                    ))
+                    <>
+                        {pendingInbound.map((item) => (
+                            <DelegationRequestCard key={item.id} delegation={item} />
+                        ))}
+                        {pendingOutbound.map((item) => (
+                            <DelegationPendingOutboundCard key={item.id} delegation={item} />
+                        ))}
+                    </>
                 )}
             </ScrollView>
 
@@ -214,12 +234,6 @@ function EmptyState({ message, theme }: { message: string; theme: ReturnType<typ
 
 function makeStyles() {
     return StyleSheet.create({
-        header: {
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: spacing[2],
-        },
         inviteBtn: {
             flexDirection: "row",
             alignItems: "center",
@@ -227,6 +241,7 @@ function makeStyles() {
             paddingHorizontal: spacing[3],
             paddingVertical: spacing[2],
             borderRadius: radii.sm,
+            marginRight: spacing[2],
         },
         inviteBtnText: {
             color: "#fff",

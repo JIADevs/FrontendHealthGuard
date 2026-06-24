@@ -3,37 +3,32 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "rea
 import { palette, spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
 import { useRevokeDelegationMutation } from "@helu/api/hooks";
 import type { ThemeContextValue } from "@helu/ui";
-import type { ManagerDelegation } from "@helu/api";
+import type { DependentDelegation, ManagerDelegation } from "@helu/api";
 import { DelegationRevokeConfirm } from "./DelegationRevokeConfirm";
 
-interface ManagerCardProps {
-    manager: ManagerDelegation;
+interface DelegationPendingOutboundCardProps {
+    delegation: DependentDelegation | ManagerDelegation;
 }
 
-export function ManagerCard({ manager }: ManagerCardProps) {
+export function DelegationPendingOutboundCard({ delegation }: DelegationPendingOutboundCardProps) {
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
     const revoke = useRevokeDelegationMutation();
-    const [revokeConfirmVisible, setRevokeConfirmVisible] = useState(false);
+    const [cancelConfirmVisible, setCancelConfirmVisible] = useState(false);
 
-    const name = manager.linkedUserName;
-    const email = manager.linkedUserEmail;
+    const name = (delegation as { linkedUserName?: string | null }).linkedUserName;
+    const email = delegation.linkedUserEmail;
     const displayName = name ?? email;
 
-    const handleConfirmRevoke = () => {
-        revoke.mutate(manager.id, {
-            onSettled: () => setRevokeConfirmVisible(false),
+    const handleConfirmCancel = () => {
+        revoke.mutate(delegation.id, {
+            onSettled: () => setCancelConfirmVisible(false),
         });
     };
 
     return (
         <>
             <View style={[styles.card, { backgroundColor: t.surface.bgCard }]}>
-                <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
-                        {displayName[0]?.toUpperCase() ?? "?"}
-                    </Text>
-                </View>
                 <View style={styles.info}>
                     <Text style={[styles.name, { color: t.text.primary }]} numberOfLines={1}>
                         {displayName}
@@ -43,30 +38,33 @@ export function ManagerCard({ manager }: ManagerCardProps) {
                             {email}
                         </Text>
                     ) : null}
+                    <Text style={[styles.status, { color: t.text.muted }]}>Esperando respuesta</Text>
                 </View>
                 <TouchableOpacity
                     style={styles.revokeBtn}
-                    onPress={() => setRevokeConfirmVisible(true)}
+                    onPress={() => setCancelConfirmVisible(true)}
                     disabled={revoke.isPending}
-                    accessibilityLabel="Revocar acceso del cuidador"
+                    accessibilityLabel="Cancelar invitación"
                 >
                     {revoke.isPending ? (
                         <ActivityIndicator size="small" color={palette.status.error[500]} />
                     ) : (
                         <Text style={[styles.revokeBtnText, { color: palette.status.error[500] }]}>
-                            Revocar
+                            Cancelar
                         </Text>
                     )}
                 </TouchableOpacity>
             </View>
 
             <DelegationRevokeConfirm
-                visible={revokeConfirmVisible}
-                title="¿Revocar acceso?"
-                message={`¿Quieres revocar el acceso de ${displayName}?`}
+                visible={cancelConfirmVisible}
+                title="¿Cancelar invitación?"
+                message={`Se cancelará la invitación enviada a ${displayName}.`}
+                confirmLabel="Cancelar invitación"
+                actionsLayout="stacked"
                 loading={revoke.isPending}
-                onConfirm={handleConfirmRevoke}
-                onCancel={() => setRevokeConfirmVisible(false)}
+                onConfirm={handleConfirmCancel}
+                onCancel={() => setCancelConfirmVisible(false)}
             />
         </>
     );
@@ -83,22 +81,9 @@ function makeStyles(t: ThemeContextValue) {
             borderWidth: 1,
             borderColor: t.border.light,
         },
-        avatar: {
-            width: 36,
-            height: 36,
-            borderRadius: radii.full,
-            backgroundColor: palette.brand[100],
-            alignItems: "center",
-            justifyContent: "center",
-            marginRight: spacing[3],
-        },
-        avatarText: {
-            color: palette.brand[600],
-            fontSize: fontSize.base,
-            fontWeight: fontWeight.bold,
-        },
         info: {
             flex: 1,
+            marginRight: spacing[2],
         },
         name: {
             fontSize: fontSize.base,
@@ -107,6 +92,10 @@ function makeStyles(t: ThemeContextValue) {
         email: {
             fontSize: fontSize.sm,
             marginTop: 2,
+        },
+        status: {
+            fontSize: fontSize.xs,
+            marginTop: spacing[1],
         },
         revokeBtn: {
             paddingHorizontal: spacing[3],

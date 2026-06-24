@@ -1,11 +1,17 @@
 import { useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { palette, spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
 import { useRevokeDelegationMutation } from "@helu/api/hooks";
+import { useAuthStore } from "@helu/stores";
 import type { ThemeContextValue } from "@helu/ui";
 import type { DependentDelegation } from "@helu/api";
 import { ContextColorPicker } from "./ContextColorPicker";
+import { DelegationRevokeConfirm } from "./DelegationRevokeConfirm";
+import { resolveDelegationRingColor } from "./colorTokens";
 import type { DelegationContextColors } from "@helu/api";
+import type { RootStackParamList } from "../../navigation/RootNavigator";
 
 interface ManagedPatientCardProps {
     delegation: DependentDelegation;
@@ -24,30 +30,32 @@ export function ManagedPatientCard({
     onSwitchContext,
     onColorsUpdate,
 }: ManagedPatientCardProps) {
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
     const revoke = useRevokeDelegationMutation();
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
+    const [revokeConfirmVisible, setRevokeConfirmVisible] = useState(false);
 
     const name = delegation.linkedUserName;
     const email = delegation.linkedUserEmail;
     const patientId = delegation.dependentUserId ?? delegation.id;
-    const ringColor = contextColors[patientId] ?? getDefaultColor(colorIndex);
+    const ringColor = resolveDelegationRingColor(contextColors, patientId, colorIndex);
     const initials = (name ?? email)?.slice(0, 2).toUpperCase() ?? "??";
+    const displayName = name ?? email;
 
-    const handleRevoke = () => {
-        Alert.alert(
-            "Revocar delegación",
-            `¿Querés revocar el acceso a la cuenta de ${name ?? email}?`,
-            [
-                { text: "Cancelar", style: "cancel" },
-                {
-                    text: "Revocar",
-                    style: "destructive",
-                    onPress: () => revoke.mutate(delegation.id),
-                },
-            ],
-        );
+    const handleConfirmRevoke = () => {
+        revoke.mutate(delegation.id, {
+            onSuccess: () => {
+                const { isManaging, activePatientId, switchPatientContext } =
+                    useAuthStore.getState();
+                if (isManaging && activePatientId === patientId) {
+                    switchPatientContext(null);
+                    navigation.navigate("MainTabs");
+                }
+            },
+            onSettled: () => setRevokeConfirmVisible(false),
+        });
     };
 
     return (
@@ -60,14 +68,14 @@ export function ManagedPatientCard({
                 ]}
                 onPress={() => onSwitchContext(patientId)}
                 activeOpacity={0.7}
-                accessibilityLabel={`Gestionar cuenta de ${name ?? email}`}
+                accessibilityLabel={`Gestionar cuenta de ${displayName}`}
             >
                 <View style={[styles.avatar, { borderColor: ringColor }]}>
                     <Text style={styles.avatarText}>{initials}</Text>
                 </View>
                 <View style={styles.info}>
                     <Text style={[styles.name, { color: t.text.primary }]} numberOfLines={1}>
-                        {name ?? email}
+                        {displayName}
                     </Text>
                     {name ? (
                         <Text style={[styles.email, { color: t.text.secondary }]} numberOfLines={1}>
@@ -85,7 +93,7 @@ export function ManagedPatientCard({
                         accessibilityLabel="Cambiar color"
                     />
                     <TouchableOpacity
-                        onPress={handleRevoke}
+                        onPress={() => setRevokeConfirmVisible(true)}
                         disabled={revoke.isPending}
                         style={styles.revokeBtn}
                         accessibilityLabel="Revocar delegación"
@@ -111,13 +119,17 @@ export function ManagedPatientCard({
                     setColorPickerVisible(false);
                 }}
             />
+
+            <DelegationRevokeConfirm
+                visible={revokeConfirmVisible}
+                title="¿Revocar delegación?"
+                message={`¿Quieres revocar el acceso a la cuenta de ${displayName}?`}
+                loading={revoke.isPending}
+                onConfirm={handleConfirmRevoke}
+                onCancel={() => setRevokeConfirmVisible(false)}
+            />
         </>
     );
-}
-
-function getDefaultColor(index: number): string {
-    const { DELEGATION_COLOR_TOKENS } = require("./colorTokens");
-    return DELEGATION_COLOR_TOKENS[index % DELEGATION_COLOR_TOKENS.length];
 }
 
 function makeStyles(t: ThemeContextValue) {

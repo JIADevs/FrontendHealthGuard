@@ -72,7 +72,11 @@ export function DependientesScreen() {
     const pendingInbound = pendingItems.filter((d) => isDelegationInbound(d, userEmail));
     const pendingOutbound = pendingItems.filter((d) => !isDelegationInbound(d, userEmail));
 
-    const isLoading = managedQuery.isLoading || managersQuery.isLoading;
+    const isInitialLoading =
+        (managedQuery.isPending && managedQuery.data === undefined) ||
+        (managersQuery.isPending && managersQuery.data === undefined);
+
+    const managedSectionRefreshing = managedQuery.isFetching && managedQuery.data !== undefined;
 
     const handleSwitchContext = useCallback(
         (patientId: string) => {
@@ -112,7 +116,7 @@ export function DependientesScreen() {
         });
     }, [navigation, styles.inviteBtn, styles.inviteBtnText]);
 
-    if (isLoading) {
+    if (isInitialLoading) {
         return (
             <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["bottom"]}>
                 <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -143,7 +147,12 @@ export function DependientesScreen() {
                 )}
 
                 {/* Section: Personas que gestiono */}
-                <SectionHeader title="Personas que gestiono" />
+                <View style={styles.sectionHeaderRow}>
+                    <SectionHeader title="Personas que gestiono" />
+                    {managedSectionRefreshing ? (
+                        <ActivityIndicator size="small" color={palette.brand[500]} />
+                    ) : null}
+                </View>
                 {activeDelegations.length === 0 ? (
                     <EmptyState message="Todavía no gestionas la cuenta de nadie." theme={t} />
                 ) : (
@@ -205,6 +214,7 @@ function SectionHeader({ title }: { title: string }) {
                 letterSpacing: 0.6,
                 marginTop: spacing[4],
                 marginBottom: spacing[2],
+                flex: 1,
             }}
         >
             {title}
@@ -258,6 +268,11 @@ function makeStyles() {
         myAccountText: {
             fontSize: fontSize.base,
             fontWeight: fontWeight.semibold,
+        },
+        sectionHeaderRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing[2],
         },
     });
 }

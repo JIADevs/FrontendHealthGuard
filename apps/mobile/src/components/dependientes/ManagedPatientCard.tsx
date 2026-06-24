@@ -1,6 +1,4 @@
 import { useMemo, useState } from "react";
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { palette, spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
 import { useRevokeDelegationMutation } from "@helu/api/hooks";
@@ -11,7 +9,6 @@ import { ContextColorPicker } from "./ContextColorPicker";
 import { DelegationRevokeConfirm } from "./DelegationRevokeConfirm";
 import { resolveDelegationRingColor } from "./colorTokens";
 import type { DelegationContextColors } from "@helu/api";
-import type { RootStackParamList } from "../../navigation/RootNavigator";
 
 interface ManagedPatientCardProps {
     delegation: DependentDelegation;
@@ -30,7 +27,6 @@ export function ManagedPatientCard({
     onSwitchContext,
     onColorsUpdate,
 }: ManagedPatientCardProps) {
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
     const revoke = useRevokeDelegationMutation();
@@ -51,7 +47,6 @@ export function ManagedPatientCard({
                     useAuthStore.getState();
                 if (isManaging && activePatientId === patientId) {
                     switchPatientContext(null);
-                    navigation.navigate("MainTabs");
                 }
             },
             onSettled: () => setRevokeConfirmVisible(false),

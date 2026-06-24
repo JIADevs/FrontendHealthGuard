@@ -86,6 +86,8 @@ import type {
     UserUpdate,
     DelegationRequest,
     DelegationContextColors,
+    DependentDelegation,
+    ManagerDelegation,
 } from "./schemas";
 import type { ShareStatusFilter } from "./shares/schemas";
 import { invalidateBackpackQueries } from "./backpackQueryUtils";
@@ -623,6 +625,7 @@ export function useManagedUsersQuery() {
         queryFn: getManagedUsers,
         enabled: !!token,
         staleTime: 30_000,
+        placeholderData: keepPreviousData,
     });
 }
 
@@ -633,6 +636,7 @@ export function useManagersQuery() {
         queryFn: getManagers,
         enabled: !!token,
         staleTime: 30_000,
+        placeholderData: keepPreviousData,
     });
 }
 
@@ -659,6 +663,36 @@ export function useRevokeDelegationMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (id: string) => revokeDelegation(id),
+        onMutate: async (id) => {
+            const token = useAuthStore.getState().token;
+            await qc.cancelQueries({ queryKey: delegationKeys.all() });
+            const managedKey = delegationKeys.managed(token);
+            const managersKey = delegationKeys.managers(token);
+            const previousManaged = qc.getQueryData<DependentDelegation[]>(managedKey);
+            const previousManagers = qc.getQueryData<ManagerDelegation[]>(managersKey);
+            if (previousManaged) {
+                qc.setQueryData(
+                    managedKey,
+                    previousManaged.filter((d) => d.id !== id),
+                );
+            }
+            if (previousManagers) {
+                qc.setQueryData(
+                    managersKey,
+                    previousManagers.filter((m) => m.id !== id),
+                );
+            }
+            return { previousManaged, previousManagers, managedKey, managersKey };
+        },
+        onError: (_error, _id, context) => {
+            if (!context) return;
+            if (context.previousManaged !== undefined) {
+                qc.setQueryData(context.managedKey, context.previousManaged);
+            }
+            if (context.previousManagers !== undefined) {
+                qc.setQueryData(context.managersKey, context.previousManagers);
+            }
+        },
         onSettled: async () => {
             await qc.invalidateQueries({ queryKey: delegationKeys.all() });
         },

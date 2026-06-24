@@ -40,3 +40,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Native prebuild accidental from monorepo root
+/android/
+/app.json
+
+# npm lockfile — monorepo uses pnpm
+package-lock.json
+
+# Local installers
+*.dmg
+
+# Gentle AI / local tooling
+**/.atl/

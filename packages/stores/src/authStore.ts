@@ -19,9 +19,15 @@ type AuthState = {
     setAuth: (token: string, refreshToken: string) => void;
     setUser: (user: User) => void;
     setPatientContext: (patientId: string | null) => void;
+    switchPatientContext: (patientId: string | null) => void;
+    setQueryCacheCleaner: (fn: () => void) => void;
     logout: () => void;
     setHydrated: () => void;
 };
+
+// Injected cache cleaner — set at bootstrap; lives outside the Zustand state
+// to avoid serialization and circular dep (api → stores → api).
+let _queryCacheCleaner: (() => void) | null = null;
 
 export const useAuthStore = create<AuthState>()(
     persist(
@@ -37,6 +43,13 @@ export const useAuthStore = create<AuthState>()(
             setUser: (user) => set({ user }),
             setPatientContext: (patientId) =>
                 set({ activePatientId: patientId, isManaging: !!patientId }),
+            switchPatientContext: (patientId) => {
+                set({ activePatientId: patientId, isManaging: !!patientId });
+                _queryCacheCleaner?.();
+            },
+            setQueryCacheCleaner: (fn) => {
+                _queryCacheCleaner = fn;
+            },
             logout: () =>
                 set({
                     token: null,
@@ -54,9 +67,15 @@ export const useAuthStore = create<AuthState>()(
                 token: s.token,
                 refreshToken: s.refreshToken,
                 user: s.user,
-                activePatientId: s.activePatientId,
+                // R7 Option B: do NOT persist activePatientId — reset to null on cold start
             }),
-            onRehydrateStorage: () => (state) => state?.setHydrated(),
+            onRehydrateStorage: () => (state) => {
+                if (state) {
+                    state.activePatientId = null;
+                    state.isManaging = false;
+                }
+                state?.setHydrated();
+            },
         }
     )
 );

@@ -23,6 +23,8 @@ setApiAuthProviders({
 
 const queryClient = new QueryClient();
 
+useAuthStore.getState().setQueryCacheCleaner(() => queryClient.clear());
+
 export default function App() {
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const token = useAuthStore((s) => s.token);

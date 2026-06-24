@@ -13,6 +13,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
+import { useAuthStore } from "@helu/stores";
 import { ZodError } from "zod";
 import {
     // Documents
@@ -135,7 +136,8 @@ export const QK = {
 
     calendar:         (start: string, end: string) => ["calendar", start, end] as const,
 
-    profile:          ()                      => ["me"] as const,
+    profile:          (patientContextId: string | null = null) =>
+        ["me", patientContextId ?? "self"] as const,
 
     documentSharesActive: () => ["document-shares-active"] as const,
     shares: (status: ShareStatusFilter = "all") => ["shares", status] as const,
@@ -619,8 +621,9 @@ export function useCalendarEventsQuery(startDate: string, endDate: string) {
 // ─── Profile ───────────────────────────────────────────
 
 export function useProfileQuery() {
+    const activePatientId = useAuthStore((s) => s.activePatientId);
     return useQuery({
-        queryKey: QK.profile(),
+        queryKey: QK.profile(activePatientId),
         queryFn: getMe,
         staleTime: 60_000,
     });

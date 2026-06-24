@@ -39,7 +39,16 @@ export const useAuthStore = create<AuthState>()(
             activePatientId: null,
             isManaging: false,
 
-            setAuth: (token, refreshToken) => set({ token, refreshToken }),
+            setAuth: (token, refreshToken) => {
+                _queryCacheCleaner?.();
+                set({
+                    token,
+                    refreshToken,
+                    user: null,
+                    activePatientId: null,
+                    isManaging: false,
+                });
+            },
             setUser: (user) => set({ user }),
             setPatientContext: (patientId) =>
                 set({ activePatientId: patientId, isManaging: !!patientId }),
@@ -50,14 +59,16 @@ export const useAuthStore = create<AuthState>()(
             setQueryCacheCleaner: (fn) => {
                 _queryCacheCleaner = fn;
             },
-            logout: () =>
+            logout: () => {
+                _queryCacheCleaner?.();
                 set({
                     token: null,
                     refreshToken: null,
                     user: null,
                     activePatientId: null,
                     isManaging: false,
-                }),
+                });
+            },
             setHydrated: () => set({ isHydrated: true }),
         }),
         {

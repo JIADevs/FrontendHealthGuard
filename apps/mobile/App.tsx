@@ -22,9 +22,38 @@ setApiAuthProviders({
 
 const queryClient = new QueryClient();
 
-useAuthStore.getState().setQueryCacheCleaner(() => {
-  queryClient.cancelQueries();
-  queryClient.clear();
+/** Query roots whose cached data depends on X-Patient-Context (not delegation lists). */
+const PATIENT_SCOPED_QUERY_ROOTS = [
+  "me",
+  "documents",
+  "document",
+  "document-types",
+  "tag-categories",
+  "backpacks",
+  "backpack",
+  "backpack-docs",
+  "backpack-doc-ids",
+  "doctors",
+  "appointments",
+  "appointment",
+  "treatments",
+  "treatment",
+  "medications",
+  "notifications",
+  "calendar",
+  "document-shares-active",
+  "shares",
+] as const;
+
+useAuthStore.getState().setQueryCacheCleaner((mode = "full") => {
+  void queryClient.cancelQueries();
+  if (mode === "full") {
+    queryClient.clear();
+    return;
+  }
+  for (const root of PATIENT_SCOPED_QUERY_ROOTS) {
+    queryClient.removeQueries({ queryKey: [root] });
+  }
 });
 
 export default function App() {

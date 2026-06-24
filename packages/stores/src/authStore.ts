@@ -8,6 +8,11 @@ type User = {
     email: string;
 };
 
+/** `full` wipes the cache (login/logout). `patient-context` drops only patient-scoped queries. */
+export type QueryCacheCleanMode = "full" | "patient-context";
+
+type QueryCacheCleaner = (mode?: QueryCacheCleanMode) => void;
+
 type AuthState = {
     token: string | null;
     refreshToken: string | null;
@@ -20,14 +25,14 @@ type AuthState = {
     setUser: (user: User) => void;
     setPatientContext: (patientId: string | null) => void;
     switchPatientContext: (patientId: string | null) => void;
-    setQueryCacheCleaner: (fn: () => void) => void;
+    setQueryCacheCleaner: (fn: QueryCacheCleaner) => void;
     logout: () => void;
     setHydrated: () => void;
 };
 
 // Injected cache cleaner — set at bootstrap; lives outside the Zustand state
 // to avoid serialization and circular dep (api → stores → api).
-let _queryCacheCleaner: (() => void) | null = null;
+let _queryCacheCleaner: QueryCacheCleaner | null = null;
 
 export const useAuthStore = create<AuthState>()(
     persist(
@@ -40,7 +45,7 @@ export const useAuthStore = create<AuthState>()(
             isManaging: false,
 
             setAuth: (token, refreshToken) => {
-                _queryCacheCleaner?.();
+                _queryCacheCleaner?.("full");
                 set({
                     token,
                     refreshToken,
@@ -54,13 +59,13 @@ export const useAuthStore = create<AuthState>()(
                 set({ activePatientId: patientId, isManaging: !!patientId }),
             switchPatientContext: (patientId) => {
                 set({ activePatientId: patientId, isManaging: !!patientId });
-                _queryCacheCleaner?.();
+                _queryCacheCleaner?.("patient-context");
             },
             setQueryCacheCleaner: (fn) => {
                 _queryCacheCleaner = fn;
             },
             logout: () => {
-                _queryCacheCleaner?.();
+                _queryCacheCleaner?.("full");
                 set({
                     token: null,
                     refreshToken: null,

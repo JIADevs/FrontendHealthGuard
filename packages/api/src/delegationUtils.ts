@@ -58,11 +58,15 @@ export function inferDelegationRelationship(
     return null;
 }
 
-/** Role shown in the pending-request badge. */
+/** Role of the person on the card, from the current user's perspective. */
 export function getDelegationRoleLabel(
     relationship: DelegationRelationship,
+    perspective: "inbound" | "outbound",
 ): "Paciente" | "Cuidador" {
-    return relationship === "I_WANT_TO_MANAGE_THEM" ? "Paciente" : "Cuidador";
+    if (perspective === "outbound") {
+        return relationship === "I_WANT_TO_MANAGE_THEM" ? "Paciente" : "Cuidador";
+    }
+    return relationship === "I_WANT_TO_MANAGE_THEM" ? "Cuidador" : "Paciente";
 }
 
 export type DelegationRelationshipLabels = {
@@ -75,7 +79,7 @@ export function getDelegationRelationshipLabels(
     relationship: DelegationRelationship,
     perspective: "inbound" | "outbound",
 ): DelegationRelationshipLabels {
-    const shortLabel = getDelegationRoleLabel(relationship);
+    const shortLabel = getDelegationRoleLabel(relationship, perspective);
 
     if (relationship === "I_WANT_TO_MANAGE_THEM") {
         return {

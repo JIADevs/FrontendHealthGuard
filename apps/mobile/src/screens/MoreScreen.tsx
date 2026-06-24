@@ -25,6 +25,7 @@ import {
 import { palette, spacing, useAppTheme, Typography } from "@helu/ui";
 import { ProfileCard, MenuItem, MenuSection } from "../components/more";
 import type { RootStackParamList } from "../navigation/RootNavigator";
+import { LINKED_PEOPLE_SCREEN_TITLE } from "../constants/linkedPeople";
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
@@ -135,7 +136,7 @@ export function MoreScreen() {
           />
           <MenuItem
             icon={<Users size={20} color={palette.brand[600]} />}
-            label="Dependientes"
+            label={LINKED_PEOPLE_SCREEN_TITLE}
             badge={pendingDelegationsCount > 0 ? pendingDelegationsCount : undefined}
             onPress={() => navigation.navigate("Dependientes", { backTitle: "Más" })}
             last

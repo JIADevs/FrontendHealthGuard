@@ -3,7 +3,10 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 import type * as ExpoNotifications from "expo-notifications";
-import { registerDeviceToken } from "@helu/api";
+import type { QueryClient } from "@tanstack/react-query";
+import { registerDeviceToken, getNotifications } from "@helu/api";
+import { delegationKeys } from "@helu/api/hooks";
+import { useNotifStore } from "@helu/stores";
 import { palette } from "@helu/ui";
 import { navigationRef, navigateTo } from "../navigation/navigationRef";
 
@@ -39,7 +42,51 @@ export interface PushNotificationState {
   notification?: ExpoNotifications.Notification;
 }
 
-export const usePushNotifications = (authToken?: string | null): PushNotificationState => {
+function handlePushPayload(
+  data: Record<string, string> | undefined,
+  queryClient?: QueryClient,
+) {
+  if (!data?.type) return;
+
+  if (data.type === "DELEGATION_INVITE" && queryClient) {
+    void queryClient.invalidateQueries({ queryKey: delegationKeys.all() });
+    void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    void getNotifications({ page: 1, limit: 50 })
+      .then((res) => {
+        const unread = res.items.filter((n) => !n.isRead).length;
+        useNotifStore.getState().setUnreadCount(unread);
+      })
+      .catch(() => {});
+  }
+}
+
+function handleNotificationTap(data: Record<string, string>) {
+  switch (data?.type) {
+    case "CHECKIN":
+      if (navigationRef.isReady()) {
+        navigationRef.navigate("MainTabs" as any, {
+          screen: "Agenda",
+          params: { initialTab: "wellbeing" },
+        } as any);
+      }
+      break;
+    case "DELEGATION_INVITE":
+      navigateTo("Dependientes", { backTitle: "Más" });
+      break;
+    case "APPOINTMENT":
+    case "MEDICATION":
+    case "SYSTEM":
+    case "INFO":
+    default:
+      navigateTo("Notifications");
+      break;
+  }
+}
+
+export const usePushNotifications = (
+  authToken?: string | null,
+  queryClient?: QueryClient,
+): PushNotificationState => {
   const notificationRef = useRef<ExpoNotifications.Notification>(undefined);
   const notificationListener = useRef<ExpoNotifications.Subscription>(undefined);
   const responseListener = useRef<ExpoNotifications.Subscription>(undefined);
@@ -105,12 +152,15 @@ export const usePushNotifications = (authToken?: string | null): PushNotificatio
     notificationListener.current = Notifications.addNotificationReceivedListener(
       (notification: ExpoNotifications.Notification) => {
         notificationRef.current = notification;
+        const data = notification.request.content.data as Record<string, string> | undefined;
+        handlePushPayload(data, queryClient);
       },
     );
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
       (response: ExpoNotifications.NotificationResponse) => {
         const data = response.notification.request.content.data as Record<string, string>;
+        handlePushPayload(data, queryClient);
         handleNotificationTap(data);
       },
     );
@@ -119,27 +169,7 @@ export const usePushNotifications = (authToken?: string | null): PushNotificatio
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, []);
+  }, [queryClient]);
 
   return { notification: notificationRef.current };
 };
-
-function handleNotificationTap(data: Record<string, string>) {
-  switch (data?.type) {
-    case "CHECKIN":
-      if (navigationRef.isReady()) {
-        navigationRef.navigate("MainTabs" as any, {
-          screen: "Agenda",
-          params: { initialTab: "wellbeing" },
-        } as any);
-      }
-      break;
-    case "APPOINTMENT":
-    case "MEDICATION":
-    case "SYSTEM":
-    case "INFO":
-    default:
-      navigateTo("Notifications");
-      break;
-  }
-}

@@ -29,6 +29,7 @@ import {
     DelegationInviteModeSheet,
 } from "../components/dependientes";
 import type { RootStackParamList } from "../navigation/RootNavigator";
+import { LINKED_PEOPLE_SCREEN_TITLE } from "../constants/linkedPeople";
 import type { DelegationRelationship, DelegationContextColors } from "@helu/api";
 import { isDelegationInbound } from "@helu/api";
 
@@ -95,7 +96,10 @@ export function DependientesScreen() {
 
     const handleInviteSelect = useCallback(
         (relationship: DelegationRelationship) => {
-            navigation.navigate("DependientesInvite", { relationship, backTitle: "Dependientes" });
+            navigation.navigate("DependientesInvite", {
+                relationship,
+                backTitle: LINKED_PEOPLE_SCREEN_TITLE,
+            });
         },
         [navigation],
     );

@@ -28,6 +28,7 @@ import { CycleDetailScreen } from "../screens/CycleDetailScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { DependientesScreen } from "../screens/DependientesScreen";
 import { DependientesInviteScreen } from "../screens/DependientesInviteScreen";
+import { LINKED_PEOPLE_SCREEN_TITLE } from "../constants/linkedPeople";
 import { useAppTheme } from "@helu/ui";
 import { withDocumentsTheme, getDocumentsStackScreenOptions } from "../components/documents";
 import type { ShareResourceType } from "@helu/api";
@@ -290,7 +291,7 @@ export function RootNavigator() {
             component={DependientesScreen}
             options={({ route }) => ({
               headerShown: true,
-              title: "Dependientes",
+              title: LINKED_PEOPLE_SCREEN_TITLE,
               animation: "slide_from_right" as const,
               headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Más",
             })}
@@ -302,7 +303,7 @@ export function RootNavigator() {
               headerShown: true,
               title: "Invitar",
               animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Dependientes",
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? LINKED_PEOPLE_SCREEN_TITLE,
             })}
           />
         </>

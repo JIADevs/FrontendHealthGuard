@@ -63,7 +63,7 @@ export default function App() {
   const themePreference = useUiStore((s) => s.theme);
 
   // Pasa el JWT para que el registro FCM ocurra solo después del login
-  usePushNotifications(token);
+  usePushNotifications(token, queryClient);
 
   useEffect(() => {
     if (!useAuthStore.getState().isHydrated) {

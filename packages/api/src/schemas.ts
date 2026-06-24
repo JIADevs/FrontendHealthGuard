@@ -430,7 +430,7 @@ export const NotificationSchema = z.object({
     userId: z.string().uuid(),
     title: z.string(),
     body: z.string(),
-    type: z.enum(["APPOINTMENT", "MEDICATION", "CHECKIN", "SYSTEM", "INFO"]),
+    type: z.enum(["APPOINTMENT", "MEDICATION", "CHECKIN", "SYSTEM", "INFO", "DELEGATION_INVITE"]),
     entityId: z.string().uuid().nullable(),
     isRead: z.boolean(),
     createdAt: z.string(),

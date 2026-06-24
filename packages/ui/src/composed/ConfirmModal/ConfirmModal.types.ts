@@ -25,4 +25,6 @@ export interface ConfirmModalProps {
   icon?: ReactNode;
   /** Tinted background color for the icon container. Defaults to 'danger'. */
   iconTone?: ConfirmModalIconTone;
+  /** Side-by-side (default) or full-width stacked buttons — use stacked for longer labels. */
+  actionsLayout?: 'row' | 'stacked';
 }

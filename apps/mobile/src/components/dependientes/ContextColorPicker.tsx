@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Modal, View, Text, StyleSheet, Pressable, TouchableOpacity } from "react-native";
 import { spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { DELEGATION_COLOR_TOKENS } from "./colorTokens";
+import { DELEGATION_COLOR_OPTIONS } from "./colorTokens";
 
 interface ContextColorPickerProps {
     visible: boolean;
@@ -37,16 +37,16 @@ export function ContextColorPicker({
                         Color de identificación
                     </Text>
                     <View style={styles.palette}>
-                        {DELEGATION_COLOR_TOKENS.map((color) => (
+                        {DELEGATION_COLOR_OPTIONS.map((option) => (
                             <TouchableOpacity
-                                key={color}
+                                key={option.id}
                                 style={[
                                     styles.colorTile,
-                                    { backgroundColor: color },
-                                    color === currentColor && styles.selected,
+                                    { backgroundColor: option.color },
+                                    option.color === currentColor && styles.selected,
                                 ]}
-                                onPress={() => onSelectColor(color)}
-                                accessibilityLabel={`Color ${color}`}
+                                onPress={() => onSelectColor(option.color)}
+                                accessibilityLabel={`Color ${option.id}`}
                                 accessibilityRole="button"
                             />
                         ))}

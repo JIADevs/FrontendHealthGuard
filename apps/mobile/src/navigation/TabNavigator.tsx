@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Platform } from "react-native";
+import { View, Text, StyleSheet, Platform, ActivityIndicator } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { HomeScreen } from "../screens/HomeScreen";
 import { DocumentsScreen } from "../screens/DocumentsScreen";
@@ -23,8 +23,9 @@ import {
   fontWeight,
   useAppTheme,
 } from "@helu/ui";
-import { useManagedUsersQuery } from "@helu/api/hooks";
-import { getDefaultColor } from "../components/dependientes";
+import { useManagedUsersQuery, useDelegationContextColorsQuery } from "@helu/api/hooks";
+import { resolveDelegationRingColor } from "../components/dependientes";
+import { usePatientContextGuard } from "../hooks/usePatientContextGuard";
 
 export type TabParamList = {
   Documents: undefined;
@@ -45,16 +46,43 @@ function CenterTabIcon({ focused }: { focused: boolean }) {
   const isManaging = useAuthStore((s) => s.isManaging);
   const activePatientId = useAuthStore((s) => s.activePatientId);
   const managedQuery = useManagedUsersQuery();
+  const contextColorsQuery = useDelegationContextColorsQuery();
 
   if (isManaging && activePatientId) {
     const managed = managedQuery.data ?? [];
     const activeIdx = managed.findIndex(
       (d) => (d.dependentUserId ?? d.id) === activePatientId,
     );
-    const activeDelegate = managed[activeIdx];
-    const ringColor = getDefaultColor(activeIdx >= 0 ? activeIdx : 0);
+    const activeDelegate = activeIdx >= 0 ? managed[activeIdx] : undefined;
+    const contextColors = contextColorsQuery.data ?? {};
+    const ringColor = resolveDelegationRingColor(
+      contextColors,
+      activePatientId,
+      activeIdx >= 0 ? activeIdx : 0,
+    );
+    const isDelegateLoading =
+      managedQuery.isPending ||
+      (managedQuery.isFetching && !activeDelegate);
+
+    if (isDelegateLoading) {
+      return (
+        <View
+          style={[
+            styles.centerTab,
+            {
+              backgroundColor: focused ? t.brand.fg : t.text.muted,
+              borderWidth: 3,
+              borderColor: ringColor,
+            },
+          ]}
+        >
+          <ActivityIndicator size="small" color={colors.white} />
+        </View>
+      );
+    }
+
     const name = activeDelegate?.linkedUserName ?? activeDelegate?.linkedUserEmail ?? "";
-    const initials = name.slice(0, 2).toUpperCase() || "??";
+    const initials = name.slice(0, 2).toUpperCase() || "?";
 
     return (
       <View
@@ -100,6 +128,7 @@ function CenterTabIcon({ focused }: { focused: boolean }) {
 // ─── Tab Navigator ───────────────────────────────────────────────────────────
 
 export function TabNavigator() {
+  usePatientContextGuard();
   const t = useAppTheme();
 
   return (

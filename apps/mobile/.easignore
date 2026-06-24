@@ -1,0 +1,2 @@
+# EAS upload respects .gitignore by default. Negate secrets needed at build time.
+!google-services.json

@@ -1,0 +1,33 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "environment": "preview",
+      "node": "22.14.0",
+      "pnpm": "9.15.0",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://backendhealthguard.onrender.com",
+        "EXPO_USE_PNPM": "1"
+      }
+    },
+    "production": {
+      "environment": "production",
+      "node": "22.14.0",
+      "pnpm": "9.15.0",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://backendhealthguard.onrender.com",
+        "EXPO_USE_PNPM": "1"
+      }
+    }
+  }
+}

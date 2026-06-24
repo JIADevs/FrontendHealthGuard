@@ -66,6 +66,13 @@ import {
     // User
     getMe,
     updateMe,
+    // Delegations
+    getManagedUsers,
+    getManagers,
+    createDelegation,
+    respondDelegation,
+    revokeDelegation,
+    updateDelegationContextColors,
 } from "./endpoints";
 import type {
     DocumentCreate,
@@ -75,6 +82,8 @@ import type {
     DoctorCreate,
     BackpackCreate,
     UserUpdate,
+    DelegationRequest,
+    DelegationContextColors,
 } from "./schemas";
 import type { ShareStatusFilter } from "./shares/schemas";
 import { invalidateBackpackQueries } from "./backpackQueryUtils";
@@ -583,6 +592,61 @@ export function useUpdateProfileMutation() {
 }
 
 
+
+// ─── Delegations ───────────────────────────────────────
+
+export const delegationKeys = {
+    all:      ()            => ["delegations"] as const,
+    managed:  ()            => ["delegations", "managed"] as const,
+    managers: ()            => ["delegations", "managers"] as const,
+};
+
+export function useManagedUsersQuery() {
+    return useQuery({
+        queryKey: delegationKeys.managed(),
+        queryFn: getManagedUsers,
+        staleTime: 30_000,
+    });
+}
+
+export function useManagersQuery() {
+    return useQuery({
+        queryKey: delegationKeys.managers(),
+        queryFn: getManagers,
+        staleTime: 30_000,
+    });
+}
+
+export function useCreateDelegationMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: DelegationRequest) => createDelegation(payload),
+        onSuccess: () => qc.invalidateQueries({ queryKey: delegationKeys.all() }),
+    });
+}
+
+export function useRespondDelegationMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, action }: { id: string; action: "accept" | "reject" }) =>
+            respondDelegation(id, action),
+        onSuccess: () => qc.invalidateQueries({ queryKey: delegationKeys.all() }),
+    });
+}
+
+export function useRevokeDelegationMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => revokeDelegation(id),
+        onSuccess: () => qc.invalidateQueries({ queryKey: delegationKeys.all() }),
+    });
+}
+
+export function useUpdateDelegationColorsMutation() {
+    return useMutation({
+        mutationFn: (colors: DelegationContextColors) => updateDelegationContextColors(colors),
+    });
+}
 
 export * from "./reactQueryHooks";
 export * from "./useDocumentFormCore";

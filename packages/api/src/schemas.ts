@@ -531,6 +531,52 @@ export function parseCalendarEventsResponse(data: unknown): CalendarDay[] {
         .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+// --- Delegation ---
+
+export const DelegationStatusSchema = z.enum(["PENDING", "ACTIVE", "REJECTED", "REVOKED"]);
+export const DelegationRelationshipSchema = z.enum(["I_WANT_TO_MANAGE_THEM", "THEY_WILL_MANAGE_ME"]);
+
+export const DelegationRequestSchema = z.object({
+    email: z.string().email("Email inválido"),
+    relationship: DelegationRelationshipSchema,
+    permissions: z.literal("FULL_ACCESS"),
+});
+
+const NestedDelegationProfileSchema = z.object({
+    id: z.string(),
+    name: z.string().nullable(),
+    email: z.string().email(),
+}).nullable().optional();
+
+const DelegationBaseSchema = z.object({
+    id: z.string(),
+    managerUserId: z.string(),
+    dependentUserId: z.string().nullable(),
+    status: DelegationStatusSchema,
+    permissions: z.string(),
+    linkedUserEmail: z.string().nullable().optional(),
+    createdAt: z.string(),
+    revokedAt: z.string().nullable().optional(),
+});
+
+export const DependentDelegationSchema = DelegationBaseSchema.extend({
+    dependent: NestedDelegationProfileSchema,
+}).transform((d) => ({
+    ...d,
+    linkedUserEmail: d.linkedUserEmail ?? d.dependent?.email ?? "",
+    linkedUserName: d.dependent?.name ?? null,
+}));
+
+export const ManagerDelegationSchema = DelegationBaseSchema.extend({
+    manager: NestedDelegationProfileSchema,
+}).transform((d) => ({
+    ...d,
+    linkedUserEmail: d.linkedUserEmail ?? d.manager?.email ?? "",
+    linkedUserName: d.manager?.name ?? null,
+}));
+
+export type DelegationContextColors = Record<string, string>;
+
 // --- Inferred types ---
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 export type SignupRequest = z.infer<typeof SignupRequestSchema>;
@@ -571,4 +617,9 @@ export type DailyCheckIn = z.infer<typeof DailyCheckInSchema>;
 export type DailyCheckInCreate = z.infer<typeof DailyCheckInCreateSchema>;
 export type DailyCheckInUpdate = z.infer<typeof DailyCheckInUpdateSchema>;
 export type DailyCheckInPage = z.infer<typeof DailyCheckInPageSchema>;
+export type DelegationStatus = z.infer<typeof DelegationStatusSchema>;
+export type DelegationRelationship = z.infer<typeof DelegationRelationshipSchema>;
+export type DelegationRequest = z.infer<typeof DelegationRequestSchema>;
+export type DependentDelegation = z.infer<typeof DependentDelegationSchema>;
+export type ManagerDelegation = z.infer<typeof ManagerDelegationSchema>;
 

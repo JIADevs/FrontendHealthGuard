@@ -28,6 +28,8 @@ import {
     ClassificationSuggestionSchema,
     DailyCheckInSchema,
     DailyCheckInPageSchema,
+    DependentDelegationSchema,
+    ManagerDelegationSchema,
     parseCalendarEventsResponse,
     type CalendarDay,
     type DailyCheckInUpdate,
@@ -43,6 +45,10 @@ import {
     type CustomTagCreate,
     type DailyCheckInCreate,
     type DailyCheckInPage,
+    type DelegationRequest,
+    type DependentDelegation,
+    type ManagerDelegation,
+    type DelegationContextColors,
 } from "./schemas";
 
 // ─── Auth ──────────────────────────────────────────────
@@ -481,6 +487,38 @@ export async function removeDocFromBackpack(backpackId: string, documentId: stri
 
 export async function shareBackpack(id: string, expiresIn: ShareCreateOptions["expiresIn"] = "24h") {
     return shareBackpackWithOptions(id, { expiresIn });
+}
+
+// ─── Delegations ───────────────────────────────────────
+
+export async function createDelegation(payload: DelegationRequest): Promise<DependentDelegation | ManagerDelegation> {
+    const { data } = await apiClient.post("/users/me/delegations", payload);
+    return DependentDelegationSchema.parse(data);
+}
+
+export async function getManagedUsers(): Promise<DependentDelegation[]> {
+    const { data } = await apiClient.get("/users/me/delegations/managed");
+    return z.array(DependentDelegationSchema).parse(data);
+}
+
+export async function getManagers(): Promise<ManagerDelegation[]> {
+    const { data } = await apiClient.get("/users/me/delegations/managers");
+    return z.array(ManagerDelegationSchema).parse(data);
+}
+
+export async function respondDelegation(id: string, action: "accept" | "reject"): Promise<DependentDelegation | ManagerDelegation> {
+    const { data } = await apiClient.patch(`/users/me/delegations/${id}/status`, undefined, {
+        params: { action },
+    });
+    return DependentDelegationSchema.parse(data);
+}
+
+export async function revokeDelegation(id: string): Promise<void> {
+    await apiClient.delete(`/users/me/delegations/${id}`);
+}
+
+export async function updateDelegationContextColors(colors: DelegationContextColors): Promise<void> {
+    await apiClient.put("/users/me/preferences/delegation_context_colors", { value: colors });
 }
 
 export async function getBackpackDocuments(params: {

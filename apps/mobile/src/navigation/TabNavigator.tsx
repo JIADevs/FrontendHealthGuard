@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { HomeScreen } from "../screens/HomeScreen";
 import { DocumentsScreen } from "../screens/DocumentsScreen";
@@ -64,6 +65,11 @@ function CenterTabIcon({ focused }: { focused: boolean }) {
 
 export function TabNavigator() {
   const t = useAppTheme();
+  const insets = useSafeAreaInsets();
+  // En Android con navegación por botones (back/circle/square), la barra del
+  // sistema no siempre se refleja en el inset, así que garantizamos un mínimo.
+  const bottomInset =
+    Platform.OS === "ios" ? insets.bottom : Math.max(insets.bottom, spacing[2]);
 
   return (
     <Tab.Navigator
@@ -86,8 +92,8 @@ export function TabNavigator() {
           borderTopWidth: 0,
           borderTopLeftRadius: radii.xl,
           borderTopRightRadius: radii.xl,
-          height: Platform.OS === "ios" ? 90 : 68,
-          paddingBottom: Platform.OS === "ios" ? spacing[6] : spacing[2],
+          height: 60 + bottomInset,
+          paddingBottom: bottomInset,
           paddingTop: spacing[2],
           paddingHorizontal: spacing[2],
           // Elevated shadow

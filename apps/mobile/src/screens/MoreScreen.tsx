@@ -2,6 +2,7 @@ import { useMemo, useCallback } from "react";
 import { View, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
+import { useQueryClient } from "@tanstack/react-query";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Pill,
@@ -26,6 +27,7 @@ export function MoreScreen() {
   const t = useAppTheme();
 
   const logout = useAuthStore((s) => s.logout);
+  const queryClient = useQueryClient();
   const profile = useProfileQuery();
   const medications = useMedicationsQuery();
 
@@ -50,10 +52,17 @@ export function MoreScreen() {
       "¿Estás seguro de que deseas cerrar sesión?",
       [
         { text: "Cancelar", style: "cancel" },
-        { text: "Cerrar sesión", style: "destructive", onPress: logout },
+        {
+          text: "Cerrar sesión",
+          style: "destructive",
+          onPress: () => {
+            queryClient.clear();
+            logout();
+          },
+        },
       ],
     );
-  }, [logout]);
+  }, [logout, queryClient]);
 
   const showComingSoon = useCallback(() => {
     Alert.alert("Próximamente", "Esta función estará disponible pronto.");

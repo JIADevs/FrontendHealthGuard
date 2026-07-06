@@ -205,7 +205,7 @@ export function useMedicationFormCore({
 
     if (isEdit) {
       updateMedMut.mutate(
-        { id: initial!.id, name } as any,
+        { id: initial!.id, name },
         {
           onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
           onError: (err) => {

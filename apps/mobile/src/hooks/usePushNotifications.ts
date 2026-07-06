@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 import type * as ExpoNotifications from "expo-notifications";
+import { useQueryClient } from "@tanstack/react-query";
 import { registerDeviceToken } from "@helu/api";
 import { palette } from "@helu/ui";
 import { navigationRef, navigateTo } from "../navigation/navigationRef";
@@ -40,6 +41,7 @@ export interface PushNotificationState {
 }
 
 export const usePushNotifications = (authToken?: string | null): PushNotificationState => {
+  const queryClient = useQueryClient();
   const notificationRef = useRef<ExpoNotifications.Notification>(undefined);
   const notificationListener = useRef<ExpoNotifications.Subscription>(undefined);
   const responseListener = useRef<ExpoNotifications.Subscription>(undefined);
@@ -105,6 +107,7 @@ export const usePushNotifications = (authToken?: string | null): PushNotificatio
     notificationListener.current = Notifications.addNotificationReceivedListener(
       (notification: ExpoNotifications.Notification) => {
         notificationRef.current = notification;
+        queryClient.invalidateQueries({ queryKey: ["notifications"] });
       },
     );
 
@@ -119,7 +122,7 @@ export const usePushNotifications = (authToken?: string | null): PushNotificatio
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, []);
+  }, [queryClient]);
 
   return { notification: notificationRef.current };
 };

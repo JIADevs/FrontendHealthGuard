@@ -121,7 +121,7 @@ export function MedicationDetailScreen() {
   function saveName() {
     if (!nameValue.trim() || !med) return;
     updateMedMut.mutate(
-      { id: med.id, name: nameValue.trim() } as any,
+      { id: med.id, name: nameValue.trim() },
       {
         onSuccess: () => {
           setEditingName(false);

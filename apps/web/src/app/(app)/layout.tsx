@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore, useUnreadCount, useTheme } from "@helu/stores";
 import { useNotificationBell } from "@/hooks/useNotificationBell";
 import { timeAgo } from "@helu/ui";
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { token, isHydrated, user, logout } = useAuthStore();
 
   // Sync theme to <html data-theme="..."> for CSS variable resolution
@@ -65,6 +67,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pageTitle = NAV_ITEMS.find((n) => pathname.startsWith(n.href))?.label ?? "Helu";
 
   function handleLogout() {
+    queryClient.clear();
     logout();
     router.replace("/login");
   }

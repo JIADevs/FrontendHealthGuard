@@ -232,6 +232,8 @@ export function DocumentEditScreen() {
       await updateDocument(id, payload);
       queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["document", id] });
+      queryClient.invalidateQueries({ queryKey: ["backpack-docs"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["backpack-doc-ids"], exact: false });
       Toast.show({ type: "success", text1: "Cambios guardados", text2: trimmedTitle });
       navigation.goBack();
     } catch (err) {

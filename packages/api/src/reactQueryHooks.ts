@@ -80,7 +80,6 @@ import type {
     DocumentCreate,
     DocumentActiveShare,
     AppointmentCreate,
-    MedicationCreate,
     MedicationCycleCreate,
     MedicationCycleUpdate,
     MedicationIntakeCreate,
@@ -100,6 +99,11 @@ import {
     invalidateShareQueries,
     shareQK,
 } from "./shares/hooks";
+
+/** Listas que se invalidan explícitamente en cada mutación (ver onSettled abajo) —
+ *  el staleTime largo solo evita refetches redundantes al navegar, no afecta
+ *  la frescura tras crear/editar/eliminar. */
+const LIST_STALE_TIME_MS = 5 * 60 * 1000;
 
 // ─── Query keys ────────────────────────────────────────
 // Centralized so invalidation is always consistent.
@@ -165,7 +169,7 @@ export function useDocumentsQuery(
                 startDate: startDate ?? undefined,
                 endDate: endDate ?? undefined,
             }),
-        staleTime: 5_000,
+        staleTime: LIST_STALE_TIME_MS,
         placeholderData: keepPreviousData,
     });
 }
@@ -263,7 +267,7 @@ export function useBackpacksQuery(search = "", limit = 20) {
     return useQuery({
         queryKey: QK.backpacks(search),
         queryFn: () => getBackpacks({ page: 1, limit, searchQuery: search || undefined }),
-        staleTime: 5_000,
+        staleTime: LIST_STALE_TIME_MS,
         placeholderData: keepPreviousData,
     });
 }
@@ -282,7 +286,7 @@ export function useBackpackDocumentsQuery(backpackId: string, search = "", page 
         queryKey: QK.backpackDocs(backpackId, search, page),
         queryFn: () => getBackpackDocuments({ backpackId, page, limit, searchQuery: search || undefined }),
         enabled: !!backpackId,
-        staleTime: 5_000,
+        staleTime: LIST_STALE_TIME_MS,
     });
 }
 
@@ -341,7 +345,7 @@ export function useAppointmentByIdQuery(id: string) {
     return useQuery({
         queryKey: QK.appointment(id),
         queryFn: () => getAppointmentById(id),
-        staleTime: 5_000,
+        staleTime: LIST_STALE_TIME_MS,
         enabled: !!id,
     });
 }
@@ -356,7 +360,7 @@ export function useAppointmentsQuery(
     return useQuery({
         queryKey: QK.appointments(search, page, limit, startDate ?? null, endDate ?? null),
         queryFn: () => getAppointments({ page, limit, searchQuery: search || undefined, startDate, endDate }),
-        staleTime: 5_000,
+        staleTime: LIST_STALE_TIME_MS,
         placeholderData: keepPreviousData,
     });
 }
@@ -401,7 +405,10 @@ export function useUpdateAppointmentStatusMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ id, status }: { id: string; status: string }) => updateAppointmentStatus(id, status),
-        onSettled: () => qc.invalidateQueries({ queryKey: ["appointments"] }),
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: ["appointments"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
+        },
     });
 }
 
@@ -469,7 +476,7 @@ export function useMedicationsQuery(page = 1, limit = 20) {
     return useQuery({
         queryKey: QK.medications(page, limit),
         queryFn: () => getMedications({ page, limit }),
-        staleTime: 5_000,
+        staleTime: LIST_STALE_TIME_MS,
         placeholderData: keepPreviousData,
     });
 }
@@ -479,14 +486,14 @@ export function useMedicationByIdQuery(id: string) {
         queryKey: QK.medication(id),
         queryFn: () => getMedicationById(id),
         enabled: !!id,
-        staleTime: 5_000,
+        staleTime: LIST_STALE_TIME_MS,
     });
 }
 
 export function useCreateMedicationMutation() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (med: MedicationCreate) => createMedication(med),
+        mutationFn: (name: string) => createMedication(name),
         onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
     });
 }
@@ -499,6 +506,7 @@ export function useCreateMedicationCycleMutation() {
         onSettled: (_data, _err, variables) => {
             qc.invalidateQueries({ queryKey: ["medications"] });
             qc.invalidateQueries({ queryKey: ["medication", variables.medicationId] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
         },
     });
 }
@@ -506,8 +514,12 @@ export function useCreateMedicationCycleMutation() {
 export function useUpdateMedicationMutation() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, med }: { id: string; med: MedicationCreate }) => updateMedication(id, med),
-        onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
+        mutationFn: ({ id, name }: { id: string; name: string }) => updateMedication(id, name),
+        onSettled: (_data, _err, vars) => {
+            qc.invalidateQueries({ queryKey: ["medications"] });
+            qc.invalidateQueries({ queryKey: ["medication", vars.id] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
+        },
     });
 }
 
@@ -515,7 +527,10 @@ export function useDeleteMedicationMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (id: string) => deleteMedication(id),
-        onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: ["medications"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
+        },
     });
 }
 
@@ -527,6 +542,7 @@ export function useUpdateMedicationCycleMutation() {
         onSettled: (_data, _err, vars) => {
             qc.invalidateQueries({ queryKey: ["medications"] });
             qc.invalidateQueries({ queryKey: ["medication"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
         },
     });
 }
@@ -538,6 +554,7 @@ export function useDeleteMedicationCycleMutation() {
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["medications"] });
             qc.invalidateQueries({ queryKey: ["medication"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
         },
     });
 }
@@ -546,7 +563,10 @@ export function useConfirmIntakeMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (id: string) => confirmIntake(id),
-        onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: ["medications"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
+        },
     });
 }
 
@@ -598,10 +618,11 @@ export function useDeleteDoctorMutation() {
 
 // ─── Notifications ─────────────────────────────────────
 
-export function useNotificationsQuery(page = 1, limit = 20) {
+export function useNotificationsQuery(page = 1, limit = 20, enabled = true) {
     return useQuery({
         queryKey: QK.notifications(page),
         queryFn: () => getNotifications({ page, limit }),
+        enabled,
         staleTime: 30_000,
         refetchInterval: 30_000,
     });
@@ -659,7 +680,7 @@ export function useDailyCheckInsQuery(params?: {
     return useQuery({
         queryKey: QK.dailyCheckIns(params?.page, params?.startDate, params?.endDate),
         queryFn: () => getDailyCheckIns(params),
-        staleTime: 5_000,
+        staleTime: LIST_STALE_TIME_MS,
         placeholderData: keepPreviousData,
     });
 }

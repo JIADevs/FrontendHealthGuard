@@ -1,5 +1,6 @@
 import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -11,8 +12,11 @@ import {
 import { Trash2 } from "lucide-react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useInfiniteBackpackDocuments } from "@helu/api/hooks";
+import type { Document } from "@helu/api";
 import { useBackpackForm } from "../hooks/useBackpackForm";
 import { useBackpackCreateWithDocs } from "../hooks/useBackpackCreateWithDocs";
+import { useBackpackDetail } from "../hooks/useBackpackDetail";
 import {
   spacing,
   Button,
@@ -25,7 +29,7 @@ import {
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { BackpackCreateDocumentPicker } from "../components/backpacks";
+import { BackpackCreateDocumentPicker, BackpackDetailContentSection } from "../components/backpacks";
 
 type RouteParams = { id?: string };
 
@@ -38,7 +42,43 @@ export function BackpackEditScreen() {
 
   const form = useBackpackForm({ backpackId: id });
   const create = useBackpackCreateWithDocs();
+  const detail = useBackpackDetail(id ?? "");
+  const docsQuery = useInfiniteBackpackDocuments(id ?? "");
+  const docs = useMemo(
+    () => docsQuery.data?.pages.flatMap((p) => p.items) ?? [],
+    [docsQuery.data],
+  );
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+
+  const openDocument = useCallback(
+    (doc: Document) =>
+      navigation.navigate("DocumentDetail", { id: doc.id, title: doc.title, backTitle: "Mochila" }),
+    [navigation],
+  );
+
+  const handleRemoveDocument = useCallback(
+    (doc: Document) => {
+      Alert.alert(
+        "Quitar documento",
+        `¿Querés quitar "${doc.title}" de esta mochila? El documento no se elimina de tu biblioteca.`,
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Quitar",
+            style: "destructive",
+            onPress: () => detail.removeDocument(doc.id, doc.title),
+          },
+        ],
+      );
+    },
+    [detail],
+  );
+
+  const handleLoadMoreDocs = useCallback(() => {
+    if (docsQuery.hasNextPage && !docsQuery.isFetchingNextPage) {
+      void docsQuery.fetchNextPage();
+    }
+  }, [docsQuery]);
 
   const handleHeaderCreate = useCallback(() => {
     void create.handleCreate();
@@ -110,6 +150,23 @@ export function BackpackEditScreen() {
             numberOfLines={3}
             accessibilityLabel="Descripción de la mochila"
           />
+
+          {docsQuery.isLoading ? (
+            <View style={styles.docsLoading}>
+              <Spinner size="md" />
+            </View>
+          ) : (
+            <BackpackDetailContentSection
+              documents={docs}
+              onDocumentPress={openDocument}
+              onAddPress={() => navigation.navigate("BackpackAddDocuments", { id: id! })}
+              onRemoveDocument={handleRemoveDocument}
+              removingDocId={detail.removingDocId}
+              hasNextPage={docsQuery.hasNextPage}
+              isFetchingNextPage={docsQuery.isFetchingNextPage}
+              onLoadMore={handleLoadMoreDocs}
+            />
+          )}
 
           <Button variant="danger" fullWidth onPress={confirmDelete} disabled={form.deleting} loading={form.deleting}>
             Eliminar mochila
@@ -197,6 +254,7 @@ function makeStyles(t: ThemeContextValue) {
     createContent: { padding: spacing[5], gap: spacing[5], paddingBottom: spacing[10] },
     editContent: { padding: spacing[5], gap: spacing[4] },
     createFooter: { marginTop: spacing[2] },
+    docsLoading: { paddingVertical: spacing[8], alignItems: "center" },
     headerAction: {
       paddingHorizontal: spacing[3],
       paddingVertical: spacing[2],

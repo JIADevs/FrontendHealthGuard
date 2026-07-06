@@ -1,8 +1,10 @@
-import type { Appointment, CalendarDay, DailyCheckIn, Medication } from "@helu/api";
+import type { Appointment, CalendarDay, DailyCheckIn, Medication, MedicationIntake } from "@helu/api";
 import { localDateKeyFromISO } from "./calendarDateUtils";
 import {
     generateIntakeTimesForDay,
     medicationIntakeSortKey,
+    resolveCycleForDay,
+    findIntakeForSlot,
 } from "./medicationIntakeUtils";
 
 export type AgendaEvent =
@@ -12,8 +14,10 @@ export type AgendaEvent =
     | {
           type: "medication";
           data: Medication;
+          cycleId: string;
           dayKey: string;
           intakeTime: string;
+          intake?: MedicationIntake;
           sortKey: number;
       };
 
@@ -31,13 +35,18 @@ function mapMedicationIntakesForDay(dayKey: string, medications: Medication[]): 
     const events: AgendaEvent[] = [];
 
     for (const med of medications) {
-        const intakeTimes = generateIntakeTimesForDay(med.firstIntakeTime, med.frequency);
+        const cycle = resolveCycleForDay(med, dayKey);
+        if (!cycle) continue;
+
+        const intakeTimes = generateIntakeTimesForDay(cycle.firstIntakeTime, cycle.frequency);
         for (const intakeTime of intakeTimes) {
             events.push({
                 type: "medication",
                 data: med,
+                cycleId: cycle.id,
                 dayKey,
                 intakeTime,
+                intake: findIntakeForSlot(cycle, dayKey, intakeTime),
                 sortKey: medicationIntakeSortKey(dayKey, intakeTime),
             });
         }

@@ -22,6 +22,7 @@ import {
     MedicationPageSchema,
     MedicationSchema,
     MedicationCycleSchema,
+    MedicationIntakeSchema,
     NotificationPageSchema,
     BackpackPageSchema,
     BackpackSchema,
@@ -38,6 +39,7 @@ import {
     type AppointmentCreate,
     type MedicationCycleCreate,
     type MedicationCycleUpdate,
+    type MedicationIntakeCreate,
     type DoctorCreate,
     type BackpackCreate,
     type CustomTagCreate,
@@ -334,6 +336,11 @@ export async function confirmIntake(cycleId: string) {
         taken_at: new Date().toISOString(),
     });
     return data;
+}
+
+export async function recordIntake(cycleId: string, payload: MedicationIntakeCreate) {
+    const { data } = await apiClient.post(`/medication-cycles/${cycleId}/intakes`, payload);
+    return MedicationIntakeSchema.parse(data);
 }
 
 // ─── Doctors ───────────────────────────────────────────

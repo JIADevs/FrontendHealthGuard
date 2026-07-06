@@ -12,3 +12,11 @@ export {
 export type { AgendaEvent } from "./mapCalendarApiToEvents";
 export type { DayActivityIndicators } from "./dayActivityIndicators";
 export { buildDayActivityMap } from "./dayActivityIndicators";
+export {
+    resolveCycleForDay,
+    findIntakeForSlot,
+    generateIntakeTimesForDay,
+    NOT_TAKEN_REASON_LABELS_ES,
+    formatMedDose,
+} from "./medicationIntakeUtils";
+export { todayLocalDateKey } from "./calendarDateUtils";

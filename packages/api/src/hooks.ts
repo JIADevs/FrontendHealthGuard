@@ -58,6 +58,7 @@ import {
     updateMedication,
     deleteMedication,
     confirmIntake,
+    recordIntake,
     // Notifications
     getNotifications,
     markNotificationAsRead,
@@ -72,6 +73,7 @@ import type {
     DocumentActiveShare,
     AppointmentCreate,
     MedicationCycleCreate,
+    MedicationIntakeCreate,
     DoctorCreate,
     BackpackCreate,
     UserUpdate,
@@ -497,6 +499,18 @@ export function useConfirmIntakeMutation() {
     return useMutation({
         mutationFn: (id: string) => confirmIntake(id),
         onSettled: () => qc.invalidateQueries({ queryKey: ["medications"] }),
+    });
+}
+
+export function useRecordIntakeMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ cycleId, payload }: { cycleId: string; payload: MedicationIntakeCreate }) =>
+            recordIntake(cycleId, payload),
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: ["medications"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
+        },
     });
 }
 // ─── Doctors ───────────────────────────────────────────

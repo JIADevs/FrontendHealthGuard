@@ -31,7 +31,6 @@ import {
 } from "@helu/api";
 
 import { useWellbeingScreen } from "../hooks/useWellbeingScreen";
-import { MedicationFormModal } from "../components/MedicationFormModal";
 
 import {
   colors, palette,
@@ -40,14 +39,11 @@ import {
   fontSize,
   fontWeight,
   useAppTheme,
-  appointmentStatusLabel,
   formatApptDate,
   Pagination,
-  Card,
   cardContentStyle,
   Typography,
   Button,
-  ActionButton,
   Spinner,
   ConfirmModal,
   EmptyState,
@@ -57,12 +53,6 @@ import type { ThemeContextValue } from "@helu/ui";
 import {
   CalendarDays,
   Pill,
-  Plus,
-  Clock,
-  MapPin,
-  User,
-  Check,
-  CheckCircle,
   Heart,
   Menu,
   ChevronLeft,
@@ -76,12 +66,15 @@ import {
   AgendaMenuSheet,
   AgendaFAB,
   AgendaAddSheet,
+  MedicationIntakeModal,
+  AppointmentCard,
+  MedicationCard,
+  CycleCard,
   type AgendaView,
 } from "../components/agenda";
+import type { AgendaEvent } from "@helu/ui";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-
-const STATUSES = ["PROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI"] as const;
 
 const LIST_VIEW_TITLES: Record<Exclude<AgendaView, "calendar">, string> = {
   appointments: "Citas",
@@ -108,7 +101,6 @@ export function AgendaScreen() {
   const [view, setView] = useState<AgendaView>("calendar");
   const [menuOpen, setMenuOpen] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
-  const [medicationFormOpen, setMedicationFormOpen] = useState(false);
   const [checkInFormOpen, setCheckInFormOpen] = useState(false);
 
   useEffect(() => {
@@ -169,16 +161,9 @@ export function AgendaScreen() {
             visible={addSheetOpen}
             onClose={() => setAddSheetOpen(false)}
             onAddAppointment={() => navigation.navigate("AppointmentForm" as never)}
-            onAddMedication={() => setMedicationFormOpen(true)}
+            onAddMedication={() => navigation.navigate("MedicationForm" as never)}
             onAddCheckIn={() => setCheckInFormOpen(true)}
           />
-
-          {medicationFormOpen ? (
-            <MedicationFormModal
-              initial={null}
-              onClose={() => setMedicationFormOpen(false)}
-            />
-          ) : null}
 
           {checkInFormOpen ? (
             <DailyCheckInForm onClose={() => setCheckInFormOpen(false)} />
@@ -201,10 +186,15 @@ export function AgendaScreen() {
 function CalendarTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const [intakeEvent, setIntakeEvent] = useState<Extract<AgendaEvent, { type: "medication" }> | null>(null);
 
   return (
     <View style={styles.tabContent}>
-      <HeluAgendaCalendar />
+      <HeluAgendaCalendar onMedicationPress={setIntakeEvent} />
+
+      {intakeEvent ? (
+        <MedicationIntakeModal event={intakeEvent} onClose={() => setIntakeEvent(null)} />
+      ) : null}
     </View>
   );
 }
@@ -253,16 +243,6 @@ function AppointmentsTab() {
 
   return (
     <View style={styles.tabContent}>
-      <View style={styles.addRow}>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => navigation.navigate("AppointmentForm")}
-        >
-          <Plus size={16} color={colors.white} />
-          <Text style={styles.addBtnText}>Nueva Cita</Text>
-        </TouchableOpacity>
-      </View>
-
       {appts.isLoading ? (
         <View style={styles.center}>
           <Spinner size="lg" />
@@ -278,61 +258,13 @@ function AppointmentsTab() {
           keyExtractor={(a) => a.id}
           contentContainerStyle={cardContentStyle}
           renderItem={({ item: a }) => (
-            <TouchableOpacity onPress={() => navigation.navigate("AppointmentDetail", { id: a.id })}>
-              <Card
-                title={a.name || a.specialty || "Cita médica"}
-                subtitle={
-                <View style={{ gap: spacing[1] }}>
-                  {a.doctor && (
-                    <View style={styles.cardMeta}>
-                      <User size={12} color={t.text.secondary} />
-                      <Text style={styles.cardMetaText}>{a.doctor}</Text>
-                    </View>
-                  )}
-                  {(a.location || a.videoCallLink) && (
-                    <View style={styles.cardMeta}>
-                      <MapPin size={12} color={t.text.secondary} />
-                      <Text style={styles.cardMetaText}>
-                        {a.modality === "VIRTUAL" ? "Virtual" : a.modality === "DOMICILIARIA" ? "Domiciliaria" : a.location}
-                      </Text>
-                    </View>
-                  )}
-                  <View style={styles.cardMeta}>
-                    <Clock size={12} color={t.text.secondary} />
-                    <Text style={styles.cardMetaText}>{formatApptDate(a.date)} {a.time?.slice(0, 5)}</Text>
-                  </View>
-                  {a.specialty && (
-                    <Text style={styles.cardMetaText}>• {a.specialty}</Text>
-                  )}
-                  {a.cost && (
-                    <Text style={styles.cardMetaText}>💰 ${a.cost}</Text>
-                  )}
-                </View>
-              }
-              icon={<CalendarDays size={20} color={t.brand.fg} />}
-              iconBackground={t.brand.tintMed}
-              actions={
-                <View style={styles.cardActions}>
-                  <ActionButton action="edit" size="sm" onPress={() => navigation.navigate("AppointmentForm", { id: a.id })} />
-                  <ActionButton action="delete" size="sm" onPress={() => setDeleteTarget(a)} />
-                </View>
-              }
-            >
-              <View style={styles.statusRow}>
-                {STATUSES.map((s) => (
-                  <TouchableOpacity
-                    key={s}
-                    style={[styles.statusPill, a.status === s && styles.statusPillActive]}
-                    onPress={() => handleStatusChange(a.id, s)}
-                  >
-                    <Text style={[styles.statusPillText, a.status === s && styles.statusPillTextActive]}>
-                      {appointmentStatusLabel(s)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Card>
-            </TouchableOpacity>
+            <AppointmentCard
+              appointment={a}
+              onPress={() => navigation.navigate("AppointmentDetail", { id: a.id })}
+              onEdit={() => navigation.navigate("AppointmentForm", { id: a.id })}
+              onDelete={() => setDeleteTarget(a)}
+              onStatusChange={(status) => handleStatusChange(a.id, status)}
+            />
           )}
           ListFooterComponent={
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
@@ -350,6 +282,8 @@ function AppointmentsTab() {
           onCancel={() => setDeleteTarget(null)}
         />
       )}
+
+      <AgendaFAB onPress={() => navigation.navigate("AppointmentForm")} />
     </View>
   );
 }
@@ -360,6 +294,7 @@ function MedicationsTab() {
   const [subTab, setSubTab] = useState<"meds" | "cycles">("meds");
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const navigation = require("@react-navigation/native").useNavigation();
 
   return (
     <View style={styles.tabContent}>
@@ -382,6 +317,8 @@ function MedicationsTab() {
         </TouchableOpacity>
       </View>
       {subTab === "meds" ? <MedicationsList /> : <CyclesList />}
+
+      <AgendaFAB onPress={() => navigation.navigate("MedicationForm")} />
     </View>
   );
 }
@@ -435,16 +372,6 @@ function MedicationsList() {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={styles.addRow}>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => navigation.navigate("MedicationForm")}
-        >
-          <Plus size={16} color={colors.white} />
-          <Text style={styles.addBtnText}>Nuevo Ciclo</Text>
-        </TouchableOpacity>
-      </View>
-
       {meds.isLoading ? (
         <View style={styles.center}>
           <Spinner size="lg" />
@@ -459,51 +386,15 @@ function MedicationsList() {
           data={items}
           keyExtractor={(m) => m.id}
           contentContainerStyle={cardContentStyle}
-          renderItem={({ item: m }) => {
-            const cycle = m.cycles?.[0];
-            return (
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate("MedicationDetail" as never, { id: m.id } as never)}
-              >
-                <Card
-                  title={m.name}
-                  subtitle={cycle ? `${formatDose(cycle.doseAmount, cycle.doseUnit, cycle.dosage)} — ${formatFrequency(cycle.frequency, cycle.frequencyUnit)}` : "Sin ciclo activo"}
-                  icon={<Pill size={20} color={t.status.warningFg} />}
-                  iconBackground={t.status.warningBg}
-                  actions={
-                    <View style={styles.cardActions}>
-                      <ActionButton action="delete" size="sm" onPress={() => setDeleteTarget(m)} />
-                    </View>
-                  }
-                >
-                  {cycle?.reason ? (
-                    <Text style={styles.cardMetaText}>{cycle.reason}</Text>
-                  ) : null}
-                  {cycle?.nextIntakeTime ? (
-                    <View style={styles.cardMeta}>
-                      <Clock size={12} color={t.text.secondary} />
-                      <Text style={styles.cardMetaText}>
-                        {new Date(cycle.nextIntakeTime).toLocaleString("es-CO", {
-                          month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit",
-                        })}
-                      </Text>
-                    </View>
-                  ) : null}
-                  {cycle ? (
-                    <TouchableOpacity
-                      style={styles.intakeBtn}
-                      onPress={() => handleIntake(cycle.id)}
-                      disabled={intakeMut.isPending}
-                    >
-                      <Check size={13} color={colors.white} />
-                      <Text style={styles.intakeBtnText}>Tomado</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </Card>
-              </TouchableOpacity>
-            );
-          }}
+          renderItem={({ item: m }) => (
+            <MedicationCard
+              medication={m}
+              onPress={() => navigation.navigate("MedicationDetail" as never, { id: m.id } as never)}
+              onDelete={() => setDeleteTarget(m)}
+              onIntake={handleIntake}
+              intakePending={intakeMut.isPending}
+            />
+          )}
           ListFooterComponent={
             <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
           }
@@ -536,34 +427,6 @@ type CycleItem = {
 function isCycleActive(cycle: MedicationCycle): boolean {
   if (!cycle.endDate) return true;
   return new Date(cycle.endDate) >= new Date();
-}
-
-const DOSE_UNIT_LABELS_ES: Record<string, string> = {
-  TABLET: "tableta(s)",
-  ML:     "ml",
-  DROPS:  "gotas",
-  GRAMS:  "gramos",
-  MG:     "mg",
-  UNITS:  "unidad(es)",
-};
-
-function formatFrequency(freq: number, unit: string): string {
-  const labels: Record<string, [string, string]> = {
-    HOUR:  ["hora",    "horas"],
-    DAY:   ["día",     "días"],
-    WEEK:  ["semana",  "semanas"],
-    MONTH: ["mes",     "meses"],
-    YEAR:  ["año",     "años"],
-  };
-  const [s, p] = labels[unit] ?? [unit.toLowerCase(), unit.toLowerCase()];
-  return `cada ${freq} ${freq === 1 ? s : p}`;
-}
-
-function formatDose(doseAmount: number | null | undefined, doseUnit: string | null | undefined, fallback: string): string {
-  const unitLabel = doseUnit ? (DOSE_UNIT_LABELS_ES[doseUnit] ?? doseUnit.toLowerCase()) : "";
-  if (doseAmount != null && unitLabel) return `${doseAmount} ${unitLabel}`;
-  if (doseAmount != null) return String(doseAmount);
-  return fallback;
 }
 
 function CyclesList() {
@@ -627,16 +490,6 @@ function CyclesList() {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={styles.addRow}>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => navigation.navigate("MedicationForm")}
-        >
-          <Plus size={16} color={colors.white} />
-          <Text style={styles.addBtnText}>Nuevo Ciclo</Text>
-        </TouchableOpacity>
-      </View>
-
       {meds.isLoading ? (
         <View style={styles.center}>
           <Spinner size="lg" />
@@ -655,9 +508,10 @@ function CyclesList() {
             const { cycle, medicationId, medicationName } = item;
             const active = isCycleActive(cycle);
             return (
-              <TouchableOpacity
-                activeOpacity={0.85}
-                style={[styles.cycleCard, { borderColor: t.border.light }]}
+              <CycleCard
+                cycle={cycle}
+                medicationName={medicationName}
+                active={active}
                 onPress={() =>
                   navigation.navigate("CycleDetail" as never, {
                     cycleId: cycle.id,
@@ -665,79 +519,16 @@ function CyclesList() {
                     medicationName,
                   } as never)
                 }
-              >
-                {/* Encabezado */}
-                <View style={styles.cycleCardHeader}>
-                  <View style={styles.cycleCardTitleRow}>
-                    <Pill size={14} color={t.accent.medFg} />
-                    <Text style={[styles.cycleCardMedName, { color: t.text.primary }]} numberOfLines={1}>
-                      {medicationName}
-                    </Text>
-                  </View>
-                  <View style={styles.cycleCardRight}>
-                    <View style={[
-                      styles.cycleBadge,
-                      { backgroundColor: active ? (t.status.successBg ?? t.accent.medBg) : t.surface.bg },
-                    ]}>
-                      <Text style={[
-                        styles.cycleBadgeText,
-                        { color: active ? (t.status.successFg ?? t.accent.medFg) : t.text.muted },
-                      ]}>
-                        {active ? "Activo" : "Finalizado"}
-                      </Text>
-                    </View>
-                    <View style={styles.cycleCardActions}>
-                      <ActionButton
-                        action="edit"
-                        size="sm"
-                        onPress={() =>
-                          navigation.navigate("MedicationForm", {
-                            cycleId: cycle.id,
-                            medicationId,
-                            medicationName,
-                          })
-                        }
-                      />
-                      {active && (
-                        <TouchableOpacity
-                          style={[styles.finalizeIconBtn, { backgroundColor: t.status.warningBg ?? "#FFF3CD" }]}
-                          activeOpacity={0.7}
-                          onPress={() => setFinalizingItem(item)}
-                        >
-                          <CheckCircle size={14} color={t.status.warningFg ?? "#856404"} strokeWidth={2} />
-                        </TouchableOpacity>
-                      )}
-                      <ActionButton
-                        action="delete"
-                        size="sm"
-                        onPress={() => setDeletingItem(item)}
-                      />
-                    </View>
-                  </View>
-                </View>
-
-                {/* Datos */}
-                <View style={styles.cycleCardBody}>
-                  <Text style={[styles.cycleCardDosage, { color: t.text.primary }]}>
-                    {formatDose(cycle.doseAmount, cycle.doseUnit, cycle.dosage)}
-                    <Text style={[styles.cycleCardFreq, { color: t.text.secondary }]}>
-                      {" · "}{formatFrequency(cycle.frequency, cycle.frequencyUnit)}
-                    </Text>
-                  </Text>
-                  <Text style={[styles.cycleCardDates, { color: t.text.secondary }]}>
-                    {new Date(cycle.startDate).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}
-                    {" → "}
-                    {cycle.endDate
-                      ? new Date(cycle.endDate).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })
-                      : "en curso"}
-                  </Text>
-                  {cycle.reason ? (
-                    <Text style={[styles.cycleCardNote, { color: t.text.muted }]} numberOfLines={1}>
-                      {cycle.reason}
-                    </Text>
-                  ) : null}
-                </View>
-              </TouchableOpacity>
+                onEdit={() =>
+                  navigation.navigate("MedicationForm", {
+                    cycleId: cycle.id,
+                    medicationId,
+                    medicationName,
+                  })
+                }
+                onFinalize={() => setFinalizingItem(item)}
+                onDelete={() => setDeletingItem(item)}
+              />
             );
           }}
         />
@@ -917,37 +708,8 @@ function makeStyles(t: ThemeContextValue) {
     wellbeingListFooter: {
       paddingVertical: spacing[4],
     },
-    addRow:             { flexDirection: "row", justifyContent: "flex-end", padding: spacing[4] },
-    addBtn:             { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: t.brand.fg, paddingHorizontal: spacing[4], paddingVertical: spacing[2], borderRadius: radii.md },
-    addBtnText:         { color: colors.white, fontWeight: fontWeight.semibold, fontSize: fontSize.sm },
-    center:             { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
-    cardMeta:           { flexDirection: "row", alignItems: "center", gap: spacing[1] },
-    cardMetaText:       { fontSize: fontSize.sm, color: t.text.secondary },
-    cardActions:        { gap: spacing[2] },
+    center:{ flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
     iconBtn:            { width: 34, height: 34, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bg },
-    statusRow:          { flexDirection: "row", flexWrap: "wrap", gap: spacing[1], marginTop: spacing[1] },
-    statusPill:         { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radii.full, backgroundColor: t.border.light, borderWidth: 1, borderColor: t.border.medium },
-    statusPillActive:   { backgroundColor: t.brand.fg, borderColor: t.brand.fg },
-    statusPillText:     { fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.secondary },
-    statusPillTextActive: { color: colors.white },
-    intakeBtn:          { flexDirection: "row", alignItems: "center", gap: spacing[1], marginTop: spacing[1], backgroundColor: t.accent.notifFg, alignSelf: "flex-start", paddingHorizontal: spacing[3], paddingVertical: 4, borderRadius: radii.full },
-    intakeBtnText:      { color: colors.white, fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
-
-    // Cycle card (CyclesTab)
-    cycleCard:          { backgroundColor: t.surface.bgCard, borderRadius: radii.lg, borderWidth: 1, overflow: "hidden", marginHorizontal: spacing[4], marginBottom: spacing[3] },
-    cycleCardHeader:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing[3], paddingTop: spacing[3], paddingBottom: spacing[1] },
-    cycleCardTitleRow:  { flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1, marginRight: spacing[2] },
-    cycleCardMedName:   { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, flex: 1 },
-    cycleBadge:         { paddingHorizontal: spacing[2], paddingVertical: 2, borderRadius: radii.full },
-    cycleBadgeText:     { fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
-    cycleCardBody:      { paddingHorizontal: spacing[3], paddingBottom: spacing[3], gap: spacing[1] },
-    cycleCardDosage:    { fontSize: fontSize.base, fontWeight: fontWeight.medium },
-    cycleCardFreq:      { fontSize: fontSize.sm, fontWeight: fontWeight.normal },
-    cycleCardDates:     { fontSize: fontSize.xs },
-    cycleCardNote:      { fontSize: fontSize.xs },
-    cycleCardRight:     { flexDirection: "row", alignItems: "center", gap: spacing[2] },
-    cycleCardActions:   { flexDirection: "column", alignItems: "center", gap: spacing[1] },
-    finalizeIconBtn:    { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
 
     fieldLabel:         { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: t.text.primary, marginBottom: spacing[2] },
     errorText:          { color: t.status.errorFg, fontSize: fontSize.sm, marginTop: spacing[3], backgroundColor: t.status.errorBg, padding: spacing[3], borderRadius: radii.sm },

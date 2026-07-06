@@ -27,6 +27,7 @@ interface CalendarGridProps {
     dates: string[];
     selectedDate: string;
     onSelectDate: (date: string) => void;
+    onMedicationPress?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
 }
 
 export function CalendarGrid({
@@ -35,6 +36,7 @@ export function CalendarGrid({
     dates,
     selectedDate,
     onSelectDate,
+    onMedicationPress,
 }: CalendarGridProps) {
     const t = useAppTheme();
     const { width: screenWidth } = useWindowDimensions();
@@ -85,6 +87,7 @@ export function CalendarGrid({
                             compact={isCompact}
                             styles={styles}
                             onSelectDate={onSelectDate}
+                            onMedicationPress={onMedicationPress}
                         />
                     ))}
                 </View>
@@ -100,9 +103,10 @@ interface DayColumnProps {
     compact: boolean;
     styles: ReturnType<typeof makeStyles>;
     onSelectDate: (date: string) => void;
+    onMedicationPress?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
 }
 
-function DayColumn({ date, selectedDate, events, compact, styles, onSelectDate }: DayColumnProps) {
+function DayColumn({ date, selectedDate, events, compact, styles, onSelectDate, onMedicationPress }: DayColumnProps) {
     const { weekday, day, isToday } = formatDayShort(date);
     const isSelected = date === selectedDate;
 
@@ -158,7 +162,15 @@ function DayColumn({ date, selectedDate, events, compact, styles, onSelectDate }
                             },
                         ]}
                     >
-                        <EventBlock event={layout.event} compact={compact} />
+                        <EventBlock
+                            event={layout.event}
+                            compact={compact}
+                            onPress={
+                                layout.event.type === "medication" && onMedicationPress
+                                    ? () => onMedicationPress(layout.event as Extract<AgendaEvent, { type: "medication" }>)
+                                    : undefined
+                            }
+                        />
                     </View>
                 ))}
             </View>

@@ -278,11 +278,31 @@ export const AppointmentCreateSchema = z.object({
 
 
 // --- Medications ---
+export const INTAKE_STATUSES = ["TAKEN", "NOT_TAKEN"] as const;
+export type IntakeStatus = typeof INTAKE_STATUSES[number];
+
+export const NOT_TAKEN_REASONS = ["FORGOT", "NOT_PURCHASED", "OTHER"] as const;
+export type NotTakenReason = typeof NOT_TAKEN_REASONS[number];
+
 export const MedicationIntakeSchema = z.object({
     id: z.string().uuid(),
     cycleId: z.string().uuid(),
-    takenAt: z.string(),
+    status: z.enum(INTAKE_STATUSES).default("TAKEN"),
+    scheduledTime: z.string(),
+    takenAt: z.string().nullable().optional(),
+    notTakenReason: z.enum(NOT_TAKEN_REASONS).nullable().optional(),
+    notes: z.string().nullable().optional(),
 });
+
+export const MedicationIntakeCreateSchema = z.object({
+    status: z.enum(INTAKE_STATUSES).default("TAKEN"),
+    scheduledTime: z.string().optional(),
+    takenAt: z.string().optional(),
+    notTakenReason: z.enum(NOT_TAKEN_REASONS).optional(),
+    notes: z.string().optional(),
+});
+
+export type MedicationIntakeCreate = z.infer<typeof MedicationIntakeCreateSchema>;
 
 export const MedicationDeliverySchema = z.object({
     id: z.string().uuid(),

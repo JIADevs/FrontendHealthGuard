@@ -6,12 +6,14 @@ import { DaySelector } from "./DaySelector";
 import { CalendarGrid } from "./CalendarGrid";
 import { MonthGridView } from "./MonthGridView";
 import { useHeluAgendaCalendar } from "./useHeluAgendaCalendar";
+import type { AgendaEvent } from "./mapCalendarApiToEvents";
 
 export interface HeluAgendaCalendarProps {
     initialDate?: string;
+    onMedicationPress?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
 }
 
-export function HeluAgendaCalendar({ initialDate }: HeluAgendaCalendarProps) {
+export function HeluAgendaCalendar({ initialDate, onMedicationPress }: HeluAgendaCalendarProps) {
     const calendar = useHeluAgendaCalendar(initialDate);
     const t = useAppTheme();
 
@@ -50,6 +52,7 @@ export function HeluAgendaCalendar({ initialDate }: HeluAgendaCalendarProps) {
                     dates={calendar.gridDates}
                     selectedDate={calendar.selectedDate}
                     onSelectDate={calendar.selectDate}
+                    onMedicationPress={onMedicationPress}
                 />
             )}
         </View>

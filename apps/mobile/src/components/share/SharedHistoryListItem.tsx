@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { Backpack, ChevronRight, FileText } from "lucide-react-native";
 import type { ShareLink } from "@helu/api";
-import { Chip, Typography, palette, radii, spacing, useAppTheme } from "@helu/ui";
+import { Chip, Typography, radii, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { formatShareStartedAt } from "./shareUtils";
 
@@ -15,8 +15,8 @@ export function SharedHistoryListItem({ item, onPress }: SharedHistoryListItemPr
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const isBackpack = item.resourceType === "backpack";
-  const iconColor = isBackpack ? palette.accent.backpack[600] : t.accent.docFg;
-  const iconBg = isBackpack ? palette.accent.backpack[50] : t.accent.docBg;
+  const iconColor = isBackpack ? t.accent.backpackFg : t.accent.docFg;
+  const iconBg = isBackpack ? t.accent.backpackBg : t.accent.docBg;
   const statusLabel = item.status === "active" ? "Activo" : "Expirado";
   const statusChipColor = item.status === "active" ? "green" : "default";
   const startedLabel = formatShareStartedAt(item.createdAt);

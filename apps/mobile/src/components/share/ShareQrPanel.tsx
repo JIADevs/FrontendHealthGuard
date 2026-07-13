@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { View, StyleSheet, Image, Text } from "react-native";
 import { Copy, Share2, Clock } from "lucide-react-native";
-import { Button, Typography, spacing, radii, fontSize, fontWeight, useAppTheme } from "@helu/ui";
+import { Button, Typography, colors, spacing, radii, fontSize, fontWeight, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { qrCodeImageUriForShareUrl, resolveExpoReachableUrl } from "../../utils/shareLinks";
 import { formatShareExpiresInHuman } from "./shareUtils";
@@ -49,7 +49,7 @@ export function ShareQrPanel({
       </View>
       <Button fullWidth onPress={onCopy} loading={copyLoading} disabled={!shareUrl}>
         <View style={styles.btnRow}>
-          <Copy size={16} color="#fff" />
+          <Copy size={16} color={colors.white} />
           <Text style={styles.btnPrimaryText}>Copiar enlace</Text>
         </View>
       </Button>
@@ -107,7 +107,7 @@ function makeStyles(t: ThemeContextValue) {
       gap: spacing[2],
     },
     btnPrimaryText: {
-      color: "#fff",
+      color: colors.white,
       fontSize: fontSize.sm,
       fontWeight: fontWeight.semibold,
     },

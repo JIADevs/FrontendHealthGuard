@@ -59,6 +59,8 @@ export const lightTheme = {
     aiFg:       palette.accent.ai[500],
     notifBg:    palette.accent.notification[50],
     notifFg:    palette.accent.notification[500],
+    backpackBg: palette.accent.backpack[50],
+    backpackFg: palette.accent.backpack[600],
   },
 } as const;
 
@@ -117,6 +119,8 @@ export const darkTheme = {
     aiFg:       palette.accent.ai[500],
     notifBg:    'rgba(16, 185, 129, 0.12)',
     notifFg:    palette.accent.notification[500],
+    backpackBg: 'rgba(249, 115, 22, 0.12)',
+    backpackFg: palette.accent.backpack[500],
   },
 } as const;
 
@@ -145,6 +149,7 @@ export type AppTheme = {
     medBg: string; medFg: string;
     aiBg: string; aiFg: string;
     notifBg: string; notifFg: string;
+    backpackBg: string; backpackFg: string;
   };
 };
 

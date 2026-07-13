@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { Backpack, FileText } from "lucide-react-native";
 import type { ShareResourceType } from "@helu/api";
-import { Chip, Typography, palette, radii, spacing, useAppTheme } from "@helu/ui";
+import { Chip, Typography, radii, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { shareResourceTypeLabel } from "./shareUtils";
 
@@ -22,8 +22,8 @@ export function ShareResourceSummaryCard({
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const isBackpack = resourceType === "backpack";
-  const iconColor = isBackpack ? palette.accent.backpack[600] : t.accent.docFg;
-  const iconBg = isBackpack ? palette.accent.backpack[50] : t.accent.docBg;
+  const iconColor = isBackpack ? t.accent.backpackFg : t.accent.docFg;
+  const iconBg = isBackpack ? t.accent.backpackBg : t.accent.docBg;
 
   return (
     <View style={styles.card}>

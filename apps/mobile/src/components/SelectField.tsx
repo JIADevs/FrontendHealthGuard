@@ -53,11 +53,11 @@ export function SelectField({ label, value, placeholder, options, onChange, requ
       {isOpen && (
         <View style={[styles.dropdown, { backgroundColor: t.surface.bgCard, borderColor: t.border.medium }]}>
           <View style={[styles.searchContainer, { borderBottomColor: t.border.light }]}>
-            <Search size={16} color={t.text.tertiary} />
+            <Search size={16} color={t.text.muted} />
             <TextInput
               style={[styles.searchInput, { color: t.text.primary }]}
               placeholder="Buscar..."
-              placeholderTextColor={t.text.tertiary}
+              placeholderTextColor={t.text.muted}
               value={search}
               onChangeText={setSearch}
             />

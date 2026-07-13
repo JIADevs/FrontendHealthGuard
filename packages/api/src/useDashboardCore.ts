@@ -64,6 +64,11 @@ export interface DashboardData {
   isApptsLoading: boolean;
   isMedsLoading: boolean;
   isDocsLoading: boolean;
+
+  /** True mientras cualquiera de las 4 queries se está re-consultando (pull-to-refresh). */
+  isRefetching: boolean;
+  /** Vuelve a consultar perfil, documentos, citas y medicamentos. */
+  refetch: () => Promise<unknown>;
 }
 
 // ─── Core hook ───────────────────────────────────────────────────────────────
@@ -134,5 +139,9 @@ export function useDashboardCore(): DashboardData {
     isApptsLoading: appts.isLoading,
     isMedsLoading: meds.isLoading,
     isDocsLoading: docs.isLoading,
+
+    isRefetching: profile.isRefetching || docs.isRefetching || appts.isRefetching || meds.isRefetching,
+    refetch: () =>
+      Promise.all([profile.refetch(), docs.refetch(), appts.refetch(), meds.refetch()]),
   };
 }

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
 import type { ShareStatusFilter } from "@helu/api";
-import { spacing, radii, fontSize, fontWeight, useAppTheme } from "@helu/ui";
+import { colors, spacing, radii, fontSize, fontWeight, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 const FILTERS: { value: ShareStatusFilter; label: string }[] = [
@@ -66,7 +66,7 @@ function makeStyles(t: ThemeContextValue) {
       color: t.text.secondary,
     },
     chipTextSelected: {
-      color: "#fff",
+      color: colors.white,
     },
   });
 }

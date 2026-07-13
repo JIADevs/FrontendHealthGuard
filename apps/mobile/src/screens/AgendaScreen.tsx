@@ -247,16 +247,18 @@ function AppointmentsTab() {
         <View style={styles.center}>
           <Spinner size="lg" />
         </View>
-      ) : items.length === 0 ? (
-        <EmptyState
-          icon={<CalendarDays size={48} color={t.border.medium} />}
-          message="No tienes citas registradas."
-        />
       ) : (
         <FlatList
           data={items}
           keyExtractor={(a) => a.id}
-          contentContainerStyle={cardContentStyle}
+          contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
+          refreshControl={
+            <RefreshControl
+              refreshing={appts.isRefetching}
+              onRefresh={() => appts.refetch()}
+              tintColor={t.brand.fg}
+            />
+          }
           renderItem={({ item: a }) => (
             <AppointmentCard
               appointment={a}
@@ -266,8 +268,16 @@ function AppointmentsTab() {
               onStatusChange={(status) => handleStatusChange(a.id, status)}
             />
           )}
+          ListEmptyComponent={
+            <EmptyState
+              icon={<CalendarDays size={48} color={t.border.medium} />}
+              message="No tienes citas registradas."
+            />
+          }
           ListFooterComponent={
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            items.length > 0 ? (
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            ) : null
           }
         />
       )}
@@ -376,16 +386,18 @@ function MedicationsList() {
         <View style={styles.center}>
           <Spinner size="lg" />
         </View>
-      ) : items.length === 0 ? (
-        <EmptyState
-          icon={<Pill size={48} color={t.border.medium} />}
-          message="No tienes medicamentos registrados."
-        />
       ) : (
         <FlatList
           data={items}
           keyExtractor={(m) => m.id}
-          contentContainerStyle={cardContentStyle}
+          contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
+          refreshControl={
+            <RefreshControl
+              refreshing={meds.isRefetching}
+              onRefresh={() => meds.refetch()}
+              tintColor={t.brand.fg}
+            />
+          }
           renderItem={({ item: m }) => (
             <MedicationCard
               medication={m}
@@ -395,8 +407,16 @@ function MedicationsList() {
               intakePending={intakeMut.isPending}
             />
           )}
+          ListEmptyComponent={
+            <EmptyState
+              icon={<Pill size={48} color={t.border.medium} />}
+              message="No tienes medicamentos registrados."
+            />
+          }
           ListFooterComponent={
-            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            items.length > 0 ? (
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            ) : null
           }
         />
       )}
@@ -494,16 +514,26 @@ function CyclesList() {
         <View style={styles.center}>
           <Spinner size="lg" />
         </View>
-      ) : cycleItems.length === 0 ? (
-        <EmptyState
-          icon={<Pill size={48} color={t.border.medium} />}
-          message="No hay ciclos registrados."
-        />
       ) : (
         <FlatList
           data={cycleItems}
           keyExtractor={(item) => item.cycle.id}
-          contentContainerStyle={[cardContentStyle, { paddingBottom: 24 }]}
+          contentContainerStyle={
+            cycleItems.length === 0 ? styles.emptyListContent : [cardContentStyle, { paddingBottom: 24 }]
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={meds.isRefetching}
+              onRefresh={() => meds.refetch()}
+              tintColor={t.brand.fg}
+            />
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon={<Pill size={48} color={t.border.medium} />}
+              message="No hay ciclos registrados."
+            />
+          }
           renderItem={({ item }: { item: CycleItem }) => {
             const { cycle, medicationId, medicationName } = item;
             const active = isCycleActive(cycle);
@@ -679,6 +709,7 @@ function makeStyles(t: ThemeContextValue) {
     menuBtn:            { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: radii.md },
     headerSpacer:       { width: 40 },
     tabContent:         { flex: 1 },
+    emptyListContent:   { flexGrow: 1 },
     subTabBar:          { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: t.border.medium, backgroundColor: t.surface.bgCard },
     subTab:             { flex: 1, alignItems: "center", paddingVertical: spacing[3], borderBottomWidth: 2, borderBottomColor: "transparent" },
     subTabActive:       { borderBottomColor: t.brand.fg },

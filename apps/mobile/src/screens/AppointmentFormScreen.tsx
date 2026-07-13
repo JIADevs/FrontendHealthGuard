@@ -116,7 +116,7 @@ function PickerModal({ visible, onClose, title, items, selected, onToggle }: Pic
               value={search}
               onChangeText={setSearch}
               placeholder="Buscar..."
-              placeholderTextColor={t.text.secondary}
+              placeholderTextColor={t.text.muted}
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch("")}>

@@ -263,6 +263,7 @@ export function useDocumentFormCore<TFile>(
                     format: adapters.getMimeType(file),
                     file_size_bytes: fileSize ?? 0,
                     documentDate: docDate ?? today.toISOString(),
+                    treatmentId: overrides?.treatmentId ?? undefined,
                     typeId,
                     subtypeIds: [],
                     specialtyIds,
@@ -276,6 +277,7 @@ export function useDocumentFormCore<TFile>(
                 }
 
                 queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
+                queryClient.invalidateQueries({ queryKey: ["treatments"], exact: false });
 
                 if (!isSilent) {
                     onUploaded?.({ id: createdDoc.id, title: createdDoc.title });

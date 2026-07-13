@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Pill,
+  Activity,
   Share2,
   Users,
   Bell,
@@ -15,7 +16,7 @@ import {
   Settings,
 } from "lucide-react-native";
 import { useAuthStore } from "@helu/stores";
-import { useProfileQuery, useMedicationsQuery } from "@helu/api/hooks";
+import { useProfileQuery, useMedicationsQuery, useTreatmentsQuery } from "@helu/api/hooks";
 import { palette, spacing, useAppTheme, Typography } from "@helu/ui";
 import { ProfileCard, MenuItem, MenuSection } from "../components/more";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -30,6 +31,7 @@ export function MoreScreen() {
   const queryClient = useQueryClient();
   const profile = useProfileQuery();
   const medications = useMedicationsQuery();
+  const treatments = useTreatmentsQuery(1, 100);
 
   const activeMedsCount = useMemo(() => {
     if (!medications.data?.items) return 0;
@@ -89,6 +91,12 @@ export function MoreScreen() {
             label="Medicamentos"
             badge={activeMedsCount > 0 ? `${activeMedsCount} activos` : undefined}
             onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "medications" } } as any)}
+          />
+          <MenuItem
+            icon={<Activity size={20} color={palette.brand[500]} />}
+            label="Tratamientos"
+            badge={treatments.data?.total ? `${treatments.data.total}` : undefined}
+            onPress={() => navigation.navigate("Treatments", { backTitle: "MÃ¡s" })}
           />
           <MenuItem
             icon={<Share2 size={20} color={palette.brand[500]} />}

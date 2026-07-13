@@ -139,7 +139,7 @@ export const DocumentCreateSchema = z.object({
     format: z.string(),
     file_size_bytes: z.number().optional(),
     documentDate: z.string().optional(),
-    treatmentId: z.string().uuid().optional(),
+    treatmentId: z.string().uuid().nullable().optional(),
     typeId: z.string().uuid().optional(),
     subtypeIds: z.array(z.string().uuid()).optional(),
     specialtyIds: z.array(z.string().uuid()).optional(),
@@ -177,6 +177,7 @@ export const DoctorCreateSchema = z.object({
 export const TreatmentSchema = z.object({
     id: z.string().uuid(),
     userId: z.string().uuid(),
+    createdBy: z.string().uuid().nullable().optional(),
     name: z.string(),
     description: z.string().nullable().optional(),
     status: z.enum(["ACTIVE", "COMPLETED", "INACTIVE"]).default("ACTIVE"),
@@ -185,6 +186,63 @@ export const TreatmentSchema = z.object({
     createdAt: z.string().nullable().optional(),
 });
 export const TreatmentPageSchema = createPageSchema(TreatmentSchema);
+
+export const TreatmentCreateSchema = z.object({
+    name: z.string().min(1, "El nombre es obligatorio"),
+    description: z.string().nullable().optional(),
+    status: z.enum(["ACTIVE", "COMPLETED", "INACTIVE"]).default("ACTIVE"),
+    startDate: z.string().nullable().optional(),
+    endDate: z.string().nullable().optional(),
+});
+
+export const TreatmentUpdateSchema = TreatmentCreateSchema.partial();
+
+export const TreatmentMedicationCycleRefSchema = z.object({
+    id: z.string().uuid(),
+    medicationId: z.string().uuid(),
+    medicationName: z.string(),
+    dosage: z.string().nullable().optional(),
+    startDate: z.string().nullable().optional(),
+    endDate: z.string().nullable().optional(),
+});
+
+export const TreatmentAppointmentRefSchema = z.object({
+    id: z.string().uuid(),
+    name: z.string().nullable().optional(),
+    date: z.string().nullable().optional(),
+    status: z.string().nullable().optional(),
+    type: z.string().nullable().optional(),
+});
+
+export const TreatmentDocumentRefSchema = z.object({
+    id: z.string().uuid(),
+    title: z.string(),
+    documentDate: z.string().nullable().optional(),
+    uploadedAt: z.string().nullable().optional(),
+    format: z.string().nullable().optional(),
+});
+
+export const TreatmentDailyCheckInRefSchema = z.object({
+    id: z.string().uuid(),
+    mood: z.enum(["excellent", "good", "okay", "bad", "awful"]),
+    recordedAt: z.string(),
+    notes: z.string().nullable().optional(),
+});
+
+export const TreatmentSymptomRefSchema = z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    recordedAt: z.string().nullable().optional(),
+    severity: z.number().nullable().optional(),
+});
+
+export const TreatmentDetailSchema = TreatmentSchema.extend({
+    medicationCycles: z.array(TreatmentMedicationCycleRefSchema).default([]),
+    appointments: z.array(TreatmentAppointmentRefSchema).default([]),
+    documents: z.array(TreatmentDocumentRefSchema).default([]),
+    dailyCheckins: z.array(TreatmentDailyCheckInRefSchema).default([]),
+    symptoms: z.array(TreatmentSymptomRefSchema).default([]),
+});
 
 // --- Reminder config ---
 export const ReminderConfigSchema = z.object({
@@ -519,12 +577,14 @@ export const DailyCheckInSchema = z.object({
     mood:       z.enum(["excellent", "good", "okay", "bad", "awful"]),
     recordedAt: z.string(),
     notes:      z.string().nullable().optional(),
+    treatmentId: z.string().uuid().nullable().optional(),
 });
 
 export const DailyCheckInCreateSchema = z.object({
     mood:       z.enum(["excellent", "good", "okay", "bad", "awful"]),
     recordedAt: z.string(),
     notes:      z.string().optional(),
+    treatmentId: z.string().uuid().nullable().optional(),
 });
 
 export const DailyCheckInUpdateSchema = DailyCheckInCreateSchema.partial();
@@ -586,6 +646,14 @@ export type BackpackCreate = z.infer<typeof BackpackCreateSchema>;
 export type CustomTagCreate = z.infer<typeof CustomTagCreateSchema>;
 export type Treatment = z.infer<typeof TreatmentSchema>;
 export type TreatmentPage = z.infer<typeof TreatmentPageSchema>;
+export type TreatmentCreate = z.infer<typeof TreatmentCreateSchema>;
+export type TreatmentUpdate = z.infer<typeof TreatmentUpdateSchema>;
+export type TreatmentDetail = z.infer<typeof TreatmentDetailSchema>;
+export type TreatmentMedicationCycleRef = z.infer<typeof TreatmentMedicationCycleRefSchema>;
+export type TreatmentAppointmentRef = z.infer<typeof TreatmentAppointmentRefSchema>;
+export type TreatmentDocumentRef = z.infer<typeof TreatmentDocumentRefSchema>;
+export type TreatmentDailyCheckInRef = z.infer<typeof TreatmentDailyCheckInRefSchema>;
+export type TreatmentSymptomRef = z.infer<typeof TreatmentSymptomRefSchema>;
 export type ReminderConfig = z.infer<typeof ReminderConfigSchema>;
 export type DailyCheckIn = z.infer<typeof DailyCheckInSchema>;
 export type DailyCheckInCreate = z.infer<typeof DailyCheckInCreateSchema>;

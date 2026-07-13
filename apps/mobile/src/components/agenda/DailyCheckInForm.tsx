@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { ScrollView, TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import Toast from "react-native-toast-message";
 import {
     Modal,
@@ -22,8 +22,9 @@ import {
     useCreateDailyCheckInMutation,
     useUpdateDailyCheckInMutation,
     useDeleteDailyCheckInMutation,
+    useTreatmentsQuery,
 } from "@helu/api/hooks";
-import type { DailyCheckIn, MoodEnum } from "@helu/api";
+import type { DailyCheckIn, MoodEnum, Treatment } from "@helu/api";
 import { Trash2 } from "lucide-react-native";
 import { MoodPicker } from "./MoodPicker";
 
@@ -39,6 +40,7 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
 
     const [mood, setMood] = useState<MoodEnum | null>(initialValues?.mood ?? null);
     const [notes, setNotes] = useState(initialValues?.notes ?? "");
+    const [treatmentId, setTreatmentId] = useState<string | null>(initialValues?.treatmentId ?? null);
     const [recordedAt, setRecordedAt] = useState(() => {
         const initial = initialValues?.recordedAt
             ? pickerValueFromUtcIso(initialValues.recordedAt)
@@ -51,12 +53,15 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
         if (!initialValues) return;
         setMood(initialValues.mood);
         setNotes(initialValues.notes ?? "");
+        setTreatmentId(initialValues.treatmentId ?? null);
         setRecordedAt(clampPickerValueToMax(pickerValueFromUtcIso(initialValues.recordedAt)));
     }, [initialValues]);
 
     const createMutation = useCreateDailyCheckInMutation();
     const updateMutation = useUpdateDailyCheckInMutation();
     const deleteMutation = useDeleteDailyCheckInMutation();
+    const treatmentsQuery = useTreatmentsQuery(1, 100);
+    const treatments = treatmentsQuery.data?.items ?? [];
 
     const isPending =
         createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
@@ -68,6 +73,7 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
             mood,
             recordedAt: toUtcIsoFromPickerValue(clampPickerValueToMax(recordedAt)),
             notes: notes.trim() || undefined,
+            treatmentId,
         };
 
         if (isEdit && initialValues) {
@@ -155,6 +161,44 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
                 </View>
 
                 <View style={styles.fields}>
+                    {treatments.length > 0 ? (
+                        <View style={styles.treatmentSection}>
+                            <Text style={styles.label}>Tratamiento (opcional)</Text>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.treatmentChips}
+                            >
+                                {treatments.map((treatment: Treatment) => {
+                                    const selected = treatmentId === treatment.id;
+                                    return (
+                                        <TouchableOpacity
+                                            key={treatment.id}
+                                            style={[
+                                                styles.treatmentChip,
+                                                {
+                                                    borderColor: selected ? t.brand.fg : t.border.medium,
+                                                    backgroundColor: selected ? t.brand.tint : t.surface.bgCard,
+                                                },
+                                            ]}
+                                            onPress={() => setTreatmentId(selected ? null : treatment.id)}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.treatmentChipText,
+                                                    { color: selected ? t.brand.fg : t.text.secondary },
+                                                ]}
+                                                numberOfLines={1}
+                                            >
+                                                {treatment.name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        </View>
+                    ) : null}
+
                     <TextField
                         label="Notas (opcional)"
                         value={notes}
@@ -194,6 +238,24 @@ function makeStyles(t: ThemeContextValue) {
         },
         fields: {
             gap: spacing[4],
+        },
+        treatmentSection: {
+            gap: spacing[2],
+        },
+        treatmentChips: {
+            gap: spacing[2],
+            paddingRight: spacing[2],
+        },
+        treatmentChip: {
+            maxWidth: 180,
+            paddingHorizontal: spacing[3],
+            paddingVertical: spacing[2],
+            borderRadius: 999,
+            borderWidth: 1,
+        },
+        treatmentChipText: {
+            fontSize: fontSize.sm,
+            fontWeight: fontWeight.medium,
         },
         label: {
             fontSize: fontSize.sm,

@@ -18,6 +18,7 @@ import {
     AppointmentSchema,
     TreatmentPageSchema,
     TreatmentSchema,
+    TreatmentDetailSchema,
     DoctorPageSchema,
     MedicationPageSchema,
     MedicationSchema,
@@ -37,6 +38,8 @@ import {
     type UserUpdate,
     type DocumentCreate,
     type AppointmentCreate,
+    type TreatmentCreate,
+    type TreatmentUpdate,
     type MedicationCycleCreate,
     type MedicationCycleUpdate,
     type MedicationIntakeCreate,
@@ -285,7 +288,21 @@ export async function getTreatments(params: { page?: number; limit?: number } = 
 
 export async function getTreatmentById(id: string) {
     const { data } = await apiClient.get(`/treatments/${id}`);
+    return TreatmentDetailSchema.parse(data);
+}
+
+export async function createTreatment(treatment: TreatmentCreate) {
+    const { data } = await apiClient.post("/treatments/", treatment);
     return TreatmentSchema.parse(data);
+}
+
+export async function updateTreatment(id: string, treatment: TreatmentUpdate) {
+    const { data } = await apiClient.patch(`/treatments/${id}`, treatment);
+    return TreatmentSchema.parse(data);
+}
+
+export async function deleteTreatment(id: string) {
+    await apiClient.delete(`/treatments/${id}`);
 }
 
 // ─── Medications ───────────────────────────────────────

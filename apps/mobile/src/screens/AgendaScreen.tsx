@@ -186,14 +186,29 @@ export function AgendaScreen() {
 function CalendarTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const navigation = useNavigation();
   const [intakeEvent, setIntakeEvent] = useState<Extract<AgendaEvent, { type: "medication" }> | null>(null);
+  const [checkInEvent, setCheckInEvent] = useState<Extract<AgendaEvent, { type: "checkin" }> | null>(null);
 
   return (
     <View style={styles.tabContent}>
-      <HeluAgendaCalendar onMedicationPress={setIntakeEvent} />
+      <HeluAgendaCalendar
+        onMedicationPress={setIntakeEvent}
+        onAppointmentPress={(event) =>
+          navigation.navigate("AppointmentDetail" as never, { id: event.data.id } as never)
+        }
+        onCheckInPress={setCheckInEvent}
+      />
 
       {intakeEvent ? (
         <MedicationIntakeModal event={intakeEvent} onClose={() => setIntakeEvent(null)} />
+      ) : null}
+
+      {checkInEvent ? (
+        <DailyCheckInForm
+          onClose={() => setCheckInEvent(null)}
+          initialValues={checkInEvent.data}
+        />
       ) : null}
     </View>
   );

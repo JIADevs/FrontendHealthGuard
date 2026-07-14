@@ -11,9 +11,16 @@ import type { AgendaEvent } from "./mapCalendarApiToEvents";
 export interface HeluAgendaCalendarProps {
     initialDate?: string;
     onMedicationPress?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
+    onAppointmentPress?: (event: Extract<AgendaEvent, { type: "appointment" | "exam" }>) => void;
+    onCheckInPress?: (event: Extract<AgendaEvent, { type: "checkin" }>) => void;
 }
 
-export function HeluAgendaCalendar({ initialDate, onMedicationPress }: HeluAgendaCalendarProps) {
+export function HeluAgendaCalendar({
+    initialDate,
+    onMedicationPress,
+    onAppointmentPress,
+    onCheckInPress,
+}: HeluAgendaCalendarProps) {
     const calendar = useHeluAgendaCalendar(initialDate);
     const t = useAppTheme();
 
@@ -53,6 +60,8 @@ export function HeluAgendaCalendar({ initialDate, onMedicationPress }: HeluAgend
                     selectedDate={calendar.selectedDate}
                     onSelectDate={calendar.selectDate}
                     onMedicationPress={onMedicationPress}
+                    onAppointmentPress={onAppointmentPress}
+                    onCheckInPress={onCheckInPress}
                 />
             )}
         </View>

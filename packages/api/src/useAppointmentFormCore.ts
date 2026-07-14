@@ -11,9 +11,12 @@ import {
   useUpdateAppointmentMutation,
 } from "./reactQueryHooks";
 import { isApiError } from "./errors";
-import type { Appointment, ReminderConfig } from "./schemas";
+import type { Appointment } from "./schemas";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+/** Modo de recordatorio para la cita */
+export type ReminderMode = "none" | "at_time" | "before";
 
 export interface AppointmentFormState {
   name: string;
@@ -43,7 +46,10 @@ export interface AppointmentFormState {
   postDocumentIds: string[];
   preBackpackIds: string[];
   postBackpackIds: string[];
-  reminderConfig: ReminderConfig | null;
+  /** Cómo se recuerda la cita */
+  reminderMode: ReminderMode;
+  /** Offsets en minutos cuando reminderMode === "before" */
+  reminderOffsets: number[];
   /** Inline validation / API error — display directly in the form UI. */
   error: string | null;
   saving: boolean;
@@ -76,7 +82,8 @@ export interface AppointmentFormActions {
   setPostDocumentIds: (v: string[]) => void;
   setPreBackpackIds: (v: string[]) => void;
   setPostBackpackIds: (v: string[]) => void;
-  setReminderConfig: (v: ReminderConfig | null) => void;
+  setReminderMode: (v: ReminderMode) => void;
+  toggleReminderOffset: (minutes: number) => void;
   clearError: () => void;
   handleSave: () => void;
 }
@@ -131,14 +138,25 @@ export function useAppointmentFormCore({
   const [postDocumentIds, setPostDocumentIds] = useState<string[]>(initial?.postDocumentIds ?? []);
   const [preBackpackIds, setPreBackpackIds] = useState<string[]>(initial?.preBackpackIds ?? []);
   const [postBackpackIds, setPostBackpackIds] = useState<string[]>(initial?.postBackpackIds ?? []);
-  const [reminderConfig, setReminderConfig] = useState<ReminderConfig | null>(
-    initial?.reminderConfig ?? null,
+  const initialOffsets = initial?.reminderOffsets ?? [];
+  let initialReminderMode: ReminderMode = "before";
+  if (initialOffsets.length === 0) initialReminderMode = "none";
+  else if (initialOffsets.length === 1 && initialOffsets[0] === 0) initialReminderMode = "at_time";
+  const [reminderMode, setReminderMode] = useState<ReminderMode>(initialReminderMode);
+  const [reminderOffsets, setReminderOffsets] = useState<number[]>(
+    initialReminderMode === "before" ? initialOffsets : [30],
   );
   const [error, setError] = useState<string | null>(null);
 
   const createMut = useCreateAppointmentMutation();
   const updateMut = useUpdateAppointmentMutation();
   const saving = createMut.isPending || updateMut.isPending;
+
+  function toggleReminderOffset(minutes: number) {
+    setReminderOffsets((prev) =>
+      prev.includes(minutes) ? prev.filter((m) => m !== minutes) : [...prev, minutes],
+    );
+  }
 
   function handleSave() {
     if (!date || !time) {
@@ -157,6 +175,11 @@ export function useAppointmentFormCore({
     }
 
     setError(null);
+
+    let resolvedOffsets: number[];
+    if (reminderMode === "none") resolvedOffsets = [];
+    else if (reminderMode === "at_time") resolvedOffsets = [0];
+    else resolvedOffsets = reminderOffsets;
 
     const payload = {
       name: name.trim() || undefined,
@@ -178,10 +201,9 @@ export function useAppointmentFormCore({
       cost: cost.trim() ? parseFloat(cost) : undefined,
       notes: notes.trim() || undefined,
       customReminder: customReminder.trim() || undefined,
-      reminderConfig: reminderConfig?.enabled ? reminderConfig : null,
       tags: [] as string[],
       treatmentTags,
-      reminderOffsets: [] as number[],
+      reminderOffsets: resolvedOffsets,
       treatmentIds: treatmentIds.map((id) => id.trim()).filter(Boolean),
       preDocumentIds,
       postDocumentIds,
@@ -210,13 +232,13 @@ export function useAppointmentFormCore({
     specialty, service, consultationType, duration, doctorId, doctor, clinic,
     type, status, examType, cost, notes, customReminder, treatmentTags,
     treatmentIds, preDocumentIds, postDocumentIds, preBackpackIds, postBackpackIds,
-    reminderConfig,
+    reminderMode, reminderOffsets,
     error, saving, isEdit,
     setName, setDate, setTime, setModality, setLocation, setVideoCallLink,
     setSpecialty, setService, setConsultationType, setDuration, setDoctorId, setDoctor, setClinic,
     setType, setStatus, setExamType, setCost, setNotes, setCustomReminder, setTreatmentTags,
     setTreatmentIds, setPreDocumentIds, setPostDocumentIds, setPreBackpackIds, setPostBackpackIds,
-    setReminderConfig,
+    setReminderMode, toggleReminderOffset,
     clearError: () => setError(null),
     handleSave,
   };

@@ -79,7 +79,7 @@ export function useDashboardCore(): DashboardData {
   const profile = useProfileQuery();
   const docs = useDocumentsQuery("", 1, 3);
   const appts = useAppointmentsQuery("", 1, 3, todayISODate());
-  const meds = useMedicationsQuery(1, 3);
+  const meds = useMedicationsQuery("", 1, 3);
 
   // Mantiene el objeto de usuario del store sincronizado con el perfil real.
   useEffect(() => {

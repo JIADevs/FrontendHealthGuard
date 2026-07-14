@@ -127,14 +127,15 @@ export const QK = {
      doctors:          (search = "", page = 1, limit = 50) => ["doctors", page, search, limit] as const,
 
     /** Incluye `limit` y rango de fechas: el dashboard usa limit pequeño y `startDate`; la agenda usa otros parámetros. */
-    appointments:     (search = "", page = 1, limit = 20, startDate: string | null = null, endDate: string | null = null) =>
-        ["appointments", page, search, limit, startDate, endDate] as const,
+    appointments:     (search = "", page = 1, limit = 20, startDate: string | null = null, endDate: string | null = null, filters: AppointmentFilters = {}) =>
+        ["appointments", page, search, limit, startDate, endDate, filters] as const,
     appointment:      (id: string)             => ["appointment", id] as const,
 
     treatments:       (page = 1, limit = 100) => ["treatments", page, limit] as const,
     treatment:        (id: string)            => ["treatment", id] as const,
 
-    medications:      (page = 1, limit = 20) => ["medications", page, limit] as const,
+    medications:      (search = "", page = 1, limit = 20, filters: MedicationFilters = {}) =>
+        ["medications", page, search, limit, filters] as const,
     medication:       (id: string)           => ["medication", id] as const,
 
     notifications:    (page = 1)              => ["notifications", page] as const,
@@ -350,16 +351,26 @@ export function useAppointmentByIdQuery(id: string) {
     });
 }
 
+export interface AppointmentFilters {
+    status?: string;
+    type?: string;
+    modality?: string;
+    doctorId?: string;
+    treatmentId?: string;
+    specialty?: string;
+}
+
 export function useAppointmentsQuery(
     search = "",
     page = 1,
     limit = 20,
     startDate?: string,
     endDate?: string,
+    filters: AppointmentFilters = {},
 ) {
     return useQuery({
-        queryKey: QK.appointments(search, page, limit, startDate ?? null, endDate ?? null),
-        queryFn: () => getAppointments({ page, limit, searchQuery: search || undefined, startDate, endDate }),
+        queryKey: QK.appointments(search, page, limit, startDate ?? null, endDate ?? null, filters),
+        queryFn: () => getAppointments({ page, limit, searchQuery: search || undefined, startDate, endDate, ...filters }),
         staleTime: LIST_STALE_TIME_MS,
         placeholderData: keepPreviousData,
     });
@@ -472,10 +483,18 @@ export function useBackpacksByIdsQuery(ids: string[]) {
 
 // ─── Medications ───────────────────────────────────────
 
-export function useMedicationsQuery(page = 1, limit = 20) {
+export interface MedicationFilters {
+    status?: "active" | "finished";
+    frequencyUnit?: string;
+    treatmentId?: string;
+    startDateFrom?: string;
+    startDateTo?: string;
+}
+
+export function useMedicationsQuery(search = "", page = 1, limit = 20, filters: MedicationFilters = {}) {
     return useQuery({
-        queryKey: QK.medications(page, limit),
-        queryFn: () => getMedications({ page, limit }),
+        queryKey: QK.medications(search, page, limit, filters),
+        queryFn: () => getMedications({ page, limit, search: search || undefined, ...filters }),
         staleTime: LIST_STALE_TIME_MS,
         placeholderData: keepPreviousData,
     });

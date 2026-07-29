@@ -1,7 +1,7 @@
 ﻿import React, { useRef, useEffect } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  KeyboardAvoidingView, Platform, Modal, Pressable, Switch, TextInput,
+  KeyboardAvoidingView, Platform, Modal, Pressable, TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
@@ -24,7 +24,6 @@ import {
   useDocumentsQuery,
   useBackpacksQuery,
 } from "@helu/api/hooks";
-import type { ReminderConfig } from "@helu/api";
 import {
   Plus, ChevronDown, ChevronUp, Calendar, Clock, MapPin, Video, Phone,
   User, Building2, FileText, Stethoscope, Briefcase, ClipboardList, Timer,
@@ -38,40 +37,13 @@ import { AddDoctorModal } from "../components/AddDoctorModal";
 
 type AppointmentFormRouteProp = RouteProp<RootStackParamList, "AppointmentForm">;
 
-// ─── Frequency and day labels ─────────────────────────────────────────────────
-const FREQUENCIES = [
-  { value: "DAILY" as const, label: "Día" },
-  { value: "WEEKLY" as const, label: "Semana" },
-  { value: "MONTHLY" as const, label: "Mes" },
-  { value: "YEARLY" as const, label: "Año" },
+// ─── Reminder offset presets ───────────────────────────────────────────────────
+const REMINDER_PRESET_MINUTES = [
+  { label: "30 min", value: 30 },
+  { label: "1 hora", value: 60 },
+  { label: "2 horas", value: 120 },
+  { label: "1 día antes", value: 1440 },
 ];
-
-const WEEK_DAYS = [
-  { value: "MON" as const, label: "Lun" },
-  { value: "TUE" as const, label: "Mar" },
-  { value: "WED" as const, label: "Mié" },
-  { value: "THU" as const, label: "Jue" },
-  { value: "FRI" as const, label: "Vie" },
-  { value: "SAT" as const, label: "Sáb" },
-  { value: "SUN" as const, label: "Dom" },
-];
-
-const END_TYPES = [
-  { value: "NEVER" as const, label: "Nunca" },
-  { value: "ON_DATE" as const, label: "En fecha" },
-  { value: "AFTER_N" as const, label: "Después de" },
-];
-
-const DEFAULT_REMINDER: ReminderConfig = {
-  enabled: true,
-  frequency: "DAILY",
-  interval: 1,
-  byDay: undefined,
-  endType: "NEVER",
-  endDate: undefined,
-  endCount: undefined,
-  time: "09:00",
-};
 
 // ─── Chip picker modal (multi-select) ─────────────────────────────────────────
 
@@ -116,7 +88,7 @@ function PickerModal({ visible, onClose, title, items, selected, onToggle }: Pic
               value={search}
               onChangeText={setSearch}
               placeholder="Buscar..."
-              placeholderTextColor={t.text.secondary}
+              placeholderTextColor={t.text.muted}
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch("")}>
@@ -279,28 +251,6 @@ function AppointmentFormBody({ appointment }: { appointment: any }) {
       if (!form.specialty) form.setSpecialty(selected.specialty ?? "");
       if (!form.clinic) form.setClinic(selected.clinic ?? "");
     }
-  }
-
-  // ── Reminder helpers ──────────────────────────────────────────────────────
-  const reminder = form.reminderConfig;
-
-  // Local text state for interval input — allows clearing before typing new value
-  const [intervalText, setIntervalText] = useState(String(reminder?.interval ?? 1));
-  useEffect(() => {
-    if (reminder?.enabled) setIntervalText(String(reminder.interval ?? 1));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reminder?.enabled]);
-
-  function toggleReminder(val: boolean) {
-    if (val) {
-      form.setReminderConfig({ ...DEFAULT_REMINDER });
-    } else {
-      form.setReminderConfig(null);
-    }
-  }
-
-  function updateReminder(patch: Partial<ReminderConfig>) {
-    form.setReminderConfig({ ...(reminder ?? DEFAULT_REMINDER), ...patch });
   }
 
   return (
@@ -551,142 +501,52 @@ function AppointmentFormBody({ appointment }: { appointment: any }) {
             </View>
           </View>
 
-          {/* ── RECORDATORIO PERSONALIZADO ────────────────────────────────── */}
+          {/* ── RECORDATORIO ──────────────────────────────────────────────── */}
           <View style={styles.card}>
-            <View style={[styles.cardHeader, { justifyContent: "space-between" }]}>
-              <View style={styles.cardHeader}>
-                <Bell size={20} color={t.brand.fg} />
-                <Text style={styles.cardTitle}>Recordatorio</Text>
-              </View>
-              <Switch
-                value={!!reminder?.enabled}
-                onValueChange={toggleReminder}
-                trackColor={{ false: t.border.medium, true: t.brand.fg }}
-                thumbColor="#fff"
-              />
+            <View style={styles.cardHeader}>
+              <Bell size={20} color={t.brand.fg} />
+              <Text style={styles.cardTitle}>Recordatorio</Text>
             </View>
 
-            {reminder?.enabled && (
-              <View style={{ gap: spacing[4] }}>
-                {/* Se repite cada N [frecuencia] */}
-                <View>
-                  <Text style={styles.label}>Se repite cada</Text>
-                  <View style={[styles.row, { alignItems: "center", marginTop: spacing[2] }]}>
-                    <TextInput
-                      style={styles.numberInput}
-                      keyboardType="numeric"
-                      value={intervalText}
-                      onChangeText={(v: string) => {
-                        setIntervalText(v);
-                        const n = parseInt(v, 10);
-                        if (!isNaN(n) && n > 0) updateReminder({ interval: n });
-                      }}
-                      onBlur={() => {
-                        const n = parseInt(intervalText, 10);
-                        if (isNaN(n) || n <= 0) setIntervalText(String(reminder.interval ?? 1));
-                      }}
-                    />
-                    <View style={[styles.pillRow, { flex: 1 }]}>
-                      {FREQUENCIES.map((f) => (
-                        <TouchableOpacity
-                          key={f.value}
-                          style={[styles.pill, reminder.frequency === f.value && styles.pillActive]}
-                          onPress={() => updateReminder({ frequency: f.value, byDay: undefined })}
-                        >
-                          <Text style={[styles.pillText, reminder.frequency === f.value && styles.pillTextActive]}>
-                            {f.label}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                </View>
+            <View style={styles.pillRow}>
+              {(["none", "at_time", "before"] as const).map((mode) => {
+                const label =
+                  mode === "none" ? "Sin recordatorio" :
+                  mode === "at_time" ? "A la hora de la cita" :
+                  "Antes de la cita";
+                const selected = form.reminderMode === mode;
+                return (
+                  <TouchableOpacity
+                    key={mode}
+                    style={[styles.pill, selected && styles.pillActive]}
+                    onPress={() => form.setReminderMode(mode)}
+                  >
+                    <Text style={[styles.pillText, selected && styles.pillTextActive]}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
-                {/* Días de la semana (solo si es WEEKLY) — selección múltiple */}
-                {reminder.frequency === "WEEKLY" && (
-                  <View>
-                    <Text style={styles.label}>Se repite el</Text>
-                    <View style={[styles.pillRow, { marginTop: spacing[2] }]}>
-                      {WEEK_DAYS.map((d) => {
-                        const activeDays = (reminder.byDay as string[] | undefined) ?? [];
-                        const isActive = activeDays.includes(d.value);
-                        return (
-                          <TouchableOpacity
-                            key={d.value}
-                            style={[styles.pill, isActive && styles.pillActive]}
-                            onPress={() => {
-                              const newDays = isActive
-                                ? activeDays.filter((x) => x !== d.value)
-                                : [...activeDays, d.value];
-                              updateReminder({ byDay: (newDays.length > 0 ? newDays : undefined) as any });
-                            }}
-                          >
-                            <Text style={[styles.pillText, isActive && styles.pillTextActive]}>
-                              {d.label}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </View>
-                )}
-
-                {/* Termina */}
-                <View>
-                  <Text style={styles.label}>Termina</Text>
-                  <View style={[styles.pillRow, { marginTop: spacing[2] }]}>
-                    {END_TYPES.map((e) => (
+            {form.reminderMode === "before" && (
+              <View style={{ marginTop: spacing[3] }}>
+                <Text style={styles.label}>¿Con cuánta anticipación?</Text>
+                <View style={[styles.pillRow, { marginTop: spacing[2] }]}>
+                  {REMINDER_PRESET_MINUTES.map(({ label, value }) => {
+                    const selected = form.reminderOffsets.includes(value);
+                    return (
                       <TouchableOpacity
-                        key={e.value}
-                        style={[styles.pill, reminder.endType === e.value && styles.pillActive]}
-                        onPress={() => updateReminder({ endType: e.value })}
+                        key={value}
+                        style={[styles.pill, selected && styles.pillActive]}
+                        onPress={() => form.toggleReminderOffset(value)}
                       >
-                        <Text style={[styles.pillText, reminder.endType === e.value && styles.pillTextActive]}>
-                          {e.label}
+                        <Text style={[styles.pillText, selected && styles.pillTextActive]}>
+                          {label}
                         </Text>
                       </TouchableOpacity>
-                    ))}
-                  </View>
-
-                  {reminder.endType === "ON_DATE" && (
-                    <View style={{ marginTop: spacing[2] }}>
-                      <DatePicker
-                        label=""
-                        value={reminder.endDate ?? ""}
-                        onChange={(v: string) => updateReminder({ endDate: v })}
-                        placeholder="Seleccionar fecha de fin"
-                      />
-                    </View>
-                  )}
-
-                  {reminder.endType === "AFTER_N" && (
-                    <View style={[styles.row, { alignItems: "center", marginTop: spacing[2], gap: spacing[2] }]}>
-                      <TextInput
-                        style={[styles.numberInput, { width: 70 }]}
-                        keyboardType="numeric"
-                        value={String(reminder.endCount ?? 1)}
-                        onChangeText={(v: string) => {
-                          const n = parseInt(v);
-                          if (!isNaN(n) && n > 0) updateReminder({ endCount: n });
-                        }}
-                      />
-                      <Text style={styles.label}>repeticion(es)</Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Hora */}
-                <View>
-                  <View style={styles.labelWithIcon}>
-                    <Clock size={16} color={t.text.secondary} />
-                    <Text style={styles.label}>A qué hora</Text>
-                  </View>
-                  <TimePicker
-                    label=""
-                    value={reminder.time ?? "09:00"}
-                    onChange={(v: string) => updateReminder({ time: v })}
-                    placeholder="Seleccionar hora"
-                  />
+                    );
+                  })}
                 </View>
               </View>
             )}

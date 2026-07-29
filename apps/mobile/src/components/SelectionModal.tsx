@@ -77,7 +77,7 @@ export function SelectionModal({ visible, onClose, title, sections }: SelectionM
                         <Text style={styles.modalOptionSubtitle}>{option.subtitle}</Text>
                       )}
                     </View>
-                    <ChevronRight size={20} color={t.text.tertiary} />
+                    <ChevronRight size={20} color={t.text.muted} />
                   </TouchableOpacity>
                 ))}
               </View>

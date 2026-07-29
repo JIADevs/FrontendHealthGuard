@@ -223,7 +223,7 @@ function MedicationsTab() {
   const [editTarget, setEditTarget] = useState<Medication | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Medication | null>(null);
 
-  const meds = useMedicationsQuery(page, 10);
+  const meds = useMedicationsQuery("", page, 10);
   const intakeMut = useConfirmIntakeMutation();
   const deleteMut = useDeleteMedicationMutation();
 

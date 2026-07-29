@@ -88,7 +88,7 @@ export function DateTimePicker({
           styles.field,
           {
             borderColor,
-            backgroundColor: disabled ? t.border.light : t.surface.bg,
+            backgroundColor: disabled ? t.border.light : t.surface.bgCard,
           },
           disabled && styles.disabled,
         ]}

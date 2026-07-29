@@ -214,7 +214,7 @@ function PickerModal({
               value={search}
               onChangeText={setSearch}
               placeholder="Buscar..."
-              placeholderTextColor={t.text.secondary}
+              placeholderTextColor={t.text.muted}
             />
             {search.length > 0 && (
               <TouchableOpacity onPress={() => setSearch("")}>
@@ -427,7 +427,7 @@ function CreateFlow({
   const [fuzzySuggestion, setFuzzySuggestion] = useState<Medication | null>(null);
   const skipFuzzyRef = useRef(false);
 
-  const { data: medsPage } = useMedicationsQuery(1, 100);
+  const { data: medsPage } = useMedicationsQuery("", 1, 100);
   const allMeds: Medication[] = medsPage?.items ?? [];
 
   const form = useMedicationFormCore({

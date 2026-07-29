@@ -236,6 +236,12 @@ export async function getAppointments(params: {
     startDate?: string;
     endDate?: string;
     searchQuery?: string;
+    status?: string;
+    type?: string;
+    modality?: string;
+    doctorId?: string;
+    treatmentId?: string;
+    specialty?: string;
 }) {
     const { data } = await apiClient.get("/appointments/", { params });
     return AppointmentPageSchema.parse(data);
@@ -310,6 +316,12 @@ export async function deleteTreatment(id: string) {
 export async function getMedications(params: {
     page?: number;
     limit?: number;
+    search?: string;
+    status?: string;
+    frequencyUnit?: string;
+    treatmentId?: string;
+    startDateFrom?: string;
+    startDateTo?: string;
 }) {
     const { data } = await apiClient.get("/medications/", { params });
     return MedicationPageSchema.parse(data);

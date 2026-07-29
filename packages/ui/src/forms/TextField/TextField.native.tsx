@@ -44,7 +44,7 @@ export function TextField({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor={t.text.tertiary}
+        placeholderTextColor={t.text.muted}
         editable={!disabled}
         multiline={multiline}
         numberOfLines={multiline ? numberOfLines : undefined}

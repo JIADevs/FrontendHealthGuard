@@ -28,6 +28,8 @@ interface CalendarGridProps {
     selectedDate: string;
     onSelectDate: (date: string) => void;
     onMedicationPress?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
+    onAppointmentPress?: (event: Extract<AgendaEvent, { type: "appointment" | "exam" }>) => void;
+    onCheckInPress?: (event: Extract<AgendaEvent, { type: "checkin" }>) => void;
 }
 
 export function CalendarGrid({
@@ -37,6 +39,8 @@ export function CalendarGrid({
     selectedDate,
     onSelectDate,
     onMedicationPress,
+    onAppointmentPress,
+    onCheckInPress,
 }: CalendarGridProps) {
     const t = useAppTheme();
     const { width: screenWidth } = useWindowDimensions();
@@ -88,6 +92,8 @@ export function CalendarGrid({
                             styles={styles}
                             onSelectDate={onSelectDate}
                             onMedicationPress={onMedicationPress}
+                            onAppointmentPress={onAppointmentPress}
+                            onCheckInPress={onCheckInPress}
                         />
                     ))}
                 </View>
@@ -104,9 +110,21 @@ interface DayColumnProps {
     styles: ReturnType<typeof makeStyles>;
     onSelectDate: (date: string) => void;
     onMedicationPress?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
+    onAppointmentPress?: (event: Extract<AgendaEvent, { type: "appointment" | "exam" }>) => void;
+    onCheckInPress?: (event: Extract<AgendaEvent, { type: "checkin" }>) => void;
 }
 
-function DayColumn({ date, selectedDate, events, compact, styles, onSelectDate, onMedicationPress }: DayColumnProps) {
+function DayColumn({
+    date,
+    selectedDate,
+    events,
+    compact,
+    styles,
+    onSelectDate,
+    onMedicationPress,
+    onAppointmentPress,
+    onCheckInPress,
+}: DayColumnProps) {
     const { weekday, day, isToday } = formatDayShort(date);
     const isSelected = date === selectedDate;
 
@@ -165,17 +183,37 @@ function DayColumn({ date, selectedDate, events, compact, styles, onSelectDate, 
                         <EventBlock
                             event={layout.event}
                             compact={compact}
-                            onPress={
-                                layout.event.type === "medication" && onMedicationPress
-                                    ? () => onMedicationPress(layout.event as Extract<AgendaEvent, { type: "medication" }>)
-                                    : undefined
-                            }
+                            onPress={eventPressHandler(layout.event, {
+                                onMedicationPress,
+                                onAppointmentPress,
+                                onCheckInPress,
+                            })}
                         />
                     </View>
                 ))}
             </View>
         </View>
     );
+}
+
+function eventPressHandler(
+    event: AgendaEvent,
+    handlers: {
+        onMedicationPress?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
+        onAppointmentPress?: (event: Extract<AgendaEvent, { type: "appointment" | "exam" }>) => void;
+        onCheckInPress?: (event: Extract<AgendaEvent, { type: "checkin" }>) => void;
+    },
+): (() => void) | undefined {
+    if (event.type === "medication" && handlers.onMedicationPress) {
+        return () => handlers.onMedicationPress!(event);
+    }
+    if ((event.type === "appointment" || event.type === "exam") && handlers.onAppointmentPress) {
+        return () => handlers.onAppointmentPress!(event);
+    }
+    if (event.type === "checkin" && handlers.onCheckInPress) {
+        return () => handlers.onCheckInPress!(event);
+    }
+    return undefined;
 }
 
 function makeStyles(t: ThemeContextValue, columnWidth: number, isCompact: boolean) {

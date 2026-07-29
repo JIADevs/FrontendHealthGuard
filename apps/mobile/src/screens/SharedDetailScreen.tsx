@@ -201,7 +201,7 @@ export function SharedDetailScreen() {
 
           {isActive ? (
             <View style={styles.revokeBox}>
-              <EyeOff size={20} color="#dc2626" />
+              <EyeOff size={20} color={t.status.errorFg} />
               <Text style={styles.revokeCopy}>
                 Revocar acceso ahora. El enlace y QR dejarán de funcionar inmediatamente.
               </Text>

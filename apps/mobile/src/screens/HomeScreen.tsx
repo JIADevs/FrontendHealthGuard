@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDashboardCore, useCalendarEventsQuery } from "@helu/api/hooks";
@@ -83,6 +84,16 @@ export function HomeScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={dash.isRefetching || calendarQuery.isRefetching}
+            onRefresh={() => {
+              dash.refetch();
+              calendarQuery.refetch();
+            }}
+            tintColor={t.brand.fg}
+          />
+        }
       >
         {/* ── Branded Header ── */}
         <View style={styles.header}>

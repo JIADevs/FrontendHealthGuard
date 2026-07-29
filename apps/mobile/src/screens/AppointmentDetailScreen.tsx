@@ -508,8 +508,8 @@ export function AppointmentDetailScreen() {
           </View>
         ) : (
           <View style={[styles.emptyAttachments, { borderColor: t.border.default }]}>
-            <FileCheck size={28} color={t.text.tertiary} strokeWidth={1.5} />
-            <Text style={[styles.emptyAttachmentsText, { color: t.text.tertiary }]}>
+            <FileCheck size={28} color={t.text.muted} strokeWidth={1.5} />
+            <Text style={[styles.emptyAttachmentsText, { color: t.text.muted }]}>
               Sin documentos ni mochilas adjuntas
             </Text>
           </View>

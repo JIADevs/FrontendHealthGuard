@@ -87,10 +87,10 @@ export function TimePicker({
           disabled && styles.disabled,
         ]}
       >
-        <Text style={[styles.fieldText, { color: value ? t.text.primary : t.text.tertiary }]}>
+        <Text style={[styles.fieldText, { color: value ? t.text.primary : t.text.muted }]}>
           {value ? formatDisplay(value) : (placeholder ?? 'Seleccionar hora')}
         </Text>
-        <Clock size={18} color={t.text.tertiary} />
+        <Clock size={18} color={t.text.muted} />
       </Pressable>
 
       {error && <Text style={styles.error}>{error}</Text>}

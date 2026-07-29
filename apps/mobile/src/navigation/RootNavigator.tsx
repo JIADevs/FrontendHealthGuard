@@ -24,6 +24,9 @@ import { DoctorFormScreen } from "../screens/DoctorFormScreen";
 import { MedicationFormScreen } from "../screens/MedicationFormScreen";
 import { MedicationDetailScreen } from "../screens/MedicationDetailScreen";
 import { CycleDetailScreen } from "../screens/CycleDetailScreen";
+import { TreatmentsScreen } from "../screens/TreatmentsScreen";
+import { TreatmentDetailScreen } from "../screens/TreatmentDetailScreen";
+import { TreatmentFormScreen } from "../screens/TreatmentFormScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { useAppTheme } from "@helu/ui";
@@ -44,6 +47,9 @@ export type RootStackParamList = {
   MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string } | undefined;
   MedicationDetail: { id: string };
   CycleDetail: { cycleId: string; medicationId: string; medicationName: string };
+  Treatments: WithBackTitle | undefined;
+  TreatmentDetail: WithBackTitle & { id: string };
+  TreatmentForm: WithBackTitle & { id?: string } | undefined;
   Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
   DocumentUpload: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
   DocumentDetail: WithBackTitle & { id: string; title?: string } | undefined;
@@ -277,6 +283,21 @@ export function RootNavigator() {
           <Stack.Screen
             name="CycleDetail"
             component={CycleDetailScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="Treatments"
+            component={TreatmentsScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="TreatmentDetail"
+            component={TreatmentDetailScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="TreatmentForm"
+            component={TreatmentFormScreen}
             options={{ headerShown: false, animation: "slide_from_right" }}
           />
         </>

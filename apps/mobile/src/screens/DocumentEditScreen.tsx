@@ -14,7 +14,7 @@ import {
 import Toast from "react-native-toast-message";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDocumentQuery } from "@helu/api/hooks";
+import { useDocumentQuery, useTreatmentsQuery } from "@helu/api/hooks";
 import * as DocumentPicker from "expo-document-picker";
 import { FileUp, FileText as FileTextIcon, Check, X as XIcon } from "lucide-react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -30,6 +30,7 @@ import {
   isApiError,
   type DocumentCreate,
   type Document,
+  type Treatment,
 } from "@helu/api";
 import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, Typography, Spinner } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
@@ -70,6 +71,8 @@ export function DocumentEditScreen() {
   const scrollPaddingBottom = useKeyboardScrollPadding(120);
 
   const docQuery = useDocumentQuery(id);
+  const treatmentsQuery = useTreatmentsQuery(1, 100);
+  const treatments = treatmentsQuery.data?.items ?? [];
 
   const signedUrlQuery = useQuery({
     queryKey: ["signed-url", (docQuery.data as Document | undefined)?.fileUrl],
@@ -81,6 +84,7 @@ export function DocumentEditScreen() {
   const [classifyFile, setClassifyFile] = useState<FileSource | undefined>(undefined);
   const [classifyFileLoading, setClassifyFileLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [treatmentId, setTreatmentId] = useState<string | null>(null);
   const didInitRef = useRef(false);
 
   const currentMimeType = replacementFile?.mimeType ?? (docQuery.data as Document | undefined)?.format ?? "";
@@ -95,6 +99,7 @@ export function DocumentEditScreen() {
     form.setSelectedType(d.documentType?.id);
     form.setSelectedSpecialty(d.specialties?.[0]?.id);
     form.setSelectedTags(d.customTags?.map((t) => t.id) ?? []);
+    setTreatmentId(d.treatmentId ?? null);
   }, [docQuery.data]);
 
   useEffect(() => {
@@ -222,7 +227,7 @@ export function DocumentEditScreen() {
         format,
         file_size_bytes,
         documentDate: d.documentDate ?? undefined,
-        treatmentId: d.treatmentId ?? undefined,
+        treatmentId,
         typeId: form.selectedType,
         subtypeIds: [],
         specialtyIds: form.selectedSpecialty ? [form.selectedSpecialty] : [],
@@ -232,6 +237,7 @@ export function DocumentEditScreen() {
       await updateDocument(id, payload);
       queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["document", id] });
+      queryClient.invalidateQueries({ queryKey: ["treatments"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["backpack-docs"], exact: false });
       queryClient.invalidateQueries({ queryKey: ["backpack-doc-ids"], exact: false });
       Toast.show({ type: "success", text1: "Cambios guardados", text2: trimmedTitle });
@@ -325,6 +331,44 @@ export function DocumentEditScreen() {
           classifyFileLoading={classifyFileLoading}
           {...form}
         />
+
+        {treatments.length > 0 ? (
+          <View style={styles.treatmentSection}>
+            <Text style={styles.treatmentLabel}>Tratamiento</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.treatmentChips}
+            >
+              {treatments.map((treatment: Treatment) => {
+                const selected = treatmentId === treatment.id;
+                return (
+                  <TouchableOpacity
+                    key={treatment.id}
+                    style={[
+                      styles.treatmentChip,
+                      {
+                        borderColor: selected ? t.brand.fg : t.border.medium,
+                        backgroundColor: selected ? t.brand.tint : t.surface.bgCard,
+                      },
+                    ]}
+                    onPress={() => setTreatmentId(selected ? null : treatment.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.treatmentChipText,
+                        { color: selected ? t.brand.fg : t.text.secondary },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {treatment.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        ) : null}
       </ScrollView>
       </KeyboardAvoidingView>
 
@@ -359,6 +403,11 @@ function makeStyles(t: ThemeContextValue) {
     changeFileBtnText:    { color: colors.white, fontWeight: fontWeight.bold, fontSize: fontSize.sm },
     clearReplacementLink: { paddingHorizontal: spacing[5], paddingBottom: 10 },
     clearReplacementText: { color: t.text.secondary, fontWeight: fontWeight.semibold },
+    treatmentSection: { paddingHorizontal: spacing[5], paddingVertical: spacing[4], gap: spacing[2] },
+    treatmentLabel: { color: t.text.primary, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+    treatmentChips: { gap: spacing[2], paddingRight: spacing[2] },
+    treatmentChip: { maxWidth: 180, paddingHorizontal: spacing[3], paddingVertical: spacing[2], borderRadius: radii.full, borderWidth: 1 },
+    treatmentChipText: { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
     bottomBar: {
       position: "absolute",
       bottom: Platform.OS === "ios" ? 32 : 16,

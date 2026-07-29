@@ -26,6 +26,8 @@ import {
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { useDocumentForm, type FileSource } from "../hooks/useDocumentForm";
+import { useTreatmentsQuery } from "@helu/api/hooks";
+import type { Treatment } from "@helu/api";
 import { useKeyboardScrollPadding } from "../hooks/useKeyboardScrollPadding";
 import { DocumentClassificationForm } from "../components/DocumentClassificationForm";
 import { colors, palette, radii, spacing, fontSize, fontWeight, useAppTheme, Typography } from "@helu/ui";
@@ -61,10 +63,13 @@ export function DocumentUploadScreen() {
     backpackId: params?.backpackId,
     backpackName: params?.backpackName,
   });
+  const treatmentsQuery = useTreatmentsQuery(1, 100);
+  const treatments = treatmentsQuery.data?.items ?? [];
   const insets = useSafeAreaInsets();
   const scrollPaddingBottom = useKeyboardScrollPadding(spacing[4]);
 
   const [pickerAsset, setPickerAsset] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+  const [treatmentId, setTreatmentId] = useState<string | null>(null);
 
   const pickDocument = useCallback(async () => {
     try {
@@ -168,6 +173,44 @@ export function DocumentUploadScreen() {
         </View>
 
         <DocumentClassificationForm file={fileSource} {...form} />
+
+        {treatments.length > 0 ? (
+          <View style={styles.treatmentSection}>
+            <Text style={styles.treatmentLabel}>Tratamiento</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.treatmentChips}
+            >
+              {treatments.map((treatment: Treatment) => {
+                const selected = treatmentId === treatment.id;
+                return (
+                  <TouchableOpacity
+                    key={treatment.id}
+                    style={[
+                      styles.treatmentChip,
+                      {
+                        borderColor: selected ? t.brand.fg : t.border.medium,
+                        backgroundColor: selected ? t.brand.tint : t.surface.bgCard,
+                      },
+                    ]}
+                    onPress={() => setTreatmentId(selected ? null : treatment.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.treatmentChipText,
+                        { color: selected ? t.brand.fg : t.text.secondary },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {treatment.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        ) : null}
       </ScrollView>
       </KeyboardAvoidingView>
 
@@ -175,7 +218,11 @@ export function DocumentUploadScreen() {
         <TouchableOpacity style={styles.circleBtnRed} onPress={() => navigation.goBack()} disabled={form.uploading}>
           <X color={colors.white} size={24} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.circleBtnGreen} onPress={() => form.handleUpload(fileSource)} disabled={form.uploading}>
+        <TouchableOpacity
+          style={styles.circleBtnGreen}
+          onPress={() => form.handleUpload(fileSource, undefined, { treatmentId })}
+          disabled={form.uploading}
+        >
           {form.uploading ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={28} />}
         </TouchableOpacity>
       </View>
@@ -217,6 +264,11 @@ function makeStyles(t: ThemeContextValue) {
     fileInfoBar:    { flexDirection: "row", alignItems: "center", gap: spacing[2], backgroundColor: t.surface.bgCard, paddingHorizontal: spacing[5], paddingVertical: spacing[3] },
     fileInfoText:   { flex: 1, fontSize: fontSize.sm, color: t.text.primary, fontWeight: fontWeight.medium },
     changeFileLink: { fontSize: fontSize.sm, color: t.brand.fg, fontWeight: fontWeight.semibold },
+    treatmentSection: { paddingHorizontal: spacing[5], paddingVertical: spacing[4], gap: spacing[2] },
+    treatmentLabel: { color: t.text.primary, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+    treatmentChips: { gap: spacing[2], paddingRight: spacing[2] },
+    treatmentChip: { maxWidth: 180, paddingHorizontal: spacing[3], paddingVertical: spacing[2], borderRadius: radii.full, borderWidth: 1 },
+    treatmentChipText: { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
 
     previewControls: {
       flexDirection: "row",

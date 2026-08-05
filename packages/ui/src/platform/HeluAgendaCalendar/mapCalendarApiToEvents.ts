@@ -38,7 +38,7 @@ function mapMedicationIntakesForDay(dayKey: string, medications: Medication[]): 
         const cycle = resolveCycleForDay(med, dayKey);
         if (!cycle) continue;
 
-        const intakeTimes = generateIntakeTimesForDay(cycle.firstIntakeTime, cycle.frequency);
+        const intakeTimes = generateIntakeTimesForDay(cycle.firstIntakeTime, cycle.frequency, dayKey, cycle.frequencyUnit);
         for (const intakeTime of intakeTimes) {
             events.push({
                 type: "medication",

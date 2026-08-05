@@ -165,7 +165,7 @@ export function AppointmentDetailScreen() {
   const currentStatus = APPOINTMENT_STATUSES.find((s) => s.value === appointment.status);
   const isExam = appointment.type === "EXAM";
 
-  const dateObj = new Date(appointment.date);
+  const dateObj = new Date(appointment.date + "T00:00:00");
   const formattedDay = dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
   const formattedWeekday = dateObj.toLocaleDateString("es-ES", { weekday: "long" });
   const formattedWeekdayCap = formattedWeekday.charAt(0).toUpperCase() + formattedWeekday.slice(1);

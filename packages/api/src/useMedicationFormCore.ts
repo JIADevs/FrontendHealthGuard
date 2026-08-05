@@ -132,8 +132,9 @@ export function useMedicationFormCore({
   const [firstIntakeTime, setFirstIntakeTime] = useState(() => {
     const raw = activeCycle?.firstIntakeTime;
     if (!raw) return "08:00";
-    const timePart = raw.includes("T") ? raw.split("T")[1]! : raw;
-    return timePart.slice(0, 5);
+    // `raw` is a UTC instant from the API; convert to the device's local wall-clock time.
+    const d = new Date(raw);
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   });
   const [endDate, setEndDate] = useState(activeCycle?.endDate ?? "");
   const [reason, setReason] = useState(activeCycle?.reason ?? "");
@@ -188,7 +189,10 @@ export function useMedicationFormCore({
       notes: notes.trim() || undefined,
       startDate,
       endDate: endDate || undefined,
-      firstIntakeTime: `${startDate}T${firstIntakeTime}:00`,
+      // `startDate`+`firstIntakeTime` are the device's local wall-clock values from the
+      // picker; `new Date(...)` on a timezone-less string parses them as local time, so
+      // toISOString() converts to the correct UTC instant before sending to the API.
+      firstIntakeTime: new Date(`${startDate}T${firstIntakeTime}:00`).toISOString(),
       reminderOffsets: resolvedOffsets,
       treatmentIds,
     };

@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "extra": {
-      "API_URL": "http://192.168.1.5:8000",
+      "API_URL": "https://backendhealthguard.onrender.com",
       "eas": {
         "projectId": "6e9a56d2-147d-4105-a519-5c46c15e179c"
       }

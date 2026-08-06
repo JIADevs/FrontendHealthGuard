@@ -2,12 +2,16 @@
   "expo": {
     "name": "Helu",
     "slug": "helu",
+    "owner": "juanr1001",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "extra": {
-      "API_URL": "http://192.168.1.5:8000"
+      "API_URL": "http://192.168.1.5:8000",
+      "eas": {
+        "projectId": "6e9a56d2-147d-4105-a519-5c46c15e179c"
+      }
     },
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -44,10 +48,10 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_EXTERNAL_STORAGE"
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.POST_NOTIFICATIONS"
       ],
       "softwareKeyboardLayoutMode": "resize",
-      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

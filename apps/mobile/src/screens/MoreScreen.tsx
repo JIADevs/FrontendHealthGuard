@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from "react";
-import { View, ScrollView, Alert } from "react-native";
+import { View, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -16,12 +16,18 @@ import {
   Settings,
 } from "lucide-react-native";
 import { useAuthStore } from "@helu/stores";
-import { useProfileQuery, useMedicationsQuery, useTreatmentsQuery } from "@helu/api/hooks";
+import { isDelegationInbound } from "@helu/api";
+import {
+  useProfileQuery,
+  useMedicationsQuery,
+  useTreatmentsQuery,
+  useManagedUsersQuery,
+  useManagersQuery,
+} from "@helu/api/hooks";
 import { palette, spacing, useAppTheme, Typography } from "@helu/ui";
 import { ProfileCard, MenuItem, MenuSection } from "../components/more";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-
-// ─── Screen ──────────────────────────────────────────────────────────────────
+import { LINKED_PEOPLE_SCREEN_TITLE } from "../constants/linkedPeople";
 
 export function MoreScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -29,14 +35,38 @@ export function MoreScreen() {
 
   const logout = useAuthStore((s) => s.logout);
   const queryClient = useQueryClient();
+  const storeUserEmail = useAuthStore((s) => s.user?.email);
   const profile = useProfileQuery();
+  const userEmail = (profile.data?.email ?? storeUserEmail ?? "").toLowerCase();
   const medications = useMedicationsQuery();
   const treatments = useTreatmentsQuery(1, 100);
+  const managedQuery = useManagedUsersQuery();
+  const managersQuery = useManagersQuery();
+
+  useFocusEffect(
+    useCallback(() => {
+      managedQuery.refetch();
+      managersQuery.refetch();
+    }, []),
+  );
 
   const activeMedsCount = useMemo(() => {
     if (!medications.data?.items) return 0;
     return medications.data.items.filter((m: any) => m.active).length;
   }, [medications.data]);
+
+  const pendingDelegationsCount = useMemo(() => {
+    const inboundManaged = (managedQuery.data ?? []).filter(
+      (d) => d.status === "PENDING" && isDelegationInbound(d, userEmail),
+    ).length;
+    const inboundManagers = (managersQuery.data ?? []).filter(
+      (m) => m.status === "PENDING" && isDelegationInbound(m, userEmail),
+    ).length;
+    return inboundManaged + inboundManagers;
+  }, [managedQuery.data, managersQuery.data, userEmail]);
+
+  const profileLoading =
+    profile.isPending || (profile.isFetching && !profile.data);
 
   const initials =
     profile.data?.name
@@ -77,14 +107,29 @@ export function MoreScreen() {
           <Typography variant="h2">Más</Typography>
         </View>
 
-        <ProfileCard
-          initials={initials}
-          name={profile.data?.name || "Sin nombre"}
-          email={profile.data?.email ?? ""}
-          onPress={() => navigation.navigate("Profile", { backTitle: "Más" })}
-        />
+        {profileLoading ? (
+          <View
+            style={{
+              padding: spacing[4],
+              borderRadius: 12,
+              backgroundColor: t.surface.bgCard,
+              marginBottom: spacing[4],
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 84,
+            }}
+          >
+            <ActivityIndicator size="small" color={palette.brand[500]} />
+          </View>
+        ) : (
+          <ProfileCard
+            initials={initials}
+            name={profile.data?.name || "Sin nombre"}
+            email={profile.data?.email ?? ""}
+            onPress={() => navigation.navigate("Profile", { backTitle: "Más" })}
+          />
+        )}
 
-        {/* Funciones */}
         <MenuSection>
           <MenuItem
             icon={<Pill size={20} color={palette.status.warning[500]} />}
@@ -96,7 +141,7 @@ export function MoreScreen() {
             icon={<Activity size={20} color={palette.brand[500]} />}
             label="Tratamientos"
             badge={treatments.data?.total ? `${treatments.data.total}` : undefined}
-            onPress={() => navigation.navigate("Treatments", { backTitle: "MÃ¡s" })}
+            onPress={() => navigation.navigate("Treatments", { backTitle: "Más" })}
           />
           <MenuItem
             icon={<Share2 size={20} color={palette.brand[500]} />}
@@ -105,13 +150,13 @@ export function MoreScreen() {
           />
           <MenuItem
             icon={<Users size={20} color={palette.brand[600]} />}
-            label="Dependientes"
-            onPress={showComingSoon}
+            label={LINKED_PEOPLE_SCREEN_TITLE}
+            badge={pendingDelegationsCount > 0 ? pendingDelegationsCount : undefined}
+            onPress={() => navigation.navigate("Dependientes", { backTitle: "Más" })}
             last
           />
         </MenuSection>
 
-        {/* Configuración */}
         <MenuSection>
           <MenuItem
             icon={<Bell size={20} color={t.text.secondary} />}
@@ -131,7 +176,6 @@ export function MoreScreen() {
           />
         </MenuSection>
 
-        {/* Soporte */}
         <MenuSection>
           <MenuItem
             icon={<HelpCircle size={20} color={t.text.secondary} />}
@@ -141,7 +185,6 @@ export function MoreScreen() {
           />
         </MenuSection>
 
-        {/* Logout */}
         <MenuSection>
           <MenuItem
             icon={<LogOut size={20} color={palette.status.error[500]} />}

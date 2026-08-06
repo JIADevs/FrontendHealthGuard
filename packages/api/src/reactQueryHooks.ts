@@ -13,6 +13,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
+import { useAuthStore } from "@helu/stores";
 import { ZodError } from "zod";
 import {
     // Documents
@@ -73,6 +74,14 @@ import {
     // User
     getMe,
     updateMe,
+    // Delegations
+    getManagedUsers,
+    getManagers,
+    createDelegation,
+    respondDelegation,
+    revokeDelegation,
+    getDelegationContextColors,
+    updateDelegationContextColors,
     // Daily Check-Ins
     getDailyCheckIns,
     createDailyCheckIn,
@@ -91,6 +100,10 @@ import type {
     DoctorCreate,
     BackpackCreate,
     UserUpdate,
+    DelegationRequest,
+    DelegationContextColors,
+    DependentDelegation,
+    ManagerDelegation,
     DailyCheckInCreate,
     DailyCheckInUpdate,
 } from "./schemas";
@@ -147,7 +160,8 @@ export const QK = {
 
     calendar:         (start: string, end: string) => ["calendar", start, end] as const,
 
-    profile:          ()                      => ["me"] as const,
+    profile:          (patientContextId: string | null = null) =>
+        ["me", patientContextId ?? "self"] as const,
 
     documentSharesActive: () => ["document-shares-active"] as const,
     shares: (status: ShareStatusFilter = "all") => ["shares", status] as const,
@@ -719,8 +733,9 @@ export function useCalendarEventsQuery(startDate: string, endDate: string) {
 // ─── Profile ───────────────────────────────────────────
 
 export function useProfileQuery() {
+    const activePatientId = useAuthStore((s) => s.activePatientId);
     return useQuery({
-        queryKey: QK.profile(),
+        queryKey: QK.profile(activePatientId),
         queryFn: getMe,
         staleTime: 60_000,
     });
@@ -731,6 +746,130 @@ export function useUpdateProfileMutation() {
     return useMutation({
         mutationFn: (userData: UserUpdate) => updateMe(userData),
         onSettled: () => qc.invalidateQueries({ queryKey: QK.profile() }),
+    });
+}
+
+// ─── Delegations ───────────────────────────────────────
+
+export const delegationKeys = {
+    all:           () => ["delegations"] as const,
+    managed:       (authToken: string | null) => ["delegations", authToken, "managed"] as const,
+    managers:      (authToken: string | null) => ["delegations", authToken, "managers"] as const,
+    contextColors: (authToken: string | null) => ["delegations", authToken, "context-colors"] as const,
+};
+
+export function useDelegationContextColorsQuery() {
+    const token = useAuthStore((s) => s.token);
+    return useQuery({
+        queryKey: delegationKeys.contextColors(token),
+        queryFn: getDelegationContextColors,
+        enabled: !!token,
+        staleTime: 60_000,
+    });
+}
+
+export function useManagedUsersQuery() {
+    const token = useAuthStore((s) => s.token);
+    return useQuery({
+        queryKey: delegationKeys.managed(token),
+        queryFn: getManagedUsers,
+        enabled: !!token,
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
+    });
+}
+
+export function useManagersQuery() {
+    const token = useAuthStore((s) => s.token);
+    return useQuery({
+        queryKey: delegationKeys.managers(token),
+        queryFn: getManagers,
+        enabled: !!token,
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
+    });
+}
+
+export function useCreateDelegationMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: DelegationRequest) => createDelegation(payload),
+        onSuccess: () => qc.invalidateQueries({ queryKey: delegationKeys.all() }),
+    });
+}
+
+export function useRespondDelegationMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, action }: { id: string; action: "accept" | "reject" }) =>
+            respondDelegation(id, action),
+        onSettled: async () => {
+            await qc.invalidateQueries({ queryKey: delegationKeys.all() });
+        },
+    });
+}
+
+export function useRevokeDelegationMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => revokeDelegation(id),
+        onMutate: async (id) => {
+            const token = useAuthStore.getState().token;
+            await qc.cancelQueries({ queryKey: delegationKeys.all() });
+            const managedKey = delegationKeys.managed(token);
+            const managersKey = delegationKeys.managers(token);
+            const previousManaged = qc.getQueryData<DependentDelegation[]>(managedKey);
+            const previousManagers = qc.getQueryData<ManagerDelegation[]>(managersKey);
+            if (previousManaged) {
+                qc.setQueryData(
+                    managedKey,
+                    previousManaged.filter((d) => d.id !== id),
+                );
+            }
+            if (previousManagers) {
+                qc.setQueryData(
+                    managersKey,
+                    previousManagers.filter((m) => m.id !== id),
+                );
+            }
+            return { previousManaged, previousManagers, managedKey, managersKey };
+        },
+        onError: (_error, _id, context) => {
+            if (!context) return;
+            if (context.previousManaged !== undefined) {
+                qc.setQueryData(context.managedKey, context.previousManaged);
+            }
+            if (context.previousManagers !== undefined) {
+                qc.setQueryData(context.managersKey, context.previousManagers);
+            }
+        },
+        onSettled: async () => {
+            await qc.invalidateQueries({ queryKey: delegationKeys.all() });
+        },
+    });
+}
+
+export function useUpdateDelegationColorsMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (colors: DelegationContextColors) => updateDelegationContextColors(colors),
+        onMutate: async (colors) => {
+            const token = useAuthStore.getState().token;
+            await qc.cancelQueries({ queryKey: delegationKeys.contextColors(token) });
+            const previous = qc.getQueryData<DelegationContextColors>(
+                delegationKeys.contextColors(token),
+            );
+            qc.setQueryData(delegationKeys.contextColors(token), colors);
+            return { previous, token };
+        },
+        onError: (_error, _colors, context) => {
+            if (context?.previous !== undefined) {
+                qc.setQueryData(delegationKeys.contextColors(context.token), context.previous);
+            }
+        },
+        onSettled: () => {
+            void qc.invalidateQueries({ queryKey: delegationKeys.all() });
+        },
     });
 }
 

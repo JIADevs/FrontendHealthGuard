@@ -1,4 +1,4 @@
-import { apiClient } from "./client";
+import { apiClient, type HeluRequestConfig } from "./client";
 import { z } from "zod";
 import {
     listShares,
@@ -30,6 +30,8 @@ import {
     ClassificationSuggestionSchema,
     DailyCheckInSchema,
     DailyCheckInPageSchema,
+    DependentDelegationSchema,
+    ManagerDelegationSchema,
     parseCalendarEventsResponse,
     type CalendarDay,
     type DailyCheckInUpdate,
@@ -48,7 +50,13 @@ import {
     type CustomTagCreate,
     type DailyCheckInCreate,
     type DailyCheckInPage,
+    type DelegationRequest,
+    type DependentDelegation,
+    type ManagerDelegation,
+    type DelegationContextColors,
+    DelegationContextColorsSchema,
 } from "./schemas";
+import { isApiError } from "./errors";
 
 // ─── Auth ──────────────────────────────────────────────
 
@@ -417,10 +425,11 @@ export async function registerDeviceToken(
     token: string,
     deviceType: string
 ) {
-    const { data } = await apiClient.post("/notifications/devices", {
-        token,
-        deviceType,
-    });
+    const { data } = await apiClient.post(
+        "/notifications/devices",
+        { token, deviceType },
+        { skipPatientContext: true } as HeluRequestConfig,
+    );
     return data;
 }
 
@@ -517,6 +526,59 @@ export async function removeDocFromBackpack(backpackId: string, documentId: stri
 
 export async function shareBackpack(id: string, expiresIn: ShareCreateOptions["expiresIn"] = "24h") {
     return shareBackpackWithOptions(id, { expiresIn });
+}
+
+// ─── Delegations ───────────────────────────────────────
+
+export async function createDelegation(payload: DelegationRequest): Promise<DependentDelegation | ManagerDelegation> {
+    const { data } = await apiClient.post("/users/me/delegations", payload);
+    return DependentDelegationSchema.parse(data);
+}
+
+export async function getManagedUsers(): Promise<DependentDelegation[]> {
+    const { data } = await apiClient.get("/users/me/delegations/managed");
+    return z.array(DependentDelegationSchema).parse(data);
+}
+
+export async function getManagers(): Promise<ManagerDelegation[]> {
+    const { data } = await apiClient.get("/users/me/delegations/managers");
+    return z.array(ManagerDelegationSchema).parse(data);
+}
+
+export async function respondDelegation(
+    id: string,
+    action: "accept" | "reject",
+): Promise<void> {
+    await apiClient.patch(`/users/me/delegations/${id}/status`, undefined, {
+        params: { action },
+    });
+}
+
+export async function revokeDelegation(id: string): Promise<void> {
+    await apiClient.delete(`/users/me/delegations/${id}`);
+}
+
+export async function getDelegationContextColors(): Promise<DelegationContextColors> {
+    try {
+        const { data } = await apiClient.get<{ value: unknown }>(
+            "/users/me/preferences/delegation_context_colors",
+            { skipPatientContext: true } as HeluRequestConfig,
+        );
+        return DelegationContextColorsSchema.parse(data.value ?? {});
+    } catch (error) {
+        if (isApiError(error) && error.isNotFound) {
+            return {};
+        }
+        throw error;
+    }
+}
+
+export async function updateDelegationContextColors(colors: DelegationContextColors): Promise<void> {
+    await apiClient.put(
+        "/users/me/preferences/delegation_context_colors",
+        { value: colors },
+        { skipPatientContext: true } as HeluRequestConfig,
+    );
 }
 
 export async function getBackpackDocuments(params: {

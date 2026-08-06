@@ -75,22 +75,23 @@ export interface DashboardData {
 
 export function useDashboardCore(): DashboardData {
   const setUser = useAuthStore((s) => s.setUser);
+  const isManaging = useAuthStore((s) => s.isManaging);
 
   const profile = useProfileQuery();
   const docs = useDocumentsQuery("", 1, 3);
   const appts = useAppointmentsQuery("", 1, 3, todayISODate());
   const meds = useMedicationsQuery("", 1, 3);
 
-  // Mantiene el objeto de usuario del store sincronizado con el perfil real.
+  // Keep auth store user aligned with self profile only — not while impersonating.
   useEffect(() => {
-    if (profile.data) {
+    if (profile.data && !isManaging) {
       setUser({
         id: profile.data.id,
         name: profile.data.name,
         email: profile.data.email,
       });
     }
-  }, [profile.data, setUser]);
+  }, [profile.data, isManaging, setUser]);
 
   const today = todayISODate();
   const todayApptCount =
@@ -116,7 +117,7 @@ export function useDashboardCore(): DashboardData {
   return {
     userName: profile.data?.name ?? profile.data?.email ?? null,
     userFirstName: userFirstName ?? null,
-    isProfileLoading: profile.isLoading,
+    isProfileLoading: profile.isPending || (profile.isFetching && !profile.data),
 
     greeting,
     apptSubtitle,

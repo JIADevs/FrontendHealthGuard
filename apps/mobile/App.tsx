@@ -12,7 +12,7 @@ import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
 import { setApiAuthProviders, isApiError } from "@helu/api";
 import { useNotificationsQuery } from "@helu/api/hooks";
-import { ThemeProvider, colors, palette } from "@helu/ui";
+import { ThemeProvider, palette } from "@helu/ui";
 
 setApiAuthProviders({
   getToken: () => useAuthStore.getState().token,
@@ -42,14 +42,51 @@ const queryClient = new QueryClient({
   },
 });
 
-function AppContent({ token }: { token: string | null }) {
+/** Query roots whose cached data depends on X-Patient-Context (not delegation lists). */
+const PATIENT_SCOPED_QUERY_ROOTS = [
+  "me",
+  "documents",
+  "document",
+  "document-types",
+  "tag-categories",
+  "backpacks",
+  "backpack",
+  "backpack-docs",
+  "backpack-doc-ids",
+  "doctors",
+  "appointments",
+  "appointment",
+  "treatments",
+  "treatment",
+  "medications",
+  "notifications",
+  "calendar",
+  "document-shares-active",
+  "shares",
+] as const;
+
+useAuthStore.getState().setQueryCacheCleaner((mode = "full") => {
+  void queryClient.cancelQueries();
+  if (mode === "full") {
+    queryClient.clear();
+    return;
+  }
+  for (const root of PATIENT_SCOPED_QUERY_ROOTS) {
+    queryClient.removeQueries({ queryKey: [root] });
+  }
+});
+
+function AppContent({
+  token,
+  isHydrated,
+}: {
+  token: string | null;
+  isHydrated: boolean;
+}) {
   const setUnreadCount = useNotifStore((s) => s.setUnreadCount);
 
-  // Pasa el JWT para que el registro FCM ocurra solo después del login
-  usePushNotifications(token);
+  usePushNotifications(token, queryClient, isHydrated);
 
-  // Carga el contador de no leídas cuando el usuario se autentica; se
-  // mantiene fresco vía invalidación de ["notifications"] (mark-read, push).
   const { data: notifData } = useNotificationsQuery(1, 50, !!token);
   useEffect(() => {
     if (!token || !notifData) return;
@@ -90,7 +127,7 @@ export default function App() {
   return (
     <ThemeProvider preference={themePreference}>
       <QueryClientProvider client={queryClient}>
-        <AppContent token={token} />
+        <AppContent token={token} isHydrated={isHydrated} />
       </QueryClientProvider>
     </ThemeProvider>
   );

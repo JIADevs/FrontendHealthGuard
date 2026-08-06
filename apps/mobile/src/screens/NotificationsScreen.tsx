@@ -8,17 +8,20 @@ import {
   RefreshControl,
 } from "react-native";
 import { memo, useCallback, useMemo } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { type Notification } from "@helu/api";
 import { useNotificationsScreen } from "../hooks/useNotificationsScreen";
-import { colors, palette, radii, spacing, fontWeight, useAppTheme, Button, Typography, Spinner, EmptyState } from "@helu/ui";
+import { palette, spacing, fontWeight, useAppTheme, Button, Typography, Spinner, EmptyState } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { Bell, Calendar, Pill, Activity, Info, CheckCircle } from "lucide-react-native";
+import { Bell, Calendar, Pill, Activity, Info, CheckCircle, Users } from "lucide-react-native";
+import type { RootStackParamList } from "../navigation/RootNavigator";
 
 const TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
   APPOINTMENT: { icon: Calendar, color: palette.brand[500],              bg: palette.brand[100] },
   MEDICATION:  { icon: Pill,     color: palette.status.warning[500],     bg: palette.status.warning[50] },
   CHECKIN:     { icon: Activity, color: palette.accent.notification[500], bg: palette.accent.notification[100] },
+  DELEGATION_INVITE: { icon: Users, color: palette.brand[500],            bg: palette.brand[100] },
   SYSTEM:      { icon: Bell,     color: palette.accent.ai[500],          bg: palette.accent.ai[100] },
   INFO:        { icon: Info,     color: palette.surface[500],            bg: palette.surface[100] },
 };
@@ -28,7 +31,7 @@ const NotificationItem = memo(function NotificationItem({
   onPress,
 }: {
   item: Notification;
-  onPress: (id: string) => void;
+  onPress: (item: Notification) => void;
 }) {
   const t = useAppTheme();
   const styles = useMemo(() => makeItemStyles(t), [t]);
@@ -44,8 +47,8 @@ const NotificationItem = memo(function NotificationItem({
   });
 
   const handlePress = useCallback(() => {
-    if (!item.isRead) onPress(item.id);
-  }, [item.id, item.isRead, onPress]);
+    onPress(item);
+  }, [item, onPress]);
 
   return (
     <TouchableOpacity
@@ -83,10 +86,36 @@ const Separator = () => {
 };
 
 export function NotificationsScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const screen = useNotificationsScreen();
+
+  const handleNotificationPress = useCallback(
+    (item: Notification) => {
+      if (!item.isRead) screen.markRead(item.id);
+
+      switch (item.type) {
+        case "DELEGATION_INVITE":
+          navigation.navigate("Dependientes", { backTitle: "Notificaciones" });
+          break;
+        case "CHECKIN":
+          navigation.navigate("MainTabs", {
+            screen: "Agenda",
+            params: { initialTab: "wellbeing" },
+          });
+          break;
+        case "APPOINTMENT":
+        case "MEDICATION":
+        case "SYSTEM":
+        case "INFO":
+        default:
+          break;
+      }
+    },
+    [navigation, screen.markRead],
+  );
 
   const handleEndReached = useCallback(() => {
     if (screen.hasNextPage && !screen.isFetchingNextPage) screen.fetchNextPage();
@@ -94,9 +123,9 @@ export function NotificationsScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: Notification }) => (
-      <NotificationItem item={item} onPress={screen.markRead} />
+      <NotificationItem item={item} onPress={handleNotificationPress} />
     ),
-    [screen.markRead],
+    [handleNotificationPress],
   );
 
   return (

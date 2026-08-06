@@ -43,3 +43,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Local installers (e.g. Android Studio DMG dropped by mistake)
+*.dmg
+
+# EAS local build output
+build-*.apk
+*.apk

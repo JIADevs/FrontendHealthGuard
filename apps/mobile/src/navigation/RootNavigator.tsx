@@ -29,6 +29,9 @@ import { TreatmentDetailScreen } from "../screens/TreatmentDetailScreen";
 import { TreatmentFormScreen } from "../screens/TreatmentFormScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
+import { DependientesScreen } from "../screens/DependientesScreen";
+import { DependientesInviteScreen } from "../screens/DependientesInviteScreen";
+import { LINKED_PEOPLE_SCREEN_TITLE } from "../constants/linkedPeople";
 import { useAppTheme } from "@helu/ui";
 import { withDocumentsTheme, getDocumentsStackScreenOptions } from "../components/documents";
 import type { ShareResourceType } from "@helu/api";
@@ -78,6 +81,10 @@ export type RootStackParamList = {
   SharedDetail: WithBackTitle & {
     linkId: string;
     resourceType: ShareResourceType;
+  };
+  Dependientes: WithBackTitle | undefined;
+  DependientesInvite: WithBackTitle & {
+    relationship: "I_WANT_TO_MANAGE_THEM" | "THEY_WILL_MANAGE_ME";
   };
 };
 
@@ -299,6 +306,26 @@ export function RootNavigator() {
             name="TreatmentForm"
             component={TreatmentFormScreen}
             options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="Dependientes"
+            component={DependientesScreen}
+            options={({ route }) => ({
+              headerShown: true,
+              title: LINKED_PEOPLE_SCREEN_TITLE,
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Más",
+            })}
+          />
+          <Stack.Screen
+            name="DependientesInvite"
+            component={DependientesInviteScreen}
+            options={({ route }) => ({
+              headerShown: true,
+              title: "Invitar",
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? LINKED_PEOPLE_SCREEN_TITLE,
+            })}
           />
         </>
       ) : (

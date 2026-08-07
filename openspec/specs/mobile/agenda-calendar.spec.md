@@ -1,9 +1,9 @@
 # Spec: mobile — HeluAgendaCalendar & Agenda navigation
 
 **Domain:** mobile (`packages/ui/src/platform/HeluAgendaCalendar/`, `apps/mobile`)
-**Source change:** agenda-ui (S1 archived 2026-06-21; S2 shipped on branch `agenda`)
+**Source change:** agenda-ui (S1 archived 2026-06-21; S2 shipped on branch `agenda`); push-notification-fixes (archived 2026-08-06)
 **Status:** SHIPPED (mobile native)
-**Last updated:** 2026-06-21
+**Last updated:** 2026-08-06
 
 ---
 
@@ -179,6 +179,18 @@ No Calendario/Lista toggle inside Citas — calendar is the separate default vie
 
 ---
 
+### Push notification deep links
+
+#### RF-AC-17 — Medication intake modal resolvable from notification deep link [shipped]
+
+`AgendaScreen` MUST accept a medication-intake intent (in addition to `initialTab`) carrying
+`entity_id`/cycle id, `day_key`, and `intake_time`. When present, `AgendaScreen` MUST resolve it
+into opening `MedicationIntakeModal` directly, without requiring the agenda calendar's own query
+cache to already contain that day's data. Missing required intent fields (`day_key`/`intake_time`)
+MUST fall back to the medications list view instead of crashing or opening a malformed modal.
+
+---
+
 ## Acceptance Scenarios
 
 ### SC-AC-1: Calendar renders today's events by default [shipped]
@@ -247,6 +259,19 @@ No Calendario/Lista toggle inside Citas — calendar is the separate default vie
 **Given** the user is on the calendar  
 **When** they open `AgendaMenuSheet` and tap `"Citas"`  
 **Then** the appointments list renders with a back-to-calendar header
+
+### SC-AC-12: Medication deep-link intent opens modal without waiting for cache [shipped]
+
+**Given** `AgendaScreen` receives a medication-intake intent with `entity_id`, `day_key`, and `intake_time`  
+**When** the screen mounts  
+**Then** `MedicationIntakeModal` opens directly using the intent's fields  
+**And** it does not block on `useCalendarEventsQuery` resolving first
+
+### SC-AC-13: Missing intent fields degrades gracefully [shipped]
+
+**Given** a medication-intake intent is missing `day_key` or `intake_time`  
+**When** `AgendaScreen` resolves the intent  
+**Then** it falls back to the medications list view instead of crashing or opening a malformed modal
 
 ---
 

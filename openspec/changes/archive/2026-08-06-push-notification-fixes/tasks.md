@@ -27,7 +27,7 @@ Chain strategy: size-exception
 
 - [x] 2.1 Create `tests/api/test_device_tokens.py`: reassignment, idempotent re-register, unregister, prune-on-permanent, no-prune-on-transient.
 - [x] 2.2 Modify `tests/api/test_notifications.py`: assert MEDICATION `push_data` enrichment.
-- [ ] 2.3 Migration check: seed dupes, `alembic upgrade head`, assert single row + constraint. (manual / deploy-time)
+- [x] 2.3 Migration check: verified directly against the running dev Postgres instance — `alembic current` reports `r7s8t9u0v012 (head)`, the `uq_device_tokens_token` constraint exists (`pg_constraint` query), and zero duplicate tokens remain (`GROUP BY token HAVING COUNT(*) > 1` → empty). No dedicated pytest migration-test pattern exists elsewhere in this codebase to mirror; verification was manual SQL inspection instead of a new test file.
 
 ## Phase 3: Frontend API & Nav
 
@@ -53,6 +53,6 @@ Chain strategy: size-exception
 
 ## Phase 6: Verification
 
-- [x] 6.1 Run backend pytest: `test_device_tokens.py`, `test_notifications.py`, full suite regression. (12 passed for token+notification files)
+- [x] 6.1 Run backend pytest: `test_device_tokens.py`, `test_notifications.py` pass. Full suite regression: 163 passed, 8 failed — all 8 confirmed pre-existing (reproduced identically with this change's diff stashed): `test_calendar.py::test_get_calendar_events_with_data`, `test_medications.py::{test_create_medication,test_update_medication,test_medication_intake_flow,test_delete_intake}`, `test_treatments.py::{test_update_treatment_and_cascade,test_treatment_detail_includes_daily_checkins}`, `test_users.py::test_delegation_invite_notifies_invitee`. None touch device-token/push code.
 - [ ] 6.2 Manual QA matrix (no JS runner): 5 types × 3 entry points (tap/cold-start/list) + logout-unregister + account-switch reassign + already-checked-in toast; record results.
-- [ ] 6.3 Runbook: `pg_dump -t device_tokens` before `alembic upgrade head` in production — dedupe is destructive, irreversible.
+- [x] 6.3 Runbook: documented in `design.md` § Migration/Rollout (`pg_dump -t device_tokens` before `alembic upgrade head` — dedupe is destructive, irreversible). Locally, `alembic upgrade head` already applied cleanly against the dev DB with zero duplicate tokens remaining post-migration.

@@ -1,9 +1,9 @@
 # Spec: mobile — Bienestar (Daily Check-In UI)
 
 **Domain:** mobile (`apps/mobile`)
-**Source change:** agenda-ui (S1 archived 2026-06-21; S2+ shipped on branch `agenda`)
+**Source change:** agenda-ui (S1 archived 2026-06-21; S2+ shipped on branch `agenda`); push-notification-fixes (archived 2026-08-06)
 **Status:** SHIPPED
-**Last updated:** 2026-06-22
+**Last updated:** 2026-08-06
 
 ---
 
@@ -176,9 +176,15 @@ All entries shown; no deduplication per day.
 
 ### Push notifications
 
-#### RF-MB-24 — CHECKIN push → Bienestar [shipped]
+#### RF-MB-24 — CHECKIN push routes to form or toast based on fresh check-in status [shipped]
 
-`usePushNotifications` → `"CHECKIN"` navigates to Agenda with `initialTab: "wellbeing"`.
+`usePushNotifications`' CHECKIN handling (via `navigateForNotification`) MUST perform a fresh
+(non-cached) fetch of today's check-in status before navigating. If the user has NOT checked in
+today, it MUST navigate to open `DailyCheckInForm`. If the user HAS already checked in today, it
+MUST navigate to the Agenda wellbeing list AND show a toast; it MUST NOT open an empty form.
+
+(Previously: CHECKIN push always navigated to Agenda with `initialTab: "wellbeing"`, with no
+already-checked-in branch.)
 
 #### RF-MB-25 — TabParamList precedes push fix [shipped]
 
@@ -247,11 +253,13 @@ export { AgendaMenuSheet, type AgendaView } from "./AgendaMenuSheet";
 **When** loading completes  
 **Then** empty state with register CTA is visible
 
-### SC-MB-7: CHECKIN push opens Bienestar [shipped]
+### SC-MB-7: CHECKIN push routes to form or toast based on fresh status [shipped]
 
 **Given** a CHECKIN notification  
-**When** the user taps it  
-**Then** Agenda opens with wellbeing view active
+**When** the user taps it (live, cold start, or from `NotificationsScreen`)  
+**Then** a fresh (non-cached) fetch determines today's check-in status  
+**And** if not checked in, `DailyCheckInForm` opens directly  
+**And** if already checked in, a toast appears and the Agenda wellbeing list opens (no empty form)
 
 ### SC-MB-8: Delegated patient context [shipped]
 

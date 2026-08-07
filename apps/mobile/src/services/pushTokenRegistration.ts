@@ -3,7 +3,7 @@ import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Device from "expo-device";
 import type * as ExpoNotifications from "expo-notifications";
 import Toast from "react-native-toast-message";
-import { registerDeviceToken, isApiError } from "@helu/api";
+import { registerDeviceToken, unregisterDeviceToken, isApiError } from "@helu/api";
 import { palette } from "@helu/ui";
 
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
@@ -173,3 +173,56 @@ export async function registerDevicePushToken(options?: {
 export function resetDevicePushTokenRegistration() {
   lastRegisteredToken = null;
 }
+
+export function getLastRegisteredPushToken(): string | null {
+  return lastRegisteredToken;
+}
+
+const UNREGISTER_TIMEOUT_MS = 5000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("timed out")), timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
+/**
+ * Best-effort unregister before logout clears auth. Prefer the in-memory token;
+ * fall back to the live device token. Always resets local registration state.
+ * Does NOT throw — logout must proceed even if this fails.
+ * Call while the auth header is still present — before `logout()`.
+ */
+export async function unregisterDevicePushToken(): Promise<boolean> {
+  let token = lastRegisteredToken;
+
+  try {
+    if (!token) {
+      const Notifications = getNotificationsModule();
+      if (!Notifications || !Device.isDevice) {
+        resetDevicePushTokenRegistration();
+        return false;
+      }
+      token = await withTimeout(obtainNativePushToken(Notifications), UNREGISTER_TIMEOUT_MS);
+    }
+
+    await withTimeout(unregisterDeviceToken(token), UNREGISTER_TIMEOUT_MS);
+    console.warn("[push] device token unregistered");
+    return true;
+  } catch (err) {
+    console.warn("[push] unregister failed:", extractErrorMessage(err));
+    return false;
+  } finally {
+    resetDevicePushTokenRegistration();
+  }
+}
+

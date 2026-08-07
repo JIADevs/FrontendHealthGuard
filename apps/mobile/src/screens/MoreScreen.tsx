@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { View, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -28,6 +28,7 @@ import { palette, spacing, useAppTheme, Typography } from "@helu/ui";
 import { ProfileCard, MenuItem, MenuSection } from "../components/more";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { LINKED_PEOPLE_SCREEN_TITLE } from "../constants/linkedPeople";
+import { unregisterDevicePushToken } from "../services/pushTokenRegistration";
 
 export function MoreScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -35,6 +36,7 @@ export function MoreScreen() {
 
   const logout = useAuthStore((s) => s.logout);
   const queryClient = useQueryClient();
+  const [loggingOut, setLoggingOut] = useState(false);
   const storeUserEmail = useAuthStore((s) => s.user?.email);
   const profile = useProfileQuery();
   const userEmail = (profile.data?.email ?? storeUserEmail ?? "").toLowerCase();
@@ -88,8 +90,15 @@ export function MoreScreen() {
           text: "Cerrar sesión",
           style: "destructive",
           onPress: () => {
-            queryClient.clear();
-            logout();
+            setLoggingOut(true);
+            // Unregister while the auth header is still present — a best-effort
+            // accelerator for the server-side reassign-on-register (no toast on
+            // failure: logout must always succeed locally, deviation documented
+            // in openspec/changes/push-notification-fixes/design.md).
+            void unregisterDevicePushToken().finally(() => {
+              queryClient.clear();
+              logout();
+            });
           },
         },
       ],
@@ -187,9 +196,15 @@ export function MoreScreen() {
 
         <MenuSection>
           <MenuItem
-            icon={<LogOut size={20} color={palette.status.error[500]} />}
+            icon={
+              loggingOut ? (
+                <ActivityIndicator size="small" color={palette.status.error[500]} />
+              ) : (
+                <LogOut size={20} color={palette.status.error[500]} />
+              )
+            }
             label="Cerrar sesión"
-            onPress={handleLogout}
+            onPress={loggingOut ? () => {} : handleLogout}
             danger
             last
           />

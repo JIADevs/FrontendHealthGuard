@@ -98,12 +98,16 @@ export function DocumentDetailScreen() {
         <DocumentDetailHeader document={document} theme={theme} subtitle={subtitle} />
         <DocumentDetailTags tags={detailTags} theme={theme} />
         <DocumentDetailMetaCard document={document} />
+        {document.description?.trim() ? (
+          <Typography variant="body" color="secondary">
+            {document.description.trim()}
+          </Typography>
+        ) : null}
         {isLink ? (
           <DocumentDetailPortalCard
             portalUrl={document.portalUrl ?? ""}
             portalUsername={document.portalUsername}
             portalPassword={document.portalPassword}
-            description={document.description}
           />
         ) : (
           <>

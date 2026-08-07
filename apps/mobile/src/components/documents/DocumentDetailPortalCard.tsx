@@ -19,14 +19,12 @@ interface DocumentDetailPortalCardProps {
   portalUrl: string;
   portalUsername?: string | null;
   portalPassword?: string | null;
-  description?: string | null;
 }
 
 export function DocumentDetailPortalCard({
   portalUrl,
   portalUsername,
   portalPassword,
-  description,
 }: DocumentDetailPortalCardProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -67,13 +65,6 @@ export function DocumentDetailPortalCard({
 
   return (
     <View style={styles.card}>
-      {description?.trim() ? (
-        <View style={styles.descriptionBlock}>
-          <Typography variant="label" color="secondary">Descripción</Typography>
-          <Text style={styles.descriptionText}>{description.trim()}</Text>
-        </View>
-      ) : null}
-
       <Button
         variant="primary"
         fullWidth
@@ -177,14 +168,6 @@ function makeStyles(t: ThemeContextValue) {
       padding: spacing[4],
       backgroundColor: t.surface.bgCard,
       gap: spacing[4],
-    },
-    descriptionBlock: {
-      gap: spacing[1],
-    },
-    descriptionText: {
-      fontSize: fontSize.sm,
-      lineHeight: 20,
-      color: t.text.primary,
     },
     openRow: {
       flexDirection: "row",

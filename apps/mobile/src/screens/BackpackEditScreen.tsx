@@ -3,6 +3,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -198,7 +199,18 @@ export function BackpackEditScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={styles.createContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.createContent}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={create.documentsRefetching}
+            onRefresh={() => void create.refetchDocuments()}
+            colors={[t.brand.fg]}
+            tintColor={t.brand.fg}
+          />
+        }
+      >
         <TextField
           label="Nombre"
           value={create.name}
@@ -225,8 +237,6 @@ export function BackpackEditScreen() {
           loading={create.documentsLoading}
           search={create.docSearch}
           onSearchChange={create.setDocSearch}
-          isRefetching={create.documentsRefetching}
-          onRefresh={() => void create.refetchDocuments()}
           hasNextPage={create.hasMoreDocuments}
           isFetchingNextPage={create.isFetchingMoreDocuments}
           onLoadMore={create.loadMoreDocuments}

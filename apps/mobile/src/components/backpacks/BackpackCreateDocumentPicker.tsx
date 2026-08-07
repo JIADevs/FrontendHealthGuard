@@ -18,8 +18,6 @@ interface BackpackCreateDocumentPickerProps {
   loading?: boolean;
   search: string;
   onSearchChange: (value: string) => void;
-  isRefetching?: boolean;
-  onRefresh?: () => void;
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   onLoadMore?: () => void;
@@ -32,8 +30,6 @@ export function BackpackCreateDocumentPicker({
   loading = false,
   search,
   onSearchChange,
-  isRefetching = false,
-  onRefresh,
   hasNextPage = false,
   isFetchingNextPage = false,
   onLoadMore,
@@ -59,12 +55,11 @@ export function BackpackCreateDocumentPicker({
 
       <BackpackDocumentPickerList
         mode="check"
+        embedded
         documents={documents}
         selectedIds={selectedIds}
         onToggle={onToggle}
         loading={loading}
-        isRefetching={isRefetching}
-        onRefresh={onRefresh}
         emptyMessage={emptyMessage}
         hasNextPage={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}

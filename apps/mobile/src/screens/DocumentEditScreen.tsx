@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { useRoute, useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDocumentQuery, useTreatmentsQuery } from "@helu/api/hooks";
 import * as DocumentPicker from "expo-document-picker";
@@ -66,6 +67,7 @@ type RouteParams = { id: string };
 export function DocumentEditScreen() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const insets = useSafeAreaInsets();
 
   const route = useRoute();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -73,7 +75,7 @@ export function DocumentEditScreen() {
   const { id } = (route.params ?? {}) as RouteParams;
 
   const form = useDocumentForm();
-  const scrollPaddingBottom = useKeyboardScrollPadding(120);
+  const scrollPaddingBottom = useKeyboardScrollPadding(160);
 
   const docQuery = useDocumentQuery(id);
   const treatmentsQuery = useTreatmentsQuery(1, 100);
@@ -281,10 +283,11 @@ export function DocumentEditScreen() {
       }
 
       if (!editingLink && !fileUrl) {
-        Alert.alert(
-          "Archivo requerido",
-          "Seleccioná un archivo para guardar como documento de archivo.",
-        );
+        Toast.show({
+          type: "error",
+          text1: "Archivo requerido",
+          text2: "Seleccioná un archivo para guardar como documento de archivo.",
+        });
         setSaving(false);
         return;
       }
@@ -336,7 +339,6 @@ export function DocumentEditScreen() {
           : err.message
         : "No se pudo guardar el documento.";
       Toast.show({ type: "error", text1: "No se pudieron guardar los cambios", text2: message });
-      Alert.alert("Error", message);
     } finally {
       setSaving(false);
     }
@@ -530,24 +532,24 @@ export function DocumentEditScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: spacing[4] + insets.bottom }]}>
         <TouchableOpacity
-          style={styles.circleBtnSecondary}
+          style={styles.circleBtn}
           onPress={() => navigation.goBack()}
           disabled={saving}
           accessibilityRole="button"
           accessibilityLabel="Cancelar edición"
         >
-          <XIcon color={colors.white} size={24} />
+          <XIcon color={colors.white} size={28} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.circleBtnPrimary, saving && styles.circleBtnPrimaryDisabled]}
+          style={[styles.circleBtn, styles.circleBtnPrimary, saving && styles.circleBtnPrimaryDisabled]}
           onPress={handleSave}
           disabled={saving}
           accessibilityRole="button"
           accessibilityLabel="Guardar cambios"
         >
-          {saving ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={32} />}
+          {saving ? <ActivityIndicator color={colors.white} /> : <Check color={colors.white} size={28} />}
         </TouchableOpacity>
       </View>
     </View>
@@ -652,35 +654,25 @@ function makeStyles(t: ThemeContextValue) {
     },
     treatmentChipText: { fontSize: fontSize.sm, fontWeight: fontWeight.medium },
     bottomBar: {
-      position: "absolute",
-      bottom: Platform.OS === "ios" ? 32 : 16,
-      left: 20,
-      right: 20,
       flexDirection: "row",
-      justifyContent: "space-between",
+      justifyContent: "center",
       alignItems: "center",
-      gap: spacing[5],
+      gap: 32,
+      backgroundColor: t.surface.bgCard,
+      paddingTop: spacing[3],
+      borderTopWidth: 1,
+      borderTopColor: t.border.light,
     },
-    circleBtnSecondary: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
+    circleBtn: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
       backgroundColor: t.status.errorFg,
       alignItems: "center",
       justifyContent: "center",
     },
     circleBtnPrimary: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: t.brand.fg,
-      alignItems: "center",
-      justifyContent: "center",
-      shadowColor: t.brand.fg,
-      shadowOpacity: 0.35,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 10 },
-      elevation: 10,
+      backgroundColor: t.status.successFg,
     },
     circleBtnPrimaryDisabled: { opacity: 0.6 },
   });

@@ -39,6 +39,12 @@ export interface BackpackDocumentPickerListProps {
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   onLoadMore?: () => void;
+  /**
+   * When true, render rows with `.map` instead of FlatList.
+   * Required when this list sits inside a parent vertical ScrollView
+   * (RN forbids nested VirtualizedLists with the same orientation).
+   */
+  embedded?: boolean;
   /** add mode */
   addingIds?: Record<string, "loading" | "done">;
   onAdd?: (doc: Document) => void;
@@ -58,6 +64,7 @@ export function BackpackDocumentPickerList({
   hasNextPage = false,
   isFetchingNextPage = false,
   onLoadMore,
+  embedded = false,
   addingIds = {},
   onAdd,
   selectedIds,
@@ -71,8 +78,8 @@ export function BackpackDocumentPickerList({
   }, [hasNextPage, isFetchingNextPage, onLoadMore]);
 
   const renderAddRow = useCallback(
-    ({ item }: { item: Document }) => (
-      <View style={styles.cardRow}>
+    (item: Document) => (
+      <View key={item.id} style={styles.cardRow}>
         <TouchableOpacity
           style={styles.card}
           onPress={() => onDocumentPress?.(item)}
@@ -96,11 +103,12 @@ export function BackpackDocumentPickerList({
   );
 
   const renderCheckRow = useCallback(
-    ({ item }: { item: Document }) => {
+    (item: Document) => {
       const checked = selectedIds?.has(item.id) ?? false;
       const category = resolveDocumentTheme(item, t);
       return (
         <TouchableOpacity
+          key={item.id}
           style={[styles.checkRow, checked && styles.checkRowSelected]}
           onPress={() => onToggle?.(item.id)}
           activeOpacity={0.7}
@@ -149,11 +157,25 @@ export function BackpackDocumentPickerList({
     );
   }
 
+  // Embedded: parent ScrollView owns scrolling — never nest a FlatList here.
+  if (embedded) {
+    return (
+      <View style={styles.embeddedList}>
+        {documents.length === 0 ? (
+          <EmptyState message={emptyMessage} />
+        ) : (
+          documents.map((item) => (mode === "add" ? renderAddRow(item) : renderCheckRow(item)))
+        )}
+        {listFooter}
+      </View>
+    );
+  }
+
   return (
     <FlatList
       data={documents}
       keyExtractor={(d) => d.id}
-      renderItem={mode === "add" ? renderAddRow : renderCheckRow}
+      renderItem={({ item }) => (mode === "add" ? renderAddRow(item) : renderCheckRow(item))}
       contentContainerStyle={styles.list}
       refreshControl={
         onRefresh ? (
@@ -224,6 +246,9 @@ function makeStyles(t: ThemeContextValue) {
       gap: spacing[3],
       paddingBottom: spacing[10],
       flexGrow: 1,
+    },
+    embeddedList: {
+      minHeight: 120,
     },
     cardRow: {
       flexDirection: "row",

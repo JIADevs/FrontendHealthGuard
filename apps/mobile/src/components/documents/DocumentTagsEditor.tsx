@@ -200,6 +200,7 @@ function TagCategoryCatalog({
                       <Chip
                         key={val.id}
                         label={val.value}
+                        size="compact"
                         selected={selectedSet.has(val.id)}
                         onPress={() => onToggleTag(val.id)}
                       />

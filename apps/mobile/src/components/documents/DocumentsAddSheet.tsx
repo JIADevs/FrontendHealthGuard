@@ -8,7 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Camera, Upload, X } from "lucide-react-native";
+import { Camera, Link2, Upload, X } from "lucide-react-native";
 import { colors, fontSize, fontWeight, overlay, radii, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
@@ -16,6 +16,8 @@ export interface DocumentsAddSheetProps {
   visible: boolean;
   onClose: () => void;
   onUpload: () => void;
+  /** Create a LINK document (portal URL + optional credentials) — never opens the file picker. */
+  onPortalLink: () => void;
   onScan: () => void;
 }
 
@@ -23,6 +25,7 @@ export function DocumentsAddSheet({
   visible,
   onClose,
   onUpload,
+  onPortalLink,
   onScan,
 }: DocumentsAddSheetProps) {
   const t = useAppTheme();
@@ -32,6 +35,11 @@ export function DocumentsAddSheet({
   const handleUpload = () => {
     onClose();
     onUpload();
+  };
+
+  const handlePortalLink = () => {
+    onClose();
+    onPortalLink();
   };
 
   const handleScan = () => {
@@ -68,12 +76,25 @@ export function DocumentsAddSheet({
             onPress={handleUpload}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="Subir documento"
+            accessibilityLabel="Subir archivo"
           >
             <View style={styles.optionIcon}>
               <Upload size={22} color={t.brand.fg} strokeWidth={2.25} />
             </View>
-            <Text style={styles.optionLabel}>Subir documento</Text>
+            <Text style={styles.optionLabel}>Subir archivo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={handlePortalLink}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Resultado de examen virtual"
+          >
+            <View style={styles.optionIcon}>
+              <Link2 size={22} color={t.brand.fg} strokeWidth={2.25} />
+            </View>
+            <Text style={styles.optionLabel}>Resultado de examen virtual</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

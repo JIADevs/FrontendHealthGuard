@@ -13,7 +13,7 @@ import type { DocumentCategoryTheme } from "@helu/ui";
 
 interface DocumentCategoryIconProps {
   theme: DocumentCategoryTheme;
-  format: string;
+  format?: string | null;
   size?: number;
 }
 
@@ -39,7 +39,7 @@ export function DocumentCategoryIcon({ theme, format, size = 20 }: DocumentCateg
   );
 }
 
-function pickIcon(key: DocumentCategoryKey, format: string) {
+function pickIcon(key: DocumentCategoryKey, format?: string | null) {
   switch (key) {
     case "cardiology":
       return Heart;

@@ -109,8 +109,9 @@ export function splitDate(dateStr: string): { day: string; month: string } {
   return { day, month };
 }
 
-/** Formats a file extension string into a friendly label for document cards. */
-export function formatFileKind(format: string): string {
+/** Formats a file extension / MIME into a friendly label for document cards. */
+export function formatFileKind(format: string | null | undefined): string {
+  if (!format) return "—";
   const f = format.toLowerCase();
   if (f.includes("pdf")) return "PDF";
   if (f.includes("png") || f.includes("jpg") || f.includes("jpeg") || f.includes("webp")) return "Imagen";

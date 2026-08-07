@@ -14,6 +14,7 @@ import type { DocumentFormState, DocumentFormActions, FileSource } from "../hook
 import { useAppTheme, colors, radii, spacing, fontSize, fontWeight, Chip, TextField } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { DocumentTagsEditor } from "./documents/DocumentTagsEditor";
+import { DocumentDescriptionField } from "./documents/DocumentDescriptionField";
 
 type Props = DocumentFormState &
   DocumentFormActions<FileSource> & {
@@ -21,18 +22,25 @@ type Props = DocumentFormState &
     /** Mientras se descarga el adjunto actual para clasificar en edición */
     classifyFileLoading?: boolean;
     variant?: "upload" | "edit";
+    /** AI classify is file-only; hide for LINK / portal documents. Default true. */
+    showAiClassify?: boolean;
+    /** Override section heading. Defaults: edit → "Editar documento"; upload+AI → "Clasificar documento"; upload without AI → "Datos del documento". */
+    formTitle?: string;
   };
 
 export function DocumentClassificationForm({
   file,
   classifyFileLoading = false,
   variant = "upload",
+  showAiClassify = true,
+  formTitle: formTitleOverride,
   catalogs,
   catalogsLoading,
   selectedType,
   selectedSpecialty,
   selectedTags,
   title,
+  description,
   addingTag,
   classificationResult,
   addingCustomTag,
@@ -41,6 +49,7 @@ export function DocumentClassificationForm({
   setSelectedSpecialty,
   toggleTag,
   setTitle,
+  setDescription,
   handleAIClassify,
   handleAddCustomTag,
   handleAddCategoryAndTag,
@@ -64,14 +73,16 @@ export function DocumentClassificationForm({
   const catalogContentOpacity = useRef(new Animated.Value(0)).current;
   const skeletonOpacity = useRef(new Animated.Value(0.45)).current;
   const currentType = catalogs.types.find((tp: { id: string; name: string; specialties: any[] }) => tp.id === selectedType);
-  const canRunAI = !!file && !classifyFileLoading;
-  const aiHint = classifyFileLoading
-    ? "Preparando el adjunto para clasificar…"
-    : !file && variant === "edit"
-      ? "No se pudo cargar el adjunto para clasificar."
-      : !file
-        ? "Seleccioná un archivo para clasificar con IA."
-        : null;
+  const canRunAI = showAiClassify && !!file && !classifyFileLoading;
+  const aiHint = !showAiClassify
+    ? null
+    : classifyFileLoading
+      ? "Preparando el adjunto para clasificar…"
+      : !file && variant === "edit"
+        ? "No se pudo cargar el adjunto para clasificar."
+        : !file
+          ? "Seleccioná un archivo para clasificar con IA."
+          : null;
 
   useEffect(() => {
     if (!catalogsLoading) {
@@ -117,33 +128,42 @@ export function DocumentClassificationForm({
   return (
     <View style={styles.form}>
       <Text style={styles.formTitle}>
-        {variant === "edit" ? "Editar documento" : "Clasificar documento"}
+        {formTitleOverride ??
+          (variant === "edit"
+            ? "Editar documento"
+            : showAiClassify
+              ? "Clasificar documento"
+              : "Datos del documento")}
       </Text>
 
-      <TouchableOpacity
-        style={[styles.aiBtn, (!canRunAI || classifying) && styles.aiBtnDisabled]}
-        onPress={() => {
-          if (!file) return;
-          handleAIClassify(file);
-        }}
-        disabled={!canRunAI || classifying}
-      >
-        {classifyFileLoading ? (
-          <ActivityIndicator color={colors.white} size="small" />
-        ) : (
-          <Sparkles color={colors.white} size={20} />
-        )}
-        <Text style={styles.aiBtnText}>
-          {classifying
-            ? "Clasificando…"
-            : classifyFileLoading
-              ? "Preparando adjunto…"
-              : "Clasificar con IA"}
-        </Text>
-      </TouchableOpacity>
+      {showAiClassify ? (
+        <>
+          <TouchableOpacity
+            style={[styles.aiBtn, (!canRunAI || classifying) && styles.aiBtnDisabled]}
+            onPress={() => {
+              if (!file) return;
+              handleAIClassify(file);
+            }}
+            disabled={!canRunAI || classifying}
+          >
+            {classifyFileLoading ? (
+              <ActivityIndicator color={colors.white} size="small" />
+            ) : (
+              <Sparkles color={colors.white} size={20} />
+            )}
+            <Text style={styles.aiBtnText}>
+              {classifying
+                ? "Clasificando…"
+                : classifyFileLoading
+                  ? "Preparando adjunto…"
+                  : "Clasificar con IA"}
+            </Text>
+          </TouchableOpacity>
 
-      {aiHint && !classifying ? (
-        <Text style={styles.aiHint}>{aiHint}</Text>
+          {aiHint && !classifying ? (
+            <Text style={styles.aiHint}>{aiHint}</Text>
+          ) : null}
+        </>
       ) : null}
 
       {classificationResult && (
@@ -160,6 +180,10 @@ export function DocumentClassificationForm({
           onChange={setTitle}
           placeholder="Ej. Resultados Laboratorio"
         />
+      </View>
+
+      <View style={styles.field}>
+        <DocumentDescriptionField value={description} onChange={setDescription} />
       </View>
 
       {catalogsLoading ? (

@@ -71,7 +71,14 @@ export type RootStackParamList = {
   TreatmentDetail: WithBackTitle & { id: string };
   TreatmentForm: WithBackTitle & { id?: string } | undefined;
   Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
-  DocumentUpload: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
+  DocumentUpload:
+    | (WithBackTitle & {
+        backpackId?: string;
+        backpackName?: string;
+        /** FILE opens upload UI; LINK opens portal form and never the file picker. */
+        initialKind?: "FILE" | "LINK";
+      })
+    | undefined;
   DocumentDetail: WithBackTitle & { id: string; title?: string } | undefined;
   DocumentEdit: WithBackTitle & { id: string } | undefined;
   Notifications: WithBackTitle | undefined;

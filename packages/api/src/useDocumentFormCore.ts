@@ -23,6 +23,7 @@ import {
 } from "./endpoints";
 import { isApiError } from "./errors";
 import type { DocumentTypeOut, TagCategoryOut, ClassificationSuggestion } from "./schemas";
+import { DocumentCreateSchema } from "./schemas";
 import { retryAsync, RETRY_MAX_ATTEMPTS, RETRY_BASE_DELAY_MS, UPLOAD_MAX_FILE_SIZE_BYTES } from "./utils";
 import type { DocumentUploadOverrides } from "./documentUploadOverrides";
 export type { DocumentUploadOverrides } from "./documentUploadOverrides";
@@ -36,6 +37,7 @@ export interface DocumentFormState {
     selectedSpecialty: string | undefined;
     selectedTags: string[];
     title: string;
+    description: string;
     newTagValues: Record<string, string>;
     addingTag: string | null;
     classificationResult: ClassificationSuggestion | null;
@@ -54,11 +56,22 @@ export interface DocumentFormActions<TFile> {
     toggleTag: (tagId: string) => void;
     setSelectedTags: (tagIds: string[]) => void;
     setTitle: (title: string) => void;
+    setDescription: (description: string) => void;
     setNewTagValue: (categoryId: string, text: string) => void;
     setNewCategoryName: (name: string) => void;
     setNewTagValueField: (val: string) => void;
     handleAIClassify: (file: TFile) => Promise<void>;
     handleUpload: (file: TFile, docDate?: string, overrides?: DocumentUploadOverrides) => Promise<{ id: string; title: string } | null>;
+    handleCreateLink: (
+        params: {
+            portalUrl: string;
+            portalUsername?: string | null;
+            portalPassword?: string | null;
+            docDate?: string;
+            treatmentId?: string | null;
+            overrides?: DocumentUploadOverrides;
+        },
+    ) => Promise<{ id: string; title: string } | null>;
     handleAddCustomTag: (categoryId: string, valueOverride?: string) => Promise<void>;
     handleAddCategoryAndTag: (categoryName?: string, tagValue?: string) => Promise<void>;
 }
@@ -117,6 +130,7 @@ export function useDocumentFormCore<TFile>(
     const [selectedSpecialty, setSelectedSpecialty] = useState<string | undefined>(undefined);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
     const [newTagValues, setNewTagValues] = useState<Record<string, string>>({});
     const [addingTag, setAddingTag] = useState<string | null>(null);
     const [classificationResult, setClassificationResult] = useState<ClassificationSuggestion | null>(null);
@@ -259,6 +273,8 @@ export function useDocumentFormCore<TFile>(
 
                 const createdDoc = await createDocument({
                     title: docTitle,
+                    description: description.trim() || undefined,
+                    kind: "FILE",
                     fileUrl: storagePath,
                     format: adapters.getMimeType(file),
                     file_size_bytes: fileSize ?? 0,
@@ -310,9 +326,116 @@ export function useDocumentFormCore<TFile>(
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [uploading, title, selectedType, selectedSpecialty, selectedTags, queryClient, backpackId, backpackName,
+        [uploading, title, description, selectedType, selectedSpecialty, selectedTags, queryClient, backpackId, backpackName,
             adapters.upload, adapters.getMimeType, adapters.getFileSize, adapters.onError,
             adapters.onUploadSuccess, adapters.onUploadComplete],
+    );
+
+    const handleCreateLink = useCallback(
+        async (params: {
+            portalUrl: string;
+            portalUsername?: string | null;
+            portalPassword?: string | null;
+            docDate?: string;
+            treatmentId?: string | null;
+            overrides?: DocumentUploadOverrides;
+        }) => {
+            if (uploading) return null;
+
+            const trimmedUrl = params.portalUrl?.trim();
+            if (!trimmedUrl) {
+                adapters.onError("URL inválida", "Ingresá la URL del portal de resultados.");
+                return null;
+            }
+
+            const isSilent = params.overrides?.silent === true;
+            if (!isSilent) {
+                setUploading(true);
+            }
+
+            try {
+                const today = new Date();
+                const docTitle =
+                    params.overrides?.title ??
+                    (title || `Resultado virtual ${today.toLocaleDateString()}`);
+                const typeId = params.overrides?.typeId ?? selectedType;
+                const specialtyIds =
+                    params.overrides?.specialtyIds ??
+                    (selectedSpecialty ? [selectedSpecialty] : []);
+                const tagValueIds = params.overrides?.tagValueIds ?? selectedTags;
+
+                const payload = {
+                    title: docTitle,
+                    description: description.trim() || undefined,
+                    kind: "LINK" as const,
+                    portalUrl: trimmedUrl,
+                    portalUsername: params.portalUsername?.trim() || undefined,
+                    portalPassword: params.portalPassword || undefined,
+                    documentDate: params.docDate ?? today.toISOString(),
+                    treatmentId: params.treatmentId ?? params.overrides?.treatmentId ?? undefined,
+                    typeId,
+                    subtypeIds: [] as string[],
+                    specialtyIds,
+                    tagValueIds,
+                };
+
+                const parsed = DocumentCreateSchema.safeParse(payload);
+                if (!parsed.success) {
+                    const portalIssue = parsed.error.issues.find((issue) =>
+                        issue.path.includes("portalUrl"),
+                    );
+                    if (portalIssue) {
+                        adapters.onError("URL inválida", "");
+                        return null;
+                    }
+                    const detail = parsed.error.issues.map((issue) => issue.message).join("\n");
+                    adapters.onError("Datos inválidos", detail);
+                    return null;
+                }
+
+                const createdDoc = await createDocument(parsed.data);
+
+                if (backpackId) {
+                    await addDocToBackpack(backpackId, createdDoc.id);
+                    queryClient.invalidateQueries({ queryKey: ["backpack-docs", backpackId], exact: false });
+                    queryClient.invalidateQueries({ queryKey: ["backpack", backpackId], exact: false });
+                }
+
+                queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
+                queryClient.invalidateQueries({ queryKey: ["treatments"], exact: false });
+
+                if (!isSilent) {
+                    onUploaded?.({ id: createdDoc.id, title: createdDoc.title });
+                    if (!params.overrides?.skipSuccessToast) {
+                        adapters.onUploadSuccess(
+                            backpackId ? "Enlace agregado a la mochila" : "Resultado virtual creado",
+                            backpackName ?? docTitle,
+                        );
+                    }
+                    adapters.onUploadComplete();
+                }
+
+                return { id: createdDoc.id, title: createdDoc.title };
+            } catch (err) {
+                let detail = "Ha ocurrido un error inesperado";
+                if (isApiError(err)) {
+                    detail = err.fieldErrors
+                        ? Object.entries(err.fieldErrors).map(([f, m]) => `${f}: ${m}`).join("\n")
+                        : err.message;
+                } else if (err instanceof Error) {
+                    detail = err.message;
+                }
+                adapters.onError("No se pudo crear el enlace", detail);
+                return null;
+            } finally {
+                if (!isSilent) {
+                    setUploading(false);
+                }
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [uploading, title, description, selectedType, selectedSpecialty, selectedTags, queryClient, backpackId, backpackName,
+            adapters.onError, adapters.onUploadSuccess, adapters.onUploadComplete],
     );
 
     const handleAddCustomTag = useCallback(
@@ -372,6 +495,7 @@ export function useDocumentFormCore<TFile>(
         selectedSpecialty,
         selectedTags,
         title,
+        description,
         newTagValues,
         addingTag,
         classificationResult,
@@ -387,11 +511,13 @@ export function useDocumentFormCore<TFile>(
         toggleTag,
         setSelectedTags,
         setTitle,
+        setDescription,
         setNewTagValue: setNewTagValueForCategory,
         setNewCategoryName,
         setNewTagValueField: setNewTagValue,
         handleAIClassify,
         handleUpload,
+        handleCreateLink,
         handleAddCustomTag,
         handleAddCategoryAndTag,
     };

@@ -66,7 +66,11 @@ export function DocumentsScreen() {
   const closeAddSheet = useCallback(() => setAddSheetVisible(false), []);
 
   const handleUpload = useCallback(() => {
-    navigation.navigate("DocumentUpload");
+    navigation.navigate("DocumentUpload", { initialKind: "FILE" });
+  }, [navigation]);
+
+  const handlePortalLink = useCallback(() => {
+    navigation.navigate("DocumentUpload", { initialKind: "LINK" });
   }, [navigation]);
 
   const handleScan = useCallback(() => {
@@ -144,6 +148,7 @@ export function DocumentsScreen() {
         visible={addSheetVisible}
         onClose={closeAddSheet}
         onUpload={handleUpload}
+        onPortalLink={handlePortalLink}
         onScan={handleScan}
       />
 

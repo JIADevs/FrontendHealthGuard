@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { Alert } from "react-native";
 import Toast from "react-native-toast-message";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -40,8 +39,7 @@ export function useDocumentForm(
   }, [navigation, options?.skipNavigateBackOnUpload]);
 
   const onError = useCallback((title: string, message: string) => {
-    Toast.show({ type: "error", text1: title, text2: message });
-    Alert.alert(title, message);
+    Toast.show({ type: "error", text1: title, text2: message || undefined });
   }, []);
 
   return useDocumentFormCore<FileSource>({

@@ -99,15 +99,21 @@ export const TagCategoryOutSchema = z.object({
     values: z.array(TagValueOutSchema),
 });
 
+export const DocumentKindSchema = z.enum(["FILE", "LINK"]);
+
 export const DocumentSchema = z.object({
     id: z.string().uuid(),
     userId: z.string().uuid(),
     uploaderId: z.string().uuid().nullable().optional(),
     title: z.string(),
     description: z.string().nullable().optional(),
-    fileUrl: z.string(),
-    format: z.string(),
+    kind: DocumentKindSchema.default("FILE"),
+    fileUrl: z.string().nullable().optional(),
+    format: z.string().nullable().optional(),
     fileSizeBytes: z.number().nullable().optional(),
+    portalUrl: z.string().url("URL inválida").nullable().optional(),
+    portalUsername: z.string().nullable().optional(),
+    portalPassword: z.string().nullable().optional(),
     uploadedAt: z.string(),
     documentDate: z.string().nullable().optional(),
     treatmentId: z.string().uuid().nullable().optional(),
@@ -132,19 +138,52 @@ export const DocumentActiveShareSchema = z.object({
 
 export type DocumentActiveShare = z.infer<typeof DocumentActiveShareSchema>;
 
-export const DocumentCreateSchema = z.object({
-    title: z.string().min(1, "El título es obligatorio"),
-    description: z.string().optional(),
-    fileUrl: z.string(),
-    format: z.string(),
-    file_size_bytes: z.number().optional(),
-    documentDate: z.string().optional(),
-    treatmentId: z.string().uuid().nullable().optional(),
-    typeId: z.string().uuid().optional(),
-    subtypeIds: z.array(z.string().uuid()).optional(),
-    specialtyIds: z.array(z.string().uuid()).optional(),
-    tagValueIds: z.array(z.string().uuid()).optional(),
-});
+export const DocumentCreateSchema = z
+    .object({
+        title: z.string().min(1, "El título es obligatorio"),
+        description: z.string().optional(),
+        kind: DocumentKindSchema.default("FILE"),
+        fileUrl: z.string().nullable().optional(),
+        format: z.string().nullable().optional(),
+        file_size_bytes: z.number().optional(),
+        portalUrl: z.string().url("URL inválida").nullable().optional(),
+        portalUsername: z.string().nullable().optional(),
+        portalPassword: z.string().nullable().optional(),
+        documentDate: z.string().optional(),
+        treatmentId: z.string().uuid().nullable().optional(),
+        typeId: z.string().uuid().optional(),
+        subtypeIds: z.array(z.string().uuid()).optional(),
+        specialtyIds: z.array(z.string().uuid()).optional(),
+        tagValueIds: z.array(z.string().uuid()).optional(),
+    })
+    .superRefine((data, ctx) => {
+        const kind = data.kind ?? "FILE";
+        if (kind === "LINK") {
+            if (!data.portalUrl) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "URL inválida",
+                    path: ["portalUrl"],
+                });
+            }
+        }
+        if (kind === "FILE") {
+            if (!data.fileUrl) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "fileUrl is required when kind is FILE",
+                    path: ["fileUrl"],
+                });
+            }
+            if (!data.format) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "format is required when kind is FILE",
+                    path: ["format"],
+                });
+            }
+        }
+    });
 
 export const CustomTagCreateSchema = z.object({
     categoryId: z.string().uuid(),
@@ -687,6 +726,7 @@ export type SignupRequest = z.infer<typeof SignupRequestSchema>;
 export type TokenResponse = z.infer<typeof TokenResponseSchema>;
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 export type UserUpdate = z.infer<typeof UserUpdateSchema>;
+export type DocumentKind = z.infer<typeof DocumentKindSchema>;
 export type Document = z.infer<typeof DocumentSchema>;
 export type DocumentPage = z.infer<typeof DocumentPageSchema>;
 export type DocumentCreate = z.infer<typeof DocumentCreateSchema>;

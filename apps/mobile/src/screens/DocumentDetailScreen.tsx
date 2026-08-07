@@ -13,6 +13,7 @@ import {
   DocumentDetailPreview,
   DocumentDetailOpenExternal,
   DocumentDetailActions,
+  DocumentDetailPortalCard,
 } from "../components/documents";
 import { useShareFlow } from "../components/share";
 import { useDocumentDetail } from "../hooks/useDocumentDetail";
@@ -34,6 +35,7 @@ export function DocumentDetailScreen() {
 
   const {
     document,
+    isLink,
     theme,
     subtitle,
     detailTags,
@@ -96,28 +98,39 @@ export function DocumentDetailScreen() {
         <DocumentDetailHeader document={document} theme={theme} subtitle={subtitle} />
         <DocumentDetailTags tags={detailTags} theme={theme} />
         <DocumentDetailMetaCard document={document} />
-        <DocumentDetailPreview
-          title={document.title}
-          description={document.description}
-          documentDate={document.documentDate ?? document.uploadedAt}
-          signedUrl={signedUrl}
-          isImage={isImage}
-          docFormat={docFormat}
-          isLoading={signedUrlLoading}
-          pageCount={pageCount}
-        />
-        <DocumentDetailOpenExternal
-          onPress={() =>
-            void openDocument({
-              url: signedUrl ?? "",
-              title: document.title,
-              format: document.format,
-              docFormat,
-            })
-          }
-          disabled={!signedUrl || signedUrlLoading}
-          loading={opening}
-        />
+        {isLink ? (
+          <DocumentDetailPortalCard
+            portalUrl={document.portalUrl ?? ""}
+            portalUsername={document.portalUsername}
+            portalPassword={document.portalPassword}
+            description={document.description}
+          />
+        ) : (
+          <>
+            <DocumentDetailPreview
+              title={document.title}
+              description={document.description}
+              documentDate={document.documentDate ?? document.uploadedAt}
+              signedUrl={signedUrl}
+              isImage={isImage}
+              docFormat={docFormat}
+              isLoading={signedUrlLoading}
+              pageCount={pageCount}
+            />
+            <DocumentDetailOpenExternal
+              onPress={() =>
+                void openDocument({
+                  url: signedUrl ?? "",
+                  title: document.title,
+                  format: document.format ?? "",
+                  docFormat,
+                })
+              }
+              disabled={!signedUrl || signedUrlLoading}
+              loading={opening}
+            />
+          </>
+        )}
         <DocumentDetailActions
           onShare={() => shareFlow.openConfigureDocument(document, "Documento")}
           onEdit={() => navigation.navigate("DocumentEdit", { id: document.id })}

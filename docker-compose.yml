@@ -43,8 +43,11 @@ services:
     stdin_open: true
     # Instala dependencias dentro del contenedor (volúmenes de node_modules) y luego arranca Expo.
     # Tras cambiar package.json: `node docker-up.js --clear` o `docker compose build mobile --no-cache`.
-    # CI=true solo en pnpm (no interactivo). Expo sin CI para mostrar QR y hot reload.
-    command: sh -c "CI=true pnpm install --no-frozen-lockfile && cd apps/mobile && env -u CI npx expo start --port 8081 --host lan"
+    # `--offline` uses anonymous Expo Go manifests and skips the interactive
+    # "Log in / Proceed anonymously" menu (docker-up's TTY cannot send arrow keys).
+    # Do not set CI=1 for `expo start` — that disables Metro reload/watch.
+    # CI=true solo en pnpm (no interactivo).
+    command: sh -c "CI=true pnpm install --no-frozen-lockfile && cd apps/mobile && env -u CI npx expo start --offline --port 8081"
     ports:
       - "8081:8081"
       - "19000:19000"

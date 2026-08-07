@@ -231,6 +231,11 @@ export function resolveDocumentCategoryTheme(input: DocumentCategoryInput): Docu
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+/** True when the document is a portal link (no file attachment). */
+export function isLinkDocument(kind?: string | null): boolean {
+  return kind === "LINK";
+}
+
 /**
  * Resuelve el color de fondo e ícono para un tipo de documento médico.
  * Para tipos desconocidos usa categoría inferida o color determinístico.
@@ -257,7 +262,7 @@ export function resolveDocTypeVariant(documentTypeName?: string): DocTypeVariant
  * Normaliza el formato MIME/extensión a una de tres categorías:
  * "pdf" | "image" | "other"
  */
-export function resolveDocFormat(format: string): DocFormat {
+export function resolveDocFormat(format?: string | null): DocFormat {
   const f = (format ?? "").toLowerCase();
   if (f.includes("pdf")) return "pdf";
   if (f.match(/image|jpg|jpeg|png|webp|heic|heif/)) return "image";

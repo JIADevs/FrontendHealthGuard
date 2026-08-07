@@ -8,14 +8,12 @@ import {
   RefreshControl,
 } from "react-native";
 import { memo, useCallback, useMemo } from "react";
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { type Notification } from "@helu/api";
 import { useNotificationsScreen } from "../hooks/useNotificationsScreen";
 import { palette, spacing, fontWeight, useAppTheme, Button, Typography, Spinner, EmptyState } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { Bell, Calendar, Pill, Activity, Info, CheckCircle, Users } from "lucide-react-native";
-import type { RootStackParamList } from "../navigation/RootNavigator";
+import { navigateForNotification, buildRoutePayloadFromNotification } from "../navigation/notificationRouting";
 
 const TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
   APPOINTMENT: { icon: Calendar, color: palette.brand[500],              bg: palette.brand[100] },
@@ -86,7 +84,6 @@ const Separator = () => {
 };
 
 export function NotificationsScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
 
@@ -95,26 +92,9 @@ export function NotificationsScreen() {
   const handleNotificationPress = useCallback(
     (item: Notification) => {
       if (!item.isRead) screen.markRead(item.id);
-
-      switch (item.type) {
-        case "DELEGATION_INVITE":
-          navigation.navigate("Dependientes", { backTitle: "Notificaciones" });
-          break;
-        case "CHECKIN":
-          navigation.navigate("MainTabs", {
-            screen: "Agenda",
-            params: { initialTab: "wellbeing" },
-          });
-          break;
-        case "APPOINTMENT":
-        case "MEDICATION":
-        case "SYSTEM":
-        case "INFO":
-        default:
-          break;
-      }
+      navigateForNotification(buildRoutePayloadFromNotification(item));
     },
-    [navigation, screen.markRead],
+    [screen.markRead],
   );
 
   const handleEndReached = useCallback(() => {

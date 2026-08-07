@@ -5,7 +5,11 @@ import type { QueryClient } from "@tanstack/react-query";
 import { getNotifications } from "@helu/api";
 import { delegationKeys } from "@helu/api/hooks";
 import { useNotifStore } from "@helu/stores";
-import { navigationRef, navigateTo } from "../navigation/navigationRef";
+import {
+  buildRoutePayloadFromPushData,
+  navigateForNotification,
+} from "../navigation/notificationRouting";
+import { waitForNavigationReady } from "../navigation/navigationRef";
 import {
   registerDevicePushToken,
   resetDevicePushTokenRegistration,
@@ -67,27 +71,8 @@ function handlePushPayload(
   }
 }
 
-function handleNotificationTap(data: Record<string, string>) {
-  switch (data?.type) {
-    case "CHECKIN":
-      if (navigationRef.isReady()) {
-        navigationRef.navigate("MainTabs" as any, {
-          screen: "Agenda",
-          params: { initialTab: "wellbeing" },
-        } as any);
-      }
-      break;
-    case "DELEGATION_INVITE":
-      navigateTo("Dependientes", { backTitle: "Más" });
-      break;
-    case "APPOINTMENT":
-    case "MEDICATION":
-    case "SYSTEM":
-    case "INFO":
-    default:
-      navigateTo("Notifications");
-      break;
-  }
+function routeFromPushData(data: Record<string, string> | undefined) {
+  navigateForNotification(buildRoutePayloadFromPushData(data));
 }
 
 export const usePushNotifications = (
@@ -99,6 +84,8 @@ export const usePushNotifications = (
   const notificationListener = useRef<ExpoNotifications.Subscription>(undefined);
   const responseListener = useRef<ExpoNotifications.Subscription>(undefined);
   const hasRegistered = useRef(false);
+  const handledResponseIds = useRef<Set<string>>(new Set());
+  const coldStartHandled = useRef(false);
 
   useEffect(() => {
     if (!authToken || !isHydrated || hasRegistered.current) return;
@@ -143,9 +130,13 @@ export const usePushNotifications = (
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
       (response: ExpoNotifications.NotificationResponse) => {
+        const id = response.notification.request.identifier;
+        if (handledResponseIds.current.has(id)) return;
+        handledResponseIds.current.add(id);
+
         const data = response.notification.request.content.data as Record<string, string>;
         handlePushPayload(data, queryClient);
-        handleNotificationTap(data);
+        routeFromPushData(data);
       },
     );
 
@@ -154,6 +145,32 @@ export const usePushNotifications = (
       responseListener.current?.remove();
     };
   }, [queryClient]);
+
+  // Cold start: the tap that launched a killed app is often missed by the
+  // response listener above (it wasn't registered yet).
+  useEffect(() => {
+    if (!authToken || !isHydrated || coldStartHandled.current) return;
+    const Notifications = getNotificationsModule();
+    if (!Notifications) return;
+
+    coldStartHandled.current = true;
+
+    void (async () => {
+      const ready = await waitForNavigationReady(2000);
+      if (!ready) return;
+
+      const response = await Notifications.getLastNotificationResponseAsync();
+      if (!response) return;
+
+      const id = response.notification.request.identifier;
+      if (handledResponseIds.current.has(id)) return;
+      handledResponseIds.current.add(id);
+
+      const data = response.notification.request.content.data as Record<string, string>;
+      handlePushPayload(data, queryClient);
+      routeFromPushData(data);
+    })();
+  }, [authToken, isHydrated, queryClient]);
 
   return { notification: notificationRef.current };
 };

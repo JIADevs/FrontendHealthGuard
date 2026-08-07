@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,9 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 import { type DailyCheckIn } from "@helu/api";
 
 import { useWellbeingScreen } from "../hooks/useWellbeingScreen";
+import { useMedicationIntakeIntent } from "../hooks/useMedicationIntakeIntent";
+import { useDailyCheckInIntent } from "../hooks/useDailyCheckInIntent";
+import type { AgendaRouteParams } from "../navigation/RootNavigator";
 
 import {
   colors, palette,
@@ -73,19 +76,74 @@ export function AgendaScreen() {
   const styles = useMemo(() => makeStyles(t), [t]);
   const route = useRoute();
   const navigation = useNavigation();
+  const params = (route.params ?? {}) as AgendaRouteParams;
   const [view, setView] = useState<AgendaView>("calendar");
   const [menuOpen, setMenuOpen] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [checkInFormOpen, setCheckInFormOpen] = useState(false);
+  const [intentIntakeEvent, setIntentIntakeEvent] = useState<
+    Extract<AgendaEvent, { type: "medication" }> | null
+  >(null);
+  const lastHandledIntentAt = useRef<number | null>(null);
+
+  const intentAt = params.intentAt;
+  const intentActive =
+    typeof intentAt === "number" && intentAt !== lastHandledIntentAt.current;
+
+  const medicationIntentEnabled =
+    intentActive && params.intent === "medication-intake";
+  const checkInIntentEnabled =
+    intentActive && params.intent === "daily-checkin";
+
+  const medicationIntent = useMedicationIntakeIntent({
+    enabled: medicationIntentEnabled,
+    medicationId: params.medicationId,
+    cycleId: params.cycleId,
+    scheduledTime: params.scheduledTime,
+    medicationName: params.medicationName,
+  });
+  const checkInIntent = useDailyCheckInIntent(checkInIntentEnabled);
 
   useEffect(() => {
-    const initialTab = (route.params as { initialTab?: string } | undefined)?.initialTab;
-    if (isAgendaView(initialTab)) {
-      setView(initialTab);
+    if (isAgendaView(params.initialTab)) {
+      setView(params.initialTab);
     }
-  }, [(route.params as { initialTab?: string } | undefined)?.initialTab]);
+  }, [params.initialTab]);
+
+  useEffect(() => {
+    if (!medicationIntentEnabled || !intentAt) return;
+
+    if (medicationIntent.status === "missing-fields" || medicationIntent.status === "error") {
+      lastHandledIntentAt.current = intentAt;
+      setView("medications");
+      return;
+    }
+    if (medicationIntent.status === "ready" && medicationIntent.event) {
+      lastHandledIntentAt.current = intentAt;
+      setView("calendar");
+      setIntentIntakeEvent(medicationIntent.event);
+    }
+  }, [medicationIntentEnabled, medicationIntent, intentAt]);
+
+  useEffect(() => {
+    if (!checkInIntentEnabled || !intentAt) return;
+
+    if (checkInIntent.status === "form") {
+      lastHandledIntentAt.current = intentAt;
+      setView("calendar");
+      setCheckInFormOpen(true);
+      return;
+    }
+    if (checkInIntent.status === "already-done" || checkInIntent.status === "error") {
+      lastHandledIntentAt.current = intentAt;
+      setView("wellbeing");
+    }
+  }, [checkInIntentEnabled, checkInIntent, intentAt]);
 
   const isListView = view !== "calendar";
+  const intentLoading =
+    (medicationIntentEnabled && medicationIntent.status === "loading") ||
+    (checkInIntentEnabled && checkInIntent.status === "loading");
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -118,8 +176,15 @@ export function AgendaScreen() {
         )}
       </View>
 
-      {view === "calendar" ? (
-        <CalendarTab />
+      {intentLoading ? (
+        <View style={[styles.tabContent, styles.center]}>
+          <Spinner size="lg" />
+        </View>
+      ) : view === "calendar" ? (
+        <CalendarTab
+          intentIntakeEvent={intentIntakeEvent}
+          onIntentIntakeConsumed={() => setIntentIntakeEvent(null)}
+        />
       ) : view === "appointments" ? (
         <AppointmentsTab />
       ) : view === "medications" ? (
@@ -128,7 +193,7 @@ export function AgendaScreen() {
         <WellbeingTab />
       )}
 
-      {view === "calendar" ? (
+      {view === "calendar" && !intentLoading ? (
         <>
           <AgendaFAB onPress={() => setAddSheetOpen(true)} />
 
@@ -158,19 +223,35 @@ export function AgendaScreen() {
 
 // ─── calendar tab ─────────────────────────────────────────────────────────────
 
-function CalendarTab() {
+function CalendarTab({
+  intentIntakeEvent,
+  onIntentIntakeConsumed,
+}: {
+  intentIntakeEvent: Extract<AgendaEvent, { type: "medication" }> | null;
+  onIntentIntakeConsumed: () => void;
+}) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const navigation = useNavigation();
   const [intakeEvent, setIntakeEvent] = useState<Extract<AgendaEvent, { type: "medication" }> | null>(null);
   const [checkInEvent, setCheckInEvent] = useState<Extract<AgendaEvent, { type: "checkin" }> | null>(null);
 
+  useEffect(() => {
+    if (intentIntakeEvent) {
+      setIntakeEvent(intentIntakeEvent);
+      onIntentIntakeConsumed();
+    }
+  }, [intentIntakeEvent, onIntentIntakeConsumed]);
+
   return (
     <View style={styles.tabContent}>
       <HeluAgendaCalendar
         onMedicationPress={setIntakeEvent}
         onAppointmentPress={(event) =>
-          navigation.navigate("AppointmentDetail" as never, { id: event.data.id } as never)
+          (navigation as { navigate: (name: string, params: { id: string }) => void }).navigate(
+            "AppointmentDetail",
+            { id: event.data.id },
+          )
         }
         onCheckInPress={setCheckInEvent}
       />

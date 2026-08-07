@@ -204,6 +204,8 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
                         value={notes}
                         onChange={setNotes}
                         placeholder="¿Algo más que quieras registrar?"
+                        multiline
+                        numberOfLines={4}
                     />
 
                     <DateTimePicker

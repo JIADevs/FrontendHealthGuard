@@ -519,6 +519,11 @@ export const NotificationSchema = z.object({
         "DELEGATION_INVITE",
     ]),
     entityId: z.string().uuid().nullable(),
+    /** Deep-link extras from push (camelized by the API client). Old rows may be null. */
+    data: z
+        .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+        .nullable()
+        .optional(),
     isRead: z.boolean(),
     createdAt: z.string(),
 });

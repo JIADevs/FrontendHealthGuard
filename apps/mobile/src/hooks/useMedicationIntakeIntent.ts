@@ -49,15 +49,9 @@ export function useMedicationIntakeIntent(
 
   const query = useMedicationByIdQuery(queryEnabled ? medicationId! : "");
 
-  useEffect(() => {
-    if (enabled && !hasRequiredFields) {
-      Toast.show({
-        type: "error",
-        text1: "No se pudo abrir el recordatorio",
-        text2: "Faltan datos de la notificación.",
-      });
-    }
-  }, [enabled, hasRequiredFields]);
+  // Incomplete payloads (e.g. legacy in-app list rows without persisted
+  // `data`) degrade silently — AgendaScreen routes to the medications list.
+  // Only show a toast when the fetch itself fails after required fields exist.
 
   useEffect(() => {
     if (queryEnabled && query.isError) {

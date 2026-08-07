@@ -89,14 +89,24 @@ export function buildRoutePayloadFromPushData(
 
 /**
  * Builds a `NotificationRoutePayload` from a persisted `Notification` row
- * (in-app list tap). Only `entityId` is available here — `medicationId` and
- * `scheduledTime` are not persisted on the notification, so a MEDICATION tap
- * from the list degrades gracefully to the medications list (see
- * `useMedicationIntakeIntent`).
+ * (in-app list tap). When `data` is present (new rows), deep-link fields match
+ * the live push path. Older rows without `data` leave medication fields null —
+ * Agenda falls back silently to the medications list.
  */
 export function buildRoutePayloadFromNotification(item: Notification): NotificationRoutePayload {
+  const data = item.data ?? undefined;
+  const read = (snake: string, camel: string): string | null => {
+    if (!data) return null;
+    const value = data[camel] ?? data[snake];
+    if (value == null) return null;
+    return String(value);
+  };
+
   return {
     type: item.type,
     entityId: item.entityId,
+    medicationId: read("medication_id", "medicationId"),
+    medicationName: read("medication_name", "medicationName"),
+    scheduledTime: read("scheduled_time", "scheduledTime"),
   };
 }

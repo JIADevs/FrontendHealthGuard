@@ -28,9 +28,11 @@ import { useManagedUsersQuery, useDelegationContextColorsQuery } from "@helu/api
 import { resolveDelegationRingColor } from "../components/dependientes";
 import { usePatientContextGuard } from "../hooks/usePatientContextGuard";
 
+import type { AgendaRouteParams } from "./RootNavigator";
+
 export type TabParamList = {
   Documents: undefined;
-  Agenda: { initialTab?: "calendar" | "appointments" | "medications" | "wellbeing" } | undefined;
+  Agenda: AgendaRouteParams | undefined;
   Home: undefined;
   Backpacks: undefined;
   More: undefined;

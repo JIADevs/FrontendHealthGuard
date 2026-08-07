@@ -16,7 +16,8 @@ export {
     resolveCycleForDay,
     findIntakeForSlot,
     generateIntakeTimesForDay,
+    extractIntakeTimeHHMM,
     NOT_TAKEN_REASON_LABELS_ES,
     formatMedDose,
 } from "./medicationIntakeUtils";
-export { todayLocalDateKey } from "./calendarDateUtils";
+export { todayLocalDateKey, localDateKeyFromISO } from "./calendarDateUtils";

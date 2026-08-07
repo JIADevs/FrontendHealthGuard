@@ -39,10 +39,27 @@ import type { ShareResourceType } from "@helu/api";
 /** Shared optional param so any screen can show a contextual back label. */
 type WithBackTitle = { backTitle?: string };
 
+/**
+ * Params for the Agenda tab, used both for plain tab switches (`initialTab`)
+ * and for notification deep links that must open a specific modal inside
+ * Agenda (`intent`). `intentAt` is a nonce (`Date.now()`) so a second identical
+ * push can reopen the modal even though the params object would otherwise be
+ * referentially unchanged.
+ */
+export interface AgendaRouteParams {
+  initialTab?: "calendar" | "appointments" | "medications" | "wellbeing";
+  intent?: "medication-intake" | "daily-checkin";
+  intentAt?: number;
+  cycleId?: string;
+  medicationId?: string;
+  medicationName?: string;
+  scheduledTime?: string;
+}
+
 export type RootStackParamList = {
   Auth: undefined;
   Signup: undefined;
-  MainTabs: undefined;
+  MainTabs: { screen: "Agenda"; params: AgendaRouteParams } | undefined;
 
   AppointmentDetail: { id: string };
   AppointmentForm: { id?: string } | undefined;

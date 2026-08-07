@@ -433,6 +433,13 @@ export async function registerDeviceToken(
     return data;
 }
 
+export async function unregisterDeviceToken(token: string) {
+    await apiClient.delete("/notifications/devices", {
+        params: { token },
+        skipPatientContext: true,
+    } as HeluRequestConfig);
+}
+
 // ─── Calendar ──────────────────────────────────────────
 
 export async function getCalendarEvents(startDate: string, endDate: string): Promise<CalendarDay[]> {

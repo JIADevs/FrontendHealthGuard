@@ -83,21 +83,19 @@ export const usePushNotifications = (
   const notificationRef = useRef<ExpoNotifications.Notification>(undefined);
   const notificationListener = useRef<ExpoNotifications.Subscription>(undefined);
   const responseListener = useRef<ExpoNotifications.Subscription>(undefined);
-  const hasRegistered = useRef(false);
   const handledResponseIds = useRef<Set<string>>(new Set());
   const coldStartHandled = useRef(false);
 
   useEffect(() => {
-    if (!authToken || !isHydrated || hasRegistered.current) return;
+    if (!authToken || !isHydrated) return;
 
-    void registerDevicePushToken({ silent: true }).then((ok) => {
-      if (ok) hasRegistered.current = true;
-    });
+    // The access token carries the session id. Register again whenever it
+    // changes so an in-place refresh binds the device without a new login.
+    void registerDevicePushToken({ silent: true, force: true });
   }, [authToken, isHydrated]);
 
   useEffect(() => {
     if (!authToken) {
-      hasRegistered.current = false;
       resetDevicePushTokenRegistration();
     }
   }, [authToken]);
@@ -107,9 +105,7 @@ export const usePushNotifications = (
 
     const onAppStateChange = (nextState: AppStateStatus) => {
       if (nextState !== "active") return;
-      void registerDevicePushToken({ silent: true }).then((ok) => {
-        if (ok) hasRegistered.current = true;
-      });
+      void registerDevicePushToken({ silent: true });
     };
 
     const subscription = AppState.addEventListener("change", onAppStateChange);

@@ -1,11 +1,17 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { resolvePersistStorage } from "./persistStorage";
 
 type User = {
     id: string;
     name: string | null;
     email: string;
 };
+
+/** `full` wipes the cache (login/logout). `patient-context` drops only patient-scoped queries. */
+export type QueryCacheCleanMode = "full" | "patient-context";
+
+type QueryCacheCleaner = (mode?: QueryCacheCleanMode) => void;
 
 type AuthState = {
     token: string | null;
@@ -18,16 +24,15 @@ type AuthState = {
     setAuth: (token: string, refreshToken: string) => void;
     setUser: (user: User) => void;
     setPatientContext: (patientId: string | null) => void;
+    switchPatientContext: (patientId: string | null) => void;
+    setQueryCacheCleaner: (fn: QueryCacheCleaner) => void;
     logout: () => void;
     setHydrated: () => void;
 };
 
-const memoryStorage = new Map<string, string>();
-let _customStorage: any = null;
-
-export const setStoreStorage = (storage: any) => {
-    _customStorage = storage;
-};
+// Injected cache cleaner — set at bootstrap; lives outside the Zustand state
+// to avoid serialization and circular dep (api → stores → api).
+let _queryCacheCleaner: QueryCacheCleaner | null = null;
 
 export const useAuthStore = create<AuthState>()(
     persist(
@@ -39,47 +44,54 @@ export const useAuthStore = create<AuthState>()(
             activePatientId: null,
             isManaging: false,
 
-            setAuth: (token, refreshToken) => set({ token, refreshToken }),
+            setAuth: (token, refreshToken) => {
+                _queryCacheCleaner?.("full");
+                set({
+                    token,
+                    refreshToken,
+                    user: null,
+                    activePatientId: null,
+                    isManaging: false,
+                });
+            },
             setUser: (user) => set({ user }),
             setPatientContext: (patientId) =>
                 set({ activePatientId: patientId, isManaging: !!patientId }),
-            logout: () =>
+            switchPatientContext: (patientId) => {
+                set({ activePatientId: patientId, isManaging: !!patientId });
+                _queryCacheCleaner?.("patient-context");
+            },
+            setQueryCacheCleaner: (fn) => {
+                _queryCacheCleaner = fn;
+            },
+            logout: () => {
+                _queryCacheCleaner?.("full");
                 set({
                     token: null,
                     refreshToken: null,
                     user: null,
                     activePatientId: null,
                     isManaging: false,
-                }),
+                });
+            },
             setHydrated: () => set({ isHydrated: true }),
         }),
         {
             name: "auth-store",
-            storage: createJSONStorage(() => {
-                if (_customStorage) return _customStorage;
-                
-                // Fallback para entornos sin window o sin localStorage (React Native)
-                const isBrowser = typeof window !== "undefined" && typeof window.localStorage !== "undefined";
-                
-                if (!isBrowser) {
-                    console.log("[AuthStore] Storage: Using memory fallback");
-                    return {
-                        getItem: (key) => memoryStorage.get(key) || null,
-                        setItem: (key, value) => { memoryStorage.set(key, value); },
-                        removeItem: (key) => { memoryStorage.delete(key); },
-                    };
-                }
-
-                console.log("[AuthStore] Storage: Using window.localStorage");
-                return window.localStorage;
-            }),
+            storage: createJSONStorage(() => resolvePersistStorage("AuthStore")),
             partialize: (s) => ({
                 token: s.token,
                 refreshToken: s.refreshToken,
                 user: s.user,
-                activePatientId: s.activePatientId,
+                // R7 Option B: do NOT persist activePatientId — reset to null on cold start
             }),
-            onRehydrateStorage: () => (state) => state?.setHydrated(),
+            onRehydrateStorage: () => (state) => {
+                if (state) {
+                    state.activePatientId = null;
+                    state.isManaging = false;
+                }
+                state?.setHydrated();
+            },
         }
     )
 );

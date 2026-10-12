@@ -5,6 +5,12 @@
     "dependencies": {
         "lucide-react": "^0.475.0"
     },
+    "peerDependencies": {
+        "@helu/api": "workspace:*",
+        "@tanstack/react-query": ">=5.0.0",
+        "react": "*",
+        "react-native": "*"
+    },
     "main": "./src/index.ts",
     "types": "./src/index.ts",
     "exports": {

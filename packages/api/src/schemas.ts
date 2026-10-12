@@ -99,15 +99,21 @@ export const TagCategoryOutSchema = z.object({
     values: z.array(TagValueOutSchema),
 });
 
+export const DocumentKindSchema = z.enum(["FILE", "LINK"]);
+
 export const DocumentSchema = z.object({
     id: z.string().uuid(),
     userId: z.string().uuid(),
     uploaderId: z.string().uuid().nullable().optional(),
     title: z.string(),
     description: z.string().nullable().optional(),
-    fileUrl: z.string(),
-    format: z.string(),
+    kind: DocumentKindSchema.default("FILE"),
+    fileUrl: z.string().nullable().optional(),
+    format: z.string().nullable().optional(),
     fileSizeBytes: z.number().nullable().optional(),
+    portalUrl: z.string().url("URL inválida").nullable().optional(),
+    portalUsername: z.string().nullable().optional(),
+    portalPassword: z.string().nullable().optional(),
     uploadedAt: z.string(),
     documentDate: z.string().nullable().optional(),
     treatmentId: z.string().uuid().nullable().optional(),
@@ -132,23 +138,168 @@ export const DocumentActiveShareSchema = z.object({
 
 export type DocumentActiveShare = z.infer<typeof DocumentActiveShareSchema>;
 
-export const DocumentCreateSchema = z.object({
-    title: z.string().min(1, "El título es obligatorio"),
-    description: z.string().optional(),
-    fileUrl: z.string(),
-    format: z.string(),
-    file_size_bytes: z.number().optional(),
-    documentDate: z.string().optional(),
-    treatmentId: z.string().uuid().optional(),
-    typeId: z.string().uuid().optional(),
-    subtypeIds: z.array(z.string().uuid()).optional(),
-    specialtyIds: z.array(z.string().uuid()).optional(),
-    tagValueIds: z.array(z.string().uuid()).optional(),
-});
+export const DocumentCreateSchema = z
+    .object({
+        title: z.string().min(1, "El título es obligatorio"),
+        description: z.string().optional(),
+        kind: DocumentKindSchema.default("FILE"),
+        fileUrl: z.string().nullable().optional(),
+        format: z.string().nullable().optional(),
+        file_size_bytes: z.number().optional(),
+        portalUrl: z.string().url("URL inválida").nullable().optional(),
+        portalUsername: z.string().nullable().optional(),
+        portalPassword: z.string().nullable().optional(),
+        documentDate: z.string().optional(),
+        treatmentId: z.string().uuid().nullable().optional(),
+        typeId: z.string().uuid().optional(),
+        subtypeIds: z.array(z.string().uuid()).optional(),
+        specialtyIds: z.array(z.string().uuid()).optional(),
+        tagValueIds: z.array(z.string().uuid()).optional(),
+    })
+    .superRefine((data, ctx) => {
+        const kind = data.kind ?? "FILE";
+        if (kind === "LINK") {
+            if (!data.portalUrl) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "URL inválida",
+                    path: ["portalUrl"],
+                });
+            }
+        }
+        if (kind === "FILE") {
+            if (!data.fileUrl) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "fileUrl is required when kind is FILE",
+                    path: ["fileUrl"],
+                });
+            }
+            if (!data.format) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "format is required when kind is FILE",
+                    path: ["format"],
+                });
+            }
+        }
+    });
 
 export const CustomTagCreateSchema = z.object({
     categoryId: z.string().uuid(),
     value: z.string().min(1),
+});
+
+// --- Doctors ---
+export const DoctorSchema = z.object({
+    id: z.string().uuid(),
+    userId: z.string().uuid(),
+    name: z.string(),
+    specialty: z.string().nullable().optional(),
+    clinic: z.string().nullable().optional(),
+    phone: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    createdAt: z.string().nullable().optional(),
+});
+
+export const DoctorPageSchema = createPageSchema(DoctorSchema);
+
+export const DoctorCreateSchema = z.object({
+    name: z.string().min(1, "El nombre es obligatorio"),
+    specialty: z.string().optional(),
+    clinic: z.string().optional(),
+    phone: z.string().optional(),
+    notes: z.string().optional(),
+});
+
+// --- Treatments ---
+export const TreatmentSchema = z.object({
+    id: z.string().uuid(),
+    userId: z.string().uuid(),
+    createdBy: z.string().uuid().nullable().optional(),
+    name: z.string(),
+    description: z.string().nullable().optional(),
+    status: z.enum(["ACTIVE", "COMPLETED", "INACTIVE"]).default("ACTIVE"),
+    startDate: z.string().nullable().optional(),
+    endDate: z.string().nullable().optional(),
+    createdAt: z.string().nullable().optional(),
+});
+export const TreatmentPageSchema = createPageSchema(TreatmentSchema);
+
+export const TreatmentCreateSchema = z.object({
+    name: z.string().min(1, "El nombre es obligatorio"),
+    description: z.string().nullable().optional(),
+    status: z.enum(["ACTIVE", "COMPLETED", "INACTIVE"]).default("ACTIVE"),
+    startDate: z.string().nullable().optional(),
+    endDate: z.string().nullable().optional(),
+});
+
+export const TreatmentUpdateSchema = TreatmentCreateSchema.partial();
+
+export const TreatmentMedicationCycleRefSchema = z.object({
+    id: z.string().uuid(),
+    medicationId: z.string().uuid(),
+    medicationName: z.string(),
+    dosage: z.string().nullable().optional(),
+    startDate: z.string().nullable().optional(),
+    endDate: z.string().nullable().optional(),
+});
+
+export const TreatmentAppointmentRefSchema = z.object({
+    id: z.string().uuid(),
+    name: z.string().nullable().optional(),
+    date: z.string().nullable().optional(),
+    status: z.string().nullable().optional(),
+    type: z.string().nullable().optional(),
+});
+
+export const TreatmentDocumentRefSchema = z.object({
+    id: z.string().uuid(),
+    title: z.string(),
+    documentDate: z.string().nullable().optional(),
+    uploadedAt: z.string().nullable().optional(),
+    format: z.string().nullable().optional(),
+});
+
+export const TreatmentDailyCheckInRefSchema = z.object({
+    id: z.string().uuid(),
+    mood: z.enum(["excellent", "good", "okay", "bad", "awful"]),
+    recordedAt: z.string(),
+    notes: z.string().nullable().optional(),
+});
+
+export const TreatmentSymptomRefSchema = z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    recordedAt: z.string().nullable().optional(),
+    severity: z.number().nullable().optional(),
+});
+
+export const TreatmentDetailSchema = TreatmentSchema.extend({
+    medicationCycles: z.array(TreatmentMedicationCycleRefSchema).default([]),
+    appointments: z.array(TreatmentAppointmentRefSchema).default([]),
+    documents: z.array(TreatmentDocumentRefSchema).default([]),
+    dailyCheckins: z.array(TreatmentDailyCheckInRefSchema).default([]),
+    symptoms: z.array(TreatmentSymptomRefSchema).default([]),
+});
+
+// --- Reminder config ---
+export const ReminderConfigSchema = z.object({
+    enabled: z.boolean().default(false),
+    frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).default("DAILY"),
+    interval: z.number().min(1).default(1),
+    byDay: z.preprocess(
+        (v) => {
+            if (v === null || v === undefined) return undefined;
+            if (typeof v === "string") return [v];
+            return v;
+        },
+        z.array(z.enum(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"])).optional(),
+    ),
+    endType: z.enum(["NEVER", "ON_DATE", "AFTER_N"]).default("NEVER"),
+    endDate: z.string().optional(),
+    endCount: z.number().min(1).optional(),
+    time: z.string().default("09:00"),
 });
 
 // --- Appointments ---
@@ -156,65 +307,238 @@ export const AppointmentSchema = z.object({
     id: z.string().uuid(),
     userId: z.string().uuid(),
     createdBy: z.string().uuid().nullable().optional(),
-    date: z.string(),
-    time: z.string(),
-    specialty: z.string(),
-    doctor: z.string(),
-    location: z.string(),
-    type: z.enum(["APPOINTMENT", "EXAM"]),
-    status: z.enum(["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"]),
+    name: z.string().nullable().optional(),
+    date: z.string().nullable().optional(),
+    time: z.string().nullable().optional(),
+    modality: z.enum(["PRESENCIAL", "VIRTUAL", "DOMICILIARIA"]).default("PRESENCIAL"),
+    location: z.string().nullable().optional(),
+    videoCallLink: z.string().nullable().optional(),
+    specialty: z.string().nullable().optional(),
+    service: z.string().nullable().optional(),
+    consultationType: z.string().nullable().optional(),
+    duration: z.number().nullable().optional(),
+    doctorId: z.string().uuid().nullable().optional(),
+    doctor: z.string().nullable().optional(),
+    clinic: z.string().nullable().optional(),
+    type: z.enum(["APPOINTMENT", "EXAM"]).default("APPOINTMENT"),
+    status: z.enum(["PROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI", "PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"]).default("PROGRAMADA"),
     examType: z.string().nullable().optional(),
-    tags: z.array(z.string()),
-    reminderOffsets: z.array(z.number()),
+    cost: z.number().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    customReminder: z.string().nullable().optional(),
+    reminderConfig: ReminderConfigSchema.nullable().optional(),
+    tags: z.array(z.string()).default([]),
+    treatmentTags: z.array(z.string()).default([]),
+    reminderOffsets: z.array(z.number()).default([]),
     treatmentId: z.string().uuid().nullable().optional(),
+    treatmentIds: z.array(z.string().uuid()).default([]),
+    preDocumentIds: z.array(z.string().uuid()).default([]),
+    postDocumentIds: z.array(z.string().uuid()).default([]),
+    preBackpackIds: z.array(z.string().uuid()).default([]),
+    postBackpackIds: z.array(z.string().uuid()).default([]),
     createdAt: z.string().nullable().optional(),
 });
 
 export const AppointmentPageSchema = createPageSchema(AppointmentSchema);
 
 export const AppointmentCreateSchema = z.object({
-    date: z.string(),
-    time: z.string(),
-    specialty: z.string().min(1),
-    doctor: z.string().min(1),
-    location: z.string().min(1),
-    type: z.enum(["APPOINTMENT", "EXAM"]),
-    status: z.enum(["PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"]).default("PENDING"),
+    name: z.string().optional(),
+    date: z.string().optional(),
+    time: z.string().optional(),
+    modality: z.enum(["PRESENCIAL", "VIRTUAL", "DOMICILIARIA"]).default("PRESENCIAL"),
+    location: z.string().optional(),
+    videoCallLink: z.string().optional(),
+    specialty: z.string().optional(),
+    service: z.string().optional(),
+    consultationType: z.string().optional(),
+    duration: z.number().optional(),
+    doctorId: z.string().uuid().optional(),
+    doctor: z.string().optional(),
+    clinic: z.string().optional(),
+    type: z.enum(["APPOINTMENT", "EXAM"]).default("APPOINTMENT"),
+    status: z.enum(["PROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI", "PENDING", "COMPLETED", "CANCELLED", "RESCHEDULED"]).default("PROGRAMADA"),
     examType: z.string().optional(),
+    cost: z.number().optional(),
+    notes: z.string().optional(),
+    customReminder: z.string().optional(),
+    reminderConfig: ReminderConfigSchema.optional(),
     tags: z.array(z.string()).default([]),
+    treatmentTags: z.array(z.string()).default([]),
     reminderOffsets: z.array(z.number()).default([]),
     treatmentId: z.string().uuid().optional(),
+    treatmentIds: z.array(z.string().uuid()).default([]),
+    preDocumentIds: z.array(z.string().uuid()).default([]),
+    postDocumentIds: z.array(z.string().uuid()).default([]),
+    preBackpackIds: z.array(z.string().uuid()).default([]),
+    postBackpackIds: z.array(z.string().uuid()).default([]),
 });
 
+
 // --- Medications ---
-export const MedicationSchema = z.object({
+export const INTAKE_STATUSES = ["TAKEN", "NOT_TAKEN"] as const;
+export type IntakeStatus = typeof INTAKE_STATUSES[number];
+
+export const NOT_TAKEN_REASONS = ["FORGOT", "NOT_PURCHASED", "OTHER"] as const;
+export type NotTakenReason = typeof NOT_TAKEN_REASONS[number];
+
+export const MedicationIntakeSchema = z.object({
     id: z.string().uuid(),
-    name: z.string(),
+    cycleId: z.string().uuid(),
+    status: z.enum(INTAKE_STATUSES).default("TAKEN"),
+    scheduledTime: z.string(),
+    takenAt: z.string().nullable().optional(),
+    notTakenReason: z.enum(NOT_TAKEN_REASONS).nullable().optional(),
+    notes: z.string().nullable().optional(),
+});
+
+export const MedicationIntakeCreateSchema = z.object({
+    status: z.enum(INTAKE_STATUSES).default("TAKEN"),
+    scheduledTime: z.string().optional(),
+    takenAt: z.string().optional(),
+    notTakenReason: z.enum(NOT_TAKEN_REASONS).optional(),
+    notes: z.string().optional(),
+});
+
+export type MedicationIntakeCreate = z.infer<typeof MedicationIntakeCreateSchema>;
+
+export const MedicationDeliverySchema = z.object({
+    id: z.string().uuid(),
+    cycleId: z.string().uuid(),
+    date: z.string(),
+    quantity: z.number(),
+    cost: z.number().nullable().optional(),
+    source: z.string().nullable().optional(),
+});
+
+export const PHARMACEUTICAL_FORMS = ["TABLET", "CAPSULE", "CREAM", "PASTE", "SYRUP", "DROPS", "INJECTION", "POWDER", "SPRAY"] as const;
+export type PharmaceuticalForm = typeof PHARMACEUTICAL_FORMS[number];
+
+export const DOSE_UNITS = ["TABLET", "ML", "DROPS", "GRAMS", "MG", "UNITS"] as const;
+export type DoseUnit = typeof DOSE_UNITS[number];
+
+export const FREQUENCY_UNITS = ["HOUR", "DAY", "WEEK", "MONTH", "YEAR"] as const;
+export type FrequencyUnit = typeof FREQUENCY_UNITS[number];
+
+// --- Medications (identity + cycles; flat fields derived from active cycle for UI) ---
+
+// Coerces Decimal strings from Pydantic v2 serialization to number
+const coerceDecimal = z.preprocess(
+    (v: unknown) => (v == null ? v : Number(v)),
+    z.number().nullable().optional(),
+);
+
+export const MedicationCycleSchema = z.object({
+    id: z.string().uuid(),
+    medicationId: z.string().uuid(),
+    treatmentIds: z.array(z.string().uuid()).default([]),
+    replacesCycleId: z.string().uuid().nullable().optional(),
     dosage: z.string(),
     frequency: z.number(),
+    // Use z.string() for new enum fields so unexpected values don't crash parsing
+    frequencyUnit: z.string().default("HOUR"),
+    pharmaceuticalForm: z.string().nullable().optional(),
+    concentration: z.string().nullable().optional(),
+    doseAmount: coerceDecimal,
+    doseUnit: z.string().nullable().optional(),
+    price: coerceDecimal,
+    reason: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
     startDate: z.string(),
-    firstIntakeTime: z.string(),
     endDate: z.string().nullable().optional(),
-    indications: z.string().nullable().optional(),
-    reminderOffsets: z.array(z.number()),
-    treatmentId: z.string().uuid().nullable().optional(),
-    createdBy: z.string().uuid().nullable().optional(),
+    firstIntakeTime: z.string(),
     nextIntakeTime: z.string().nullable().optional(),
+
+    reminderOffsets: z.array(z.number()),
+    intakes: z.array(MedicationIntakeSchema).default([]),
+    deliveries: z.array(MedicationDeliverySchema).default([]),
 });
+
+
+export type MedicationCycle = z.infer<typeof MedicationCycleSchema>;
+
+function pickActiveMedicationCycle(cycles: MedicationCycle[]): MedicationCycle | undefined {
+    if (cycles.length === 0) return undefined;
+    const now = Date.now();
+    const active = cycles.find((cycle) => {
+        const start = new Date(cycle.startDate).getTime();
+        const end = cycle.endDate ? new Date(cycle.endDate).getTime() : Number.POSITIVE_INFINITY;
+        return start <= now && now <= end;
+    });
+    return active ?? cycles[cycles.length - 1];
+}
+
+export const MedicationSchema = z
+    .object({
+        id: z.string().uuid(),
+        userId: z.string().uuid().optional(),
+        name: z.string(),
+        createdBy: z.string().uuid().nullable().optional(),
+        cycles: z.array(MedicationCycleSchema).default([]),
+    })
+    .transform((med) => {
+        const cycle = pickActiveMedicationCycle(med.cycles);
+        return {
+            ...med,
+            dosage: cycle?.dosage ?? "",
+            doseAmount: cycle?.doseAmount ?? null,
+            doseUnit: cycle?.doseUnit ?? null,
+            frequency: cycle?.frequency ?? 0,
+            frequencyUnit: cycle?.frequencyUnit ?? "HOUR",
+            startDate: cycle?.startDate ?? "",
+            firstIntakeTime: cycle?.firstIntakeTime ?? "",
+            endDate: cycle?.endDate ?? null,
+            indications: cycle?.notes ?? null,
+            reminderOffsets: cycle?.reminderOffsets ?? [],
+            treatmentIds: cycle?.treatmentIds ?? [],
+            nextIntakeTime: cycle?.nextIntakeTime ?? null,
+        };
+    });
 
 export const MedicationPageSchema = createPageSchema(MedicationSchema);
 
 export const MedicationCreateSchema = z.object({
-    name: z.string().min(1),
-    dosage: z.string().min(1),
+    name: z.string().min(1, "El nombre es obligatorio"),
+});
+
+export const MedicationUpdateSchema = z.object({
+    name: z.string().min(1).optional(),
+});
+
+export const MedicationCycleCreateSchema = z.object({
+    dosage: z.string().min(1, "La dosis es obligatoria"),
     frequency: z.number().min(1),
+    frequencyUnit: z.enum(FREQUENCY_UNITS).default("HOUR"),
+    pharmaceuticalForm: z.enum(PHARMACEUTICAL_FORMS).optional(),
+    concentration: z.string().optional(),
+    doseAmount: z.number().optional(),
+    doseUnit: z.enum(DOSE_UNITS).optional(),
+    price: z.number().optional(),
+    reason: z.string().optional(),
+    notes: z.string().optional(),
     startDate: z.string(),
-    firstIntakeTime: z.string(),
     endDate: z.string().optional(),
-    indications: z.string().optional(),
-    reminderOffsets: z.array(z.number()).default([]),
-    treatmentId: z.string().uuid().optional(),
+    firstIntakeTime: z.string(),
     nextIntakeTime: z.string().optional(),
+    reminderOffsets: z.array(z.number()).default([]),
+    treatmentIds: z.array(z.string().uuid()).default([]),
+    replacesCycleId: z.string().uuid().optional(),
+});
+
+export const MedicationCycleUpdateSchema = z.object({
+    dosage: z.string().min(1).optional(),
+    frequency: z.number().min(1).optional(),
+    frequencyUnit: z.enum(FREQUENCY_UNITS).optional(),
+    pharmaceuticalForm: z.enum(PHARMACEUTICAL_FORMS).nullable().optional(),
+    concentration: z.string().nullable().optional(),
+    doseAmount: z.number().nullable().optional(),
+    doseUnit: z.enum(DOSE_UNITS).nullable().optional(),
+    price: z.number().nullable().optional(),
+    reason: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    endDate: z.string().nullable().optional(),
+    nextIntakeTime: z.string().nullable().optional(),
+    reminderOffsets: z.array(z.number()).optional(),
+    treatmentIds: z.array(z.string().uuid()).optional(),
 });
 
 // --- Notifications ---
@@ -223,8 +547,22 @@ export const NotificationSchema = z.object({
     userId: z.string().uuid(),
     title: z.string(),
     body: z.string(),
-    type: z.enum(["APPOINTMENT", "MEDICATION", "CHECKIN", "SYSTEM", "INFO"]),
+    type: z.enum([
+        "APPOINTMENT",
+        "APPOINTMENT_FOLLOWUP",
+        "MEDICATION",
+        "MEDICATION_FOLLOWUP",
+        "CHECKIN",
+        "SYSTEM",
+        "INFO",
+        "DELEGATION_INVITE",
+    ]),
     entityId: z.string().uuid().nullable(),
+    /** Deep-link extras from push (camelized by the API client). Old rows may be null. */
+    data: z
+        .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+        .nullable()
+        .optional(),
     isRead: z.boolean(),
     createdAt: z.string(),
 });
@@ -280,23 +618,134 @@ export const BackpackCreateSchema = z.object({
     type: z.enum(["CUSTOM", "TEMPORARY_SHARE"]).default("CUSTOM"),
 });
 
+// --- Daily Check-Ins ---
+
+export const MOOD_ENUM_VALUES = ["excellent", "good", "okay", "bad", "awful"] as const;
+export type MoodEnum = typeof MOOD_ENUM_VALUES[number];
+
+export const DailyCheckInSchema = z.object({
+    id:         z.string().uuid(),
+    userId:     z.string().uuid(),
+    createdBy:  z.string().uuid().nullable().optional(),
+    mood:       z.enum(["excellent", "good", "okay", "bad", "awful"]),
+    recordedAt: z.string(),
+    notes:      z.string().nullable().optional(),
+    treatmentId: z.string().uuid().nullable().optional(),
+});
+
+export const DailyCheckInCreateSchema = z.object({
+    mood:       z.enum(["excellent", "good", "okay", "bad", "awful"]),
+    recordedAt: z.string(),
+    notes:      z.string().optional(),
+    treatmentId: z.string().uuid().nullable().optional(),
+});
+
+export const DailyCheckInUpdateSchema = DailyCheckInCreateSchema.partial();
+
+export const DailyCheckInPageSchema = createPageSchema(DailyCheckInSchema);
+
+const CalendarDayPayloadSchema = z.object({
+    appointments: z.array(AppointmentSchema).default([]),
+    medications:  z.array(MedicationSchema).default([]),
+    symptoms:     z.array(z.unknown()).default([]),
+    checkIns:     z.array(DailyCheckInSchema).default([]),
+});
+
+export const CalendarDaySchema = CalendarDayPayloadSchema.extend({
+    date: z.string(),
+});
+
+export type CalendarDay = z.infer<typeof CalendarDaySchema>;
+
+export function parseCalendarEventsResponse(data: unknown): CalendarDay[] {
+    const record = z.record(z.string(), CalendarDayPayloadSchema).parse(data);
+    return Object.entries(record)
+        .map(([date, day]) => CalendarDaySchema.parse({ date, ...day }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// --- Delegation ---
+
+export const DelegationStatusSchema = z.enum(["PENDING", "ACTIVE", "REJECTED", "REVOKED"]);
+export const DelegationRelationshipSchema = z.enum(["I_WANT_TO_MANAGE_THEM", "THEY_WILL_MANAGE_ME"]);
+
+export const DelegationRequestSchema = z.object({
+    email: z.string().email("Email inválido"),
+    relationship: DelegationRelationshipSchema,
+    permissions: z.literal("FULL_ACCESS"),
+});
+
+const NestedDelegationProfileSchema = z.object({
+    id: z.string(),
+    name: z.string().nullable(),
+    email: z.string().email(),
+}).nullable().optional();
+
+const DelegationBaseSchema = z.object({
+    id: z.string(),
+    managerUserId: z.string(),
+    dependentUserId: z.string().nullable(),
+    status: DelegationStatusSchema,
+    permissions: z.string(),
+    linkedUserEmail: z.string().nullable().optional(),
+    createdAt: z.string(),
+    revokedAt: z.string().nullable().optional(),
+});
+
+export const DependentDelegationSchema = DelegationBaseSchema.extend({
+    dependent: NestedDelegationProfileSchema,
+}).transform((d) => {
+    const inviteeEmail = (d.linkedUserEmail ?? "").toLowerCase();
+    return {
+        ...d,
+        inviteeEmail,
+        linkedUserEmail: d.dependent?.email ?? d.linkedUserEmail ?? "",
+        linkedUserName: d.dependent?.name ?? null,
+    };
+});
+
+export const ManagerDelegationSchema = DelegationBaseSchema.extend({
+    manager: NestedDelegationProfileSchema,
+}).transform((d) => {
+    const inviteeEmail = (d.linkedUserEmail ?? "").toLowerCase();
+    return {
+        ...d,
+        inviteeEmail,
+        linkedUserEmail: d.manager?.email ?? d.linkedUserEmail ?? "",
+        linkedUserName: d.manager?.name ?? null,
+    };
+});
+
+export type DelegationContextColors = Record<string, string>;
+
+export const DelegationContextColorsSchema = z.record(z.string(), z.string());
+
 // --- Inferred types ---
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 export type SignupRequest = z.infer<typeof SignupRequestSchema>;
 export type TokenResponse = z.infer<typeof TokenResponseSchema>;
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 export type UserUpdate = z.infer<typeof UserUpdateSchema>;
+export type DocumentKind = z.infer<typeof DocumentKindSchema>;
 export type Document = z.infer<typeof DocumentSchema>;
 export type DocumentPage = z.infer<typeof DocumentPageSchema>;
 export type DocumentCreate = z.infer<typeof DocumentCreateSchema>;
 export type DocumentTypeOut = z.infer<typeof DocumentTypeOutSchema>;
 export type TagCategoryOut = z.infer<typeof TagCategoryOutSchema>;
+export type Doctor = z.infer<typeof DoctorSchema>;
+export type DoctorPage = z.infer<typeof DoctorPageSchema>;
+export type DoctorCreate = z.infer<typeof DoctorCreateSchema>;
 export type Appointment = z.infer<typeof AppointmentSchema>;
 export type AppointmentPage = z.infer<typeof AppointmentPageSchema>;
 export type AppointmentCreate = z.infer<typeof AppointmentCreateSchema>;
+export type MedicationIntake = z.infer<typeof MedicationIntakeSchema>;
+export type MedicationDelivery = z.infer<typeof MedicationDeliverySchema>;
 export type Medication = z.infer<typeof MedicationSchema>;
 export type MedicationPage = z.infer<typeof MedicationPageSchema>;
 export type MedicationCreate = z.infer<typeof MedicationCreateSchema>;
+export type MedicationUpdate = z.infer<typeof MedicationUpdateSchema>;
+export type MedicationCycleCreate = z.infer<typeof MedicationCycleCreateSchema>;
+export type MedicationCycleUpdate = z.infer<typeof MedicationCycleUpdateSchema>;
 export type Notification = z.infer<typeof NotificationSchema>;
 export type NotificationPage = z.infer<typeof NotificationPageSchema>;
 export type ClassificationSuggestion = z.infer<typeof ClassificationSuggestionSchema>;
@@ -305,4 +754,24 @@ export type BackpackWithDocs = z.infer<typeof BackpackWithDocsSchema>;
 export type BackpackPage = z.infer<typeof BackpackPageSchema>;
 export type BackpackCreate = z.infer<typeof BackpackCreateSchema>;
 export type CustomTagCreate = z.infer<typeof CustomTagCreateSchema>;
+export type Treatment = z.infer<typeof TreatmentSchema>;
+export type TreatmentPage = z.infer<typeof TreatmentPageSchema>;
+export type TreatmentCreate = z.infer<typeof TreatmentCreateSchema>;
+export type TreatmentUpdate = z.infer<typeof TreatmentUpdateSchema>;
+export type TreatmentDetail = z.infer<typeof TreatmentDetailSchema>;
+export type TreatmentMedicationCycleRef = z.infer<typeof TreatmentMedicationCycleRefSchema>;
+export type TreatmentAppointmentRef = z.infer<typeof TreatmentAppointmentRefSchema>;
+export type TreatmentDocumentRef = z.infer<typeof TreatmentDocumentRefSchema>;
+export type TreatmentDailyCheckInRef = z.infer<typeof TreatmentDailyCheckInRefSchema>;
+export type TreatmentSymptomRef = z.infer<typeof TreatmentSymptomRefSchema>;
+export type ReminderConfig = z.infer<typeof ReminderConfigSchema>;
+export type DailyCheckIn = z.infer<typeof DailyCheckInSchema>;
+export type DailyCheckInCreate = z.infer<typeof DailyCheckInCreateSchema>;
+export type DailyCheckInUpdate = z.infer<typeof DailyCheckInUpdateSchema>;
+export type DailyCheckInPage = z.infer<typeof DailyCheckInPageSchema>;
+export type DelegationStatus = z.infer<typeof DelegationStatusSchema>;
+export type DelegationRelationship = z.infer<typeof DelegationRelationshipSchema>;
+export type DelegationRequest = z.infer<typeof DelegationRequestSchema>;
+export type DependentDelegation = z.infer<typeof DependentDelegationSchema>;
+export type ManagerDelegation = z.infer<typeof ManagerDelegationSchema>;
 

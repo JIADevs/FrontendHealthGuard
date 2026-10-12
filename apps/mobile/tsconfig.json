@@ -2,7 +2,13 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "jsx": "react-native"
+    "jsx": "react-native",
+    "paths": {
+      "@helu/api": ["../../packages/api/src/index.ts"],
+      "@helu/api/hooks": ["../../packages/api/src/hooks.ts"],
+      "@helu/api/reactQueryHooks": ["../../packages/api/src/reactQueryHooks.ts"],
+      "@helu/ui": ["../../packages/ui/src/index.ts"]
+    }
   },
   "include": [
     "."

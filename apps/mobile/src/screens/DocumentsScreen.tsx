@@ -9,7 +9,7 @@ import { Spinner, EmptyState, ConfirmModal, palette, spacing, useAppTheme } from
 import type { ThemeContextValue } from "@helu/ui";
 import { useDocumentsList } from "../hooks/useDocumentsList";
 import { useDocumentListActions } from "../hooks/useDocumentListActions";
-import { useDocumentShareModal } from "../hooks/useDocumentShareModal";
+import { useShareFlow } from "../components/share";
 import {
   DocumentsListHeader,
   DocumentsSearchToolbar,
@@ -19,7 +19,6 @@ import {
   DocumentListItem,
   DocumentsFAB,
   DocumentsAddSheet,
-  ShareDocumentModal,
 } from "../components/documents";
 
 export function DocumentsScreen() {
@@ -60,14 +59,18 @@ export function DocumentsScreen() {
     deletePending,
   } = useDocumentListActions();
 
-  const share = useDocumentShareModal();
+  const shareFlow = useShareFlow(navigation);
   const [addSheetVisible, setAddSheetVisible] = useState(false);
 
   const openAddSheet = useCallback(() => setAddSheetVisible(true), []);
   const closeAddSheet = useCallback(() => setAddSheetVisible(false), []);
 
   const handleUpload = useCallback(() => {
-    navigation.navigate("DocumentUpload");
+    navigation.navigate("DocumentUpload", { initialKind: "FILE" });
+  }, [navigation]);
+
+  const handlePortalLink = useCallback(() => {
+    navigation.navigate("DocumentUpload", { initialKind: "LINK" });
   }, [navigation]);
 
   const handleScan = useCallback(() => {
@@ -122,9 +125,8 @@ export function DocumentsScreen() {
               actions={{
                 onView: () => handleView(item),
                 onEdit: () => handleEdit(item),
-                onShare: () => share.openShare(item),
+                onShare: () => shareFlow.openConfigureDocument(item, "Documentos"),
                 onDelete: () => requestDelete(item),
-                shareLoading: share.isSharePendingFor(item.id),
               }}
             />
           )}
@@ -146,6 +148,7 @@ export function DocumentsScreen() {
         visible={addSheetVisible}
         onClose={closeAddSheet}
         onUpload={handleUpload}
+        onPortalLink={handlePortalLink}
         onScan={handleScan}
       />
 
@@ -158,20 +161,6 @@ export function DocumentsScreen() {
         tagCategories={tagCategories}
         tagsLoading={tagsLoading}
       />
-
-      {share.shareTarget && (
-        <ShareDocumentModal
-          shareUrl={share.shareUrl}
-          isPreparing={share.isPreparing}
-          isCopying={share.isCopying}
-          onClose={share.closeShare}
-          onCopyLink={() => void share.copyLink()}
-          onWhatsApp={() => void share.shareWhatsApp()}
-          onEmail={() => void share.shareEmail()}
-          onLink={() => void share.shareLink()}
-          onMore={() => void share.shareMore()}
-        />
-      )}
 
       {deleteTarget && (
         <ConfirmModal

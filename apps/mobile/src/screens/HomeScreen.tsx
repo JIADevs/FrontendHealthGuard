@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,10 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDashboardCore, useConfirmIntakeMutation } from "@helu/api/hooks";
-import type { Appointment, Medication } from "@helu/api";
-import Toast from "react-native-toast-message";
+import { useDashboardCore, useCalendarEventsQuery } from "@helu/api/hooks";
 import { useAuthStore } from "@helu/stores";
 import {
   colors,
@@ -23,8 +22,11 @@ import {
   overlay,
   useAppTheme,
   Typography,
+  mapCalendarApiToEvents,
+  filterEventsForDates,
+  todayLocalDateKey,
 } from "@helu/ui";
-import type { ThemeContextValue } from "@helu/ui";
+import type { ThemeContextValue, AgendaEvent } from "@helu/ui";
 import {
   Calendar,
   Pill,
@@ -37,16 +39,17 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { AppointmentListItem, MedicationListItem, DocumentListItem } from "../components/home";
-import { AppointmentFormModal } from "../components/AppointmentFormModal";
-import { MedicationFormModal } from "../components/MedicationFormModal";
+import { AppointmentListItem, MedicationDoseListItem, DocumentListItem } from "../components/home";
+import { MedicationIntakeModal } from "../components/agenda";
+
+type MedicationEvent = Extract<AgendaEvent, { type: "medication" }>;
 
 // ─── Quick action data ───────────────────────────────────────────────────────
 
 const QUICK_ACTIONS = [
   { key: "upload", label: "Subir Documento", icon: Upload, route: "DocumentUpload" as const },
   { key: "scan", label: "Escanear", icon: Camera, route: "Scanner" as const },
-  { key: "share", label: "Compartir", icon: Share2, route: "ShareDocuments" as const },
+  { key: "share", label: "Compartir", icon: Share2, route: "SharedHistory" as const },
 ] as const;
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -57,22 +60,20 @@ export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const logout = useAuthStore((s) => s.logout);
   const dash = useDashboardCore();
-  const confirmIntake = useConfirmIntakeMutation();
   const insets = useSafeAreaInsets();
 
-  // Modal state
-  const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
-  const [selectedMed, setSelectedMed] = useState<Medication | null>(null);
+  const todayKey = todayLocalDateKey();
+  const calendarQuery = useCalendarEventsQuery(todayKey, todayKey);
+  const todayMedicationEvents = useMemo<MedicationEvent[]>(() => {
+    if (!calendarQuery.data) return [];
+    const events = mapCalendarApiToEvents(calendarQuery.data);
+    return filterEventsForDates(events, [todayKey]).filter(
+      (e): e is MedicationEvent => e.type === "medication",
+    );
+  }, [calendarQuery.data, todayKey]);
 
-  const handleIntake = useCallback(
-    (id: string) => {
-      confirmIntake.mutate(id, {
-        onSuccess: () => Toast.show({ type: "success", text1: "Toma confirmada" }),
-        onError: () => Toast.show({ type: "error", text1: "Error al confirmar toma" }),
-      });
-    },
-    [confirmIntake],
-  );
+  // Modal state
+  const [selectedDoseEvent, setSelectedDoseEvent] = useState<MedicationEvent | null>(null);
 
   return (
     <View style={styles.container}>
@@ -83,6 +84,16 @@ export function HomeScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={dash.isRefetching || calendarQuery.isRefetching}
+            onRefresh={() => {
+              dash.refetch();
+              calendarQuery.refetch();
+            }}
+            tintColor={t.brand.fg}
+          />
+        }
       >
         {/* ── Branded Header ── */}
         <View style={styles.header}>
@@ -138,7 +149,7 @@ export function HomeScreen() {
           <View style={styles.dayCard}>
             <TouchableOpacity
               style={styles.dayItem}
-              onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "appointments" } } as any)}
+              onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "calendar" } } as any)}
               activeOpacity={0.7}
             >
               <View style={[styles.dayIconWrap, { backgroundColor: t.accent.calBg }]}>
@@ -208,7 +219,7 @@ export function HomeScreen() {
                   <AppointmentListItem
                     appointment={appt}
                     isLast
-                    onPress={() => setSelectedAppt(appt)}
+                    onPress={() => navigation.navigate("AppointmentDetail", { id: appt.id })}
                   />
                 </View>
               ))
@@ -225,27 +236,26 @@ export function HomeScreen() {
             </TouchableOpacity>
           </View>
           <View style={styles.sectionList}>
-            {dash.isMedsLoading ? (
+            {calendarQuery.isLoading ? (
               <View style={styles.itemCard}>
                 <ActivityIndicator color={t.accent.medFg} style={{ padding: spacing[6] }} />
               </View>
-            ) : dash.activeMeds.length === 0 ? (
+            ) : todayMedicationEvents.length === 0 ? (
               <View style={styles.itemCard}>
                 <View style={styles.emptyState}>
                   <Pill size={32} color={t.text.muted} />
                   <Typography variant="bodySm" color="secondary" align="center">
-                    Sin medicamentos activos.
+                    Sin medicamentos programados para hoy.
                   </Typography>
                 </View>
               </View>
             ) : (
-              dash.activeMeds.map((m) => (
-                <View key={m.id} style={styles.itemCard}>
-                  <MedicationListItem
-                    medication={m}
+              todayMedicationEvents.map((event) => (
+                <View key={`${event.data.id}-${event.intakeTime}`} style={styles.itemCard}>
+                  <MedicationDoseListItem
+                    event={event}
                     isLast
-                    onTake={handleIntake}
-                    onPress={() => setSelectedMed(m)}
+                    onPress={() => setSelectedDoseEvent(event)}
                   />
                 </View>
               ))
@@ -294,16 +304,10 @@ export function HomeScreen() {
       </ScrollView>
 
       {/* ── Modals ── */}
-      {selectedAppt && (
-        <AppointmentFormModal
-          initial={selectedAppt}
-          onClose={() => setSelectedAppt(null)}
-        />
-      )}
-      {selectedMed && (
-        <MedicationFormModal
-          initial={selectedMed}
-          onClose={() => setSelectedMed(null)}
+      {selectedDoseEvent && (
+        <MedicationIntakeModal
+          event={selectedDoseEvent}
+          onClose={() => setSelectedDoseEvent(null)}
         />
       )}
     </View>

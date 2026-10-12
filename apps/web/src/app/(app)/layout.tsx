@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore, useUnreadCount, useTheme } from "@helu/stores";
 import { useNotificationBell } from "@/hooks/useNotificationBell";
 import { timeAgo } from "@helu/ui";
@@ -12,6 +13,7 @@ import {
   FileText,
   CalendarDays,
   Backpack,
+  Activity,
   Share2,
   LogOut,
   Bell,
@@ -23,6 +25,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/documents", label: "Documentos", icon: FileText },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
+  { href: "/treatments", label: "Tratamientos", icon: Activity },
   { href: "/backpacks", label: "Mochilas", icon: Backpack },
   { href: "/share", label: "Compartir", icon: Share2 },
   { href: "/profile", label: "Mi Perfil", icon: UserCircle },
@@ -32,6 +35,7 @@ const NAV_ITEMS = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { token, isHydrated, user, logout } = useAuthStore();
 
   // Sync theme to <html data-theme="..."> for CSS variable resolution
@@ -65,6 +69,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pageTitle = NAV_ITEMS.find((n) => pathname.startsWith(n.href))?.label ?? "Helu";
 
   function handleLogout() {
+    queryClient.clear();
     logout();
     router.replace("/login");
   }

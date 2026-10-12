@@ -84,7 +84,7 @@ export default function BackpacksPage() {
       {deleteTarget && (
         <ConfirmModal
           title="Eliminar Mochila"
-          message={`¿Eliminar "${deleteTarget.name}"? Los documentos no se eliminarán.`}
+          message={`¿Estás seguro de eliminar "${deleteTarget.name}"? Esta acción no se puede deshacer.`}
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
           onConfirm={() => deleteMut.mutate(deleteTarget.id, {

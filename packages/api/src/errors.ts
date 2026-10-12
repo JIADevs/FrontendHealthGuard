@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { AxiosError } from "axios";
 
+declare const __DEV__: boolean;
+
 const SimpleErrorSchema = z.object({ detail: z.string() });
 
 const ValidationErrorSchema = z.object({
@@ -33,6 +35,9 @@ export class ApiError extends Error {
     get isForbidden() {
         return this.status === 403;
     }
+    get isConflict() {
+        return this.status === 409;
+    }
     get isValidation() {
         return this.status === 422;
     }
@@ -46,7 +51,13 @@ export class ApiError extends Error {
 
 export function parseApiError(error: AxiosError): ApiError {
     if (!error.response) {
-        return new ApiError(0, "NETWORK_ERROR", "Sin conexión a internet");
+        const code = error.code ?? "NETWORK_ERROR";
+        const base = "Sin conexión a internet";
+        const detail =
+            typeof __DEV__ !== "undefined" && __DEV__
+                ? ` (${code}: ${error.message})`
+                : "";
+        return new ApiError(0, code, `${base}${detail}`);
     }
 
     const { status, data } = error.response;

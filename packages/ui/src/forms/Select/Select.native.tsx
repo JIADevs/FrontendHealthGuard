@@ -45,7 +45,7 @@ export function Select({
         onPress={() => setOpen(true)}
         style={[
           styles.trigger,
-          { borderColor, backgroundColor: disabled ? t.border.light : t.surface.bg },
+          { borderColor, backgroundColor: disabled ? t.border.light : t.surface.bgCard },
           disabled && styles.disabled,
         ]}
         accessibilityRole="combobox"

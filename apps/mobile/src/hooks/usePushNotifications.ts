@@ -1,119 +1,172 @@
-import { useEffect, useRef, useCallback } from "react";
-import { Platform } from "react-native";
+import { useEffect, useRef } from "react";
+import { AppState, type AppStateStatus } from "react-native";
+import type * as ExpoNotifications from "expo-notifications";
+import type { QueryClient } from "@tanstack/react-query";
+import { getNotifications } from "@helu/api";
+import { delegationKeys } from "@helu/api/hooks";
+import { useNotifStore } from "@helu/stores";
+import {
+  buildRoutePayloadFromPushData,
+  navigateForNotification,
+} from "../navigation/notificationRouting";
+import { waitForNavigationReady } from "../navigation/navigationRef";
+import {
+  registerDevicePushToken,
+  resetDevicePushTokenRegistration,
+} from "../services/pushTokenRegistration";
 
-declare const __DEV__: boolean;
-import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
-import { registerDeviceToken } from "@helu/api";
-import { colors, palette } from "@helu/ui";
-import { navigateTo } from "../navigation/navigationRef";
+let notificationsModule: typeof ExpoNotifications | null = null;
+let handlerConfigured = false;
 
-export interface PushNotificationState {
-  notification?: Notifications.Notification;
+function getNotificationsModule(): typeof ExpoNotifications | null {
+  try {
+    const Constants = require("expo-constants").default;
+    const { ExecutionEnvironment } = require("expo-constants");
+    if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
+  if (!notificationsModule) {
+    notificationsModule = require("expo-notifications") as typeof ExpoNotifications;
+  }
+  if (!handlerConfigured) {
+    notificationsModule.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+    handlerConfigured = true;
+  }
+  return notificationsModule;
 }
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+export interface PushNotificationState {
+  notification?: ExpoNotifications.Notification;
+}
 
-export const usePushNotifications = (authToken?: string | null): PushNotificationState => {
-  const notificationRef = useRef<Notifications.Notification>(undefined);
-  const notificationListener = useRef<Notifications.Subscription>(undefined);
-  const responseListener = useRef<Notifications.Subscription>(undefined);
-  // Evita re-registrar en cada refresh de token — solo registra una vez por sesión
-  const hasRegistered = useRef(false);
+function handlePushPayload(
+  data: Record<string, string> | undefined,
+  queryClient?: QueryClient,
+) {
+  if (!data?.type) return;
 
-  const registerForPushNotificationsAsync = useCallback(async () => {
-    if (!Device.isDevice) {
-      if (__DEV__) console.warn("Se requiere un dispositivo físico para notificaciones push");
-      return;
-    }
+  if (data.type === "DELEGATION_INVITE" && queryClient) {
+    void queryClient.invalidateQueries({ queryKey: delegationKeys.all() });
+    void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    void getNotifications({ page: 1, limit: 50 })
+      .then((res) => {
+        const unread = res.items.filter((n) => !n.isRead).length;
+        useNotifStore.getState().setUnreadCount(unread);
+      })
+      .catch(() => {});
+  } else if (queryClient) {
+    void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+  }
+}
 
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+function routeFromPushData(data: Record<string, string> | undefined) {
+  navigateForNotification(buildRoutePayloadFromPushData(data));
+}
 
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
+export const usePushNotifications = (
+  authToken?: string | null,
+  queryClient?: QueryClient,
+  isHydrated = true,
+): PushNotificationState => {
+  const notificationRef = useRef<ExpoNotifications.Notification>(undefined);
+  const notificationListener = useRef<ExpoNotifications.Subscription>(undefined);
+  const responseListener = useRef<ExpoNotifications.Subscription>(undefined);
+  const handledResponseIds = useRef<Set<string>>(new Set());
+  const coldStartHandled = useRef(false);
 
-    if (finalStatus !== "granted") {
-      if (__DEV__) console.warn("Permiso denegado para recibir notificaciones push");
-      return;
-    }
-
-    if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", {
-        name: "Helu",
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: palette.brand[500],
-        sound: "default",
-      });
-    }
-
-    try {
-      const tokenData = await Notifications.getDevicePushTokenAsync();
-      const deviceType = Platform.OS === "ios" ? "ios" : "android";
-      await registerDeviceToken(tokenData.data, deviceType);
-      hasRegistered.current = true;
-    } catch (err) {
-      if (__DEV__) console.warn("Error obteniendo o registrando el token FCM", err);
-    }
-  }, []);
-
-  // Se registra solo una vez por sesión: cuando el usuario se autentica por primera vez
   useEffect(() => {
-    if (!authToken || hasRegistered.current) return;
-    registerForPushNotificationsAsync();
-  }, [authToken, registerForPushNotificationsAsync]);
+    if (!authToken || !isHydrated) return;
 
-  // Resetea el flag al cerrar sesión para que el próximo login registre de nuevo
+    // The access token carries the session id. Register again whenever it
+    // changes so an in-place refresh binds the device without a new login.
+    void registerDevicePushToken({ silent: true, force: true });
+  }, [authToken, isHydrated]);
+
   useEffect(() => {
     if (!authToken) {
-      hasRegistered.current = false;
+      resetDevicePushTokenRegistration();
     }
   }, [authToken]);
 
-  // Listeners montados una sola vez, independientemente del auth
   useEffect(() => {
+    if (!authToken || !isHydrated) return;
+
+    const onAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState !== "active") return;
+      void registerDevicePushToken({ silent: true });
+    };
+
+    const subscription = AppState.addEventListener("change", onAppStateChange);
+    return () => subscription.remove();
+  }, [authToken, isHydrated]);
+
+  useEffect(() => {
+    const Notifications = getNotificationsModule();
+    if (!Notifications) return;
+
     notificationListener.current = Notifications.addNotificationReceivedListener(
-      (notification: Notifications.Notification) => {
+      (notification: ExpoNotifications.Notification) => {
         notificationRef.current = notification;
-      }
+        const data = notification.request.content.data as Record<string, string> | undefined;
+        handlePushPayload(data, queryClient);
+      },
     );
 
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (response: Notifications.NotificationResponse) => {
+      (response: ExpoNotifications.NotificationResponse) => {
+        const id = response.notification.request.identifier;
+        if (handledResponseIds.current.has(id)) return;
+        handledResponseIds.current.add(id);
+
         const data = response.notification.request.content.data as Record<string, string>;
-        handleNotificationTap(data);
-      }
+        handlePushPayload(data, queryClient);
+        routeFromPushData(data);
+      },
     );
 
     return () => {
       notificationListener.current?.remove();
       responseListener.current?.remove();
     };
-  }, []);
+  }, [queryClient]);
+
+  // Cold start: the tap that launched a killed app is often missed by the
+  // response listener above (it wasn't registered yet).
+  useEffect(() => {
+    if (!authToken || !isHydrated || coldStartHandled.current) return;
+    const Notifications = getNotificationsModule();
+    if (!Notifications) return;
+
+    coldStartHandled.current = true;
+
+    void (async () => {
+      const ready = await waitForNavigationReady(2000);
+      if (!ready) return;
+
+      const response = await Notifications.getLastNotificationResponseAsync();
+      if (!response) return;
+
+      const id = response.notification.request.identifier;
+      if (handledResponseIds.current.has(id)) return;
+      handledResponseIds.current.add(id);
+
+      const data = response.notification.request.content.data as Record<string, string>;
+      handlePushPayload(data, queryClient);
+      routeFromPushData(data);
+    })();
+  }, [authToken, isHydrated, queryClient]);
 
   return { notification: notificationRef.current };
 };
-
-function handleNotificationTap(data: Record<string, string>) {
-  switch (data?.type) {
-    case "APPOINTMENT":
-    case "MEDICATION":
-    case "CHECKIN":
-    case "SYSTEM":
-    case "INFO":
-    default:
-      navigateTo("Notifications");
-      break;
-  }
-}

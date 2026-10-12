@@ -1,6 +1,11 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { env } from "@helu/config";
+import { getApiUrl } from "@helu/config";
 import { parseApiError } from "./errors";
+
+export type HeluRequestConfig = InternalAxiosRequestConfig & {
+    /** Manager-only endpoints must not send X-Patient-Context. */
+    skipPatientContext?: boolean;
+};
 
 // --- Dependency Injection for Auth ---
 let _tokenProvider: (() => string | null) | null = null;
@@ -86,13 +91,17 @@ function snakelizeKeys(obj: unknown): unknown {
 }
 
 export const apiClient = axios.create({
-    baseURL: env.API_URL + "/api/v1",
     timeout: 15_000,
     headers: { "Content-Type": "application/json" },
 });
 
+function apiV1BaseUrl(): string {
+    return `${getApiUrl()}/api/v1`;
+}
+
 // --- Request interceptor ---
 apiClient.interceptors.request.use((config) => {
+    config.baseURL = config.baseURL ?? apiV1BaseUrl();
     const token = _tokenProvider ? _tokenProvider() : getWebToken();
     const patientContext = _patientProvider ? _patientProvider() : getWebPatient();
     
@@ -100,7 +109,7 @@ apiClient.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
     
-    if (patientContext) {
+    if (patientContext && !(config as HeluRequestConfig).skipPatientContext) {
         config.headers["X-Patient-Context"] = patientContext;
     }
 
@@ -154,7 +163,7 @@ apiClient.interceptors.response.use(
                 if (!refreshToken) throw new Error("No refresh token");
 
                 const { data } = await axios.post(
-                    `${env.API_URL}/api/v1/auth/refresh`,
+                    `${getApiUrl()}/api/v1/auth/refresh`,
                     { refresh_token: refreshToken }
                 );
 

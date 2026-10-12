@@ -1,3 +1,5 @@
+import "./src/bootstrapStorage";
+import "./src/bootstrapEnv";
 import { registerRootComponent } from 'expo';
 
 import App from './App';

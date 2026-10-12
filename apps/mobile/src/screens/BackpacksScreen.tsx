@@ -3,12 +3,15 @@ import { View, StyleSheet, SectionList, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Trash2 } from "lucide-react-native";
 import { isApiError } from "@helu/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import Toast from "react-native-toast-message";
-import { Spinner, EmptyState, spacing, useAppTheme } from "@helu/ui";
+import { Spinner, EmptyState, ConfirmModal, palette, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { useBackpacksList } from "../hooks/useBackpacksList";
+import { useBackpackListActions } from "../hooks/useBackpackListActions";
+import { useShareFlow } from "../components/share";
 import {
   BackpacksListHeader,
   BackpacksSearchToolbar,
@@ -38,10 +41,17 @@ export function BackpacksScreen() {
     navigation.navigate("BackpackEdit", { id: undefined });
   }, [navigation]);
 
-  const navigateToDetail = useCallback(
-    (id: string) => navigation.navigate("BackpackDetail", { id }),
-    [navigation],
-  );
+  const {
+    handleView,
+    handleEdit,
+    requestDelete,
+    cancelDelete,
+    confirmDelete,
+    deleteTarget,
+    deletePending,
+  } = useBackpackListActions();
+
+  const shareFlow = useShareFlow(navigation);
 
   useEffect(() => {
     if (!error) return;
@@ -82,7 +92,21 @@ export function BackpacksScreen() {
           renderItem={({ item }) => (
             <BackpackListItem
               backpack={item}
-              onPress={() => navigateToDetail(item.id)}
+              onPress={() => handleView(item)}
+              actions={{
+                onView: () => handleView(item),
+                onEdit: () => handleEdit(item),
+                onShare: () =>
+                  shareFlow.openConfigureBackpack(
+                    {
+                      id: item.id,
+                      name: item.name,
+                      documentCount: item.documentCount,
+                    },
+                    "Mochilas",
+                  ),
+                onDelete: () => requestDelete(item),
+              }}
             />
           )}
           ListEmptyComponent={
@@ -98,6 +122,19 @@ export function BackpacksScreen() {
       )}
 
       <BackpacksFAB onPress={navigateToCreate} />
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="¿Eliminar mochila?"
+          message="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          loading={deletePending}
+          onConfirm={confirmDelete}
+          onCancel={cancelDelete}
+          icon={<Trash2 size={26} color={palette.status.error[500]} strokeWidth={2.25} />}
+          iconTone="danger"
+        />
+      )}
     </SafeAreaView>
   );
 }

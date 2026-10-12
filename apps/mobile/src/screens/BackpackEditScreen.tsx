@@ -1,29 +1,36 @@
-import { useCallback, useLayoutEffect, useMemo } from "react";
+import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   Text,
   View,
 } from "react-native";
+import { Trash2 } from "lucide-react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useInfiniteBackpackDocuments } from "@helu/api/hooks";
+import type { Document } from "@helu/api";
 import { useBackpackForm } from "../hooks/useBackpackForm";
 import { useBackpackCreateWithDocs } from "../hooks/useBackpackCreateWithDocs";
+import { useBackpackDetail } from "../hooks/useBackpackDetail";
 import {
   spacing,
   Button,
   TextField,
   Typography,
   Spinner,
+  ConfirmModal,
+  palette,
   useAppTheme,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
-import { BackpackCreateDocumentPicker } from "../components/backpacks";
+import { BackpackCreateDocumentPicker, BackpackDetailContentSection } from "../components/backpacks";
 
 type RouteParams = { id?: string };
 
@@ -36,6 +43,43 @@ export function BackpackEditScreen() {
 
   const form = useBackpackForm({ backpackId: id });
   const create = useBackpackCreateWithDocs();
+  const detail = useBackpackDetail(id ?? "");
+  const docsQuery = useInfiniteBackpackDocuments(id ?? "");
+  const docs = useMemo(
+    () => docsQuery.data?.pages.flatMap((p) => p.items) ?? [],
+    [docsQuery.data],
+  );
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+
+  const openDocument = useCallback(
+    (doc: Document) =>
+      navigation.navigate("DocumentDetail", { id: doc.id, title: doc.title, backTitle: "Mochila" }),
+    [navigation],
+  );
+
+  const handleRemoveDocument = useCallback(
+    (doc: Document) => {
+      Alert.alert(
+        "Quitar documento",
+        `¿Querés quitar "${doc.title}" de esta mochila? El documento no se elimina de tu biblioteca.`,
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Quitar",
+            style: "destructive",
+            onPress: () => detail.removeDocument(doc.id, doc.title),
+          },
+        ],
+      );
+    },
+    [detail],
+  );
+
+  const handleLoadMoreDocs = useCallback(() => {
+    if (docsQuery.hasNextPage && !docsQuery.isFetchingNextPage) {
+      void docsQuery.fetchNextPage();
+    }
+  }, [docsQuery]);
 
   const handleHeaderCreate = useCallback(() => {
     void create.handleCreate();
@@ -67,14 +111,11 @@ export function BackpackEditScreen() {
   }, [navigation, isEdit, create.creating, handleHeaderCreate, styles]);
 
   const confirmDelete = useCallback(() => {
-    Alert.alert(
-      "Eliminar mochila",
-      "Esta acción no se puede deshacer. ¿Querés eliminar esta mochila?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Eliminar", style: "destructive", onPress: form.handleDelete },
-      ],
-    );
+    setDeleteConfirmVisible(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    form.handleDelete();
   }, [form.handleDelete]);
 
   if (isEdit) {
@@ -111,6 +152,23 @@ export function BackpackEditScreen() {
             accessibilityLabel="Descripción de la mochila"
           />
 
+          {docsQuery.isLoading ? (
+            <View style={styles.docsLoading}>
+              <Spinner size="md" />
+            </View>
+          ) : (
+            <BackpackDetailContentSection
+              documents={docs}
+              onDocumentPress={openDocument}
+              onAddPress={() => navigation.navigate("BackpackAddDocuments", { id: id! })}
+              onRemoveDocument={handleRemoveDocument}
+              removingDocId={detail.removingDocId}
+              hasNextPage={docsQuery.hasNextPage}
+              isFetchingNextPage={docsQuery.isFetchingNextPage}
+              onLoadMore={handleLoadMoreDocs}
+            />
+          )}
+
           <Button variant="danger" fullWidth onPress={confirmDelete} disabled={form.deleting} loading={form.deleting}>
             Eliminar mochila
           </Button>
@@ -119,6 +177,19 @@ export function BackpackEditScreen() {
             Guardar
           </Button>
         </ScrollView>
+
+        {deleteConfirmVisible && (
+          <ConfirmModal
+            title="¿Eliminar mochila?"
+            message="Esta acción no se puede deshacer."
+            confirmLabel="Eliminar"
+            loading={form.deleting}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => setDeleteConfirmVisible(false)}
+            icon={<Trash2 size={26} color={palette.status.error[500]} strokeWidth={2.25} />}
+            iconTone="danger"
+          />
+        )}
       </KeyboardAvoidingView>
     );
   }
@@ -128,7 +199,18 @@ export function BackpackEditScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScrollView contentContainerStyle={styles.createContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.createContent}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={create.documentsRefetching}
+            onRefresh={() => void create.refetchDocuments()}
+            colors={[t.brand.fg]}
+            tintColor={t.brand.fg}
+          />
+        }
+      >
         <TextField
           label="Nombre"
           value={create.name}
@@ -153,6 +235,11 @@ export function BackpackEditScreen() {
           selectedIds={create.selectedIds}
           onToggle={create.toggleDocument}
           loading={create.documentsLoading}
+          search={create.docSearch}
+          onSearchChange={create.setDocSearch}
+          hasNextPage={create.hasMoreDocuments}
+          isFetchingNextPage={create.isFetchingMoreDocuments}
+          onLoadMore={create.loadMoreDocuments}
         />
 
         <View style={styles.createFooter}>
@@ -177,6 +264,7 @@ function makeStyles(t: ThemeContextValue) {
     createContent: { padding: spacing[5], gap: spacing[5], paddingBottom: spacing[10] },
     editContent: { padding: spacing[5], gap: spacing[4] },
     createFooter: { marginTop: spacing[2] },
+    docsLoading: { paddingVertical: spacing[8], alignItems: "center" },
     headerAction: {
       paddingHorizontal: spacing[3],
       paddingVertical: spacing[2],

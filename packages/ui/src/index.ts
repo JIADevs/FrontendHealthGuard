@@ -45,6 +45,7 @@ export * from './forms/Checkbox/Checkbox.native';
 export * from './forms/SearchField/SearchField.types';
 export * from './forms/SearchField/SearchField.native';
 export * from './forms/DateTimePicker/DateTimePicker.types';
+export * from './forms/DateTimePicker/DateTimePicker.utils';
 export * from './forms/DateTimePicker/DateTimePicker.native';
 export * from './forms/DatePicker/DatePicker.types';
 export * from './forms/DatePicker/DatePicker.native';
@@ -60,3 +61,6 @@ export * from './containers/Card/Card.native';
 // ─── Composed ────────────────────────────────────────────────────────────────
 export * from './composed/ConfirmModal/ConfirmModal.types';
 export * from './composed/ConfirmModal/ConfirmModal.native';
+
+// ─── Platform ────────────────────────────────────────────────────────────────
+export * from './platform/HeluAgendaCalendar';

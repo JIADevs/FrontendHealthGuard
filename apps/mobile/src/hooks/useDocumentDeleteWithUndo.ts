@@ -59,16 +59,21 @@ export function useDocumentDeleteWithUndo(options?: UseDocumentDeleteWithUndoOpt
 
     const finalize = () => {
       pendingUndoRef.current = null;
-      deleteDocument(doc.id).catch((err) => {
-        snapshot.forEach(([key, data]) => {
-          if (data) queryClient.setQueryData(key, data);
+      deleteDocument(doc.id)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ["backpack-docs"], exact: false });
+          queryClient.invalidateQueries({ queryKey: ["backpack-doc-ids"], exact: false });
+        })
+        .catch((err) => {
+          snapshot.forEach(([key, data]) => {
+            if (data) queryClient.setQueryData(key, data);
+          });
+          Toast.show({
+            type: "error",
+            text1: "Error al eliminar",
+            text2: isApiError(err) ? err.message : "No se pudo eliminar el documento.",
+          });
         });
-        Toast.show({
-          type: "error",
-          text1: "Error al eliminar",
-          text2: isApiError(err) ? err.message : "No se pudo eliminar el documento.",
-        });
-      });
     };
 
     const onUndo = () => {

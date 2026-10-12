@@ -39,6 +39,8 @@ export function MedicationListItem({ medication, onTake, onPress, isLast }: Medi
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
 
+  const cycle = medication.cycles?.[0];
+
   return (
     <View style={[styles.item, !isLast && styles.itemBorder]}>
       <TouchableOpacity
@@ -54,22 +56,28 @@ export function MedicationListItem({ medication, onTake, onPress, isLast }: Medi
           <Text style={[styles.title, { color: t.text.primary }]}>
             {medication.name}
           </Text>
-          <Text style={[styles.subtitle, { color: t.text.secondary }]}>
-            {medication.dosage} · cada {medication.frequency}h
-          </Text>
+          {cycle && (
+            <Text style={[styles.subtitle, { color: t.text.secondary }]}>
+              {cycle.dosage} · cada {cycle.frequency}h
+            </Text>
+          )}
         </View>
       </TouchableOpacity>
       <View style={styles.rightCol}>
-        <Text style={[styles.timeLabel, { color: t.text.secondary }]}>
-          {extractTime(medication.nextIntakeTime ?? medication.firstIntakeTime)}
-        </Text>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: t.accent.medFg }]}
-          activeOpacity={0.7}
-          onPress={() => onTake(medication.id)}
-        >
-          <Text style={styles.actionBtnText}>Tomar</Text>
-        </TouchableOpacity>
+        {cycle && (
+          <Text style={[styles.timeLabel, { color: t.text.secondary }]}>
+            {extractTime(cycle.nextIntakeTime ?? cycle.firstIntakeTime)}
+          </Text>
+        )}
+        {cycle && (
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: t.accent.medFg }]}
+            activeOpacity={0.7}
+            onPress={() => onTake(cycle.id)}
+          >
+            <Text style={styles.actionBtnText}>Tomar</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

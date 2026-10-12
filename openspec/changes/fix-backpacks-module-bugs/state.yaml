@@ -1,0 +1,55 @@
+change: fix-backpacks-module-bugs
+phase: apply
+artifact_store: openspec
+delivery_strategy: ask-on-risk
+chain_strategy: feature-branch-chain
+decision_needed_before_apply: false
+tracker_branch: feature/fix-backpacks-module-bugs
+current_slice: PR-F2
+tasks_progress:
+  completed:
+    - "1.1"
+    - "1.2"
+    - "1.3"
+    - "1.4"
+    - "2.1"
+    - "2.2"
+    - "2.3"
+    - "2.4"
+    - "2.5"
+    - "3.1"
+    - "3.2"
+    - "3.3"
+    - "3.4"
+    - "3.5"
+    - "4.1"
+    - "4.2"
+    - "4.3"
+    - "4.4"
+    - "4.5"
+  pending:
+    - "5.1"
+    - "5.2"
+    - "5.3"
+    - "5.4"
+    - "5.5"
+pr_slices:
+  - id: PR-B
+    repo: BackendHealthGuard
+    head: fix/backpacks-api-contract
+    base: feature/fix-backpacks-module-bugs
+    phases: [1]
+    status: ready-for-pr
+  - id: PR-F1
+    repo: FrontendHealthGuard
+    head: fix/backpacks-shared-api
+    base: feature/fix-backpacks-module-bugs
+    phases: [2]
+    status: ready-for-pr
+  - id: PR-F2
+    repo: FrontendHealthGuard
+    head: fix/backpacks-mobile-ui
+    base: fix/backpacks-shared-api
+    phases: [3, 4, 5]
+    status: in-progress
+last_updated: "2026-05-29"

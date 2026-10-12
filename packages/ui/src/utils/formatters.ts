@@ -83,10 +83,15 @@ export function formatShortDate(d: string | null | undefined): string {
 // ─── Dominio: citas ───────────────────────────────────────────────────────────
 
 const APPOINTMENT_STATUS_LABELS: Record<string, string> = {
+  PROGRAMADA:   "Programada",
+  ASISTI:       "Asistí",
+  CANCELADA:    "Cancelada",
+  NO_ASISTI:    "No asistí",
+  // Legacy English statuses
   PENDING:      "Pendiente",
   COMPLETED:    "Realizada",
   CANCELLED:    "Cancelada",
-  RESCHEDULED:  "Re-agendada",
+  RESCHEDULED:  "Reprogramada",
 };
 
 /** Convierte un status de cita a su etiqueta en español. */
@@ -104,8 +109,9 @@ export function splitDate(dateStr: string): { day: string; month: string } {
   return { day, month };
 }
 
-/** Formats a file extension string into a friendly label for document cards. */
-export function formatFileKind(format: string): string {
+/** Formats a file extension / MIME into a friendly label for document cards. */
+export function formatFileKind(format: string | null | undefined): string {
+  if (!format) return "—";
   const f = format.toLowerCase();
   if (f.includes("pdf")) return "PDF";
   if (f.includes("png") || f.includes("jpg") || f.includes("jpeg") || f.includes("webp")) return "Imagen";

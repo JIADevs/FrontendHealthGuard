@@ -82,7 +82,7 @@ export function TimePicker({
           styles.field,
           {
             borderColor,
-            backgroundColor: disabled ? t.border.light : t.surface.bg,
+            backgroundColor: disabled ? t.border.light : t.surface.bgCard,
           },
           disabled && styles.disabled,
         ]}
@@ -137,7 +137,7 @@ export function TimePicker({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing[1],
+    gap: spacing[2],
   },
   label: {
     fontSize: fontSize.sm,

@@ -1,5 +1,13 @@
-import { apiClient } from "./client";
+import { apiClient, type HeluRequestConfig } from "./client";
 import { z } from "zod";
+import {
+    listShares,
+    revokeShare,
+    shareBackpackWithOptions,
+    shareDocumentWithOptions,
+    getSharedDocumentSignedUrlViewOnly,
+} from "./shares/endpoints";
+import type { ShareCreateOptions } from "./shares/schemas";
 import {
     TokenResponseSchema,
     UserProfileSchema,
@@ -7,20 +15,48 @@ import {
     DocumentSchema,
     DocumentActiveShareSchema,
     AppointmentPageSchema,
+    AppointmentSchema,
+    TreatmentPageSchema,
+    TreatmentSchema,
+    TreatmentDetailSchema,
+    DoctorPageSchema,
     MedicationPageSchema,
+    MedicationSchema,
+    MedicationCycleSchema,
+    MedicationIntakeSchema,
     NotificationPageSchema,
     BackpackPageSchema,
     BackpackSchema,
     ClassificationSuggestionSchema,
+    DailyCheckInSchema,
+    DailyCheckInPageSchema,
+    DependentDelegationSchema,
+    ManagerDelegationSchema,
+    parseCalendarEventsResponse,
+    type CalendarDay,
+    type DailyCheckInUpdate,
     type LoginRequest,
     type SignupRequest,
     type UserUpdate,
     type DocumentCreate,
     type AppointmentCreate,
-    type MedicationCreate,
+    type TreatmentCreate,
+    type TreatmentUpdate,
+    type MedicationCycleCreate,
+    type MedicationCycleUpdate,
+    type MedicationIntakeCreate,
+    type DoctorCreate,
     type BackpackCreate,
     type CustomTagCreate,
+    type DailyCheckInCreate,
+    type DailyCheckInPage,
+    type DelegationRequest,
+    type DependentDelegation,
+    type ManagerDelegation,
+    type DelegationContextColors,
+    DelegationContextColorsSchema,
 } from "./schemas";
+import { isApiError } from "./errors";
 
 // ─── Auth ──────────────────────────────────────────────
 
@@ -125,19 +161,29 @@ export async function addTagValue(categoryId: string, value: string) {
     return data as { id: string; categoryId?: string; value: string };
 }
 
-export async function shareDocument(id: string) {
-    const { data } = await apiClient.post(`/documents/${id}/share`);
-    return data as { shareUrl: string; qrCodeUrl: string; expiresAt: string };
+export async function shareDocument(id: string, expiresIn: ShareCreateOptions["expiresIn"] = "24h") {
+    return shareDocumentWithOptions(id, { expiresIn });
 }
 
+/** @deprecated Prefer listShares from `./shares` */
 export async function getActiveDocumentShares() {
-    const { data } = await apiClient.get("/documents/shares/active");
-    return z.array(DocumentActiveShareSchema).parse(data);
+    const items = await listShares("active");
+    return items
+        .filter((item) => item.resourceType === "document")
+        .map((item) => ({
+            linkId: item.linkId,
+            documentId: item.resourceId,
+            documentTitle: item.title,
+            shareUrl: item.shareUrl,
+            qrCodeUrl: item.qrCodeUrl,
+            expiresAt: item.expiresAt ?? "",
+            createdAt: item.createdAt,
+        }));
 }
 
 /** Revoca un enlace activo (solo el dueño del documento). */
 export async function revokeDocumentShare(linkId: string) {
-    await apiClient.delete(`/documents/shares/${linkId}`);
+    await revokeShare(linkId, "document");
 }
 
 /** Load document metadata for a public share link (no auth required; token is the capability). */
@@ -146,12 +192,9 @@ export async function consumeSharedDocument(token: string) {
     return DocumentSchema.parse(data);
 }
 
-/** Signed URL to preview/download the file for a share link (no auth required). */
+/** Signed URL to preview a shared file (view-only; no download). */
 export async function getSharedDocumentSignedUrl(token: string, expiresInSeconds = 3600) {
-    const { data } = await apiClient.get("/documents/shared/signed-url", {
-        params: { token, expires_in: expiresInSeconds },
-    });
-    return data as { url: string };
+    return getSharedDocumentSignedUrlViewOnly(token, expiresInSeconds);
 }
 
 // ─── Files ─────────────────────────────────────────────
@@ -201,9 +244,20 @@ export async function getAppointments(params: {
     startDate?: string;
     endDate?: string;
     searchQuery?: string;
+    status?: string;
+    type?: string;
+    modality?: string;
+    doctorId?: string;
+    treatmentId?: string;
+    specialty?: string;
 }) {
     const { data } = await apiClient.get("/appointments/", { params });
     return AppointmentPageSchema.parse(data);
+}
+
+export async function getAppointmentById(id: string) {
+    const { data } = await apiClient.get(`/appointments/${id}`);
+    return AppointmentSchema.parse(data);
 }
 
 export async function createAppointment(appt: AppointmentCreate) {
@@ -230,23 +284,74 @@ export async function updateAppointmentStatus(
     return data;
 }
 
+export async function getAppointmentOptions() {
+    const { data } = await apiClient.get("/appointments/options/all");
+    return {
+        specialties: (data.specialties ?? []) as string[],
+        services: (data.services ?? []) as string[],
+        consultation_types: (data.consultation_types ?? data.consultationTypes ?? []) as string[],
+    };
+}
+
+// ─── Treatments ────────────────────────────────────────
+
+export async function getTreatments(params: { page?: number; limit?: number } = {}) {
+    const { data } = await apiClient.get("/treatments/", { params });
+    return TreatmentPageSchema.parse(data);
+}
+
+export async function getTreatmentById(id: string) {
+    const { data } = await apiClient.get(`/treatments/${id}`);
+    return TreatmentDetailSchema.parse(data);
+}
+
+export async function createTreatment(treatment: TreatmentCreate) {
+    const { data } = await apiClient.post("/treatments/", treatment);
+    return TreatmentSchema.parse(data);
+}
+
+export async function updateTreatment(id: string, treatment: TreatmentUpdate) {
+    const { data } = await apiClient.patch(`/treatments/${id}`, treatment);
+    return TreatmentSchema.parse(data);
+}
+
+export async function deleteTreatment(id: string) {
+    await apiClient.delete(`/treatments/${id}`);
+}
+
 // ─── Medications ───────────────────────────────────────
 
 export async function getMedications(params: {
     page?: number;
     limit?: number;
+    search?: string;
+    status?: string;
+    frequencyUnit?: string;
+    treatmentId?: string;
+    startDateFrom?: string;
+    startDateTo?: string;
 }) {
     const { data } = await apiClient.get("/medications/", { params });
     return MedicationPageSchema.parse(data);
 }
 
-export async function createMedication(med: MedicationCreate) {
-    const { data } = await apiClient.post("/medications/", med);
+export async function getMedicationById(id: string) {
+    const { data } = await apiClient.get(`/medications/${id}`);
+    return MedicationSchema.parse(data);
+}
+
+export async function createMedication(name: string) {
+    const { data } = await apiClient.post("/medications/", { name });
+    return MedicationSchema.parse(data);
+}
+
+export async function createMedicationCycle(medicationId: string, cycle: MedicationCycleCreate) {
+    const { data } = await apiClient.post(`/medications/${medicationId}/cycles`, cycle);
     return data;
 }
 
-export async function updateMedication(id: string, med: MedicationCreate) {
-    const { data } = await apiClient.put(`/medications/${id}`, med);
+export async function updateMedication(id: string, name: string) {
+    const { data } = await apiClient.patch(`/medications/${id}`, { name });
     return data;
 }
 
@@ -254,12 +359,52 @@ export async function deleteMedication(id: string) {
     await apiClient.delete(`/medications/${id}`);
 }
 
-export async function confirmIntake(id: string) {
-    const { data } = await apiClient.post(`/medications/${id}/intakes`, {
+export async function updateMedicationCycle(cycleId: string, cycle: MedicationCycleUpdate) {
+    const { data } = await apiClient.patch(`/medication-cycles/${cycleId}`, cycle);
+    return MedicationCycleSchema.parse(data);
+}
+
+export async function deleteMedicationCycle(cycleId: string) {
+    await apiClient.delete(`/medication-cycles/${cycleId}`);
+}
+
+export async function confirmIntake(cycleId: string) {
+    const { data } = await apiClient.post(`/medication-cycles/${cycleId}/intakes`, {
         taken_at: new Date().toISOString(),
     });
     return data;
 }
+
+export async function recordIntake(cycleId: string, payload: MedicationIntakeCreate) {
+    const { data } = await apiClient.post(`/medication-cycles/${cycleId}/intakes`, payload);
+    return MedicationIntakeSchema.parse(data);
+}
+
+// ─── Doctors ───────────────────────────────────────────
+
+export async function getDoctors(params: {
+    page?: number;
+    limit?: number;
+    searchQuery?: string;
+}) {
+    const { data } = await apiClient.get("/doctors/", { params });
+    return DoctorPageSchema.parse(data);
+}
+
+export async function createDoctor(doctor: DoctorCreate) {
+    const { data } = await apiClient.post("/doctors/", doctor);
+    return data;
+}
+
+export async function updateDoctor(id: string, doctor: DoctorCreate) {
+    const { data } = await apiClient.put(`/doctors/${id}`, doctor);
+    return data;
+}
+
+export async function deleteDoctor(id: string) {
+    await apiClient.delete(`/doctors/${id}`);
+}
+
 
 // ─── Notifications ─────────────────────────────────────
 
@@ -280,20 +425,28 @@ export async function registerDeviceToken(
     token: string,
     deviceType: string
 ) {
-    const { data } = await apiClient.post("/notifications/devices", {
-        token,
-        deviceType,
-    });
+    const { data } = await apiClient.post(
+        "/notifications/devices",
+        { token, deviceType },
+        { skipPatientContext: true } as HeluRequestConfig,
+    );
     return data;
+}
+
+export async function unregisterDeviceToken(token: string) {
+    await apiClient.delete("/notifications/devices", {
+        params: { token },
+        skipPatientContext: true,
+    } as HeluRequestConfig);
 }
 
 // ─── Calendar ──────────────────────────────────────────
 
-export async function getCalendarEvents(startDate: string, endDate: string) {
-    const { data } = await apiClient.get("/calendar/", {
+export async function getCalendarEvents(startDate: string, endDate: string): Promise<CalendarDay[]> {
+    const { data } = await apiClient.get("/calendar/events", {
         params: { startDate, endDate },
     });
-    return data;
+    return parseCalendarEventsResponse(data);
 }
 
 // ─── AI Classification ────────────────────────────────
@@ -316,6 +469,32 @@ export async function classifyDocumentFromUri(uri: string, name: string, mimeTyp
         timeout: 120_000,
     });
     return ClassificationSuggestionSchema.parse(data);
+}
+
+// ─── Daily Check-Ins ───────────────────────────────────
+
+export async function getDailyCheckIns(params?: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+}): Promise<DailyCheckInPage> {
+    const { data } = await apiClient.get("/daily-checkins/", { params });
+    return DailyCheckInPageSchema.parse(data);
+}
+
+export async function createDailyCheckIn(payload: DailyCheckInCreate) {
+    const { data } = await apiClient.post("/daily-checkins/", payload);
+    return DailyCheckInSchema.parse(data);
+}
+
+export async function updateDailyCheckIn(id: string, payload: DailyCheckInUpdate) {
+    const { data } = await apiClient.patch(`/daily-checkins/${id}`, payload);
+    return DailyCheckInSchema.parse(data);
+}
+
+export async function deleteDailyCheckIn(id: string) {
+    await apiClient.delete(`/daily-checkins/${id}`);
 }
 
 // ─── Backpacks ─────────────────────────────────────────
@@ -352,9 +531,61 @@ export async function removeDocFromBackpack(backpackId: string, documentId: stri
     await apiClient.delete(`/backpacks/${backpackId}/documents/${documentId}`);
 }
 
-export async function shareBackpack(id: string) {
-    const { data } = await apiClient.post(`/backpacks/${id}/share`);
-    return data as { shareUrl: string; qrCodeUrl: string; expiresAt: string };
+export async function shareBackpack(id: string, expiresIn: ShareCreateOptions["expiresIn"] = "24h") {
+    return shareBackpackWithOptions(id, { expiresIn });
+}
+
+// ─── Delegations ───────────────────────────────────────
+
+export async function createDelegation(payload: DelegationRequest): Promise<DependentDelegation | ManagerDelegation> {
+    const { data } = await apiClient.post("/users/me/delegations", payload);
+    return DependentDelegationSchema.parse(data);
+}
+
+export async function getManagedUsers(): Promise<DependentDelegation[]> {
+    const { data } = await apiClient.get("/users/me/delegations/managed");
+    return z.array(DependentDelegationSchema).parse(data);
+}
+
+export async function getManagers(): Promise<ManagerDelegation[]> {
+    const { data } = await apiClient.get("/users/me/delegations/managers");
+    return z.array(ManagerDelegationSchema).parse(data);
+}
+
+export async function respondDelegation(
+    id: string,
+    action: "accept" | "reject",
+): Promise<void> {
+    await apiClient.patch(`/users/me/delegations/${id}/status`, undefined, {
+        params: { action },
+    });
+}
+
+export async function revokeDelegation(id: string): Promise<void> {
+    await apiClient.delete(`/users/me/delegations/${id}`);
+}
+
+export async function getDelegationContextColors(): Promise<DelegationContextColors> {
+    try {
+        const { data } = await apiClient.get<{ value: unknown }>(
+            "/users/me/preferences/delegation_context_colors",
+            { skipPatientContext: true } as HeluRequestConfig,
+        );
+        return DelegationContextColorsSchema.parse(data.value ?? {});
+    } catch (error) {
+        if (isApiError(error) && error.isNotFound) {
+            return {};
+        }
+        throw error;
+    }
+}
+
+export async function updateDelegationContextColors(colors: DelegationContextColors): Promise<void> {
+    await apiClient.put(
+        "/users/me/preferences/delegation_context_colors",
+        { value: colors },
+        { skipPatientContext: true } as HeluRequestConfig,
+    );
 }
 
 export async function getBackpackDocuments(params: {

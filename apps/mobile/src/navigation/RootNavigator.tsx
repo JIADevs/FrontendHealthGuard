@@ -12,21 +12,73 @@ import { NotificationsScreen } from "../screens/NotificationsScreen";
 import { BackpackDetailScreen } from "../screens/BackpackDetailScreen";
 import { BackpackEditScreen } from "../screens/BackpackEditScreen";
 import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
-import { ShareDocumentsScreen } from "../screens/ShareDocumentsScreen";
+import { ShareConfigureScreen } from "../screens/ShareConfigureScreen";
+import { ShareQrScreen } from "../screens/ShareQrScreen";
+import { SharedHistoryScreen } from "../screens/SharedHistoryScreen";
+import { SharedDetailScreen } from "../screens/SharedDetailScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
+
+import { AppointmentDetailScreen } from "../screens/AppointmentDetailScreen";
+import { AppointmentFormScreen } from "../screens/AppointmentFormScreen";
+import { DoctorFormScreen } from "../screens/DoctorFormScreen";
+import { MedicationFormScreen } from "../screens/MedicationFormScreen";
+import { MedicationDetailScreen } from "../screens/MedicationDetailScreen";
+import { CycleDetailScreen } from "../screens/CycleDetailScreen";
+import { TreatmentsScreen } from "../screens/TreatmentsScreen";
+import { TreatmentDetailScreen } from "../screens/TreatmentDetailScreen";
+import { TreatmentFormScreen } from "../screens/TreatmentFormScreen";
+
 import { SettingsScreen } from "../screens/SettingsScreen";
+import { DependientesScreen } from "../screens/DependientesScreen";
+import { DependientesInviteScreen } from "../screens/DependientesInviteScreen";
+import { LINKED_PEOPLE_SCREEN_TITLE } from "../constants/linkedPeople";
 import { useAppTheme } from "@helu/ui";
 import { withDocumentsTheme, getDocumentsStackScreenOptions } from "../components/documents";
+import type { ShareResourceType } from "@helu/api";
 
 /** Shared optional param so any screen can show a contextual back label. */
 type WithBackTitle = { backTitle?: string };
 
+/**
+ * Params for the Agenda tab, used both for plain tab switches (`initialTab`)
+ * and for notification deep links that must open a specific modal inside
+ * Agenda (`intent`). `intentAt` is a nonce (`Date.now()`) so a second identical
+ * push can reopen the modal even though the params object would otherwise be
+ * referentially unchanged.
+ */
+export interface AgendaRouteParams {
+  initialTab?: "calendar" | "appointments" | "medications" | "wellbeing";
+  intent?: "medication-intake" | "daily-checkin";
+  intentAt?: number;
+  cycleId?: string;
+  medicationId?: string;
+  medicationName?: string;
+  scheduledTime?: string;
+}
+
 export type RootStackParamList = {
   Auth: undefined;
   Signup: undefined;
-  MainTabs: undefined;
+  MainTabs: { screen: "Agenda"; params: AgendaRouteParams } | undefined;
+
+  AppointmentDetail: { id: string };
+  AppointmentForm: { id?: string } | undefined;
+  DoctorForm: undefined;
+  MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string } | undefined;
+  MedicationDetail: { id: string };
+  CycleDetail: { cycleId: string; medicationId: string; medicationName: string };
+  Treatments: WithBackTitle | undefined;
+  TreatmentDetail: WithBackTitle & { id: string };
+  TreatmentForm: WithBackTitle & { id?: string } | undefined;
   Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
-  DocumentUpload: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
+  DocumentUpload:
+    | (WithBackTitle & {
+        backpackId?: string;
+        backpackName?: string;
+        /** FILE opens upload UI; LINK opens portal form and never the file picker. */
+        initialKind?: "FILE" | "LINK";
+      })
+    | undefined;
   DocumentDetail: WithBackTitle & { id: string; title?: string } | undefined;
   DocumentEdit: WithBackTitle & { id: string } | undefined;
   Notifications: WithBackTitle | undefined;
@@ -35,7 +87,29 @@ export type RootStackParamList = {
   BackpackDetail: WithBackTitle & { id: string };
   BackpackEdit: WithBackTitle & { id?: string } | undefined;
   BackpackAddDocuments: WithBackTitle & { id: string };
-  ShareDocuments: WithBackTitle | undefined;
+  ShareConfigure: WithBackTitle & {
+    resourceType: ShareResourceType;
+    resourceId: string;
+    title: string;
+    subtitle?: string;
+    documentCount?: number;
+  };
+  ShareQr: WithBackTitle & {
+    shareUrl: string;
+    title: string;
+    resourceType: ShareResourceType;
+    expiresAt: string | null;
+    documentCount?: number;
+  };
+  SharedHistory: WithBackTitle | undefined;
+  SharedDetail: WithBackTitle & {
+    linkId: string;
+    resourceType: ShareResourceType;
+  };
+  Dependientes: WithBackTitle | undefined;
+  DependientesInvite: WithBackTitle & {
+    relationship: "I_WANT_TO_MANAGE_THEM" | "THEY_WILL_MANAGE_ME";
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -44,7 +118,10 @@ const ScannerScreenLight = withDocumentsTheme(ScannerScreen);
 const DocumentUploadScreenLight = withDocumentsTheme(DocumentUploadScreen);
 const DocumentDetailScreenLight = withDocumentsTheme(DocumentDetailScreen);
 const DocumentEditScreenLight = withDocumentsTheme(DocumentEditScreen);
-const ShareDocumentsScreenLight = withDocumentsTheme(ShareDocumentsScreen);
+const ShareConfigureScreenLight = withDocumentsTheme(ShareConfigureScreen);
+const ShareQrScreenLight = withDocumentsTheme(ShareQrScreen);
+const SharedHistoryScreenLight = withDocumentsTheme(SharedHistoryScreen);
+const SharedDetailScreenLight = withDocumentsTheme(SharedDetailScreen);
 
 export function RootNavigator() {
   const token = useAuthStore((s) => s.token);
@@ -146,14 +223,47 @@ export function RootNavigator() {
             })}
           />
           <Stack.Screen
-            name="ShareDocuments"
-            component={ShareDocumentsScreenLight}
+            name="ShareConfigure"
+            component={ShareConfigureScreenLight}
             options={({ route }) => ({
               ...getDocumentsStackScreenOptions(t),
               headerShown: true,
-              title: "Compartir Documentos",
+              title: "Compartir",
               animation: "slide_from_right" as const,
               headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
+            })}
+          />
+          <Stack.Screen
+            name="ShareQr"
+            component={ShareQrScreenLight}
+            options={({ route }) => ({
+              ...getDocumentsStackScreenOptions(t),
+              headerShown: true,
+              title: "Compartir QR",
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Compartir",
+            })}
+          />
+          <Stack.Screen
+            name="SharedHistory"
+            component={SharedHistoryScreenLight}
+            options={({ route }) => ({
+              ...getDocumentsStackScreenOptions(t),
+              headerShown: true,
+              title: "Compartidos",
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
+            })}
+          />
+          <Stack.Screen
+            name="SharedDetail"
+            component={SharedDetailScreenLight}
+            options={({ route }) => ({
+              ...getDocumentsStackScreenOptions(t),
+              headerShown: true,
+              title: "Compartido",
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Compartidos",
             })}
           />
           <Stack.Screen
@@ -174,6 +284,71 @@ export function RootNavigator() {
               title: "Configuraciones",
               animation: "slide_from_right" as const,
               headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Más",
+            })}
+          />
+          <Stack.Screen
+            name="AppointmentDetail"
+            component={AppointmentDetailScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="AppointmentForm"
+            component={AppointmentFormScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="DoctorForm"
+            component={DoctorFormScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="MedicationForm"
+            component={MedicationFormScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="MedicationDetail"
+            component={MedicationDetailScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="CycleDetail"
+            component={CycleDetailScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="Treatments"
+            component={TreatmentsScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="TreatmentDetail"
+            component={TreatmentDetailScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="TreatmentForm"
+            component={TreatmentFormScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="Dependientes"
+            component={DependientesScreen}
+            options={({ route }) => ({
+              headerShown: true,
+              title: LINKED_PEOPLE_SCREEN_TITLE,
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Más",
+            })}
+          />
+          <Stack.Screen
+            name="DependientesInvite"
+            component={DependientesInviteScreen}
+            options={({ route }) => ({
+              headerShown: true,
+              title: "Invitar",
+              animation: "slide_from_right" as const,
+              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? LINKED_PEOPLE_SCREEN_TITLE,
             })}
           />
         </>

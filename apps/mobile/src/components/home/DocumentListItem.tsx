@@ -9,6 +9,7 @@ import {
   useAppTheme,
   formatDate,
   formatFileKind,
+  isLinkDocument,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import type { Document } from "@helu/api";
@@ -26,6 +27,9 @@ interface DocumentListItemProps {
 export function DocumentListItem({ document, onPress, isLast }: DocumentListItemProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  const kindLabel = isLinkDocument(document.kind)
+    ? "Enlace"
+    : formatFileKind(document.format);
 
   return (
     <TouchableOpacity
@@ -46,7 +50,7 @@ export function DocumentListItem({ document, onPress, isLast }: DocumentListItem
       </View>
       <View style={[styles.formatBadge, { backgroundColor: t.accent.docBg }]}>
         <Text style={[styles.formatText, { color: t.accent.docFg }]}>
-          {formatFileKind(document.format)}
+          {kindLabel}
         </Text>
       </View>
     </TouchableOpacity>

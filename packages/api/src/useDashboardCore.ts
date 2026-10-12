@@ -12,10 +12,13 @@ import {
   useDocumentsQuery,
   useAppointmentsQuery,
   useMedicationsQuery,
-} from "./hooks";
+} from "./reactQueryHooks";
 import { useAuthStore } from "@helu/stores";
-import { todayISODate } from "@helu/ui";
 import type { Appointment, Medication, Document } from "./schemas";
+
+function todayISODate(): string {
+  return new Date().toISOString().split("T")[0]!;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -61,28 +64,34 @@ export interface DashboardData {
   isApptsLoading: boolean;
   isMedsLoading: boolean;
   isDocsLoading: boolean;
+
+  /** True mientras cualquiera de las 4 queries se está re-consultando (pull-to-refresh). */
+  isRefetching: boolean;
+  /** Vuelve a consultar perfil, documentos, citas y medicamentos. */
+  refetch: () => Promise<unknown>;
 }
 
 // ─── Core hook ───────────────────────────────────────────────────────────────
 
 export function useDashboardCore(): DashboardData {
   const setUser = useAuthStore((s) => s.setUser);
+  const isManaging = useAuthStore((s) => s.isManaging);
 
   const profile = useProfileQuery();
   const docs = useDocumentsQuery("", 1, 3);
   const appts = useAppointmentsQuery("", 1, 3, todayISODate());
-  const meds = useMedicationsQuery(1, 3);
+  const meds = useMedicationsQuery("", 1, 3);
 
-  // Mantiene el objeto de usuario del store sincronizado con el perfil real.
+  // Keep auth store user aligned with self profile only — not while impersonating.
   useEffect(() => {
-    if (profile.data) {
+    if (profile.data && !isManaging) {
       setUser({
         id: profile.data.id,
         name: profile.data.name,
         email: profile.data.email,
       });
     }
-  }, [profile.data, setUser]);
+  }, [profile.data, isManaging, setUser]);
 
   const today = todayISODate();
   const todayApptCount =
@@ -108,7 +117,7 @@ export function useDashboardCore(): DashboardData {
   return {
     userName: profile.data?.name ?? profile.data?.email ?? null,
     userFirstName: userFirstName ?? null,
-    isProfileLoading: profile.isLoading,
+    isProfileLoading: profile.isPending || (profile.isFetching && !profile.data),
 
     greeting,
     apptSubtitle,
@@ -131,5 +140,9 @@ export function useDashboardCore(): DashboardData {
     isApptsLoading: appts.isLoading,
     isMedsLoading: meds.isLoading,
     isDocsLoading: docs.isLoading,
+
+    isRefetching: profile.isRefetching || docs.isRefetching || appts.isRefetching || meds.isRefetching,
+    refetch: () =>
+      Promise.all([profile.refetch(), docs.refetch(), appts.refetch(), meds.refetch()]),
   };
 }

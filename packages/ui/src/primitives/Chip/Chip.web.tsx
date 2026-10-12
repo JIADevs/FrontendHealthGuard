@@ -15,16 +15,27 @@ const selected: Record<ChipColor, { background: string; color: string }> = {
   amber:   { background: palette.accent.medication[500], color: colors.white },
 };
 
-export function Chip({ label, color = 'default', selected: isSelected = false, onPress }: ChipProps) {
+export function Chip({
+  label,
+  color = 'default',
+  size = 'default',
+  selected: isSelected = false,
+  onPress,
+}: ChipProps) {
   const palette = isSelected ? selected[color] : unselected[color];
+  const compact = size === 'compact';
 
   const style: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
-    padding: '3px 10px',
+    justifyContent: 'center',
+    padding: compact ? '0 10px' : '3px 10px',
+    minHeight: compact ? 28 : undefined,
+    boxSizing: 'border-box',
     borderRadius: radii.full,
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
+    lineHeight: compact ? '16px' : undefined,
     whiteSpace: 'nowrap',
     cursor: onPress ? 'pointer' : 'default',
     border: 'none',

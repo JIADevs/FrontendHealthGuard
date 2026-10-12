@@ -41,7 +41,7 @@ export function AuthTextField({
         <TextInput
           style={styles.textInput}
           placeholder={placeholder}
-          placeholderTextColor={colors.gray[400]}
+          placeholderTextColor={t.text.muted}
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secure && !showPassword}

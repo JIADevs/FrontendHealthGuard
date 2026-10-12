@@ -1,0 +1,3 @@
+# EAS archives from the monorepo root; include Firebase config for mobile builds.
+!apps/mobile/google-services.json
+package-lock.json

@@ -8,7 +8,7 @@ import {
 } from "@helu/api/hooks";
 import { useDocumentDeleteWithUndo } from "./useDocumentDeleteWithUndo";
 import { getSignedUrl, type Document } from "@helu/api";
-import { resolveDocFormat, useAppTheme } from "@helu/ui";
+import { isLinkDocument, resolveDocFormat, useAppTheme } from "@helu/ui";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { resolveDocumentTheme } from "../components/documents/utils/resolveDocumentTheme";
 import {
@@ -53,10 +53,12 @@ export function useDocumentDetail(id: string) {
     [document, categoryMap],
   );
 
+  const isLink = isLinkDocument(document?.kind);
+
   const signedUrlQuery = useQuery({
     queryKey: ["signed-url", document?.fileUrl],
-    queryFn: () => getSignedUrl(document!.fileUrl),
-    enabled: !!document?.fileUrl,
+    queryFn: () => getSignedUrl(document!.fileUrl!),
+    enabled: !isLink && !!document?.fileUrl,
   });
 
   const signedUrl = signedUrlQuery.data?.url;
@@ -70,6 +72,7 @@ export function useDocumentDetail(id: string) {
 
   return {
     document,
+    isLink,
     theme,
     subtitle,
     detailTags,

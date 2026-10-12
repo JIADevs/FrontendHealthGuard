@@ -1,8 +1,15 @@
 import { useMemo } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import { Plus } from "lucide-react-native";
 import type { Document } from "@helu/api";
 import {
+  Button,
   Typography,
   spacing,
   radii,
@@ -17,6 +24,11 @@ interface BackpackDetailContentSectionProps {
   documents: Document[];
   onDocumentPress: (doc: Document) => void;
   onAddPress: () => void;
+  onRemoveDocument?: (doc: Document) => void;
+  removingDocId?: string | null;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  onLoadMore?: () => void;
   emptyMessage?: string;
 }
 
@@ -24,6 +36,11 @@ export function BackpackDetailContentSection({
   documents,
   onDocumentPress,
   onAddPress,
+  onRemoveDocument,
+  removingDocId = null,
+  hasNextPage = false,
+  isFetchingNextPage = false,
+  onLoadMore,
   emptyMessage = "Todavía no hay documentos en esta mochila.",
 }: BackpackDetailContentSectionProps) {
   const t = useAppTheme();
@@ -44,10 +61,22 @@ export function BackpackDetailContentSection({
               key={doc.id}
               document={doc}
               onPress={() => onDocumentPress(doc)}
+              onRemove={onRemoveDocument ? () => onRemoveDocument(doc) : undefined}
+              isRemoving={removingDocId === doc.id}
             />
           ))}
         </View>
       )}
+
+      {isFetchingNextPage ? (
+        <ActivityIndicator color={t.brand.fg} style={styles.footerLoader} />
+      ) : null}
+
+      {hasNextPage && onLoadMore ? (
+        <Button variant="secondary" fullWidth onPress={onLoadMore}>
+          Cargar más documentos
+        </Button>
+      ) : null}
 
       <TouchableOpacity
         style={styles.addBtn}
@@ -76,6 +105,9 @@ function makeStyles(t: ThemeContextValue) {
     },
     list: {
       gap: spacing[3],
+    },
+    footerLoader: {
+      marginVertical: spacing[2],
     },
     addBtn: {
       flexDirection: "row",

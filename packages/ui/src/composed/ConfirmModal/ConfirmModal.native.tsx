@@ -24,6 +24,7 @@ export function ConfirmModal({
   onCancel,
   icon,
   iconTone = 'danger',
+  actionsLayout = 'row',
 }: ConfirmModalProps) {
   if (icon) {
     return (
@@ -37,6 +38,7 @@ export function ConfirmModal({
         onCancel={onCancel}
         icon={icon}
         iconTone={iconTone}
+        actionsLayout={actionsLayout}
       />
     );
   }
@@ -69,9 +71,12 @@ function CenteredConfirmModal({
   onCancel,
   icon,
   iconTone,
-}: Required<Pick<ConfirmModalProps, 'title' | 'message' | 'confirmLabel' | 'confirmVariant' | 'loading' | 'onConfirm' | 'onCancel' | 'icon' | 'iconTone'>>) {
+  actionsLayout,
+}: Required<Pick<ConfirmModalProps, 'title' | 'message' | 'confirmLabel' | 'confirmVariant' | 'loading' | 'onConfirm' | 'onCancel' | 'icon' | 'iconTone'>> &
+  Pick<ConfirmModalProps, 'actionsLayout'>) {
   const t = useAppTheme();
   const styles = makeStyles(t, iconTone);
+  const stacked = actionsLayout === 'stacked';
 
   return (
     <RNModal
@@ -86,23 +91,42 @@ function CenteredConfirmModal({
           <View style={styles.iconWrap}>{icon}</View>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
-          <View style={styles.actions}>
-            <View style={styles.actionFlex}>
-              <Button variant="secondary" fullWidth onPress={onCancel} disabled={loading}>
-                Cancelar
-              </Button>
-            </View>
-            <View style={styles.actionFlex}>
-              <Button
-                variant={confirmVariant}
-                fullWidth
-                onPress={onConfirm}
-                disabled={loading}
-                loading={loading}
-              >
-                {confirmLabel}
-              </Button>
-            </View>
+          <View style={[styles.actions, stacked && styles.actionsStacked]}>
+            {stacked ? (
+              <>
+                <Button
+                  variant={confirmVariant}
+                  fullWidth
+                  onPress={onConfirm}
+                  disabled={loading}
+                  loading={loading}
+                >
+                  {confirmLabel}
+                </Button>
+                <Button variant="secondary" fullWidth onPress={onCancel} disabled={loading}>
+                  Cancelar
+                </Button>
+              </>
+            ) : (
+              <>
+                <View style={styles.actionFlex}>
+                  <Button variant="secondary" fullWidth onPress={onCancel} disabled={loading}>
+                    Cancelar
+                  </Button>
+                </View>
+                <View style={styles.actionFlex}>
+                  <Button
+                    variant={confirmVariant}
+                    fullWidth
+                    onPress={onConfirm}
+                    disabled={loading}
+                    loading={loading}
+                  >
+                    {confirmLabel}
+                  </Button>
+                </View>
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -158,6 +182,9 @@ function makeStyles(t: ThemeContextValue, iconTone: ConfirmModalIconTone) {
     },
     actionFlex: {
       flex: 1,
+    },
+    actionsStacked: {
+      flexDirection: 'column',
     },
   });
 }

@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useEffect } from "react";
-import { useMarkNotificationReadMutation } from "./hooks";
+import { useMarkNotificationReadMutation } from "./reactQueryHooks";
 import { markNotificationAsRead, type Notification } from "./index";
 import { useNotifStore } from "@helu/stores";
 

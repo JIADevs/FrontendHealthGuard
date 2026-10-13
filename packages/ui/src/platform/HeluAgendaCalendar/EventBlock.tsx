@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Stethoscope, FlaskConical, Pill, CheckCircle2, XCircle } from "lucide-react-native";
+import { Stethoscope, FlaskConical, Pill, CheckCircle2, XCircle, ListTodo } from "lucide-react-native";
 import { spacing, fontSize, fontWeight, radii } from "../../tokens/tokens";
 import { useAppTheme } from "../../tokens/ThemeProvider";
 import type { ThemeContextValue } from "../../tokens/ThemeProvider";
@@ -57,6 +57,13 @@ export function EventBlock({ event, compact = false, onPress }: EventBlockProps)
         } else {
             subtitle = doseLabel;
         }
+    } else if (event.type === "task") {
+        const timeLabel = new Date(event.data.startAt).toLocaleTimeString("es-CO", {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+        const statusLabel = event.data.status === "completed" ? "Completada" : "Pendiente";
+        subtitle = `${timeLabel} · ${statusLabel}`;
     } else {
         subtitle = event.data.time?.slice(0, 5) ?? "";
     }
@@ -83,6 +90,9 @@ export function EventBlock({ event, compact = false, onPress }: EventBlockProps)
                 ) : null}
                 {!compact && event.type === "medication" && medStatus === "PENDING" ? (
                     <Pill size={14} color={t.accent.medFg} />
+                ) : null}
+                {!compact && event.type === "task" ? (
+                    <ListTodo size={14} color={t.accent.backpackFg} />
                 ) : null}
                 {event.type === "checkin" ? (
                     <Text style={styles.emoji}>{MOOD_EMOJI[event.data.mood]}</Text>
@@ -122,6 +132,9 @@ function makeStyles(
             bg = t.accent.medBg;
             border = t.accent.medFg;
         }
+    } else if (type === "task") {
+        bg = t.accent.backpackBg;
+        border = t.accent.backpackFg;
     }
 
     return StyleSheet.create({

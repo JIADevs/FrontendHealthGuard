@@ -82,6 +82,7 @@ export function MonthGridView({
                 <LegendItem color={t.accent.calFg} label="Citas" styles={styles} />
                 <LegendItem color={t.accent.medFg} label="Medicamentos" styles={styles} />
                 <LegendItem color={t.accent.notifFg} label="Check-in" styles={styles} />
+                <LegendItem color={t.accent.backpackFg} label="Tareas" styles={styles} />
             </View>
         </ScrollView>
     );
@@ -136,6 +137,9 @@ function MonthCell({
                 ) : null}
                 {activity.hasCheckIn ? (
                     <View style={[styles.dot, { backgroundColor: theme.accent.notifFg }]} />
+                ) : null}
+                {activity.hasTasks ? (
+                    <View style={[styles.dot, { backgroundColor: theme.accent.backpackFg }]} />
                 ) : null}
             </View>
         </TouchableOpacity>

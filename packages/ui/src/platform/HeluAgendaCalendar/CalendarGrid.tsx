@@ -30,6 +30,7 @@ interface CalendarGridProps {
     onMedicationPress?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
     onAppointmentPress?: (event: Extract<AgendaEvent, { type: "appointment" | "exam" }>) => void;
     onCheckInPress?: (event: Extract<AgendaEvent, { type: "checkin" }>) => void;
+    onTaskPress?: (event: Extract<AgendaEvent, { type: "task" }>) => void;
 }
 
 export function CalendarGrid({
@@ -41,6 +42,7 @@ export function CalendarGrid({
     onMedicationPress,
     onAppointmentPress,
     onCheckInPress,
+    onTaskPress,
 }: CalendarGridProps) {
     const t = useAppTheme();
     const { width: screenWidth } = useWindowDimensions();
@@ -59,7 +61,7 @@ export function CalendarGrid({
             const key =
                 event.type === "checkin"
                     ? localDateKeyFromISO(event.data.recordedAt)
-                    : event.type === "medication"
+                    : event.type === "medication" || event.type === "task"
                       ? event.dayKey
                       : (event.data.date?.slice(0, 10) ?? "");
             if (map.has(key)) map.get(key)!.push(event);
@@ -94,6 +96,7 @@ export function CalendarGrid({
                             onMedicationPress={onMedicationPress}
                             onAppointmentPress={onAppointmentPress}
                             onCheckInPress={onCheckInPress}
+                            onTaskPress={onTaskPress}
                         />
                     ))}
                 </View>
@@ -112,6 +115,7 @@ interface DayColumnProps {
     onMedicationPress?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
     onAppointmentPress?: (event: Extract<AgendaEvent, { type: "appointment" | "exam" }>) => void;
     onCheckInPress?: (event: Extract<AgendaEvent, { type: "checkin" }>) => void;
+    onTaskPress?: (event: Extract<AgendaEvent, { type: "task" }>) => void;
 }
 
 function DayColumn({
@@ -124,6 +128,7 @@ function DayColumn({
     onMedicationPress,
     onAppointmentPress,
     onCheckInPress,
+    onTaskPress,
 }: DayColumnProps) {
     const { weekday, day, isToday } = formatDayShort(date);
     const isSelected = date === selectedDate;
@@ -187,6 +192,7 @@ function DayColumn({
                                 onMedicationPress,
                                 onAppointmentPress,
                                 onCheckInPress,
+                                onTaskPress,
                             })}
                         />
                     </View>
@@ -202,6 +208,7 @@ function eventPressHandler(
         onMedicationPress?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
         onAppointmentPress?: (event: Extract<AgendaEvent, { type: "appointment" | "exam" }>) => void;
         onCheckInPress?: (event: Extract<AgendaEvent, { type: "checkin" }>) => void;
+        onTaskPress?: (event: Extract<AgendaEvent, { type: "task" }>) => void;
     },
 ): (() => void) | undefined {
     if (event.type === "medication" && handlers.onMedicationPress) {
@@ -212,6 +219,9 @@ function eventPressHandler(
     }
     if (event.type === "checkin" && handlers.onCheckInPress) {
         return () => handlers.onCheckInPress!(event);
+    }
+    if (event.type === "task" && handlers.onTaskPress) {
+        return () => handlers.onTaskPress!(event);
     }
     return undefined;
 }

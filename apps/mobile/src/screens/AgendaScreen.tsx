@@ -254,6 +254,12 @@ function CalendarTab({
           )
         }
         onCheckInPress={setCheckInEvent}
+        onTaskPress={(event) =>
+          (navigation as { navigate: (name: string, params: { id: string }) => void }).navigate(
+            "AgendaTaskDetail",
+            { id: event.data.id },
+          )
+        }
       />
 
       {intakeEvent ? (

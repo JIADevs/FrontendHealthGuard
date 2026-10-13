@@ -3,7 +3,7 @@
 **Issue:** [#29](https://github.com/JIADevs/FrontendHealthGuard/issues/29)  
 **Backend:** [BackendHealthGuard#15](https://github.com/JIADevs/BackendHealthGuard/issues/15)  
 **Implementation branch:** `feat/agenda-tasks`  
-**Status:** In progress (T2 next)  
+**Status:** In progress (T3 next)  
 **Delivery:** Mobile only (`@helu/api` + `@helu/ui` HeluAgendaCalendar + `apps/mobile`)  
 **Out of scope:** `apps/web`; cancel status (backend has only `pending` | `completed`)
 
@@ -29,7 +29,7 @@ Detail shows status, offsets, links. Completar sheet (optional result doc/backpa
 | ID | Spec | Status |
 |----|------|--------|
 | T1 | S1 | done |
-| T2 | S2 | pending |
+| T2 | S2 | done |
 | T3 | S3 | pending |
 | T4 | S4 | pending |
 | T5 | S5 | pending |
@@ -71,3 +71,4 @@ Detail shows status, offsets, links. Completar sheet (optional result doc/backpa
 
 - L1: User scoped mobile-only; approved calendar tap → detail; issue #29; branch `feat/agenda-tasks`.
 - L2: T1 — Zod/endpoints/hooks for `/agenda-tasks`; calendar `tasks[]`; notification types `AGENDA_TASK*`. Cancel out of scope until backend supports it.
+- L3: T2 — Calendar maps `tasks` → EventBlock (backpack accent); month dots + legend; `onTaskPress` → `AgendaTaskDetail` (read-only shell for T4).

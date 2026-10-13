@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Camera, ShieldCheck, Settings2, X } from "lucide-react-native";
-import type { PermissionResponse } from "expo-modules-core";
+import type { PermissionResponse } from "expo-camera";
 import {
   SCANNER_PERMISSION_COPY,
   messageBlockedInSettings,

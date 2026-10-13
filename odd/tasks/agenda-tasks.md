@@ -3,7 +3,7 @@
 **Issue:** [#29](https://github.com/JIADevs/FrontendHealthGuard/issues/29)  
 **Backend:** [BackendHealthGuard#15](https://github.com/JIADevs/BackendHealthGuard/issues/15)  
 **Implementation branch:** `feat/agenda-tasks`  
-**Status:** Implemented (T1–T5); pending PR  
+**Status:** Implemented (T1–T5); Expo SDK **57** upgrade in-branch; pending PR  
 **Delivery:** Mobile only (`@helu/api` + `@helu/ui` HeluAgendaCalendar + `apps/mobile`)  
 **Out of scope:** `apps/web`; cancel status (backend has only `pending` | `completed`)
 
@@ -47,3 +47,4 @@ Detail shows status, offsets, links. Completar sheet (optional result doc/backpa
 - L2: T1 — Zod/endpoints/hooks for `/agenda-tasks`; calendar `tasks[]`; notification types `AGENDA_TASK*`. Cancel out of scope until backend supports it.
 - L3: T2 — Calendar maps `tasks` → EventBlock (backpack accent); month dots + legend; `onTaskPress` → `AgendaTaskDetail`.
 - L4: T3–T5 — Form + Add sheet; detail complete/reschedule; notification routing with follow-up intent.
+- L5: Expo SDK 54 → 57 (App Store Expo Go is 57); same issue #29.

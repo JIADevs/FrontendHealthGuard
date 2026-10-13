@@ -373,6 +373,60 @@ export const AppointmentCreateSchema = z.object({
     postBackpackIds: z.array(z.string().uuid()).default([]),
 });
 
+// --- Agenda Tasks (Tareas) ---
+/** Minutes before start. Omit on create for backend default [15]; empty list is invalid. */
+export const AgendaTaskReminderOffsetsSchema = z.array(z.number().int().positive()).min(1);
+
+export const AgendaTaskStatusSchema = z.enum(["pending", "completed"]);
+
+export const AgendaTaskSchema = z.object({
+    id: z.string().uuid(),
+    userId: z.string().uuid(),
+    createdBy: z.string().uuid().nullable().optional(),
+    title: z.string(),
+    description: z.string().nullable().optional(),
+    startAt: z.string(),
+    status: AgendaTaskStatusSchema,
+    reminderOffsets: z.array(z.number().int()),
+    completedAt: z.string().nullable().optional(),
+    resultComment: z.string().nullable().optional(),
+    documentIds: z.array(z.string().uuid()).default([]),
+    backpackIds: z.array(z.string().uuid()).default([]),
+    resultDocumentIds: z.array(z.string().uuid()).default([]),
+    resultBackpackIds: z.array(z.string().uuid()).default([]),
+    createdAt: z.string().nullable().optional(),
+    updatedAt: z.string().nullable().optional(),
+});
+
+export const AgendaTaskPageSchema = createPageSchema(AgendaTaskSchema);
+
+export const AgendaTaskCreateSchema = z.object({
+    title: z.string().min(1).max(200),
+    description: z.string().nullable().optional(),
+    /** ISO datetime. Naive local wall-clock is accepted by the API as America/Bogota. */
+    startAt: z.string().min(1),
+    reminderOffsets: AgendaTaskReminderOffsetsSchema.optional(),
+    documentIds: z.array(z.string().uuid()).default([]),
+    backpackIds: z.array(z.string().uuid()).default([]),
+});
+
+export const AgendaTaskUpdateSchema = z.object({
+    title: z.string().min(1).max(200).optional(),
+    description: z.string().nullable().optional(),
+    reminderOffsets: AgendaTaskReminderOffsetsSchema.optional(),
+    documentIds: z.array(z.string().uuid()).optional(),
+    backpackIds: z.array(z.string().uuid()).optional(),
+});
+
+export const AgendaTaskCompleteSchema = z.object({
+    resultDocumentIds: z.array(z.string().uuid()).default([]),
+    resultBackpackIds: z.array(z.string().uuid()).default([]),
+    resultComment: z.string().nullable().optional(),
+});
+
+export const AgendaTaskRescheduleSchema = z.object({
+    startAt: z.string().min(1),
+});
 
 // --- Medications ---
 export const INTAKE_STATUSES = ["TAKEN", "NOT_TAKEN"] as const;
@@ -556,6 +610,8 @@ export const NotificationSchema = z.object({
         "SYSTEM",
         "INFO",
         "DELEGATION_INVITE",
+        "AGENDA_TASK",
+        "AGENDA_TASK_FOLLOWUP",
     ]),
     entityId: z.string().uuid().nullable(),
     /** Deep-link extras from push (camelized by the API client). Old rows may be null. */
@@ -649,6 +705,7 @@ const CalendarDayPayloadSchema = z.object({
     medications:  z.array(MedicationSchema).default([]),
     symptoms:     z.array(z.unknown()).default([]),
     checkIns:     z.array(DailyCheckInSchema).default([]),
+    tasks:        z.array(AgendaTaskSchema).default([]),
 });
 
 export const CalendarDaySchema = CalendarDayPayloadSchema.extend({
@@ -738,6 +795,13 @@ export type DoctorCreate = z.infer<typeof DoctorCreateSchema>;
 export type Appointment = z.infer<typeof AppointmentSchema>;
 export type AppointmentPage = z.infer<typeof AppointmentPageSchema>;
 export type AppointmentCreate = z.infer<typeof AppointmentCreateSchema>;
+export type AgendaTask = z.infer<typeof AgendaTaskSchema>;
+export type AgendaTaskPage = z.infer<typeof AgendaTaskPageSchema>;
+export type AgendaTaskStatus = z.infer<typeof AgendaTaskStatusSchema>;
+export type AgendaTaskCreate = z.input<typeof AgendaTaskCreateSchema>;
+export type AgendaTaskUpdate = z.input<typeof AgendaTaskUpdateSchema>;
+export type AgendaTaskComplete = z.input<typeof AgendaTaskCompleteSchema>;
+export type AgendaTaskReschedule = z.input<typeof AgendaTaskRescheduleSchema>;
 export type MedicationIntake = z.infer<typeof MedicationIntakeSchema>;
 export type MedicationDelivery = z.infer<typeof MedicationDeliverySchema>;
 export type Medication = z.infer<typeof MedicationSchema>;

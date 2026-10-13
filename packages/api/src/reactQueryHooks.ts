@@ -53,6 +53,13 @@ import {
     deleteAppointment,
     updateAppointmentStatus,
     getAppointmentOptions,
+    // Agenda Tasks
+    getAgendaTasks,
+    getAgendaTaskById,
+    createAgendaTask,
+    updateAgendaTask,
+    completeAgendaTask,
+    rescheduleAgendaTask,
     // Treatments
     getTreatments,
     // Medications
@@ -92,6 +99,11 @@ import type {
     DocumentCreate,
     DocumentActiveShare,
     AppointmentCreate,
+    AgendaTaskCreate,
+    AgendaTaskUpdate,
+    AgendaTaskComplete,
+    AgendaTaskReschedule,
+    AgendaTaskStatus,
     TreatmentCreate,
     TreatmentUpdate,
     MedicationCycleCreate,
@@ -148,6 +160,15 @@ export const QK = {
     appointments:     (search = "", page = 1, limit = 20, startDate: string | null = null, endDate: string | null = null, filters: AppointmentFilters = {}) =>
         ["appointments", page, search, limit, startDate, endDate, filters] as const,
     appointment:      (id: string)             => ["appointment", id] as const,
+
+    agendaTasks:      (
+        page = 1,
+        limit = 20,
+        startDate: string | null = null,
+        endDate: string | null = null,
+        status: AgendaTaskStatus | null = null,
+    ) => ["agenda-tasks", page, limit, startDate, endDate, status] as const,
+    agendaTask:       (id: string)             => ["agenda-task", id] as const,
 
     treatments:       (page = 1, limit = 100) => ["treatments", page, limit] as const,
     treatment:        (id: string)            => ["treatment", id] as const,
@@ -439,6 +460,88 @@ export function useUpdateAppointmentStatusMutation() {
             qc.invalidateQueries({ queryKey: ["appointments"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
         },
+    });
+}
+
+// ─── Agenda Tasks (Tareas) ─────────────────────────────
+
+function invalidateAgendaTaskQueries(qc: ReturnType<typeof useQueryClient>) {
+    qc.invalidateQueries({ queryKey: ["agenda-tasks"] });
+    qc.invalidateQueries({ queryKey: ["agenda-task"] });
+    qc.invalidateQueries({ queryKey: ["calendar"] });
+}
+
+export function useAgendaTasksQuery(
+    page = 1,
+    limit = 20,
+    startDate?: string,
+    endDate?: string,
+    status?: AgendaTaskStatus,
+) {
+    return useQuery({
+        queryKey: QK.agendaTasks(page, limit, startDate ?? null, endDate ?? null, status ?? null),
+        queryFn: () =>
+            getAgendaTasks({
+                page,
+                limit,
+                startDate,
+                endDate,
+                status,
+            }),
+        staleTime: LIST_STALE_TIME_MS,
+        placeholderData: keepPreviousData,
+    });
+}
+
+export function useAgendaTaskByIdQuery(id: string) {
+    return useQuery({
+        queryKey: QK.agendaTask(id),
+        queryFn: () => getAgendaTaskById(id),
+        staleTime: LIST_STALE_TIME_MS,
+        enabled: !!id,
+    });
+}
+
+export function useCreateAgendaTaskMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (task: AgendaTaskCreate) => createAgendaTask(task),
+        onSettled: () => invalidateAgendaTaskQueries(qc),
+    });
+}
+
+export function useUpdateAgendaTaskMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, task }: { id: string; task: AgendaTaskUpdate }) => updateAgendaTask(id, task),
+        onSuccess: (_data, variables) => {
+            qc.removeQueries({ queryKey: QK.agendaTask(variables.id) });
+        },
+        onSettled: () => invalidateAgendaTaskQueries(qc),
+    });
+}
+
+export function useCompleteAgendaTaskMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, result }: { id: string; result?: AgendaTaskComplete }) =>
+            completeAgendaTask(id, result ?? {}),
+        onSuccess: (_data, variables) => {
+            qc.removeQueries({ queryKey: QK.agendaTask(variables.id) });
+        },
+        onSettled: () => invalidateAgendaTaskQueries(qc),
+    });
+}
+
+export function useRescheduleAgendaTaskMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, schedule }: { id: string; schedule: AgendaTaskReschedule }) =>
+            rescheduleAgendaTask(id, schedule),
+        onSuccess: (_data, variables) => {
+            qc.removeQueries({ queryKey: QK.agendaTask(variables.id) });
+        },
+        onSettled: () => invalidateAgendaTaskQueries(qc),
     });
 }
 

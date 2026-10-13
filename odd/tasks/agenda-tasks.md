@@ -3,7 +3,7 @@
 **Issue:** [#29](https://github.com/JIADevs/FrontendHealthGuard/issues/29)  
 **Backend:** [BackendHealthGuard#15](https://github.com/JIADevs/BackendHealthGuard/issues/15)  
 **Implementation branch:** `feat/agenda-tasks`  
-**Status:** In progress (T1)  
+**Status:** In progress (T2 next)  
 **Delivery:** Mobile only (`@helu/api` + `@helu/ui` HeluAgendaCalendar + `apps/mobile`)  
 **Out of scope:** `apps/web`; cancel status (backend has only `pending` | `completed`)
 
@@ -18,8 +18,8 @@ Tasks map to `AgendaEvent` type `task`; day indicators include tasks; `EventBloc
 ### S3 — Create / edit
 FAB → Agregar a agenda → Nueva tarea → form (title + start required; reminder offsets default `[15]`; optional linked docs/backpacks). Edit from detail menu.
 
-### S4 — Detail, complete, reschedule, cancel
-Detail shows status, offsets, links. Completar sheet (optional result doc/backpack/comment). Reagendar (new start). Cancelar → cancelled status. Loading + toast on mutations.
+### S4 — Detail, complete, reschedule
+Detail shows status, offsets, links. Completar sheet (optional result doc/backpack/comment). Reagendar (new start). Loading + toast on mutations. (Cancel deferred — not in backend API.)
 
 ### S5 — Push deep links
 `NotificationType` includes `AGENDA_TASK` and `AGENDA_TASK_FOLLOWUP`; `notificationRouting` opens detail and honors complete/reschedule intent when payload provides it.
@@ -28,7 +28,7 @@ Detail shows status, offsets, links. Completar sheet (optional result doc/backpa
 
 | ID | Spec | Status |
 |----|------|--------|
-| T1 | S1 | pending |
+| T1 | S1 | done |
 | T2 | S2 | pending |
 | T3 | S3 | pending |
 | T4 | S4 | pending |
@@ -64,9 +64,10 @@ Detail shows status, offsets, links. Completar sheet (optional result doc/backpa
 
 - No dedicated “Tareas” tab in v1
 - Calendar block tap opens detail (same as appointments)
-- Detail menu `⋯` for Editar / Cancelar; primary buttons Completar / Reagendar
+- Detail menu `⋯` for Editar (Cancel deferred); primary buttons Completar / Reagendar
 - Web deferred
 
 ## Log
 
 - L1: User scoped mobile-only; approved calendar tap → detail; issue #29; branch `feat/agenda-tasks`.
+- L2: T1 — Zod/endpoints/hooks for `/agenda-tasks`; calendar `tasks[]`; notification types `AGENDA_TASK*`. Cancel out of scope until backend supports it.

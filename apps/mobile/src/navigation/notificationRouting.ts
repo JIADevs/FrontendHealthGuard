@@ -8,10 +8,12 @@ import { navigateTo } from "./navigationRef";
  */
 export interface NotificationRoutePayload {
   type: string;
-  entityId?: string | null; // appointment id | medication cycle id
+  entityId?: string | null; // appointment id | medication cycle id | agenda task id
   medicationId?: string | null;
   medicationName?: string | null;
   scheduledTime?: string | null; // ISO-8601 UTC; client derives dayKey + intakeTime
+  /** Follow-up push may suggest complete and/or reschedule (comma-separated). */
+  actions?: string | null;
 }
 
 /**
@@ -59,6 +61,20 @@ export function navigateForNotification(payload: NotificationRoutePayload): void
       });
       break;
 
+    case "AGENDA_TASK":
+    case "AGENDA_TASK_FOLLOWUP": {
+      if (!entityId) {
+        navigateTo("Notifications");
+        break;
+      }
+      const followupIntent = resolveAgendaTaskFollowupIntent(payload);
+      navigateTo("AgendaTaskDetail", {
+        id: entityId,
+        ...(followupIntent ? { intent: followupIntent } : {}),
+      });
+      break;
+    }
+
     case "DELEGATION_INVITE":
       navigateTo("Dependientes", { backTitle: "Notificaciones" });
       break;
@@ -80,11 +96,23 @@ export function buildRoutePayloadFromPushData(
 ): NotificationRoutePayload {
   return {
     type: data?.type ?? "",
-    entityId: data?.entity_id ?? null,
+    entityId: data?.entity_id ?? data?.agenda_task_id ?? null,
     medicationId: data?.medication_id ?? null,
     medicationName: data?.medication_name ?? null,
     scheduledTime: data?.scheduled_time ?? null,
+    actions: data?.actions ?? null,
   };
+}
+
+function resolveAgendaTaskFollowupIntent(
+  payload: NotificationRoutePayload,
+): "complete" | "reschedule" | undefined {
+  if (payload.type !== "AGENDA_TASK_FOLLOWUP") return undefined;
+  const actions = (payload.actions ?? "").toLowerCase();
+  // Prefer complete when both are offered; user can still reschedule from detail.
+  if (actions.includes("complete")) return "complete";
+  if (actions.includes("reschedule")) return "reschedule";
+  return "complete";
 }
 
 /**
@@ -104,9 +132,10 @@ export function buildRoutePayloadFromNotification(item: Notification): Notificat
 
   return {
     type: item.type,
-    entityId: item.entityId,
+    entityId: item.entityId ?? read("agenda_task_id", "agendaTaskId"),
     medicationId: read("medication_id", "medicationId"),
     medicationName: read("medication_name", "medicationName"),
     scheduledTime: read("scheduled_time", "scheduledTime"),
+    actions: read("actions", "actions"),
   };
 }

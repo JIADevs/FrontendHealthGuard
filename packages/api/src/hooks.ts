@@ -16,6 +16,7 @@ export * from "./useMedicationFormCore";
 export * from "./useMedicationCycleEditCore";
 export * from "./useTreatmentFormCore";
 export * from "./useAppointmentFormCore";
+export * from "./useAgendaTaskFormCore";
 export * from "./useNotificationsCore";
 export * from "./useDashboardCore";
 export * from "./useDoctorFormCore";

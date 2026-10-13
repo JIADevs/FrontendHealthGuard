@@ -8,7 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Stethoscope, Pill, Heart, X } from "lucide-react-native";
+import { Stethoscope, Pill, Heart, ListTodo, X } from "lucide-react-native";
 import { colors, fontSize, fontWeight, overlay, radii, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
@@ -17,6 +17,7 @@ export interface AgendaAddSheetProps {
   onClose: () => void;
   onAddAppointment: () => void;
   onAddMedication: () => void;
+  onAddTask: () => void;
   onAddCheckIn: () => void;
 }
 
@@ -25,6 +26,7 @@ export function AgendaAddSheet({
   onClose,
   onAddAppointment,
   onAddMedication,
+  onAddTask,
   onAddCheckIn,
 }: AgendaAddSheetProps) {
   const t = useAppTheme();
@@ -39,6 +41,11 @@ export function AgendaAddSheet({
   const handleMedication = () => {
     onClose();
     onAddMedication();
+  };
+
+  const handleTask = () => {
+    onClose();
+    onAddTask();
   };
 
   const handleCheckIn = () => {
@@ -94,6 +101,19 @@ export function AgendaAddSheet({
               <Pill size={22} color={t.accent.medFg} strokeWidth={2.25} />
             </View>
             <Text style={styles.optionLabel}>Nuevo medicamento</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={handleTask}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Nueva tarea"
+          >
+            <View style={[styles.optionIcon, { backgroundColor: t.accent.backpackBg }]}>
+              <ListTodo size={22} color={t.accent.backpackFg} strokeWidth={2.25} />
+            </View>
+            <Text style={styles.optionLabel}>Nueva tarea</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

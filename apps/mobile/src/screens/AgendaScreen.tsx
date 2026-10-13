@@ -202,6 +202,7 @@ export function AgendaScreen() {
             onClose={() => setAddSheetOpen(false)}
             onAddAppointment={() => navigation.navigate("AppointmentForm" as never)}
             onAddMedication={() => navigation.navigate("MedicationForm" as never)}
+            onAddTask={() => navigation.navigate("AgendaTaskForm" as never)}
             onAddCheckIn={() => setCheckInFormOpen(true)}
           />
 

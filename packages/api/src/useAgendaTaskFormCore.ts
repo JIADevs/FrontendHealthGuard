@@ -10,7 +10,7 @@ import {
 import { isApiError } from "./errors";
 import type { AgendaTask } from "./schemas";
 
-const DEFAULT_REMINDER_OFFSETS = [15];
+const DEFAULT_REMINDER_OFFSETS = [30];
 
 export interface AgendaTaskFormState {
   title: string;

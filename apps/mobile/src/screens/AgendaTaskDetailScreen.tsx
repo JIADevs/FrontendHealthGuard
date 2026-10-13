@@ -44,6 +44,7 @@ import {
   Plus,
   FileText,
   Backpack,
+  CheckCircle2,
 } from "lucide-react-native";
 import Toast from "react-native-toast-message";
 import type { RootStackParamList } from "../navigation/RootNavigator";
@@ -142,8 +143,9 @@ export function AgendaTaskDetailScreen() {
   const footerActions: FooterAction[] = pending
     ? [
         {
-          label: completeMut.isPending ? "Completando…" : "Completar",
-          variant: "primary",
+          label: "Completar",
+          variant: "outline",
+          icon: <CheckCircle2 size={18} color={t.text.primary} />,
           disabled: completeMut.isPending || rescheduleMut.isPending,
           onPress: () => {
             setResultComment("");
@@ -155,6 +157,7 @@ export function AgendaTaskDetailScreen() {
         {
           label: "Reagendar",
           variant: "outline",
+          icon: <Calendar size={18} color={t.text.primary} />,
           disabled: completeMut.isPending || rescheduleMut.isPending,
           onPress: () => {
             const split = formatStart(task.startAt);
@@ -346,8 +349,6 @@ export function AgendaTaskDetailScreen() {
                 <X size={22} color={t.text.secondary} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.hint}>Todo es opcional.</Text>
-
             <Text style={styles.fieldLabel}>Documentos resultado</Text>
             <View style={styles.chipWrap}>
               {resultDocumentIds.map((docId) => (
@@ -413,7 +414,7 @@ export function AgendaTaskDetailScreen() {
               style={styles.commentInput}
               value={resultComment}
               onChangeText={setResultComment}
-              placeholder="Opcional"
+              placeholder=""
               placeholderTextColor={t.text.muted}
               multiline
             />
@@ -482,7 +483,7 @@ export function AgendaTaskDetailScreen() {
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
-    safe: { flex: 1, backgroundColor: t.surface.bg },
+    safe: { flex: 1, backgroundColor: t.surface.bgCard },
     center: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing[5] },
     errorText: { fontSize: fontSize.sm, color: t.status.errorFg, textAlign: "center" },
     content: { padding: spacing[4], gap: spacing[4], paddingBottom: spacing[8] },
@@ -516,10 +517,10 @@ function makeStyles(t: ThemeContextValue) {
     badgeTextPending: { color: t.accent.backpackFg },
     badgeTextDone: { color: t.status.successFg },
     metaCard: {
-      backgroundColor: t.surface.bgCard,
-      borderRadius: radii.lg,
-      padding: spacing[4],
       gap: spacing[3],
+      paddingTop: spacing[3],
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: t.border.light,
     },
     metaRow: { flexDirection: "row", alignItems: "center", gap: spacing[3] },
     metaText: { flex: 1, fontSize: fontSize.sm, color: t.text.primary },
@@ -545,7 +546,6 @@ function makeStyles(t: ThemeContextValue) {
       justifyContent: "space-between",
     },
     sheetTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: t.text.primary },
-    hint: { fontSize: fontSize.xs, color: t.text.secondary },
     fieldLabel: {
       fontSize: fontSize.sm,
       fontWeight: fontWeight.medium,

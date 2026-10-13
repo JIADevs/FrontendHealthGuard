@@ -16,7 +16,7 @@ Zod `AgendaTask*` schemas; `CalendarDay` includes `tasks[]`; endpoints + TanStac
 Tasks map to `AgendaEvent` type `task`; day indicators include tasks; `EventBlock` tappable via `onTaskPress` → `AgendaTaskDetail`.
 
 ### S3 — Create / edit
-FAB → Agregar a agenda → Nueva tarea → form (title + start required; reminder offsets default `[15]`; optional linked docs/backpacks). Edit from detail menu (start changes via reschedule only).
+FAB → Agregar a agenda → Nueva tarea → form (title + start required; reminder offsets default `[30]`; optional linked docs/backpacks). Edit from detail menu (start changes via reschedule only).
 
 ### S4 — Detail, complete, reschedule
 Detail shows status, offsets, links. Completar sheet (optional result doc/backpack/comment). Reagendar (new start). Loading + toast on mutations.

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
   Modal,
   Pressable,
   TextInput,
-  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
@@ -32,8 +31,6 @@ import {
   useBackpacksQuery,
 } from "@helu/api/hooks";
 import {
-  Calendar,
-  Clock,
   Bell,
   FileText,
   Backpack,
@@ -49,22 +46,36 @@ import { useAgendaTaskForm } from "../hooks/useAgendaTaskForm";
 type AgendaTaskFormRoute = RouteProp<RootStackParamList, "AgendaTaskForm">;
 
 const REMINDER_PRESETS = [
-  { label: "15 min", value: 15 },
   { label: "30 min", value: 30 },
   { label: "1 hora", value: 60 },
   { label: "2 horas", value: 120 },
 ];
 
+interface PickerItem {
+  id: string;
+  label: string;
+  sub?: string;
+}
+
 interface PickerModalProps {
   visible: boolean;
   onClose: () => void;
   title: string;
-  items: { id: string; label: string; sub?: string }[];
+  items: PickerItem[];
   selected: string[];
   onToggle: (id: string) => void;
+  Icon: ComponentType<{ size?: number; color?: string }>;
 }
 
-function PickerModal({ visible, onClose, title, items, selected, onToggle }: PickerModalProps) {
+function PickerModal({
+  visible,
+  onClose,
+  title,
+  items,
+  selected,
+  onToggle,
+  Icon,
+}: PickerModalProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makePickerStyles(t), [t]);
   const [search, setSearch] = useState("");
@@ -87,6 +98,7 @@ function PickerModal({ visible, onClose, title, items, selected, onToggle }: Pic
               <X size={22} color={t.text.primary} />
             </TouchableOpacity>
           </View>
+          <View style={styles.sheetDivider} />
           <View style={styles.searchRow}>
             <Search size={16} color={t.text.secondary} />
             <TextInput
@@ -96,8 +108,16 @@ function PickerModal({ visible, onClose, title, items, selected, onToggle }: Pic
               placeholder="Buscar..."
               placeholderTextColor={t.text.muted}
             />
+            {search.length > 0 ? (
+              <TouchableOpacity onPress={() => setSearch("")}>
+                <X size={16} color={t.text.secondary} />
+              </TouchableOpacity>
+            ) : null}
           </View>
-          <ScrollView style={styles.list} contentContainerStyle={{ gap: spacing[2], paddingBottom: spacing[2] }}>
+          <ScrollView
+            style={styles.list}
+            contentContainerStyle={{ gap: spacing[2], paddingBottom: spacing[2] }}
+          >
             {filtered.length === 0 ? (
               <Text style={styles.empty}>No hay elementos disponibles</Text>
             ) : (
@@ -106,18 +126,25 @@ function PickerModal({ visible, onClose, title, items, selected, onToggle }: Pic
                 return (
                   <TouchableOpacity
                     key={item.id}
-                    style={[styles.row, isSelected && styles.rowSelected]}
+                    style={[styles.pickerCard, isSelected && styles.pickerCardSelected]}
                     onPress={() => onToggle(item.id)}
                     activeOpacity={0.7}
                   >
-                    <View style={{ flex: 1 }}>
+                    <View style={styles.pickerCardIcon}>
+                      <Icon size={20} color={t.text.secondary} />
+                    </View>
+                    <View style={styles.pickerCardText}>
                       <Text style={styles.rowTitle} numberOfLines={1}>
                         {item.label}
                       </Text>
-                      {item.sub ? <Text style={styles.rowSub}>{item.sub}</Text> : null}
+                      {item.sub ? (
+                        <Text style={styles.rowSub} numberOfLines={1}>
+                          {item.sub}
+                        </Text>
+                      ) : null}
                     </View>
                     <View style={[styles.addBtn, isSelected && styles.addBtnSelected]}>
-                      {isSelected ? <X size={18} color="#fff" /> : <Plus size={18} color="#fff" />}
+                      {isSelected ? <X size={22} color="#fff" /> : <Plus size={22} color="#fff" />}
                     </View>
                   </TouchableOpacity>
                 );
@@ -133,25 +160,33 @@ function PickerModal({ visible, onClose, title, items, selected, onToggle }: Pic
   );
 }
 
-function ChipTag({ label, onRemove }: { label: string; onRemove: () => void }) {
+function SelectedLinkRow({
+  label,
+  onRemove,
+  Icon,
+}: {
+  label: string;
+  onRemove: () => void;
+  Icon: ComponentType<{ size?: number; color?: string }>;
+}) {
   const t = useAppTheme();
+  const styles = useMemo(() => makeSelectedStyles(t), [t]);
+
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 4,
-        backgroundColor: t.accent.backpackBg,
-        borderRadius: 12,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderWidth: 1,
-        borderColor: t.accent.backpackFg,
-      }}
-    >
-      <Text style={{ fontSize: 13, color: t.accent.backpackFg }}>{label}</Text>
-      <TouchableOpacity onPress={onRemove} accessibilityLabel={`Quitar ${label}`}>
-        <X size={13} color={t.accent.backpackFg} />
+    <View style={styles.row}>
+      <View style={styles.iconWrap}>
+        <Icon size={18} color={t.text.secondary} />
+      </View>
+      <Text style={styles.label} numberOfLines={1}>
+        {label}
+      </Text>
+      <TouchableOpacity
+        onPress={onRemove}
+        accessibilityLabel={`Quitar ${label}`}
+        hitSlop={8}
+        style={styles.removeBtn}
+      >
+        <X size={18} color={t.text.secondary} />
       </TouchableOpacity>
     </View>
   );
@@ -173,7 +208,7 @@ function AgendaTaskFormEditor({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["top", "bottom"]}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bgCard }} edges={["top", "bottom"]}>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
           <Spinner size="lg" />
         </View>
@@ -217,7 +252,8 @@ function AgendaTaskFormBody({ task }: { task: Parameters<typeof useAgendaTaskFor
       <FormHeader
         title={task ? "Editar tarea" : "Nueva tarea"}
         onSave={form.handleSave}
-        saveButtonText={form.saving ? "Guardando…" : form.isEdit ? "Guardar cambios" : "Guardar"}
+        saveButtonText={form.isEdit ? "Guardar cambios" : "Guardar"}
+        saving={form.saving}
       />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -231,10 +267,10 @@ function AgendaTaskFormBody({ task }: { task: Parameters<typeof useAgendaTaskFor
             </View>
           ) : null}
 
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
               <ListTodo size={20} color={t.accent.backpackFg} />
-              <Text style={styles.cardTitle}>Información</Text>
+              <Text style={styles.sectionTitle}>Información</Text>
             </View>
 
             <TextField
@@ -247,52 +283,37 @@ function AgendaTaskFormBody({ task }: { task: Parameters<typeof useAgendaTaskFor
               label="Descripción"
               value={form.description}
               onChange={form.setDescription}
-              placeholder="Opcional"
+              placeholder=""
               multiline
             />
 
             {!form.isEdit ? (
-              <View style={styles.row}>
-                <View style={styles.half}>
-                  <View style={styles.labelRow}>
-                    <Calendar size={16} color={t.text.secondary} />
-                    <Text style={styles.label}>Fecha *</Text>
-                  </View>
-                  <DatePicker
-                    label=""
-                    value={form.date}
-                    onChange={form.setDate}
-                    placeholder="Fecha"
-                    required
-                  />
-                </View>
-                <View style={styles.half}>
-                  <View style={styles.labelRow}>
-                    <Clock size={16} color={t.text.secondary} />
-                    <Text style={styles.label}>Hora *</Text>
-                  </View>
-                  <TimePicker
-                    label=""
-                    value={form.time}
-                    onChange={form.setTime}
-                    placeholder="Hora"
-                    required
-                  />
-                </View>
+              <View style={styles.dateTimeStack}>
+                <DatePicker
+                  label="Fecha"
+                  value={form.date}
+                  onChange={form.setDate}
+                  placeholder="Seleccionar fecha"
+                  required
+                />
+                <TimePicker
+                  label="Hora"
+                  value={form.time}
+                  onChange={form.setTime}
+                  placeholder="Seleccionar hora"
+                  required
+                />
               </View>
-            ) : (
-              <Text style={styles.hint}>
-                Para cambiar la fecha u hora usá Reagendar desde el detalle.
-              </Text>
-            )}
+            ) : null}
           </View>
 
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View style={styles.divider} />
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
               <Bell size={20} color={t.accent.backpackFg} />
-              <Text style={styles.cardTitle}>Avisarme antes</Text>
+              <Text style={styles.sectionTitle}>Avisarme antes</Text>
             </View>
-            <Text style={styles.hint}>Siempre hay al menos un aviso (por defecto 15 min).</Text>
             <View style={styles.pillRow}>
               {REMINDER_PRESETS.map(({ label, value }) => {
                 const selected = form.reminderOffsets.includes(value);
@@ -309,56 +330,55 @@ function AgendaTaskFormBody({ task }: { task: Parameters<typeof useAgendaTaskFor
             </View>
           </View>
 
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View style={styles.divider} />
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
               <FileText size={20} color={t.accent.backpackFg} />
-              <Text style={styles.cardTitle}>Documentos (opcional)</Text>
+              <Text style={styles.sectionTitle}>Documentos</Text>
             </View>
             {form.documentIds.length > 0 ? (
-              <View style={styles.chipWrap}>
+              <View style={styles.linkList}>
                 {form.documentIds.map((id) => (
-                  <ChipTag
+                  <SelectedLinkRow
                     key={id}
+                    Icon={FileText}
                     label={labelForId(id, docItems)}
                     onRemove={() => form.setDocumentIds(form.documentIds.filter((x) => x !== id))}
                   />
                 ))}
               </View>
             ) : null}
-            <TouchableOpacity style={styles.addLink} onPress={() => setShowDocPicker(true)}>
-              <Plus size={16} color={t.brand.fg} />
-              <Text style={styles.addLinkText}>Agregar documento</Text>
+            <TouchableOpacity style={styles.addButton} onPress={() => setShowDocPicker(true)}>
+              <Plus size={18} color={t.brand.fg} />
+              <Text style={styles.addButtonText}>Agregar documentos</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View style={styles.divider} />
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
               <Backpack size={20} color={t.accent.backpackFg} />
-              <Text style={styles.cardTitle}>Mochilas (opcional)</Text>
+              <Text style={styles.sectionTitle}>Mochilas</Text>
             </View>
             {form.backpackIds.length > 0 ? (
-              <View style={styles.chipWrap}>
+              <View style={styles.linkList}>
                 {form.backpackIds.map((id) => (
-                  <ChipTag
+                  <SelectedLinkRow
                     key={id}
+                    Icon={Backpack}
                     label={labelForId(id, bpItems)}
                     onRemove={() => form.setBackpackIds(form.backpackIds.filter((x) => x !== id))}
                   />
                 ))}
               </View>
             ) : null}
-            <TouchableOpacity style={styles.addLink} onPress={() => setShowBpPicker(true)}>
-              <Plus size={16} color={t.brand.fg} />
-              <Text style={styles.addLinkText}>Agregar mochila</Text>
+            <TouchableOpacity style={styles.addButton} onPress={() => setShowBpPicker(true)}>
+              <Plus size={18} color={t.brand.fg} />
+              <Text style={styles.addButtonText}>Agregar mochilas</Text>
             </TouchableOpacity>
           </View>
-
-          {form.saving ? (
-            <View style={styles.savingRow}>
-              <ActivityIndicator color={t.brand.fg} />
-              <Text style={styles.hint}>Guardando…</Text>
-            </View>
-          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -366,6 +386,7 @@ function AgendaTaskFormBody({ task }: { task: Parameters<typeof useAgendaTaskFor
         visible={showDocPicker}
         onClose={() => setShowDocPicker(false)}
         title="Documentos"
+        Icon={FileText}
         items={docItems}
         selected={form.documentIds}
         onToggle={(id) =>
@@ -380,6 +401,7 @@ function AgendaTaskFormBody({ task }: { task: Parameters<typeof useAgendaTaskFor
         visible={showBpPicker}
         onClose={() => setShowBpPicker(false)}
         title="Mochilas"
+        Icon={Backpack}
         items={bpItems}
         selected={form.backpackIds}
         onToggle={(id) =>
@@ -396,21 +418,13 @@ function AgendaTaskFormBody({ task }: { task: Parameters<typeof useAgendaTaskFor
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: t.surface.bg },
+    container: { flex: 1, backgroundColor: t.surface.bgCard },
     content: { padding: spacing[4], gap: spacing[4], paddingBottom: spacing[10] },
-    card: {
-      backgroundColor: t.surface.bgCard,
-      borderRadius: radii.lg,
-      padding: spacing[4],
-      gap: spacing[3],
-    },
-    cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
-    cardTitle: { fontSize: fontSize.base, fontWeight: fontWeight.bold, color: t.text.primary },
-    row: { flexDirection: "row", gap: spacing[3] },
-    half: { flex: 1 },
-    labelRow: { flexDirection: "row", alignItems: "center", gap: spacing[1], marginBottom: spacing[1] },
-    label: { fontSize: fontSize.sm, color: t.text.secondary, fontWeight: fontWeight.medium },
-    hint: { fontSize: fontSize.xs, color: t.text.secondary },
+    section: { gap: spacing[3] },
+    sectionHeader: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
+    sectionTitle: { fontSize: fontSize.base, fontWeight: fontWeight.bold, color: t.text.primary },
+    divider: { height: StyleSheet.hairlineWidth, backgroundColor: t.border.light },
+    dateTimeStack: { gap: spacing[3] },
     pillRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
     pill: {
       paddingHorizontal: spacing[3],
@@ -418,21 +432,72 @@ function makeStyles(t: ThemeContextValue) {
       borderRadius: radii.full,
       borderWidth: 1,
       borderColor: t.border.medium,
-      backgroundColor: t.surface.bg,
+      backgroundColor: t.surface.bgCard,
     },
     pillActive: { backgroundColor: t.accent.backpackBg, borderColor: t.accent.backpackFg },
     pillText: { fontSize: fontSize.sm, color: t.text.primary },
     pillTextActive: { color: t.accent.backpackFg, fontWeight: fontWeight.semibold },
-    chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
-    addLink: { flexDirection: "row", alignItems: "center", gap: spacing[1] },
-    addLinkText: { fontSize: fontSize.sm, color: t.brand.fg, fontWeight: fontWeight.medium },
+    linkList: { gap: spacing[2] },
+    addButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing[2],
+      paddingVertical: spacing[3],
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: t.border.medium,
+      borderStyle: "dashed",
+      backgroundColor: t.surface.bgCard,
+    },
+    addButtonText: { fontSize: fontSize.sm, color: t.brand.fg, fontWeight: fontWeight.medium },
     errorBox: {
       backgroundColor: t.status.errorBg,
       borderRadius: radii.md,
       padding: spacing[3],
     },
     errorText: { color: t.status.errorFg, fontSize: fontSize.sm },
-    savingRow: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
+  });
+}
+
+function makeSelectedStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing[2],
+      paddingVertical: spacing[2],
+      paddingHorizontal: spacing[3],
+      borderRadius: radii.md,
+      borderWidth: 1,
+      borderColor: t.border.light,
+      backgroundColor: t.surface.bgCard,
+      minHeight: 48,
+    },
+    iconWrap: {
+      width: 32,
+      height: 32,
+      borderRadius: radii.sm,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: t.surface.bg,
+      flexShrink: 0,
+    },
+    label: {
+      flex: 1,
+      flexShrink: 1,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.medium,
+      color: t.text.primary,
+      minWidth: 0,
+    },
+    removeBtn: {
+      width: 32,
+      height: 32,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
   });
 }
 
@@ -440,63 +505,86 @@ function makePickerStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     overlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.45)",
+      backgroundColor: "rgba(0,0,0,0.5)",
       justifyContent: "flex-end",
     },
     sheet: {
-      backgroundColor: t.surface.bgCard,
-      borderTopLeftRadius: radii.xl,
-      borderTopRightRadius: radii.xl,
+      backgroundColor: t.surface.bg,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
       maxHeight: "75%",
-      padding: spacing[4],
-      gap: spacing[3],
+      paddingBottom: spacing[4],
     },
     sheetHeader: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[4],
     },
-    sheetTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: t.text.primary },
+    sheetTitle: { fontSize: 17, fontWeight: fontWeight.semibold, color: t.text.primary },
+    sheetDivider: { height: 1, backgroundColor: t.border.light, marginBottom: spacing[2] },
     searchRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing[2],
+      marginHorizontal: spacing[4],
+      marginBottom: spacing[3],
       borderWidth: 1,
-      borderColor: t.border.light,
-      borderRadius: radii.md,
+      borderColor: t.border.medium,
+      borderRadius: 10,
       paddingHorizontal: spacing[3],
       paddingVertical: spacing[2],
+      backgroundColor: t.surface.bgCard,
     },
-    searchInput: { flex: 1, fontSize: fontSize.sm, color: t.text.primary, padding: 0 },
-    list: { maxHeight: 320 },
-    empty: { textAlign: "center", color: t.text.secondary, padding: spacing[4] },
-    row: {
+    searchInput: { flex: 1, fontSize: 15, color: t.text.primary, padding: 0 },
+    list: { paddingHorizontal: spacing[4], maxHeight: 360 },
+    empty: { textAlign: "center", color: t.text.secondary, padding: spacing[6] },
+    pickerCard: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing[3],
       padding: spacing[3],
-      borderRadius: radii.md,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: t.border.light,
+      backgroundColor: t.surface.bgCard,
     },
-    rowSelected: { borderColor: t.accent.backpackFg, backgroundColor: t.accent.backpackBg },
-    rowTitle: { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: t.text.primary },
-    rowSub: { fontSize: fontSize.xs, color: t.text.secondary, marginTop: 2 },
+    pickerCardSelected: {
+      borderColor: t.brand.fg,
+      backgroundColor: t.brand.bg,
+    },
+    pickerCardIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 12,
+      backgroundColor: t.surface.bg,
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+    pickerCardText: { flex: 1, minWidth: 0 },
+    rowTitle: { fontSize: 15, fontWeight: fontWeight.medium, color: t.text.primary },
+    rowSub: { fontSize: 13, color: t.text.secondary, marginTop: 2 },
     addBtn: {
-      width: 32,
-      height: 32,
-      borderRadius: radii.full,
+      width: 52,
+      height: 52,
+      borderRadius: 14,
       backgroundColor: t.brand.fg,
       alignItems: "center",
       justifyContent: "center",
+      flexShrink: 0,
     },
-    addBtnSelected: { backgroundColor: t.accent.backpackFg },
+    addBtnSelected: { backgroundColor: "#e53e3e" },
     closeBtn: {
-      backgroundColor: t.surface.bg,
-      borderRadius: radii.md,
-      paddingVertical: spacing[3],
+      margin: spacing[4],
+      padding: spacing[4],
+      backgroundColor: t.surface.bgCard,
+      borderRadius: 16,
       alignItems: "center",
+      borderWidth: 1,
+      borderColor: t.border.light,
     },
-    closeBtnText: { fontWeight: fontWeight.semibold, color: t.text.primary },
+    closeBtnText: { fontSize: 16, fontWeight: fontWeight.semibold, color: t.text.primary },
   });
 }

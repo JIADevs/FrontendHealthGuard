@@ -43,11 +43,11 @@ services:
     stdin_open: true
     # Instala dependencias dentro del contenedor (volúmenes de node_modules) y luego arranca Expo.
     # Tras cambiar package.json: `node docker-up.js --clear` o `docker compose build mobile --no-cache`.
-    # `--offline` uses anonymous Expo Go manifests and skips the interactive
-    # "Log in / Proceed anonymously" menu (docker-up's TTY cannot send arrow keys).
+    # Expo Go SDK 57 on physical iOS requires the same Expo account in CLI + Expo Go.
+    # Mount host ~/.expo and do NOT use --offline so the manifest can be signed.
     # Do not set CI=1 for `expo start` — that disables Metro reload/watch.
     # CI=true solo en pnpm (no interactivo).
-    command: sh -c "CI=true pnpm install --no-frozen-lockfile && cd apps/mobile && env -u CI npx expo start --offline --port 8081"
+    command: sh -c "CI=true pnpm install --no-frozen-lockfile && cd apps/mobile && env -u CI npx expo start --port 8081"
     ports:
       - "8081:8081"
       - "19000:19000"
@@ -61,10 +61,14 @@ services:
       - EXPO_PUBLIC_API_URL=http://${HOST_IP:-localhost}:8000
       # Misma IP que la API: el teléfono no puede abrir localhost:3000 de tu PC; reescribe enlaces de compartir en la app.
       - EXPO_PUBLIC_WEB_APP_URL=http://${HOST_IP:-127.0.0.1}:3000
+      # Home for Expo credentials mounted from the host (see volumes).
+      - HOME=/root
     volumes:
       - .:/app
       - /app/apps/mobile/node_modules
       - /app/node_modules
+      # Host Expo login (npx expo whoami) — required for Expo Go SDK 57 on physical iOS.
+      - ${HOME}/.expo:/root/.expo
 
     networks:
       - helu_network

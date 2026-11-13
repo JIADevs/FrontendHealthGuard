@@ -2,6 +2,11 @@
 
 > Monorepo con Turborepo + pnpm. Web (Next.js) y Mobile (Expo/React Native).
 
+## Documentación
+
+- **Arquitectura técnica del frontend:** [`.docs/`](./.docs/README.md) en este repo.
+- **Producto, features y arquitectura general:** repo **`BackendHealthGuard`**, en [`.docs/`](https://github.com/JIADevs/BackendHealthGuard/tree/main/.docs).
+
 ## Requisitos
 
 - **Node.js** ≥ 20

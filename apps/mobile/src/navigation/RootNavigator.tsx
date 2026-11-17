@@ -19,6 +19,8 @@ import { SharedDetailScreen } from "../screens/SharedDetailScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 
 import { AppointmentDetailScreen } from "../screens/AppointmentDetailScreen";
+import { AgendaTaskDetailScreen } from "../screens/AgendaTaskDetailScreen";
+import { AgendaTaskFormScreen } from "../screens/AgendaTaskFormScreen";
 import { AppointmentFormScreen } from "../screens/AppointmentFormScreen";
 import { DoctorFormScreen } from "../screens/DoctorFormScreen";
 import { MedicationFormScreen } from "../screens/MedicationFormScreen";
@@ -62,6 +64,8 @@ export type RootStackParamList = {
   MainTabs: { screen: "Agenda"; params: AgendaRouteParams } | undefined;
 
   AppointmentDetail: { id: string };
+  AgendaTaskDetail: { id: string; intent?: "complete" | "reschedule" };
+  AgendaTaskForm: { id?: string } | undefined;
   AppointmentForm: { id?: string } | undefined;
   DoctorForm: undefined;
   MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string } | undefined;
@@ -289,6 +293,16 @@ export function RootNavigator() {
           <Stack.Screen
             name="AppointmentDetail"
             component={AppointmentDetailScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="AgendaTaskDetail"
+            component={AgendaTaskDetailScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="AgendaTaskForm"
+            component={AgendaTaskFormScreen}
             options={{ headerShown: false, animation: "slide_from_right" }}
           />
           <Stack.Screen

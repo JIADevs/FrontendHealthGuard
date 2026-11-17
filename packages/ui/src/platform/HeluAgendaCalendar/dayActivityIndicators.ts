@@ -5,6 +5,7 @@ export interface DayActivityIndicators {
     hasAppointments: boolean;
     hasMedications: boolean;
     hasCheckIn: boolean;
+    hasTasks: boolean;
 }
 
 /**
@@ -29,6 +30,7 @@ export function buildDayActivityMap(days: CalendarDay[]): Map<string, DayActivit
             hasAppointments: day.appointments.length > 0,
             hasMedications: dayHasScheduledMedication(day),
             hasCheckIn: day.checkIns.length > 0,
+            hasTasks: (day.tasks ?? []).length > 0,
         });
     }
 
@@ -40,5 +42,6 @@ export function emptyDayActivity(): DayActivityIndicators {
         hasAppointments: false,
         hasMedications: false,
         hasCheckIn: false,
+        hasTasks: false,
     };
 }

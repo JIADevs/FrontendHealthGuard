@@ -13,6 +13,7 @@ export interface HeluAgendaCalendarProps {
     onMedicationPress?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
     onAppointmentPress?: (event: Extract<AgendaEvent, { type: "appointment" | "exam" }>) => void;
     onCheckInPress?: (event: Extract<AgendaEvent, { type: "checkin" }>) => void;
+    onTaskPress?: (event: Extract<AgendaEvent, { type: "task" }>) => void;
 }
 
 export function HeluAgendaCalendar({
@@ -20,6 +21,7 @@ export function HeluAgendaCalendar({
     onMedicationPress,
     onAppointmentPress,
     onCheckInPress,
+    onTaskPress,
 }: HeluAgendaCalendarProps) {
     const calendar = useHeluAgendaCalendar(initialDate);
     const t = useAppTheme();
@@ -62,6 +64,7 @@ export function HeluAgendaCalendar({
                     onMedicationPress={onMedicationPress}
                     onAppointmentPress={onAppointmentPress}
                     onCheckInPress={onCheckInPress}
+                    onTaskPress={onTaskPress}
                 />
             )}
         </View>

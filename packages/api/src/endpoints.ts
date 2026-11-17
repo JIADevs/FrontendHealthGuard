@@ -16,6 +16,9 @@ import {
     DocumentActiveShareSchema,
     AppointmentPageSchema,
     AppointmentSchema,
+    AgendaTaskPageSchema,
+    AgendaTaskSchema,
+    AgendaTaskCompleteSchema,
     TreatmentPageSchema,
     TreatmentSchema,
     TreatmentDetailSchema,
@@ -40,6 +43,11 @@ import {
     type UserUpdate,
     type DocumentCreate,
     type AppointmentCreate,
+    type AgendaTaskCreate,
+    type AgendaTaskUpdate,
+    type AgendaTaskComplete,
+    type AgendaTaskReschedule,
+    type AgendaTaskStatus,
     type TreatmentCreate,
     type TreatmentUpdate,
     type MedicationCycleCreate,
@@ -282,6 +290,45 @@ export async function updateAppointmentStatus(
         status,
     });
     return data;
+}
+
+// ─── Agenda Tasks (Tareas) ─────────────────────────────
+
+export async function getAgendaTasks(params: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+    status?: AgendaTaskStatus;
+} = {}) {
+    const { data } = await apiClient.get("/agenda-tasks/", { params });
+    return AgendaTaskPageSchema.parse(data);
+}
+
+export async function getAgendaTaskById(id: string) {
+    const { data } = await apiClient.get(`/agenda-tasks/${id}`);
+    return AgendaTaskSchema.parse(data);
+}
+
+export async function createAgendaTask(task: AgendaTaskCreate) {
+    const { data } = await apiClient.post("/agenda-tasks/", task);
+    return AgendaTaskSchema.parse(data);
+}
+
+export async function updateAgendaTask(id: string, task: AgendaTaskUpdate) {
+    const { data } = await apiClient.put(`/agenda-tasks/${id}`, task);
+    return AgendaTaskSchema.parse(data);
+}
+
+export async function completeAgendaTask(id: string, result: AgendaTaskComplete = {}) {
+    const payload = AgendaTaskCompleteSchema.parse(result);
+    const { data } = await apiClient.patch(`/agenda-tasks/${id}/complete`, payload);
+    return AgendaTaskSchema.parse(data);
+}
+
+export async function rescheduleAgendaTask(id: string, schedule: AgendaTaskReschedule) {
+    const { data } = await apiClient.patch(`/agenda-tasks/${id}/reschedule`, schedule);
+    return AgendaTaskSchema.parse(data);
 }
 
 export async function getAppointmentOptions() {

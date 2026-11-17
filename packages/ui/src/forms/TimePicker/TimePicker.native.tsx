@@ -82,7 +82,7 @@ export function TimePicker({
           styles.field,
           {
             borderColor,
-            backgroundColor: disabled ? t.border.light : t.surface.bgCard,
+            backgroundColor: disabled ? t.border.light : t.surface.bg,
           },
           disabled && styles.disabled,
         ]}
@@ -115,7 +115,9 @@ export function TimePicker({
                 display="spinner"
                 onChange={(_e, d) => d && setTempDate(d)}
                 locale="es-ES"
-                style={{ width: '100%' }}
+                themeVariant={t.mode}
+                textColor={t.text.primary}
+                style={styles.spinner}
               />
             </View>
           </View>
@@ -190,5 +192,9 @@ const styles = StyleSheet.create({
   },
   sheetAction: {
     fontSize: fontSize.base,
+  },
+  spinner: {
+    width: '100%',
+    height: 216,
   },
 });

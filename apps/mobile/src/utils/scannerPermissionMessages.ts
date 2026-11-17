@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
-import type { PermissionResponse } from "expo-modules-core";
+import type { PermissionResponse } from "expo-camera";
 
 /** Textos fijos de la pantalla de permiso de camara (escaner). */
 export const SCANNER_PERMISSION_COPY = {

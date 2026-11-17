@@ -1,4 +1,11 @@
-import type { Appointment, CalendarDay, DailyCheckIn, Medication, MedicationIntake } from "@helu/api";
+import type {
+    AgendaTask,
+    Appointment,
+    CalendarDay,
+    DailyCheckIn,
+    Medication,
+    MedicationIntake,
+} from "@helu/api";
 import { localDateKeyFromISO } from "./calendarDateUtils";
 import {
     generateIntakeTimesForDay,
@@ -18,6 +25,13 @@ export type AgendaEvent =
           dayKey: string;
           intakeTime: string;
           intake?: MedicationIntake;
+          sortKey: number;
+      }
+    | {
+          type: "task";
+          data: AgendaTask;
+          /** Calendar day from API aggregate (America/Bogota bucketing). */
+          dayKey: string;
           sortKey: number;
       };
 
@@ -75,6 +89,14 @@ export function mapCalendarApiToEvents(days: CalendarDay[]): AgendaEvent[] {
             });
         }
         events.push(...mapMedicationIntakesForDay(day.date, day.medications));
+        for (const task of day.tasks ?? []) {
+            events.push({
+                type: "task",
+                data: task,
+                dayKey: day.date,
+                sortKey: new Date(task.startAt).getTime(),
+            });
+        }
     }
 
     return events.sort((a, b) => a.sortKey - b.sortKey);
@@ -86,7 +108,7 @@ export function filterEventsForDates(events: AgendaEvent[], dates: string[]): Ag
         if (event.type === "checkin") {
             return dateSet.has(localDateKeyFromISO(event.data.recordedAt));
         }
-        if (event.type === "medication") {
+        if (event.type === "medication" || event.type === "task") {
             return dateSet.has(event.dayKey);
         }
         const dateKey = event.data.date?.slice(0, 10);
@@ -103,6 +125,10 @@ export function eventHourFraction(event: AgendaEvent): number {
         const [h, m] = event.intakeTime.split(":").map(Number);
         return h + (m || 0) / 60;
     }
+    if (event.type === "task") {
+        const d = new Date(event.data.startAt);
+        return d.getHours() + d.getMinutes() / 60;
+    }
     const timePart = event.data.time?.slice(0, 5) ?? "09:00";
     const [h, m] = timePart.split(":").map(Number);
     return h + (m || 0) / 60;
@@ -114,6 +140,9 @@ export function eventLabel(event: AgendaEvent): string {
     }
     if (event.type === "medication") {
         return event.data.name;
+    }
+    if (event.type === "task") {
+        return event.data.title || "Tarea";
     }
     if (event.type === "exam") {
         return event.data.name || event.data.examType || "Examen";
@@ -130,5 +159,7 @@ export function eventKey(event: AgendaEvent, index: number): string {
             return `checkin-${event.data.id}`;
         case "medication":
             return `medication-${event.data.id}-${event.dayKey}-${event.intakeTime}`;
+        case "task":
+            return `task-${event.data.id}-${event.dayKey}`;
     }
 }

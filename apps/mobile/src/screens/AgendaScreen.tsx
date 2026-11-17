@@ -202,6 +202,7 @@ export function AgendaScreen() {
             onClose={() => setAddSheetOpen(false)}
             onAddAppointment={() => navigation.navigate("AppointmentForm" as never)}
             onAddMedication={() => navigation.navigate("MedicationForm" as never)}
+            onAddTask={() => navigation.navigate("AgendaTaskForm" as never)}
             onAddCheckIn={() => setCheckInFormOpen(true)}
           />
 
@@ -254,6 +255,12 @@ function CalendarTab({
           )
         }
         onCheckInPress={setCheckInEvent}
+        onTaskPress={(event) =>
+          (navigation as { navigate: (name: string, params: { id: string }) => void }).navigate(
+            "AgendaTaskDetail",
+            { id: event.data.id },
+          )
+        }
       />
 
       {intakeEvent ? (

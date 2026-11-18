@@ -14,6 +14,7 @@ Helu frontend monorepo (Turborepo + pnpm). Packages are published internally as 
 ## Documentation
 
 - Frontend architecture: `.docs/` (start at `.docs/README.md`).
+- Design system and mockups (target UI, redesign B): `.docs/design/` (start at `.docs/design/README.md`; global rules in `.docs/design/system/MASTER.md`). The gap between current code and the target is tracked in `.docs/architecture/adr/0002-adopt-design-system-b.md`.
 - Product, features, and system architecture: `BackendHealthGuard/.docs/`. Before working on a module, read its folder in `BackendHealthGuard/.docs/features/<feature>/`.
 - When a change is archived in `openspec/`, update the affected `.docs/` files.
 
@@ -36,7 +37,7 @@ Read the matching skill in `.agents/skills/<name>/SKILL.md` before working on th
 |------|-------|
 | Any new code, code review, naming, file placement | `code-conventions` |
 | Shared UI component or variant in `packages/ui` | `component-creation` |
-| Colors, typography, spacing, tokens | `design-system` |
+| Colors, typography, spacing, tokens | `design-system` (+ `.docs/design/system/`) |
 | Component with different mobile/web implementation | `platform-component` |
 | Business module (appointments, medications, records…) | `feature-module` |
 | New endpoint, Axios client, Zod validation, Query hooks | `api-integration` |

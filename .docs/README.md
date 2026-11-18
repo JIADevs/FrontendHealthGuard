@@ -8,6 +8,7 @@ El producto y las features (PRDs, flujos, detalle de frontend por módulo) viven
 
 1. [Arquitectura](./architecture/README.md): estructura del monorepo, reglas de dependencia y decisiones técnicas.
 2. [Técnico](./technical/README.md): setup, build, testing y problemas conocidos.
+3. [Diseño](./design/README.md): sistema de diseño objetivo (rediseño B) y mockups de todas las pantallas.
 
 ## Estructura
 
@@ -18,6 +19,7 @@ El producto y las features (PRDs, flujos, detalle de frontend por módulo) viven
 | `architecture/apps/` | Un documento por app (`mobile`, `web`) | ¿Cómo está organizada cada app? |
 | `architecture/adr/` | Decisiones técnicas del frontend | ¿Por qué se decidió así? |
 | `technical/` | Setup, build y release, testing, troubleshooting | ¿Cómo trabajo en el frontend? |
+| `design/` | Sistema de diseño (MASTER, reglas por módulo, tokens, componentes) y mockups HTML | ¿Cómo debe verse y comportarse la interfaz? |
 
 ## Relación con otras fuentes
 

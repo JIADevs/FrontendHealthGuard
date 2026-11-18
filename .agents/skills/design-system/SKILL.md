@@ -10,6 +10,8 @@ description: >
 
 # Design System — Helu
 
+> **Sistema objetivo (rediseño B):** las reglas vigentes de diseño están en [`.docs/design/system/MASTER.md`](../../../.docs/design/system/MASTER.md) (tokens en `tokens.json`/`tokens.css`, componentes en `componentes.md`, formularios y movimiento en `pages/`). Esta skill describe los tokens **tal como están hoy en el código**; las diferencias con el objetivo (por ejemplo `brand[500]` → `brand[600]`, documentos green → sky, mochilas orange → teal, Nunito para títulos) están en el ADR 0002 (`.docs/architecture/adr/0002-adopt-design-system-b.md`). Al crear UI nueva, seguir el sistema objetivo.
+
 ## Fuente de verdad: `packages/ui/src/tokens/tokens.ts`
 
 Todos los valores de diseño viven en un solo archivo TypeScript.

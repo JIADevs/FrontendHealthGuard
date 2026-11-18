@@ -27,3 +27,4 @@ Qué se gana, qué se pierde y qué queda pendiente.
 | ADR | Decisión | Estado |
 |-----|----------|--------|
 | [0001](./0001-document-code-as-is.md) | Documentar el código tal como es | Aceptada |
+| [0002](./0002-adopt-design-system-b.md) | Adoptar el sistema de diseño B («Equilibrada») | Propuesta |

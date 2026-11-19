@@ -128,7 +128,7 @@ Las pantallas cambiadas llevan una nota que empieza por **«v2 ·»** en el lien
 | **Tipo preseleccionado en Nueva misión** | Sigue «Realizar un examen». Falta el dato de cuál es el tipo más común (ítem 6). |
 | **Modo oscuro** | Los tokens existen, pero no hay mockups en oscuro (MASTER §12). |
 | **Web** | No se auditó. Solo cambió lo que hereda del kit o comparte función con móvil (orden de citas, chips, toast de borrado, sin estado en «Nuevo tratamiento»). Hace falta una pasada propia. |
-| **Vistas previas del sistema** | `preview.html`, `formularios.html` y `movimiento.html` no se actualizaron y muestran tamaños de v1. |
+| **Vistas previas del sistema** | `preview.html` y `formularios.html` no se actualizaron y muestran tamaños de v1 (`movimiento.html` se actualizó en v2.5.1). |
 | **Diferencias con el código** | El código permite archivos de 25 MB; los diseños dicen 10 MB. Hay que alinear uno de los dos. |
 | **`tokens.css` editado a mano** | El generador de `tokens.css` (`generate-tokens.cjs`, de la skill design-system) no está en este equipo. Se regeneró `tokens.json` con `build-tokens.py` y se editaron a mano solo las 3 líneas de tamaño. Al regenerar con la skill, el resultado debería ser idéntico. |
 
@@ -197,3 +197,53 @@ La barra de los mockups pasa a ser la de `apps/mobile/src/navigation/TabNavigato
 
 **Causa real y arreglo (v2.4.3):** el encimado de las etiquetas solo aparecía al alejar el lienzo con el zoom del navegador. Los íconos se achican, pero la letra no baja de su tamaño mínimo: con esta configuración, «Documentos» se veía al doble de su tamaño respecto del ícono. Con la letra al doble, cinco etiquetas y el botón central no entran en 390 px con ningún layout. Se agregó un zoom propio del lienzo (botones 25 / 40 / 60 / 100 % y `?z=`), con `transform: scale`, que achica todo por igual; las instrucciones están en `mockups/README.md`. Medido a 100 %, 60 %, 40 % y 25 %: misma proporción entre etiqueta e ícono y ninguna etiqueta encimada. Parámetro de caché: `?v=27`.
 
+
+## 8. v2.5 · Reglas de movimiento a partir de leyes de UX
+
+Revisión de las leyes de la sección «More laws» de la checklist de UX (más el umbral de Doherty de la parte 1) contra `system/pages/movimiento-interacciones.md`. La vista previa `movimiento.html` se actualizó después, en v2.5.1.
+
+| Ley | Cambio | Dónde |
+|---|---|---|
+| Umbral de Doherty (31–32) | Las acciones de bajo riesgo (toma, chip, interruptor, check-in, paso de misión) cambian al tocar y se guardan en segundo plano; si fallan, vuelven atrás con fundido y un toast con «Reintentar». Borrar, compartir, revocar, eliminar la cuenta y cambiar de perfil gestionado esperan al servidor. Las animaciones motivacionales esperan siempre al servidor. **Reemplaza** la regla de v1 «El estado se actualiza al confirmar el servidor» | §1b, §6, §8 · MASTER §10 |
+| Similaridad (66–68) | Diccionario de movimiento: cada patrón con un único significado. Separa el halo («estás aquí») del destello de la IA («estoy trabajando») | §1b |
+| Proximidad (65) | El feedback principal ocurre en el elemento tocado; el toast lo completa. «Acción guardada» resalta además el elemento en su lista | §1b, §6 |
+| Región común (69–71) | Se anima el contenedor, no sus partes | §1b, §2 |
+| Chunking y Miller (36, 41) | Escalonado por grupo en listas agrupadas. El ícono y el color de la tarjeta se repiten en la cabecera del detalle (con *View Transitions* en web) | §2, §3 |
+| Carga cognitiva (42) | Las secuencias encadenadas terminan en ≤ 1,2 s y el toast entra al final | §2, §6 |
+| Pico-final (51–53) | La primera lectura de la IA tiene un momento de nivel medio, una vez por cuenta (sin mascota, porque son datos clínicos). Un reintento que funciona transforma el banner de error en éxito | §6, §7 |
+| Zeigarnik (49–50) | «Continuar borrador» lleva al último campo editado y lo resalta | §6 |
+
+**Inconsistencias corregidas:** el toast de «Acción guardada» pasa de «3–5 s» a 4 s, como en MASTER. MASTER §10 suma el destello de la IA a los bucles permitidos, como ya decía la spec de movimiento.
+
+**No aplicadas:** Postel (ya cubierta por los umbrales de la hoja), posición serial, Tesler y estética-usabilidad (no cambian el movimiento; animar la mascota en «Bienvenida» rompería la regla de una sola animación con énfasis).
+
+**Pendiente para el equipo:** en el código, solo dos mutaciones son optimistas (`onMutate` con reversión en `packages/api/src/reactQueryHooks.ts`): los colores de contexto, que encajan con la regla, y **revocar una delegación, que según esta regla debería esperar al servidor** porque quita el acceso a otra persona. Registrar una toma, el check-in y los pasos de misión hoy esperan la respuesta y tendrían que pasar a optimistas.
+
+**v2.5.1 · `system/movimiento.html` actualizado**
+
+| Qué | Antes (v1) | Ahora |
+|---|---|---|
+| Tamaños | Botón `sm` de 36 px, chips de 40 px, botones de ícono de 38 px | 44 px con los tokens `--button-height-sm`, `--chip-height-option` e `--icon-button-size`; interruptor y casilla con área táctil de 44 px |
+| Toast | 300 px, 3,2 s | 320 px, 4 s; 5 s si trae «Deshacer» o «Reintentar» |
+| Colores | `#CBD5E1`, `#F8FAFC`, `#fff`, confeti y fondo de la celebración en hex | Tokens. Solo quedan en hex la mascota (ilustración, igual que en `kit.js`) y el marco del teléfono |
+| Barra de pestañas | Estilo v1 con pastilla de tinte | La de `TabNavigator.tsx`, igual que en los mockups; la pestaña activa solo cambia de color. La spec (§5) se corrigió igual |
+| Propiedades animadas | La barra de progreso, el riel y el segmentado animaban `width`, `height` o `left` | Solo `transform` y `opacity` |
+| Reglas v2.5 | — | Secciones «Reglas de base», «Diccionario de movimiento» (con prueba de cada patrón) y «Momentos que importan». Demos: toma optimista con «Simular falla del servidor», check-in y paso de misión que esperan al servidor para animar (≤ 1,2 s, toast al final), quitar con colapso y «Deshacer», carga por grupos, reintento que funciona, ícono que viaja de la tarjeta al detalle, cita guardada resaltada en su lista, primera lectura de la IA y borrador recuperado |
+
+Probado en el navegador: sin errores de consola, sin controles de menos de 44 px a 1280 px, toast de 320 px y cada flujo (también con movimiento reducido). A menos de 400 px de ancho, el teléfono de 360 px no entra en la página.
+
+## 9. v2.6 · Errores de formulario sin resumen arriba
+
+Decisión del equipo: al enviar un formulario con errores, **no** se muestra el banner «Revisa N campos». Los errores aparecen solo junto a cada campo, con la causa y cómo corregirlo.
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| Al enviar con errores | Resumen arriba con enlaces a cada campo; el foco iba al resumen | La pantalla baja hasta el primer campo con error y le pasa el foco |
+| Lector de pantalla | Leía el resumen | Lee la etiqueta y el error del campo enfocado, y anuncia «Revisa 2 campos» por una región `aria-live` que no se ve |
+| Componente `FormErrorSummary` | Nuevo (P2) | Descartado |
+
+Archivos: `mockups/m7-estados.js` («Formulario con errores»), `system/pages/formularios.md` §6 y checklist, `system/pages/movimiento-interacciones.md` §6, `system/componentes.md` y `system/formularios.html` (se quitó la tarjeta del resumen).
+
+**Por qué funciona sin el resumen:** el foco y el desplazamiento llevan a la persona al primer error, y los demás quedan marcados en rojo con su mensaje. **A vigilar:** en formularios largos, si el segundo error queda muy abajo, la persona lo descubre recién al corregir el primero y volver a enviar.
+
+**Pendiente:** la versión vigente (`../design/`) todavía muestra el resumen en `mockups/m7-estados.js` y en `system/pages/formularios.md`.

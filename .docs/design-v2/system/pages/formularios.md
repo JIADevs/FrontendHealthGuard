@@ -94,7 +94,7 @@ Texto de ayuda o error                    ← Inter 12; el error con ícono ⓘ 
 | Al escribir | Nada, salvo el contador y la máscara (teléfono, moneda). |
 | Al salir del campo | Valida formato y obligatoriedad, y muestra el error en línea. |
 | Al corregir un campo con error | El error desaparece en cuanto el valor es válido (validación en vivo **solo** después del primer error). |
-| Al enviar | Valida todo. En formularios de 6 o más campos, **resumen de errores** arriba («Revisa 2 campos») con enlaces a cada uno; el foco va al resumen o al primer campo inválido. |
+| Al enviar | Valida todo. **Sin resumen de errores arriba** (v2.6): cada campo inválido muestra su error debajo. La pantalla baja hasta el **primer campo con error** y le pasa el foco; el lector de pantalla lee la etiqueta y el error (`aria-describedby` en web, `accessibilityHint` en móvil) y anuncia cuántos campos faltan («Revisa 2 campos») por una región `aria-live` que no se ve. |
 | Error del servidor 422 | Se mapean `fieldErrors` de `ApiError` a cada campo (`@helu/api` ya los normaliza). |
 | Error de red o 5xx | Banner en el formulario: «No pudimos guardar. Revisa tu conexión e intenta de nuevo.» + «Reintentar». **Lo escrito se conserva.** |
 
@@ -147,7 +147,7 @@ Formato local: fechas «Jue 5 nov 2026», horas «10:00 a. m.», moneda «$ 45.0
 - [ ] El selector de ánimo anuncia «Bien, 4 de 5» y no depende solo del color.
 - [ ] La zona de carga es operable por teclado y anuncia el progreso («Subiendo, 50 %», «La IA está leyendo el documento»).
 - [ ] Alto mínimo de 48 px en campos y de 44 px en chips, segmentados y botones `sm`, con ≥ 8 px entre sí.
-- [ ] Al fallar el envío, el foco va al resumen de errores o al primer campo inválido.
+- [ ] Al fallar el envío, no hay resumen arriba: la pantalla baja al primer campo inválido y le pasa el foco.
 - [ ] Con el tamaño de texto al 130 %, las etiquetas pueden pasar a dos líneas y nada se corta.
 
 ## 10. Microcopy de formularios

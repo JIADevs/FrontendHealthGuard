@@ -13,7 +13,8 @@ Cuando el equipo la apruebe, se reemplaza `../design/` por esta carpeta (o se fu
 | [`system/pages/`](./system/pages/) | Reglas por módulo que mandan sobre MASTER | Actualizadas: inicio y agenda, formularios, documentos y compartir, misiones, movimiento |
 | [`system/componentes.md`](./system/componentes.md) | Catálogo de componentes | Actualizado + sección «v2» al final |
 | [`system/tokens.json`](./system/tokens.json) · [`tokens.css`](./system/tokens.css) · [`build-tokens.py`](./system/build-tokens.py) | Tokens en tres capas, claro y oscuro | v2.1: `button.height-sm` 36 → 44 px; nuevos `chip.height-option` e `icon-button.size` (44 px). `tokens.json` regenerado con `build-tokens.py`; en `tokens.css` se editaron a mano esas 3 líneas porque el generador (`generate-tokens.cjs` de la skill design-system) no está en este equipo |
-| [`system/preview.html`](./system/preview.html) · [`formularios.html`](./system/formularios.html) · [`movimiento.html`](./system/movimiento.html) | Vistas previas interactivas | **Sin actualizar:** todavía muestran tamaños de v1 (botón `sm`, chips, botones de ícono) |
+| [`system/movimiento.html`](./system/movimiento.html) | Vista previa interactiva del movimiento | Actualizada (v2.5): tamaños y tokens de v2, barra de pestañas del código y demos de las reglas nuevas |
+| [`system/preview.html`](./system/preview.html) · [`formularios.html`](./system/formularios.html) | Vistas previas interactivas | **Sin actualizar:** todavía muestran tamaños de v1 (botón `sm`, chips, botones de ícono) |
 | [`mockups/`](./mockups/README.md) | Lienzo HTML con todas las pantallas en móvil y web | Actualizado: kit + los 7 módulos; 19 pantallas móviles nuevas |
 
 El prototipo descartado (`archive/`) no se copió: sigue en `../design/archive/`.

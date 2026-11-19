@@ -236,7 +236,9 @@ Personaje en forma de cápsula azul con degradado (`#60A5FA → #2563EB`), barri
 - Animar solo `transform` y `opacity`.
 - Salir más rápido que entrar.
 - Con `prefers-reduced-motion` o la opción «Celebraciones» apagada: sin confeti ni rebotes, solo un fundido de 150 ms.
-- Animaciones en bucle permitidas: solo el halo del paso actual (pulso suave de 1,8 s), y se detiene con movimiento reducido.
+- Animaciones en bucle permitidas: solo el halo del paso actual (pulso suave de 1,8 s) y el destello de «La IA está leyendo…», y se detienen con movimiento reducido.
+- **v2.5:** un movimiento, un significado (diccionario en `pages/movimiento-interacciones.md` §1b); el feedback principal ocurre donde se tocó y el toast lo completa; se anima el contenedor, no sus partes.
+- **v2.5:** las acciones de bajo riesgo (toma, chip, check-in, paso de misión) cambian al tocar y se guardan en segundo plano; si fallan, vuelven atrás y avisan. Borrar, compartir y lo que sale de la app esperan al servidor. Las celebraciones siempre esperan al servidor.
 
 ---
 

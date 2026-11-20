@@ -146,7 +146,7 @@ export function BackpackDocumentPickerList({
         </View>
       );
     }
-    return null;
+    return undefined;
   }, [hasNextPage, isFetchingNextPage, onLoadMore, styles, t.brand.fg]);
 
   if (loading && documents.length === 0) {

@@ -163,7 +163,7 @@ function MedicationsList() {
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
-              onRefresh={() => refetch()}
+              onRefresh={() => { void refetch(); }}
               tintColor={t.brand.fg}
             />
           }
@@ -189,7 +189,7 @@ function MedicationsList() {
           ListFooterComponent={
             items.length > 0 ? (
               <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-            ) : null
+            ) : undefined
           }
         />
       )}
@@ -306,7 +306,7 @@ function CyclesList() {
           refreshControl={
             <RefreshControl
               refreshing={meds.isRefetching}
-              onRefresh={() => meds.refetch()}
+              onRefresh={() => { void meds.refetch(); }}
               tintColor={t.brand.fg}
             />
           }

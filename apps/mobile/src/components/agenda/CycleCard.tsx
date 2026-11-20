@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useCallback } from "react";
+import { useMemo, useRef, useState, useCallback, type ComponentRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Pill, MoreVertical, Pencil, CheckCircle, Trash2 } from "lucide-react-native";
 import type { MedicationCycle } from "@helu/api";
@@ -29,7 +29,7 @@ export function CycleCard({
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
 
-  const menuTriggerRef = useRef<View>(null);
+  const menuTriggerRef = useRef<ComponentRef<typeof View>>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuTop, setMenuTop] = useState(0);
   const [menuLeft, setMenuLeft] = useState(0);

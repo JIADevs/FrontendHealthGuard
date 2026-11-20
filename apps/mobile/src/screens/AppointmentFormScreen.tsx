@@ -1,4 +1,4 @@
-﻿import React, { useRef, useEffect } from "react";
+﻿import React, { useRef, useEffect, type ComponentRef } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   KeyboardAvoidingView, Platform, Modal, Pressable, TextInput,
@@ -208,7 +208,7 @@ function AppointmentFormBody({ appointment }: { appointment: any }) {
   const [showPreBpPicker, setShowPreBpPicker] = useState(false);
   const [showPostBpPicker, setShowPostBpPicker] = useState(false);
 
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
   const form = useAppointmentForm({
     initial: appointment,

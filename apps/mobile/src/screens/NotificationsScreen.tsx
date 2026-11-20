@@ -138,7 +138,7 @@ export function NotificationsScreen() {
           refreshControl={
             <RefreshControl
               refreshing={screen.isRefetching}
-              onRefresh={screen.refetch}
+              onRefresh={() => { void screen.refetch(); }}
               tintColor={t.brand.fg}
             />
           }
@@ -147,7 +147,7 @@ export function NotificationsScreen() {
           ListFooterComponent={
             screen.isFetchingNextPage ? (
               <ActivityIndicator style={styles.loadingFooter} color={t.brand.fg} />
-            ) : null
+            ) : undefined
           }
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={Separator}

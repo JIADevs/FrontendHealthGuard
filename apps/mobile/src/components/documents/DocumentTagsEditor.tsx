@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, Fragment } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, Fragment, type ComponentRef } from "react";
 import {
   View,
   Text,
@@ -75,7 +75,7 @@ function TagCategoryCatalog({
   const [expandedCategoryIds, setExpandedCategoryIds] = useState<Set<string>>(() => new Set());
   const expandedBeforeFilterRef = useRef<Set<string> | null>(null);
   const wasFilterActiveRef = useRef(false);
-  const addInputRef = useRef<TextInputType>(null);
+  const addInputRef = useRef<ComponentRef<typeof TextInputType>>(null);
 
   useEffect(() => {
     if (filterActive) {

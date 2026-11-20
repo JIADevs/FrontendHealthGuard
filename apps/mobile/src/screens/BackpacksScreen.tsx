@@ -114,7 +114,7 @@ export function BackpacksScreen() {
               message={
                 debouncedSearch.trim()
                   ? "Sin mochilas para esta búsqueda."
-                  : "Todavía no tenés mochilas. Creá la primera."
+                  : "Todavía no tienes mochilas. Crea la primera."
               }
             />
           }

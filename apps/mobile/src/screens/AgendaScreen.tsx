@@ -331,7 +331,7 @@ function WellbeingTab() {
       ) : screen.items.length === 0 ? (
         <EmptyState
           icon={<Heart size={48} color={t.border.medium} />}
-          message="No tenés check-ins registrados."
+          message="No tienes check-ins registrados."
           action={
             <Button onPress={() => setFormTarget("new")}>
               Registrar check-in

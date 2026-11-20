@@ -34,6 +34,7 @@ export * from './primitives/DangerLink/DangerLink.types';
 export * from './primitives/DangerLink/DangerLink.native';
 export * from './composed/ListRow/ListRow.types';
 export * from './composed/ListRow/ListRow.native';
+export * from './containers/BottomActionBar/BottomActionBar.native';
 export * from './primitives/Chip/Chip.types';
 export * from './primitives/Chip/Chip.native';
 export * from './primitives/Pagination/Pagination.types';

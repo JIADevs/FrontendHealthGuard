@@ -30,6 +30,7 @@ export * from './primitives/DangerLink/DangerLink.types';
 export * from './primitives/DangerLink/DangerLink.web';
 export * from './composed/ListRow/ListRow.types';
 export * from './composed/ListRow/ListRow.web';
+export * from './containers/BottomActionBar/BottomActionBar.web';
 export * from './primitives/Chip/Chip.types';
 export * from './primitives/Chip/Chip.web';
 export * from './primitives/Pagination/Pagination.types';

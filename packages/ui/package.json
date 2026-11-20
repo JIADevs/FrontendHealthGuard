@@ -9,7 +9,8 @@
         "@helu/api": "workspace:*",
         "@tanstack/react-query": ">=5.0.0",
         "react": "*",
-        "react-native": "*"
+        "react-native": "*",
+        "react-native-safe-area-context": "*"
     },
     "main": "./src/index.ts",
     "types": "./src/index.ts",

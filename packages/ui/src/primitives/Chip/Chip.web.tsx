@@ -1,56 +1,69 @@
 "use client";
-
-import { colors, palette, radii, fontSize, fontWeight } from '../../tokens/tokens';
-import type { ChipProps, ChipColor } from './Chip.types';
-
-const unselected: Record<ChipColor, { background: string; color: string }> = {
-  default: { background: palette.brand[50],  color: palette.brand[700] },
-  green:   { background: palette.status.success[50],  color: colors.green[700]   },
-  amber:   { background: palette.accent.medication[50],    color: palette.accent.medication[800]   },
-};
-
-const selected: Record<ChipColor, { background: string; color: string }> = {
-  default: { background: palette.brand[600],   color: colors.white },
-  green:   { background: colors.green[700], color: colors.white },
-  amber:   { background: palette.accent.medication[500], color: colors.white },
-};
+import { Check } from 'lucide-react';
+import { radii, fontFamily } from '../../tokens/tokens';
+import { toneVars } from '../../tokens/tones';
+import type { ChipProps } from './Chip.types';
+import { toneFromColor, OPTION_HEIGHT } from './chipStyle';
 
 export function Chip({
   label,
+  tone,
   color = 'default',
+  variant = 'tag',
+  icon,
   size = 'default',
-  selected: isSelected = false,
+  selected = false,
   onPress,
 }: ChipProps) {
-  const palette = isSelected ? selected[color] : unselected[color];
-  const compact = size === 'compact';
+  const c = toneVars(tone ?? toneFromColor[color]);
+  const isOption = variant === 'option';
+  const compact = size === 'compact' && !isOption;
 
-  const style: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: compact ? '0 10px' : '3px 10px',
-    minHeight: compact ? 28 : undefined,
-    boxSizing: 'border-box',
-    borderRadius: radii.full,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
-    lineHeight: compact ? '16px' : undefined,
-    whiteSpace: 'nowrap',
-    cursor: onPress ? 'pointer' : 'default',
-    border: 'none',
-    background: palette.background,
-    color: palette.color,
-    transition: 'background 0.15s, color 0.15s',
-  };
+  const style: React.CSSProperties = isOption
+    ? {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        minHeight: OPTION_HEIGHT,
+        padding: '0 14px',
+        borderRadius: radii.full,
+        border: `1.5px solid ${selected ? 'var(--color-brand-solid)' : 'var(--color-border)'}`,
+        background: selected ? 'var(--color-brand-tint)' : 'var(--color-surface)',
+        color: selected ? 'var(--color-brand-text)' : 'var(--color-text-primary)',
+        font: `800 13px ${fontFamily.heading}`,
+        cursor: onPress ? 'pointer' : 'default',
+        boxSizing: 'border-box',
+      }
+    : {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: compact ? '0 10px' : '5px 10px',
+        minHeight: compact ? 28 : undefined,
+        borderRadius: radii.full,
+        border: 'none',
+        // Seleccionado (filtros v1): relleno con el color del tono y texto blanco
+        background: selected ? c.fg : c.bg,
+        color: selected ? 'var(--color-text-on-solid)' : c.fg,
+        font: `800 12.5px ${fontFamily.heading}`,
+        whiteSpace: 'nowrap',
+        cursor: onPress ? 'pointer' : 'default',
+        boxSizing: 'border-box',
+      };
+
+  const content = (
+    <>
+      {isOption && selected ? <Check size={14} strokeWidth={3} aria-hidden /> : icon}
+      {label}
+    </>
+  );
 
   if (onPress) {
     return (
-      <button type="button" style={style} onClick={onPress}>
-        {label}
+      <button type="button" style={style} onClick={onPress} aria-pressed={isOption ? selected : undefined}>
+        {content}
       </button>
     );
   }
-
-  return <span style={style}>{label}</span>;
+  return <span style={style}>{content}</span>;
 }

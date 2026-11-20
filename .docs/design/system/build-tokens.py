@@ -119,7 +119,8 @@ component = {
 
 dark = {
     "color": {
-        "brand": {"solid": C(R("blue.500")), "edge": C(R("blue.700")), "tint": C("rgba(59, 130, 246, 0.14)"),
+        # v2.9.1: el relleno sólido se mantiene en oscuro (MASTER §4.5); blue.500 daba 3,68:1 con texto blanco
+        "brand": {"solid": C(R("blue.600")), "edge": C(R("blue.700")), "tint": C("rgba(59, 130, 246, 0.14)"),
                   "tint-border": C("rgba(59, 130, 246, 0.3)"), "text": C(R("blue.300")), "focus": C(R("blue.400"))},
         "bg": C(R("slate.950")), "surface": C(R("slate.800")), "surface-muted": C(R("slate.900")),
         "border": C(R("slate.700")),

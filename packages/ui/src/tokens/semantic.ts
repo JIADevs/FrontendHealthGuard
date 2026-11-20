@@ -86,7 +86,8 @@ export type SemanticTokens = Record<SemanticKey, string>;
 /** Modo oscuro: parte de los valores claros y pisa solo lo que `tokens.css` pisa. */
 export const semanticDark: SemanticTokens = {
   ...semanticLight,
-  'brand-solid': '#3B82F6',
+  // El relleno sólido se mantiene en oscuro (MASTER §4.5): #3B82F6 daba 3,68:1 con texto blanco.
+  'brand-solid': '#2563EB',
   'brand-edge': '#1D4ED8',
   'brand-tint': 'rgba(59, 130, 246, 0.14)',
   'brand-tint-border': 'rgba(59, 130, 246, 0.3)',

@@ -2,8 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NavigationContainer } from "@react-navigation/native";
-import Toast from "react-native-toast-message";
-import { toastConfig } from "./src/components/ToastConfig";
+import { HeluToast } from "./src/components/ToastConfig";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { navigationRef } from "./src/navigation/navigationRef";
 import { useAuthStore, useNotifStore, useUiStore } from "@helu/stores";
@@ -106,7 +105,7 @@ function AppContent({
       <NavigationContainer ref={navigationRef}>
         <RootNavigator />
       </NavigationContainer>
-      <Toast config={toastConfig} position="bottom" bottomOffset={90} visibilityTime={3500} />
+      <HeluToast />
       <StatusBar style="auto" />
     </SafeAreaProvider>
   );

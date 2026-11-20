@@ -3,6 +3,8 @@
  * Fuente de verdad única para colores, tipografía, espaciado y radios.
  */
 
+import { semanticLight } from './semantic';
+
 // ─── Colores ────────────────────────────────────────────────────────────────
 
 export const colors = {
@@ -194,21 +196,21 @@ export const colors = {
 // ─── Tokens semánticos (superficie / texto / borde) ─────────────────────────
 
 export const surface = {
-  bg:             colors.slate[50],   // Fondo de pantalla
+  bg:             semanticLight['bg'], // Fondo de pantalla (v2)
   bgCard:         colors.white,       // Fondo de tarjeta
   bgSidebar:      colors.slate[900],  // Sidebar web
   bgSidebarHover: colors.slate[800],
 } as const;
 
 export const text = {
-  primary:   colors.gray[900],
-  secondary: colors.slate[500],
+  primary:   colors.slate[900], // v2 text.primary
+  secondary: colors.gray[500],  // v2 text.secondary (4,5:1 sobre --bg)
   sidebar:   colors.slate[200],
-  muted:     colors.gray[400],
+  muted:     colors.slate[500], // v2 text.muted (antes gray-400, 2,54:1)
 } as const;
 
 export const border = {
-  default: colors.gray[200],
+  default: colors.slate[200], // v2 border
   light:   colors.slate[100],
   medium:  colors.slate[200],
 } as const;

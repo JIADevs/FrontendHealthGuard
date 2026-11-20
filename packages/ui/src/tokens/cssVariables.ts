@@ -47,7 +47,7 @@ export function generateCssVariables(): string {
     /* Text (dark mode) */
     --text-primary:   ${darkTheme.text.primary};
     --text-secondary: ${darkTheme.text.secondary};
-    --text-muted:     ${darkTheme.text.muted};
+    --text-muted:     ${darkTheme.text.secondary};
 
     /* Border (dark mode — subtle glow) */
     --border: ${darkTheme.border.default};
@@ -205,7 +205,8 @@ ${colorVars(semanticDark, "    ")}
   /* Text (light mode) */
   --text-primary:   ${lightTheme.text.primary};
   --text-secondary: ${lightTheme.text.secondary};
-  --text-muted:     ${lightTheme.text.muted};
+  /* Alias v1: web lo usa para texto, no para placeholders; text.muted (#64748B) da 4,48:1 sobre --bg */
+  --text-muted:     ${lightTheme.text.secondary};
   --text-sidebar:   ${colors.slate[200]};
 
   /* Border (light mode) */

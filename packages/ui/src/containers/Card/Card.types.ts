@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
 
+export type CardVariant = 'default' | 'compact' | 'selected';
+export type CardTone = 'streak' | 'ai' | 'success';
+
 export interface CardProps {
   title: string;
   subtitle?: ReactNode;
@@ -15,4 +18,8 @@ export interface CardProps {
   footer?: ReactNode;
   /** Makes the whole card pressable/clickable */
   onPress?: () => void;
+  /** v2: `compact` (padding 12), `selected` (borde de marca, ítem abierto en lista + detalle) */
+  variant?: CardVariant;
+  /** v2: tinte de fondo y borde (tarjeta de racha, aviso de IA, éxito) */
+  tone?: CardTone;
 }

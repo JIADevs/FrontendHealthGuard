@@ -45,7 +45,7 @@ El código se migra por fases siguiendo [`componentes.md`](../../design/system/c
 | Tema | Código hoy | Objetivo |
 |---|---|---|
 | Botón primario | **Hecho (Fase 0.1):** relleno `brand[600]` (5,17:1) en claro y oscuro. Falta el canto inferior de 3 px | `brand[600]` (5,17:1), con canto inferior de 3 px |
-| Botones éxito / racha | No existen como variantes | `success` (green-700) y `streak` (orange-700) |
+| Botones éxito / racha | **Hecho (Fase 0.2a):** variantes `success` y `streak`, con canto inferior de 3 px en todos los rellenos | `success` (green-700) y `streak` (orange-700) |
 | Documentos | **Hecho (Fase 0.1):** acento sky | Sky |
 | Mochilas | **Hecho (Fase 0.1):** acento teal | Teal (el naranja queda para la racha) |
 | Notificaciones / bienestar | **Hecho (Fase 0.1):** notificación en brand; los check-ins pasaron a `wellbeing` (emerald) | Notificación en brand; bienestar en emerald |
@@ -63,4 +63,6 @@ El código se migra por fases siguiendo [`componentes.md`](../../design/system/c
 
 **Fase 0.1 (tokens, tema, variables CSS y fuentes):** hecha en el change `design-system-v2-foundation` (issue #35). Los valores viven en `packages/ui/src/tokens/semantic.ts`, copia de `tokens.css`, y `pnpm --filter @helu/ui check:tokens` verifica que coincidan.
 
-**Siguiente paso:** Fase 0.2: componentes base (Button, IconButton, Chip, Card, Typography, Toast con «Deshacer», BottomActionBar, ConfirmModal, DangerLink). Después vienen las pantallas, empezando por Agenda e Inicio en móvil.
+**Fase 0.2a (componentes visuales):** hecha en el change `design-system-v2-components`.
+
+**Siguiente paso:** Fase 0.2b: Toast con «Deshacer» (unificar `sileo` y `react-native-toast-message`), ConfirmModal con la opción segura primero y BottomActionBar. Después vienen las pantallas, empezando por Agenda e Inicio en móvil.

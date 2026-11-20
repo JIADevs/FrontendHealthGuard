@@ -59,6 +59,7 @@ Texto de ayuda o error                    ← Inter 12; el error con ícono ⓘ 
 | Fecha / hora | **Selector de fecha y hora** nativo | Cita, ciclo, check-in |
 | Rango de fechas | **Dos fechas** «Desde / Hasta» o un selector de rango en web | Filtros, periodo del ciclo o del tratamiento |
 | Cantidad pequeña | **Número con unidad** (o stepper − / +) | Dosis por toma, cada cuántas horas, duración |
+| Unidad de una cantidad (v2) | **Se deduce** (de la forma farmacéutica) o chips; nunca un desplegable aparte | «1 tableta(s)»; frecuencia: Horas / Días / Semanas |
 | Dinero | **Moneda** con prefijo «$» y separador de miles es-CO | Costo de la cita |
 | Estado de ánimo | **Selector de ánimo** (5 caras con etiqueta) | Check-in |
 | Archivo | **Zona de carga** con estados | Subir orden, autorización o resultados |
@@ -72,17 +73,18 @@ Texto de ayuda o error                    ← Inter 12; el error con ícono ⓘ 
 | Tamaño del formulario | Contenedor | Ejemplos |
 |---|---|---|
 | 1 a 5 campos, acción rápida | **Hoja inferior** (móvil) / **modal** de 560 px (web) | Registrar toma, check-in, paso de misión, invitar, filtros |
-| 6 o más campos | **Pantalla completa** (móvil) / **modal alto o página** (web) con secciones | Nueva cita, nuevo medicamento, subir documento, perfil |
+| 6 o más campos | **Pantalla completa** (móvil) / **modal** con cuerpo con scroll y pie fijo (web), con secciones. En web, página propia solo para Perfil y Configuración (ver [`web.md`](./web.md) §2) | Nueva cita, nuevo medicamento, subir documento, perfil |
 
 - **Secciones:** tarjetas con título H3 («Información básica», «Modalidad y lugar», «Recordatorio», «Documentos y mochilas», «Detalles adicionales»). Separación de 16 px entre secciones y 12 px entre campos.
-- **Una columna en móvil.** Dos campos en una fila solo si son cortos y relacionados: fecha + hora, dosis + unidad, inicio + fin.
-- **Web:** dos columnas como máximo dentro del modal; ancho de lectura máximo de 720 px en páginas.
+- **Una columna, en móvil y en web.** Dos campos en una fila solo si son cortos y relacionados: fecha + hora, dosis + unidad, inicio + fin.
+- **Web:** ancho de lectura máximo de 720 px en páginas. *(v2.8: antes se permitían dos columnas dentro del modal web; ver [`web.md`](./web.md) §6.)*
 - **Acción principal:**
-  - pantalla completa móvil: «Guardar» en la cabecera (botón pequeño) **y** una barra fija inferior en formularios largos
+  - pantalla completa móvil: **siempre** una barra fija inferior con el botón primario («Guardar cita»); el «Guardar» de la cabecera es opcional *(v2: antes solo en formularios largos, y casi ningún mockup la tenía)*
   - hoja: botón ancho al final
   - modal web: pie alineado a la derecha, «Cancelar» (secundario) + acción (primario)
 - **El botón dice qué hace:** «Guardar cita», «Crear mochila», «Generar enlace», «Enviar invitación». No usar «Aceptar» ni «OK».
-- **Acción destructiva** separada y en rojo, al final: «Eliminar mochila», nunca junto a «Guardar».
+- **Acción destructiva** separada y en rojo, al final: «Eliminar mochila», nunca junto a «Guardar» ni en la barra inferior. Se muestra como enlace rojo con ícono.
+- **Más detalles (v2):** en formularios de 6 o más campos, los opcionales van plegados en una fila «Más detalles (opcional)» que dice qué contiene («Documentos, tratamiento, notas y costo»).
 - **Teclado (móvil):** `KeyboardAvoidingView` o scroll al campo con foco; `returnKeyType="next"` encadena los campos y el último usa `done`; nunca dejar el botón de guardar oculto bajo el teclado.
 
 ## 6. Validación
@@ -92,7 +94,7 @@ Texto de ayuda o error                    ← Inter 12; el error con ícono ⓘ 
 | Al escribir | Nada, salvo el contador y la máscara (teléfono, moneda). |
 | Al salir del campo | Valida formato y obligatoriedad, y muestra el error en línea. |
 | Al corregir un campo con error | El error desaparece en cuanto el valor es válido (validación en vivo **solo** después del primer error). |
-| Al enviar | Valida todo. En formularios de 6 o más campos, **resumen de errores** arriba («Revisa 2 campos») con enlaces a cada uno; el foco va al resumen o al primer campo inválido. |
+| Al enviar | Valida todo. **Sin resumen de errores arriba** (v2.6): cada campo inválido muestra su error debajo. La pantalla baja hasta el **primer campo con error** y le pasa el foco; el lector de pantalla lee la etiqueta y el error (`aria-describedby` en web, `accessibilityHint` en móvil) y anuncia cuántos campos faltan («Revisa 2 campos») por una región `aria-live` que no se ve. |
 | Error del servidor 422 | Se mapean `fieldErrors` de `ApiError` a cada campo (`@helu/api` ya los normaliza). |
 | Error de red o 5xx | Banner en el formulario: «No pudimos guardar. Revisa tu conexión e intenta de nuevo.» + «Reintentar». **Lo escrito se conserva.** |
 
@@ -144,8 +146,8 @@ Formato local: fechas «Jue 5 nov 2026», horas «10:00 a. m.», moneda «$ 45.0
 - [ ] Interruptores con `role="switch"` y su etiqueta textual. Nunca un interruptor sin texto.
 - [ ] El selector de ánimo anuncia «Bien, 4 de 5» y no depende solo del color.
 - [ ] La zona de carga es operable por teclado y anuncia el progreso («Subiendo, 50 %», «La IA está leyendo el documento»).
-- [ ] Alto mínimo de 48 px en campos y chips con ≥ 8 px entre sí.
-- [ ] Al fallar el envío, el foco va al resumen de errores o al primer campo inválido.
+- [ ] Alto mínimo de 48 px en campos y de 44 px en chips, segmentados y botones `sm`, con ≥ 8 px entre sí.
+- [ ] Al fallar el envío, no hay resumen arriba: la pantalla baja al primer campo inválido y le pasa el foco.
 - [ ] Con el tamaño de texto al 130 %, las etiquetas pueden pasar a dos líneas y nada se corta.
 
 ## 10. Microcopy de formularios

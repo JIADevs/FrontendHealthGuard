@@ -1,6 +1,12 @@
-# Mockups HTML — rediseño B
+# Mockups HTML — rediseño B · v2
+
+> Versión vigente, con los cambios de la auditoría UX del 2026-11-18 y de la auditoría web (v2.8). Las pantallas cambiadas o nuevas llevan una nota que empieza por «v2 ·» o «v2.8 ·». Detalle en [`../CHANGELOG.md`](../CHANGELOG.md).
 
 Lienzo con todas las pantallas de Helu en móvil (390 × 844) y web (1440 × 900), armado en HTML para poder iterar sin depender de Figma y luego capturarlo.
+
+## Zoom del lienzo
+
+El lienzo es muy grande. Para verlo entero, usa los botones **Zoom 25 % · 40 % · 60 % · 100 %** de la esquina superior derecha, o agrega `&z=0.4` a la URL. **No uses el zoom del navegador (Cmd −):** el navegador no baja la letra de su tamaño mínimo y los textos chicos (por ejemplo, las etiquetas de la barra de pestañas, de 11 px) quedan desproporcionados y se enciman. El zoom del lienzo achica todo por igual. No se activa durante la captura a Figma.
 
 ## Estructura
 
@@ -16,16 +22,16 @@ Lienzo con todas las pantallas de Helu en móvil (390 × 844) y web (1440 × 900
 | `m5-mochilas-compartir.js` | 6 · Mochilas · 7 · Compartir |
 | `m6-cuenta.js` | 8 · Dependientes · 9 · Cuenta |
 | `m7-estados.js` | 10 · Estados vacíos, validación, confirmaciones y errores |
-| `m8-vacios.js` | 11 · Estados vacíos (propuesta): primer uso, ejemplos, plantillas, «sin resultados» útil y «todo al día» |
+| `m8-carga.js` | 11 · Estados de carga: esqueletos generados desde las pantallas reales (`skel()`), con las clases `.skel`, `.skt` y `.skb` de `kit.css` |
 
 ## Ver
 
 ```bash
-python -m http.server 5180 --directory .docs/design
+python3 -m http.server 5180 --directory .docs/design
 ```
 
 - Todo: `http://localhost:5180/mockups/index.html`
-- Un módulo o varios: `?m=misiones` · `?m=agenda,docs` (ids: `acceso`, `inicio`, `agenda`, `misiones`, `docs`, `mochilas`, `compartir`, `dependientes`, `cuenta`, `estados`, `vacios`)
+- Un módulo o varios: `?m=misiones` · `?m=agenda,docs` (ids: `acceso`, `inicio`, `agenda`, `misiones`, `docs`, `mochilas`, `compartir`, `dependientes`, `cuenta`, `estados`, `carga`)
 
 ## Agregar o cambiar una pantalla
 
@@ -34,6 +40,17 @@ const X = mod('id', 'N · Título', 'Descripción del módulo');
 X.m('Nombre móvil', phone(`${mback('Título')}${card('…')}`, { tab: 'agenda' }), 'Nota opcional');
 X.w('Nombre web', web({ sel: 'agenda', title: 'Agenda', sub: '…' }, `…`));
 ```
+
+Helpers nuevos en v2: `radio(on)`, `moreRow(t,s)`, `xbtn()`, `kebab(label)`, `redLink(t,icon)`, `toast(t,tone,icon,acción)` y la opción `bar` de `phone()` para la barra de acción fija.
+
+Helpers web de v2.8 ([`../system/pages/web.md`](../system/pages/web.md)):
+
+- `web()` acepta `act` (la acción de la página, entre el título y la campana) y `cls`. La cabecera ya no muestra racha ni nivel.
+- `wnew(t)`: «Nuevo …» como secundario con «+».
+- `mfoot(cancelar, acción)`: pie fijo del modal. `msec(título, campos)`: sección de formulario dentro del modal.
+- `amenu()`: menú de cuenta del avatar.
+- `wvariant(módulo, pantalla, 'w1024' | 'laptop')`: la misma pantalla a 1024 px o en una laptop de 1366 × 768.
+- Clases `.sel` (tarjeta abierta en lista + detalle), `.mhd` (encabezado fijo del modal) y `.wfoot` (pie fijo de página).
 
 Reglas: usar las clases y helpers del kit (no colores sueltos), seguir [`../system/MASTER.md`](../system/MASTER.md) y los `pages/` del módulo. Datos de ejemplo: Alejandra Gómez (paciente), Carlos (cuidador), Juan Pérez (dependiente).
 

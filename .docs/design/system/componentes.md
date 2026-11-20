@@ -38,8 +38,8 @@
 
 | Componente | Estado | Qué es / variantes | Props clave | Dónde aparece | Prioridad |
 |---|---|---|---|---|---|
-| **Button** | Extender | Variantes: `primary`, `secondary`, `success`, `streak`, `danger`, `ghost`; tamaños `sm`, `md`. Canto inferior de 3 px, presionado sin salto de layout, `loading` con texto en gerundio | `variant`, `size`, `icon`, `iconPosition`, `loading`, `loadingLabel`, `fullWidth` | Todas | P1 |
-| **IconButton** | Nuevo | Botón circular de 38 px (área de 44) con borde; tono neutro o tinte | `icon`, `accessibilityLabel` (obligatoria), `badge` | Campana, más, cerrar, filtros, volver | P1 |
+| **Button** | Extender | Variantes: `primary`, `secondary`, `success`, `streak`, `danger`, `ghost`; tamaños `sm` (44 px de alto, v2) y `md` (48 px). Canto inferior de 3 px, presionado sin salto de layout, `loading` con texto en gerundio | `variant`, `size`, `icon`, `iconPosition`, `loading`, `loadingLabel`, `fullWidth` | Todas | P1 |
+| **IconButton** | Nuevo | Botón circular de 44 px con borde (v2: antes 38); tono neutro o tinte | `icon`, `accessibilityLabel` (obligatoria), `badge` | Campana, más, cerrar, filtros, volver | P1 |
 | **Typography** | Extender | Roles `display`, `h1`, `h2`, `h3`, `eyebrow`, `body`, `data`, `meta`, `label` (Nunito o Inter según `MASTER.md` §5) | `variant`, `color`, `numberOfLines` | Todas | P1 |
 | **Chip** | Extender | Tonos semánticos y de módulo, ícono opcional, `selected` (para filtros) | `tone` (`success`/`warning`/`danger`/`info`/`neutral`/`feature:*`/`streak`), `icon`, `size` | Estados, IA, tipos de documento, racha | P1 |
 | **IconTile** | Nuevo | Cuadro de 40 px (52 grande) con tinte del módulo + ícono | `feature`, `icon`, `size` | Filas de lista, encabezados | P1 |
@@ -93,7 +93,7 @@
 |---|---|---|---|
 | **ConfirmModal** | Extender | Ícono circular + pregunta + consecuencia + verbo exacto; variante `danger` | P1 |
 | **DiscardChangesDialog** | Nuevo | «¿Descartar los cambios?»: «Seguir editando» / «Descartar» | P1 |
-| **FormErrorSummary** | Nuevo | «Revisa 2 campos» con enlaces, recibe el foco tras el envío | P2 |
+| ~~FormErrorSummary~~ | **Descartado en v2.6** | Los errores van solo en cada campo; el foco pasa al primer campo con error | — |
 | **InlineBanner** | Nuevo | Aviso dentro de una pantalla o formulario: `info`, `success`, `warning`, `danger`, `ai`, `offline`, con acción opcional | P1 |
 | **Toast** | Nuevo (unificar `sileo` y `react-native-toast-message`) | Ícono en cuadro + texto + acción «Deshacer» opcional; 3–5 s; `aria-live` | P1 |
 | **ListRow** | Nuevo | `IconTile` + título + metadato + acción a la derecha (chip, botón o chevron) | P1 |
@@ -127,3 +127,29 @@
 4. **P2 y P3:** el resto.
 
 Cada componente nuevo sigue el patrón del repo: `Nombre.types.ts` + `Nombre.native.tsx` + `Nombre.web.tsx`, exportado en `src/index.ts` **y** `src/web.ts` (ver la skill `component-creation`).
+
+---
+
+## v2 · Componentes nuevos o cambiados por la auditoría UX
+
+| Componente | Capa | Estado | Qué es | Prioridad |
+|---|---|---|---|---|
+| **BottomActionBar** | containers | Nuevo | Barra fija inferior con un botón primario de ancho completo (y opcionalmente uno secundario). Respeta el área segura y reserva espacio en el scroll | P1 |
+| **Legend** | primitives | Nuevo | Fila de puntos o caras con etiqueta, para calendario y gráfico de ánimo | P1 |
+| **MoreDetailsRow** | forms | Nuevo | Fila plegable «Más detalles (opcional)» que dice qué contiene | P1 |
+| **Toast** | containers | Extender | Acción opcional («Deshacer»); 4 s sin acción y 5 s con acción | P1 |
+| **ConfirmModal** | composed | Extender | Opción segura primero, con etiqueta propia (`keepLabel`: «Mantener cita»); solo para lo irreversible | P1 |
+| **DangerLink** | primitives | Nuevo | Enlace rojo con ícono para acciones destructivas al final del contenido | P1 |
+| **OptionCard** | forms | Extender | Indicador de radio visible además del borde seleccionado | P2 |
+| **ChoiceChips** | forms | Extender | 44 px de alto; el seleccionado lleva ✓ | P1 |
+| **SetupChecklist** | composed | Nuevo | Tarjeta «Configura Helu · n de 4» con anillo, pasos y «Ocultar esta lista» | P2 |
+| **PageReview** | app (documents) | Nuevo | Revisión de páginas escaneadas: volver a tomar, quitar, reordenar | P2 |
+| **PermissionState** | composed | Nuevo | Estado vacío para permisos negados (cámara) con «Abrir ajustes» y una alternativa | P2 |
+| **PasswordRecovery** | app (auth) | Nuevo | Pantallas «Recuperar contraseña», «Revisa tu correo» y «Nueva contraseña» | P1 |
+| **PublicShareView** (móvil) | app (share) | Nuevo | Vista pública a 390 px y estado «enlace no disponible» | P1 |
+| **ListRow** (v2.1) | primitives | Extender | Título y metadato en hasta 2 líneas antes de cortarse | P1 |
+| **ButtonStack** (v2.1) | primitives | Nuevo | Acción principal de ancho completo + secundaria fantasma debajo, cuando no entran lado a lado | P2 |
+| **Modal** (v2.8, web) | containers | Extender | Alto máximo = alto visible − 48 px; encabezado y pie fijos, solo el cuerpo hace scroll; foco atrapado y devuelto al cerrar (`pages/web.md` §2) | P1 |
+| **PageActionBar** (v2.8, web) | containers | Nuevo | Pie fijo de las páginas con formulario largo (Perfil): equivalente web de `BottomActionBar` | P2 |
+| **AccountMenu** (v2.8, web) | composed | Nuevo | Menú del avatar con Perfil, Configuración y Cerrar sesión (`pages/web.md` §3) | P1 |
+| **AppSidebar** (v2.8, web) | composed | Extender | 5 destinos principales + grupo «Más» con título; sin cuenta ni «Cerrar sesión» | P1 |

@@ -14,7 +14,7 @@ Helu frontend monorepo (Turborepo + pnpm). Packages are published internally as 
 ## Documentation
 
 - Frontend architecture: `.docs/` (start at `.docs/README.md`).
-- Design system and mockups (target UI, redesign B): `.docs/design/` (start at `.docs/design/README.md`; global rules in `.docs/design/system/MASTER.md`). The gap between current code and the target is tracked in `.docs/architecture/adr/0002-adopt-design-system-b.md`.
+- Design system and mockups (target UI, redesign B, version 2): `.docs/design/` (start at `.docs/design/README.md`; global rules in `.docs/design/system/MASTER.md`; per-module and web rules in `.docs/design/system/pages/`, including `web.md` for `apps/web`; every design change is logged in `.docs/design/CHANGELOG.md`). The gap between current code and the target is tracked in `.docs/architecture/adr/0002-adopt-design-system-b.md`.
 - Product, features, and system architecture: `BackendHealthGuard/.docs/`. Before working on a module, read its folder in `BackendHealthGuard/.docs/features/<feature>/`.
 - When a change is archived in `openspec/`, update the affected `.docs/` files.
 

@@ -109,6 +109,7 @@
   --color-text-primary: #0F172A;
   --color-text-secondary: #6B7280;
   --color-text-muted: #64748B;
+  --color-text-on-muted: #475569;
   --color-text-on-solid: #FFFFFF;
   --color-success-bg: #F0FDF4;
   --color-success-fg: #15803D;
@@ -170,7 +171,7 @@
 /* === COMPONENTS === */
 :root {
   --button-height: 48px;
-  --button-height-sm: 36px;
+  --button-height-sm: 44px;
   --button-radius: 14px;
   --button-edge-width: 3px;
   --button-font: Nunito, Inter, system-ui, sans-serif;
@@ -198,6 +199,8 @@
   --input-height: 48px;
   --chip-radius: 999px;
   --chip-font-size: 12.5px;
+  --chip-height-option: 44px;
+  --icon-button-size: 44px;
   --sheet-radius: 28px;
   --modal-radius: 24px;
   --modal-width: 560px;
@@ -239,6 +242,7 @@
   --color-text-primary: #F8FAFC;
   --color-text-secondary: #94A3B8;
   --color-text-muted: #94A3B8;
+  --color-text-on-muted: #CBD5E1;
   --color-text-on-solid: #FFFFFF;
   --color-success-bg: rgba(34, 197, 94, 0.12);
   --color-success-fg: #4ADE80;

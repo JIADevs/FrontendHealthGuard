@@ -33,7 +33,7 @@ Temas: `lightTheme` / `darkTheme`. Web inyecta `--brand-*`, `--bg`, `--text-prim
 
 ## Estado objetivo
 
-Este documento describe el código actual. El diseño objetivo (rediseño B: tokens nuevos, Nunito + Inter, canto en botones y tarjetas, formularios, movimiento, misiones) vive en [`.docs/design/`](../design/README.md). La decisión y la tabla de diferencias código ↔ objetivo están en el [ADR 0002](./adr/0002-adopt-design-system-b.md). Diferencias principales hoy:
+Este documento describe el código actual. El diseño objetivo (rediseño B, versión 2: tokens nuevos, Nunito + Inter, canto en botones y tarjetas, formularios, movimiento, misiones y reglas web) vive en [`.docs/design/`](../design/README.md). La decisión y la tabla de diferencias código ↔ objetivo están en el [ADR 0002](./adr/0002-adopt-design-system-b.md). Diferencias principales hoy:
 
 - `lightTheme.brand.solid` usa `brand[500]` (3,68:1 con texto blanco); el objetivo es `brand[600]`.
 - `palette.accent.document` es green y `backpack` es orange; el objetivo es sky y teal.

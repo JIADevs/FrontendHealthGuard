@@ -12,7 +12,7 @@
    - Las tarjetas se quedan (son la forma), pero sin color de acento. */
 {
 const L=mod('carga','11 · Estados de carga','Esqueletos de las pantallas principales. Cada uno sale de la misma pantalla de los módulos 2 a 6, por eso tiene exactamente su forma: lo fijo (encabezado, pestañas, buscador, filtros, barra inferior) se ve real y solo es esqueleto lo que llega del servidor. En la app, los bloques llevan un brillo de 1,4 s (aquí quedan quietos) y el contenido entra con fundido de 150 ms, por grupos. Reglas: system/pages/movimiento-interacciones.md §6c.');
-const CHROME='.sbar,.mhead,.tabbar,.seg,.search,.bbar,.fab,.homeind,.pick';
+const CHROME='.sbar,.mhead,.tabbar,.seg,.search,.bbar,.fab,.homeind,.pick,.side,.wtop';
 const BLOCK='.tile,.chip,.btn,.avatar,.dot,.bar,.banner,.hint,.iconbtn,.inp,.toast';
 function skel(html){
  const t=document.createElement('template');t.innerHTML=html.trim();const ph=t.content.firstElementChild;ph.classList.add('skel');
@@ -41,4 +41,12 @@ const pick=(modId,name)=>{const m=MODS.find(x=>x.id===modId);const s=m&&m.mob.fi
  ['mochilas','Detalle de mochila','Detalle de mochila','Encabezado, «Compartir mochila» y el contenido de la mochila son esqueleto; la barra con volver es real.'],
  ['misiones','Detalle de misión','Detalle de misión','El encabezado (tipo, objetivo, barra) y la línea de pasos conservan su forma. La barra de progreso aparece en su valor, sin animar desde 0 al cargar.'],
 ].forEach(([mid,src,name,note])=>L.m(name+' · cargando',skel(pick(mid,src)),note));
+/* v2.8 · web (W-14): la barra lateral y la cabecera son reales; lo demás, igual que en móvil */
+const pickW=(modId,name)=>{const m=MODS.find(x=>x.id===modId);const s=m&&m.web.find(x=>x.n===name);if(!s)throw new Error('No existe la pantalla web '+modId+' › '+name);return s.h};
+[
+ ['inicio','Inicio','Inicio','El saludo y la mascota son locales. Las tarjetas mantienen su lugar en la grilla, así nada salta al llegar los datos.'],
+ ['docs','Documentos','Documentos','Buscador y filtros funcionan desde el inicio; cada documento es una tarjeta en esqueleto.'],
+ ['docs','Detalle de documento','Detalle de documento','La lista y el panel cargan a la vez; la vista previa tiene su alto reservado.'],
+ ['mochilas','Mochilas','Mochilas','Buscador real; las mochilas y el panel de detalle son esqueleto.'],
+].forEach(([mid,src,name,note])=>L.w(name+' · cargando',skel(pickW(mid,src)),'v2.8 · Nuevo en web (W-14). '+note));
 }

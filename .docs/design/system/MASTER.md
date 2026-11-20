@@ -2,7 +2,7 @@
 
 > **Fuente global de verdad visual de Helu.** Si existe un archivo en `pages/<pantalla>.md`, sus reglas mandan sobre este para esa pantalla. Los valores exactos están en [`tokens.json`](./tokens.json) (DTCG) y [`tokens.css`](./tokens.css). Vista previa: [`preview.html`](./preview.html).
 >
-> **Versión:** 1.0 · 2026-11-17 · Basado en: código de `FrontendHealthGuard` (`packages/ui/src/tokens`), `.docs/` de frontend y backend (visión, personas, glosario, PRD de Misiones), el rediseño B («Equilibrada») en Figma y los mockups HTML de [`../mockups/`](../mockups/README.md), y la base de datos de la skill ui-ux-pro-max.
+> **Versión:** 2.9 · 2026-11-20, vigente (v1.0 del 2026-11-17 + auditoría UX del 2026-11-18 + auditoría web v2.8; cambios en [`../CHANGELOG.md`](../CHANGELOG.md)) · Basado en: código de `FrontendHealthGuard` (`packages/ui/src/tokens`), `.docs/` de frontend y backend (visión, personas, glosario, PRD de Misiones), el rediseño B («Equilibrada») en Figma y los mockups HTML de [`../mockups/`](../mockups/README.md), y la base de datos de la skill ui-ux-pro-max.
 
 ---
 
@@ -25,7 +25,7 @@
 
 ## 2. Principios
 
-1. **Lo siguiente, no todo.** Cada pantalla destaca una acción principal (el próximo paso de la misión, la toma de hoy). El resto se consulta.
+1. **Lo siguiente, no todo.** Cada pantalla destaca una acción principal (el próximo paso de la misión, la toma de hoy). El resto se consulta. **Una sola acción primaria por pantalla:** las demás van como secundario, fantasma o enlace. Si hay varias candidatas, gana la más urgente (toma pendiente → check-in → paso de misión).
 2. **Acompañar sin infantilizar.** Cercano, claro y profesional. La motivación es un apoyo, no el producto.
 3. **Progreso visible y honesto.** Nada se marca como hecho solo porque pasó la fecha; el estado viene del servidor.
 4. **Claridad clínica primero.** Datos médicos (dosis, fechas, autorizaciones) siempre legibles, nunca decorados.
@@ -62,9 +62,12 @@ Mezcla de **Accesible y ético** + **Flat** con una sola concesión de profundid
 | `color.border` | `#E2E8F0` | `#334155` | Bordes y divisores |
 | `color.text.primary` | `#0F172A` | `#F8FAFC` | Títulos y datos |
 | `color.text.secondary` | `#6B7280` | `#94A3B8` | Subtítulos, metadatos |
+| `color.text.on-muted` | `#475569` | `#CBD5E1` | Texto sobre `surface-muted`, el segmentado y los tintes de marca: chips grises, opciones inactivas (v2.8; con `text.secondary` daba 4,30–4,44:1) |
 | `color.text.muted` | `#64748B` | `#94A3B8` | Placeholders (no usar `#94A3B8` sobre blanco: 2,56:1) |
 
 > **Cambio respecto al código:** hoy `lightTheme.brand.solid = brand[500]` (`#3B82F6`). Texto blanco sobre él da **3,68:1** y no pasa AA. Pasa a `brand[600]`, que da 5,17:1.
+>
+> **v2:** `#94A3B8` tampoco se usa en íconos funcionales sobre fondo claro (pestaña inactiva, mostrar contraseña, limpiar búsqueda, «⋯»): no llega a 3:1. Usar `#64748B`. Lo mismo para textos de 11–12 px sobre tintes: el día seleccionado del calendario va en blanco, y los días de la racha en `#C2410C` (hechos) y `#6B7280` (futuros).
 
 ### 4.2 Estados
 
@@ -90,6 +93,13 @@ Mezcla de **Accesible y ético** + **Flat** con una sola concesión de profundid
 | Tratamientos | violet | `#F5F3FF` | `#6D28D9` | Nuevo (comparte escala con IA; el ícono diferencia) |
 
 **Regla:** nunca comunicar un estado solo con color. Siempre ícono + texto (por ejemplo ✓ «Tomado», no un punto verde).
+
+**Reglas v2:**
+- **Un color, un significado.** El verde es solo «completado / éxito»; el violeta, IA y tratamientos; el naranja, la racha; el rojo, error o eliminar. Los atributos (presencial, virtual, programada) van en chip gris o azul.
+- **El progreso siempre es verde** (misiones, meta semanal, ciclos, configuración inicial). El color del módulo queda para el ícono.
+- **Tipos de documento:** un solo tinte (sky) y se distinguen por ícono y texto (ver `pages/documentos-compartir-delegacion.md`).
+- **Puntos de color con leyenda:** el calendario y el gráfico de ánimo llevan su leyenda visible.
+- **Color con medida (v2.1):** el color de módulo va solo en el ícono del objeto principal de una fila (un medicamento, una cita, un documento) y en los selectores donde el módulo es la opción («Agregar a agenda»). Menús, metadatos, atributos, encabezados de sección y pasos de configuración usan gris o el azul de marca. Como máximo, un chip de color por tarjeta.
 
 ### 4.4 Color de motivación
 
@@ -118,7 +128,9 @@ Superficies `#0C1222` (fondo) → `#1E293B` (tarjeta) → `#334155` (borde). Los
 | Eyebrow (PASO 4 · AHORA) | Nunito | 900, `letter-spacing: .08em`, mayúsculas | 11 |
 | Cuerpo | Inter | 400–500 | 15 / 1,5 (mín. 14) |
 | Dato en fila | Inter | 600 | 14 / 1,3 |
-| Metadato | Inter | 400 | 12 / 1,4 (mínimo absoluto) |
+| Subtítulo | Inter | 400 | 14 / 1,5 |
+| Metadato | Inter | 400 | 13 / 1,4 (mínimo absoluto; en v1 era 12) |
+| Etiqueta de la barra de pestañas | Inter | 500 (Inicio 700) | 11, igual al código (única excepción al mínimo de 13; queda pendiente revisarla con el texto del sistema al 130 %) |
 
 - Nunito aporta calidez y redondez; Inter, legibilidad clínica. Nunca Nunito en párrafos.
 - **Mayúsculas solo en eyebrows.** Botones en minúscula, por ejemplo «Hacer check-in de hoy».
@@ -137,7 +149,7 @@ Superficies `#0C1222` (fondo) → `#1E293B` (tarjeta) → `#334155` (borde). Los
 | Elevación 1 (tarjeta) | borde 1 px `color.border` + «canto» inferior de 3 px (`box-shadow: 0 3px 0 color.border`, no `border-bottom`, para no cambiar el alto) |
 | Elevación 2 (botón) | canto inferior de 3 px del tono «edge» (`box-shadow: 0 3px 0 edge`). Al presionar: `translateY(3px)` y el canto pasa a 0. El alto no cambia, así que no hay salto de layout |
 | Elevación 3 (toast, menú) | sombra `0 14px 30px -12px rgba(15,23,42,.35)` |
-| Objetivo táctil | ≥ 44 × 44 px (íconos de 38 px con área ampliada) |
+| Objetivo táctil | ≥ 44 × 44 px **visibles** en todo control: botones (`sm` incluido), chips de opción, segmentados, botones de ícono (44 px) y enlaces. Separación mínima de 8 px. **Rige también en web, aunque se use con mouse** (v2.8) |
 | Íconos | Lucide, trazo 2 (2,4 activo), 16 · 18 · 20 · 22 · 24 |
 
 ---
@@ -148,16 +160,19 @@ Superficies `#0C1222` (fondo) → `#1E293B` (tarjeta) → `#334155` (borde). Los
 
 | Componente | Especificación |
 |---|---|
-| **Botón** | Variantes: primario, secundario (blanco con borde), éxito, racha, peligro y fantasma. Alto mín. 48 (sm 36). Estados: hover +7 % de brillo; presionado baja 3 px sin cambiar el alto; deshabilitado al 50 % sin borde inferior; cargando con spinner y texto («Guardando…»); foco con anillo de 3 px `#3B82F6` a 2 px de distancia. |
+| **Botón** | Variantes: primario, secundario (blanco con borde), éxito, racha, peligro y fantasma. Alto mín. 48 (sm 44). Si dos botones no entran lado a lado con su texto completo, se apilan: la acción principal arriba, de ancho completo, y la secundaria debajo como fantasma (v2.1). Estados: hover +7 % de brillo; presionado baja 3 px sin cambiar el alto; deshabilitado al 50 % sin borde inferior; cargando con spinner y texto («Guardando…»); foco con anillo de 3 px `#3B82F6` a 2 px de distancia. **Destructivos** (eliminar, revocar, cancelar cita, finalizar ciclo): nunca en la barra inferior ni junto a guardar o editar; van como enlace rojo con ícono al final del contenido. |
 | **Tarjeta** | Superficie, radio 18, padding 16 (compacta 12), elevación 1. Seleccionada: borde `brand.solid`. |
-| **Fila de lista** | Ícono en cuadro de 40 px (radio 13, tinte del módulo) + título 14/600 + metadato 12 + acción a la derecha. |
-| **Chip** | Píldora con tinte y texto 700 del tono, Nunito 800 12,5, ícono opcional de 12 px. |
+| **Fila de lista** | Ícono en cuadro de 40 px (radio 13, tinte del módulo) + título 14/600 + metadato 13 + acción a la derecha. Título y metadato ocupan hasta 2 líneas antes de cortarse (v2.1). |
+| **Chip** | Píldora con tinte y texto 700 del tono, Nunito 800 12,5, ícono opcional de 12 px. Los chips **de opción** (seleccionables) miden 44 px de alto y el seleccionado lleva ✓. |
 | **Campo** | Etiqueta visible siempre (Nunito 800 13), caja `#F8FAFC` con borde 1,5 px y radio 14, mín. 48 de alto. En foco, borde azul y fondo blanco. Error bajo el campo en rojo con ícono. |
 | **Pestañas segmentadas** | Contenedor `#EEF2F7`; la activa es blanca con texto `brand.text`. |
-| **Barra de pestañas (móvil)** | 5 ítems máximo: Documentos, Agenda, Inicio, Mochilas, Más. Activa: pastilla `brand.tint` detrás del ícono. |
-| **Barra lateral (web)** | Blanca, 248 px. Activa: `brand.tint` + texto 900. Mini tarjeta de racha al pie. |
+| **Barra de pestañas (móvil)** | Igual a `apps/mobile/src/navigation/TabNavigator.tsx` (v2.4): Documentos (`FileText`), Agenda (`CalendarDays`), **Inicio al centro** (botón circular de 52 px elevado 20 px, ícono `LayoutDashboard` blanco; sólido `brand.solid` si está activo y `text.muted` si no), Mochilas (`Folder`) y Más (`Menu`). Íconos de 24 px; la pestaña activa solo cambia de color a `brand.solid`, sin pastilla. Etiquetas Inter 500 de 11 px (Inicio en 700). Barra de 60 px + área segura, esquinas superiores de 20 px, sombra hacia arriba y sin borde. En modo gestión, el botón central muestra las iniciales del dependiente con un anillo de 3 px de su color de contexto. |
+| **Barra de acción inferior** (v2) | Fija abajo en formularios de pantalla completa y en flujos de pasos. Un botón primario de ancho completo con verbo + objeto («Guardar cita», «Continuar con 2 documentos»). Respeta el área segura; el contenido no queda oculto debajo. |
+| **Diálogo de confirmación** (v2) | Solo para lo irreversible o lo que afecta a otra persona (revocar, eliminar cuenta, cancelar cita). Título en pregunta + consecuencia. Primero la opción segura con nombre propio («Mantener cita»), después la acción con el verbo exacto. |
+| **Leyenda** (v2) | Fila de puntos o caras con su etiqueta. Obligatoria junto al calendario y al gráfico de ánimo. |
+| **Barra lateral (web)** | Blanca, 248 px. Activa: `brand.tint` + texto 900. Mini tarjeta de racha al pie. Cabecera, menú de cuenta, lista + detalle, modales y anchos de pantalla: [`pages/web.md`](./pages/web.md) (v2.8). |
 | **Hoja inferior / modal** | Hoja: radio 28 arriba, asa, encabezado con ícono circular + eyebrow + título + cerrar. Modal web de 560 px. Fondo `rgba(15,23,42,.5)`. |
-| **Toast** | Arriba, 320 px, ícono en cuadro, Nunito 800 14, 2,8 s. Sin acciones destructivas dentro. |
+| **Toast** | Arriba, 320 px, ícono en cuadro, Nunito 800 14. Visible 4 s; con «Deshacer», 5 s. Sin acciones destructivas dentro. **v2:** borrar algo recuperable (documento, quitar de una mochila) se confirma con este toast y «Deshacer», no con un modal. |
 | **Anillo de progreso** | Trazo de 8 px, `#E2E8F0` de fondo, texto «3/8» en Nunito 900 en el centro. |
 | **Línea de tiempo de misión** | Riel de 3 px. Nodo hecho: verde con ✓. Actual: azul de 40 px con halo de 5 px y tarjeta desplegada. Pendiente: blanco con borde y texto gris. Siempre con texto de estado. |
 | **Tarjeta de racha** | Degradado `#FFF7ED → #FFF`, llama de 34 px, número en Nunito 900, semana L–D, botón de check-in y la nota de pausas. |
@@ -222,7 +237,9 @@ Personaje en forma de cápsula azul con degradado (`#60A5FA → #2563EB`), barri
 - Animar solo `transform` y `opacity`.
 - Salir más rápido que entrar.
 - Con `prefers-reduced-motion` o la opción «Celebraciones» apagada: sin confeti ni rebotes, solo un fundido de 150 ms.
-- Animaciones en bucle permitidas: solo el halo del paso actual (pulso suave de 1,8 s), y se detiene con movimiento reducido.
+- Animaciones en bucle permitidas: solo el halo del paso actual (pulso suave de 1,8 s) y el destello de «La IA está leyendo…», y se detienen con movimiento reducido.
+- **v2.5:** un movimiento, un significado (diccionario en `pages/movimiento-interacciones.md` §1b); el feedback principal ocurre donde se tocó y el toast lo completa; se anima el contenedor, no sus partes.
+- **v2.5:** las acciones de bajo riesgo (toma, chip, check-in, paso de misión) cambian al tocar y se guardan en segundo plano; si fallan, vuelven atrás y avisan. Borrar, compartir y lo que sale de la app esperan al servidor. Las celebraciones siempre esperan al servidor.
 
 ---
 
@@ -236,21 +253,27 @@ Personaje en forma de cápsula azul con degradado (`#60A5FA → #2563EB`), barri
   - **Mochila**, no «carpeta».
   - **Paciente / cuidador**, no «cliente».
   - **Toma**, no «intake».
+  - **Reprogramar**, no «reagendar».
+  - **Correo**, no «email».
+  - **Iniciar sesión** en botones y enlaces, no «Entrar».
+  - **Configuración**, en singular.
+  - **Cancelar cita** (queda en el historial como cancelada) ≠ **Eliminar cita** (se borra).
 - **Errores:** qué pasó + qué hacer. «No se pudieron cargar las mochilas. Revisa tu conexión e intenta de nuevo.»
-- **Confirmaciones destructivas:** título en pregunta + consecuencia + botón con el verbo exacto («Eliminar», «Revocar acceso»).
+- **Confirmaciones destructivas:** título en pregunta + consecuencia + botón con el verbo exacto («Eliminar», «Revocar acceso»). La opción segura nombra lo que conserva («Mantener cita», «Conservar mi cuenta»), nunca solo «Cancelar» si la acción también empieza por «Cancelar».
+- **Progreso en positivo:** «Llevas 12 de 14», «Llevas 3 de 10 sesiones». Nunca «Te faltan…».
 
 ---
 
 ## 12. Accesibilidad (obligatorio)
 
 - [ ] Texto normal ≥ 4,5:1; texto grande y componentes ≥ 3:1. Botón primario 5,17:1; éxito 5,02:1; racha 5,18:1.
-- [ ] Objetivos táctiles ≥ 44 px y separados al menos 8 px.
+- [ ] Objetivos táctiles ≥ 44 px y separados al menos 8 px, en móvil y en web (también con mouse).
 - [ ] Foco visible: anillo de 3 px en web; `accessibilityRole`, `accessibilityLabel` y `accessibilityState` en móvil.
 - [ ] Botones de solo ícono con etiqueta accesible: campana, más, cerrar, filtros.
 - [ ] El estado nunca va solo por color (línea de tiempo, tomas, enlaces compartidos).
 - [ ] Soporta tamaño de texto del sistema (Dynamic Type / escala de fuente de Android) hasta 130 % sin cortar contenido.
 - [ ] Respeta las áreas seguras: barra de estado, notch, indicador de inicio. El contenido con scroll no queda oculto bajo la barra de pestañas ni bajo los botones fijos.
-- [ ] Probado en teléfono pequeño (375 px), teléfono grande, tablet y web de 1440 px, en claro **y** en oscuro.
+- [ ] Probado en teléfono pequeño (375 px), teléfono grande, tablet y web de 1440 px, en claro **y** en oscuro. *(v2: todavía no hay mockups en oscuro.)*
 - [ ] `prefers-reduced-motion` respetado.
 - [ ] Errores de formulario junto al campo, y anunciados.
 - [ ] Modo gestión anunciado al lector de pantalla al cambiar de contexto.
@@ -282,3 +305,11 @@ Usar `validate-tokens.cjs` de la skill `design-system` para encontrar hex escrit
 - Degradados morados o rosados «de IA» en bloques grandes; la IA se señala con un chip violeta.
 - Ocultar el contexto del paciente cuando un cuidador opera como otra persona.
 - Placeholders como única etiqueta de un campo.
+- *(v2)* Dos botones primarios en la misma pantalla.
+- *(v2)* Guardar solo en la cabecera de un formulario largo.
+- *(v2)* «Eliminar» al lado de «Editar» o «Guardar», o en la barra inferior.
+- *(v2)* Un modal «no se puede deshacer» para algo que tiene «Deshacer».
+- *(v2)* Un enlace o botón que no lleva a ningún lado («¿Olvidaste tu contraseña?» sin flujo, «Próximamente»).
+- *(v2.1)* Botones lado a lado que recortan su texto.
+- *(v2.1)* Un chip de color por cada atributo; menús o secciones con un color distinto por fila.
+- *(v2.1)* Colores escritos a mano en los mockups: se usan las variables de `tokens.css`.

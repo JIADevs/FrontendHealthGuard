@@ -163,3 +163,10 @@ svg{flex:none;display:block}
 @keyframes mspark{0%{opacity:0;transform:scale(.2) rotate(0)}40%{opacity:1;transform:scale(1.2) rotate(45deg)}100%{opacity:0;transform:scale(.8) rotate(90deg)}}
 @media (prefers-reduced-motion:reduce){.mascot *{animation:none!important}}
 .link svg{display:inline-block;vertical-align:-2px}
+/* Estados de carga (módulo 11): esqueleto generado desde la pantalla real */
+.skel .skt{color:transparent!important;-webkit-text-fill-color:transparent;width:fit-content;max-width:100%;background:linear-gradient(var(--color-border),var(--color-border)) center/100% 62% no-repeat!important;border-radius:6px;border-color:transparent!important;box-shadow:none!important;text-decoration:none!important}
+.skel .skt *{color:transparent!important;-webkit-text-fill-color:transparent;background:none!important;border-color:transparent!important;box-shadow:none!important}
+.skel .skt svg{visibility:hidden}
+.skel .skb{background:var(--color-border)!important;background-image:none!important;color:transparent!important;border-color:transparent!important;box-shadow:none!important;outline:0!important}
+.skel .skb *{visibility:hidden}
+.skel .card{background:var(--card-bg)!important;border-color:var(--line)!important}

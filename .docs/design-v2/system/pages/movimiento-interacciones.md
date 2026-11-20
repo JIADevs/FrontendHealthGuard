@@ -31,7 +31,7 @@ Salen de leyes de UX conocidas; la ley va entre paréntesis para que se pueda bu
 |---|---|---|---|
 | Entra desde la derecha | Bajé un nivel | Detalle de cita, documento, ciclo, misión | Pestañas, formularios de creación |
 | Sube desde abajo | Tarea temporal que se cierra | Hojas, formularios de creación | Navegación entre secciones |
-| Fundido cruzado | Mismo lugar, otro contenido | Pestañas, segmentado, «Tomar» → «✓ Tomado» | Cambio de nivel |
+| Fundido cruzado (*fade through*: sale 100 ms, después entra 150–250 ms) | Mismo lugar, otro contenido | Pestañas internas, segmentado, «Tomar» → «✓ Tomado» | Cambio de nivel |
 | Rebote corto (`ease-spring`) | Salió bien | Chip marcado, nodo desbloqueado, insignia, número de racha | Errores, borrados, datos clínicos |
 | Resaltado de borde de 1,2 s | Esto es nuevo o aquí quedaste | Elemento nuevo en una lista, campo donde se retoma un borrador | Errores (usan su propio mensaje) |
 | Halo que late (1,8 s, bucle) | Estás aquí | Paso actual de la misión | Carga o espera |
@@ -57,6 +57,7 @@ Salen de leyes de UX conocidas; la ley va entre paréntesis para que se pueda bu
 
 **Reglas de duración:**
 - **Salir dura entre el 60 y el 70 % de entrar.** La hoja entra en 350 ms y sale en 220 ms.
+- **«Fundido cruzado» = *fade through*** cuando cambia el contenido dentro de una pantalla (pestañas internas, «Tomar» → «✓ Tomado», un banner que pasa de error a éxito): el contenido anterior **sale** con fundido en 100 ms (`--motion-instant`, lineal) y **después entra** el nuevo en 150 ms. Si es una vista completa (las pestañas internas de Agenda), entra en 250 ms subiendo 4 px (`--motion-ease-standard`). **Nunca hay dos contenidos encimados**: tienen alturas distintas y se leerían uno sobre otro. Si se toca otra pestaña a mitad de camino, la animación se corta y entra directo la última elegida. Entre pantallas completas (barra inferior) sí vale el fundido simultáneo del navegador (`animation: 'fade'`), porque cada pantalla cubre todo el fondo.
 - Escalonado de listas: 40 ms por elemento, máximo 6 elementos; el resto aparece de una vez. **Si la lista tiene grupos** («Hoy», «Mañana», «Esta semana»), se escalona por grupo y cada grupo entra completo (chunking: la persona lee grupos, no filas sueltas).
 - Se anima el contenedor completo (tarjeta, fila, grupo); nunca sus partes por separado.
 - **Secuencias encadenadas** (check-in, paso de misión): todo termina en **1,2 s o menos** y el toast entra cuando termina la animación, no al mismo tiempo, para que no compitan.
@@ -70,7 +71,7 @@ Salen de leyes de UX conocidas; la ley va entre paréntesis para que se pueda bu
 | **Continuidad al abrir** (tarjeta → detalle) | El ícono y el color del tipo de la tarjeta se repiten en la cabecera del detalle, en el mismo lugar. La transición compartida (el ícono viaja) es opcional: las de Reanimated siguen siendo experimentales | El ícono viaja con *View Transitions* (`view-transition-name`) cuando el navegador la soporta; si no, fundido | La persona no tiene que recordar qué abrió (Miller) |
 | **Volver** | Desliza a la derecha + gesto de borde (iOS) / botón atrás (Android) | Fundido, 150 ms | Dirección inversa; nunca bloquear el gesto del sistema |
 | **Cambiar de pestaña** (Documentos, Agenda, Inicio, Mochilas, Más) | Fundido cruzado de 150 ms, **sin** deslizar | Cambio inmediato + resaltado de la barra lateral (150 ms) | Las pestañas son hermanas, no hay jerarquía |
-| **Pestañas internas** (Calendario, Citas, Medicamentos, Bienestar) | El indicador del segmentado se desliza 250 ms + fundido del contenido | Igual | Mismo contenedor: fundido cruzado |
+| **Pestañas internas** (Calendario, Citas, Medicamentos, Bienestar) | El indicador del segmentado se desliza 250 ms; el contenido hace *fade through*: sale en 100 ms y entra en 250 ms subiendo 4 px | Igual | Mismo contenedor, otro contenido. Sin deslizar de lado (eso significa «bajé un nivel») y sin dos listas encimadas |
 | **Formulario de creación** (nueva cita, nuevo medicamento) | `slide_from_bottom` / `fullScreenModal`, 350 ms | Modal de 560 px: escala 0,96 → 1 + fundido, 250 ms | Es una tarea temporal que se cierra hacia abajo |
 | **Acción rápida** (toma, check-in, paso de misión, filtros) | Hoja inferior con resorte; fondo oscuro con fundido de 250 ms | Modal centrado | Sale desde donde se tocó (abajo) |
 | **Celebración** | Fundido + escala 0,9 → 1 de la mascota | Igual | Momento especial, sin desplazar |

@@ -22,6 +22,7 @@ El lienzo es muy grande. Para verlo entero, usa los botones **Zoom 25 % · 40 % 
 | `m5-mochilas-compartir.js` | 6 · Mochilas · 7 · Compartir |
 | `m6-cuenta.js` | 8 · Dependientes · 9 · Cuenta |
 | `m7-estados.js` | 10 · Estados vacíos, validación, confirmaciones y errores |
+| `m8-carga.js` | 11 · Estados de carga: esqueletos generados desde las pantallas reales (`skel()`), con las clases `.skel`, `.skt` y `.skb` de `kit.css` |
 
 ## Ver
 
@@ -30,7 +31,7 @@ python -m http.server 5180 --directory .docs/design
 ```
 
 - Todo: `http://localhost:5180/mockups/index.html`
-- Un módulo o varios: `?m=misiones` · `?m=agenda,docs` (ids: `acceso`, `inicio`, `agenda`, `misiones`, `docs`, `mochilas`, `compartir`, `dependientes`, `cuenta`, `estados`)
+- Un módulo o varios: `?m=misiones` · `?m=agenda,docs` (ids: `acceso`, `inicio`, `agenda`, `misiones`, `docs`, `mochilas`, `compartir`, `dependientes`, `cuenta`, `estados`, `carga`)
 
 ## Agregar o cambiar una pantalla
 

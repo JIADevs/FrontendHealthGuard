@@ -247,3 +247,16 @@ Archivos: `mockups/m7-estados.js` («Formulario con errores»), `system/pages/fo
 **Por qué funciona sin el resumen:** el foco y el desplazamiento llevan a la persona al primer error, y los demás quedan marcados en rojo con su mensaje. **A vigilar:** en formularios largos, si el segundo error queda muy abajo, la persona lo descubre recién al corregir el primero y volver a enviar.
 
 **Pendiente:** la versión vigente (`../design/`) todavía muestra el resumen en `mockups/m7-estados.js` y en `system/pages/formularios.md`.
+
+## 10. v2.7 · Estados de carga en los mockups
+
+Nuevo módulo **«11 · Estados de carga»** (`mockups/m8-carga.js`, `?m=carga`): esqueletos de Inicio, Agenda · Calendario, Detalle de cita, Documentos, Detalle de documento, Mochilas, Detalle de mochila y Detalle de misión.
+
+- Cada esqueleto se **genera desde la misma pantalla** con `skel()`: queda con exactamente su forma (medido en Inicio: las tarjetas tienen la misma posición y el mismo alto), así que nada se mueve cuando llega el contenido.
+- Real desde el primer momento: barra de estado, encabezado, pestañas internas, buscador, filtros, barra inferior, barra de acción, botón flotante, mascota e íconos sueltos. Esqueleto: el texto que viene del servidor (`.skt`, la barra mide lo que el texto) y los bloques de contenido (`.skb`: íconos en cuadro, chips, botones, avatares, barras, anillos, avisos). Las tarjetas se quedan, sin color de acento.
+- En la app los bloques llevan el brillo de 1,4 s y el contenido entra con fundido de 150 ms por grupos; en el lienzo quedan quietos.
+- Las reglas completas están en `../design/system/pages/movimiento-interacciones.md` §6c. La spec de esta carpeta (`system/pages/movimiento-interacciones.md`) todavía no tiene esa sección.
+
+## 11. v2.7.1 · «Fundido cruzado» definido como *fade through*
+
+En `system/pages/movimiento-interacciones.md` (§2 y §3), y también en `../design/`: cuando cambia el contenido dentro de una pantalla (pestañas internas de Agenda, «Tomar» → «✓ Tomado», banner de error → éxito), el contenido anterior sale en 100 ms y **después** entra el nuevo (150 ms; 250 ms con 4 px de subida si es una vista completa). Nunca hay dos contenidos encimados, y un toque nuevo a mitad de camino deja entrar directo la última opción. Entre pantallas completas de la barra inferior se mantiene el fundido simultáneo del navegador. Las dos `system/movimiento.html` muestran ahora contenido distinto en Calendario, Citas y Bienestar para que se vea el cambio.

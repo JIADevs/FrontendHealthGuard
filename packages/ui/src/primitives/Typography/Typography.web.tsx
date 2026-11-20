@@ -1,5 +1,5 @@
 "use client";
-import { colors, palette, fontSize, fontWeight, fontFamily, text } from '../../tokens/tokens';
+import { fontSize, fontWeight, fontFamily } from '../../tokens/tokens';
 import type { TypographyProps, TypographyVariant, TypographyColor } from './Typography.types';
 
 // ─── Variant → style ─────────────────────────────────────────────────────────
@@ -19,6 +19,10 @@ const variantStyles: Record<TypographyVariant, React.CSSProperties> = {
   caption: { fontFamily: B, fontSize: fontSize.xs,   fontWeight: fontWeight.normal,    lineHeight: 1.4 },
   label:   { fontFamily: H, fontSize: fontSize.sm,   fontWeight: fontWeight.extrabold, lineHeight: 1.4 },
   overline:{ fontFamily: H, fontSize: fontSize.xs,   fontWeight: fontWeight.black,     lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: '0.08em' },
+  display: { fontFamily: H, fontSize: 30,            fontWeight: fontWeight.black,     lineHeight: 1.1 },
+  eyebrow: { fontFamily: H, fontSize: fontSize.xs,   fontWeight: fontWeight.black,     lineHeight: 1.3, textTransform: 'uppercase', letterSpacing: '0.08em' },
+  data:    { fontFamily: B, fontSize: 14,            fontWeight: fontWeight.semibold,  lineHeight: 1.3 },
+  meta:    { fontFamily: B, fontSize: fontSize.sm,   fontWeight: fontWeight.normal,    lineHeight: 1.4 },
 };
 
 // ─── Variant → HTML element ───────────────────────────────────────────────────
@@ -34,25 +38,31 @@ const variantElement: Record<TypographyVariant, keyof React.JSX.IntrinsicElement
   caption: 'span',
   label:   'span',
   overline:'span',
+  display: 'p',
+  eyebrow: 'span',
+  data:    'span',
+  meta:    'span',
 };
 
 // ─── Color → CSS value ────────────────────────────────────────────────────────
 
+// Variables CSS: siguen el modo oscuro (cssVariables.ts). Estados en tono 700 (≥ 4,5:1).
 const colorValue: Record<TypographyColor, string> = {
-  default:   text.primary,
-  secondary: text.secondary,
-  muted:     text.muted,
-  error:     palette.status.error[500],
-  success:   palette.status.success[500],
-  warning:   palette.status.warning[500],
+  default:   'var(--color-text-primary)',
+  secondary: 'var(--color-text-secondary)',
+  muted:     'var(--color-text-muted)',
+  error:     'var(--color-danger-fg)',
+  success:   'var(--color-success-fg)',
+  warning:   'var(--color-warning-fg)',
   inherit:   'inherit',
+  brand:     'var(--color-brand-text)',
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function Typography({
   variant = 'body',
-  color = 'default',
+  color,
   align,
   numberOfLines,
   children,
@@ -62,7 +72,7 @@ export function Typography({
   const style: React.CSSProperties = {
     margin: 0,
     padding: 0,
-    color: colorValue[color],
+    color: colorValue[color ?? (variant === 'meta' ? 'secondary' : 'default')],
     textAlign: align,
     ...variantStyles[variant],
     ...(numberOfLines

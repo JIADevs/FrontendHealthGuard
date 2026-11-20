@@ -1,5 +1,5 @@
 import { Text, StyleSheet } from 'react-native';
-import { colors, palette, fontSize, nativeFont } from '../../tokens/tokens';
+import { fontSize, nativeFont } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { TypographyProps, TypographyVariant, TypographyColor } from './Typography.types';
 
@@ -22,13 +22,17 @@ const variantStyles = StyleSheet.create({
   caption: { ...body(400),    fontSize: fontSize.xs,    lineHeight: 16 },
   label:   { ...heading(800), fontSize: fontSize.sm,    lineHeight: 20 },
   overline:{ ...heading(900), fontSize: fontSize.xs,    lineHeight: 16, textTransform: 'uppercase', letterSpacing: 0.8 },
+  display: { ...heading(900), fontSize: 30,             lineHeight: 33 },
+  eyebrow: { ...heading(900), fontSize: fontSize.xs,    lineHeight: 14, textTransform: 'uppercase', letterSpacing: 0.9 },
+  data:    { ...body(600),    fontSize: 14,             lineHeight: 18 },
+  meta:    { ...body(400),    fontSize: fontSize.sm,    lineHeight: 18 },
 });
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function Typography({
   variant = 'body',
-  color = 'default',
+  color,
   align,
   numberOfLines,
   children,
@@ -39,15 +43,16 @@ export function Typography({
     default:   t.text.primary,
     secondary: t.text.secondary,
     muted:     t.text.muted,
-    error:     palette.status.error[500],
-    success:   palette.status.success[500],
-    warning:   palette.status.warning[500],
+    error:     t.status.errorFg,
+    success:   t.status.successFg,
+    warning:   t.status.warningFg,
     inherit:   t.text.primary,
+    brand:     t.brand.text,
   };
 
   return (
     <Text
-      style={[variantStyles[variant], { color: colorValue[color], textAlign: align }]}
+      style={[variantStyles[variant], { color: colorValue[color ?? (variant === 'meta' ? 'secondary' : 'default')], textAlign: align }]}
       numberOfLines={numberOfLines}
     >
       {children}

@@ -11,6 +11,11 @@ export type TypographyVariant =
   | 'caption'  // 11px normal    — texto de ayuda / hint
   | 'label'    // 13px semibold  — etiquetas, tags
   | 'overline' // 11px semibold uppercase — cabeceras de sección
+  // v2 (MASTER §5)
+  | 'display'  // Nunito 900 30 — celebración, número de racha
+  | 'eyebrow'  // Nunito 900 11 mayúsculas .08em — «PASO 4 · AHORA»
+  | 'data'     // Inter 600 14 — dato principal de una fila
+  | 'meta'     // Inter 400 13, text.secondary — metadato (mínimo absoluto)
   ;
 
 export type TypographyColor =
@@ -21,6 +26,7 @@ export type TypographyColor =
   | 'success'
   | 'warning'
   | 'inherit'
+  | 'brand'     // brand.text — enlaces y texto sobre tinte de marca
   ;
 
 export type TypographyAlign = 'left' | 'center' | 'right';

@@ -9,7 +9,7 @@ Fuente: `packages/ui/src/tokens/` + capas de componentes.
 | Tokens | `tokens/` | palette, surface, spacing, theme |
 | Primitives | `primitives/` | Button, Typography, Chip, Spinner, EmptyState |
 | Forms | `forms/` | TextField, Select, DatePicker, SearchField |
-| Containers | `containers/` | Modal, Card |
+| Containers | `containers/` | Modal, Card, BottomActionBar |
 | Composed | `composed/` | ConfirmModal |
 | Platform | `platform/HeluAgendaCalendar/` | Calendario (native) |
 

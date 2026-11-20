@@ -65,4 +65,10 @@ El código se migra por fases siguiendo [`componentes.md`](../../design/system/c
 
 **Fase 0.2a (componentes visuales):** hecha en el change `design-system-v2-components`.
 
-**Siguiente paso:** Fase 0.2b: Toast con «Deshacer» (unificar `sileo` y `react-native-toast-message`), ConfirmModal con la opción segura primero y BottomActionBar. Después vienen las pantallas, empezando por Agenda e Inicio en móvil.
+**Fase 0.2b (feedback y formularios):** hecha en el change `design-system-v2-feedback`:
+
+- **Toast:** se mantienen `sileo` (web) y `react-native-toast-message` (mobile) con el estilo v2, arriba, 4 s o 5 s con acción. Cada app tiene `notify({ message, description?, tone, action? })` con la misma firma. En web, `globals.css` cambia los colores de estado de `sileo` (500) por 700–800 sobre el toast claro y 400 sobre el oscuro, para pasar AA.
+- **ConfirmModal:** opción segura primero con `keepLabel`, `IconTile` redondo y colores del tema. `ConfirmDialog` (mobile) dibuja este componente. La consecuencia va en `message`; no hizo falta una prop `consequence`.
+- **BottomActionBar:** nuevo en `@helu/ui`, con `BOTTOM_ACTION_BAR_HEIGHT` y el área segura en mobile; en web es un pie `sticky`.
+
+**Siguiente paso:** las pantallas, empezando por Agenda e Inicio en móvil (Fase 1). Ahí se cambian los borrados recuperables a toast con «Deshacer» y las 5 pantallas con `DetailFooter` a `BottomActionBar`.

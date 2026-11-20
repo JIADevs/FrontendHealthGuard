@@ -1,25 +1,31 @@
 "use client";
 
 import { useState } from 'react';
-import { colors, radii, spacing, fontSize, fontWeight, surface, border, text } from '../../tokens/tokens';
+import { radii, spacing, fontSize, fontWeight, fontFamily } from '../../tokens/tokens';
 import type { CardProps } from './Card.types';
 
-export function Card({ title, subtitle, icon, iconBackground, children, actions, footer, onPress }: CardProps) {
+const toneStyle = {
+  streak:  { bg: 'var(--color-motivation-streak-bg)', border: 'var(--color-motivation-streak-border)' },
+  ai:      { bg: 'var(--color-feature-ai-bg)', border: 'var(--color-feature-ai-fg)' },
+  success: { bg: 'var(--color-success-bg)', border: 'var(--color-success-fg)' },
+} as const;
+
+export function Card({ title, subtitle, icon, iconBackground, children, actions, footer, onPress, variant = 'default', tone }: CardProps) {
   const [hovered, setHovered] = useState(false);
+  // v2 (MASTER §6–7): radio 18, borde 1 px + canto inferior de 3 px (box-shadow, no cambia el alto)
+  const borderColor = variant === 'selected' ? 'var(--color-brand-solid)' : tone ? toneStyle[tone].border : 'var(--color-border)';
+  const pad = variant === 'compact' ? spacing[3] : spacing[4];
 
   const containerStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    background: surface.bgCard,
-    borderRadius: radii.lg,
-    border: `1px solid ${border.default}`,
+    background: tone ? toneStyle[tone].bg : 'var(--color-surface)',
+    borderRadius: radii.card,
+    border: `1px solid ${borderColor}`,
     overflow: 'hidden',
     cursor: onPress ? 'pointer' : 'default',
-    transition: 'box-shadow 0.15s, transform 0.15s',
-    boxShadow: hovered && onPress
-      ? '0 4px 16px rgba(0,0,0,0.10)'
-      : '0 1px 4px rgba(0,0,0,0.05)',
-    transform: hovered && onPress ? 'translateY(-1px)' : 'none',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+    boxShadow: `0 3px 0 ${hovered && onPress && variant !== 'selected' ? 'var(--color-brand-tint-border)' : borderColor}`,
   };
 
   return (
@@ -30,15 +36,15 @@ export function Card({ title, subtitle, icon, iconBackground, children, actions,
       onMouseLeave={() => setHovered(false)}
     >
       {/* Main row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing[3], padding: spacing[5] }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing[3], padding: pad }}>
         {/* Icon slot */}
         {icon && (
           <div
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: radii.md,
-              background: iconBackground ?? border.light,
+              width: 40,
+              height: 40,
+              borderRadius: 13,
+              background: iconBackground ?? 'var(--color-surface-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -53,9 +59,10 @@ export function Card({ title, subtitle, icon, iconBackground, children, actions,
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontSize: fontSize.sm + 1,
-              fontWeight: fontWeight.semibold,
-              color: text.primary,
+              fontSize: 16,
+              fontWeight: fontWeight.extrabold,
+              fontFamily: fontFamily.heading,
+              color: 'var(--color-text-primary)',
               marginBottom: subtitle ? 2 : 0,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -65,7 +72,7 @@ export function Card({ title, subtitle, icon, iconBackground, children, actions,
             {title}
           </div>
           {subtitle && (
-            <div style={{ fontSize: fontSize.sm, color: text.secondary }}>
+            <div style={{ fontSize: fontSize.sm, color: 'var(--color-text-secondary)' }}>
               {subtitle}
             </div>
           )}
@@ -89,8 +96,8 @@ export function Card({ title, subtitle, icon, iconBackground, children, actions,
           style={{
             display: 'flex',
             alignItems: 'center',
-            padding: `${spacing[3]}px ${spacing[5]}px`,
-            borderTop: `1px solid ${border.default}`,
+            padding: `${spacing[3]}px ${pad}px`,
+            borderTop: '1px solid var(--color-border)',
           }}
           onClick={(e) => e.stopPropagation()}
         >

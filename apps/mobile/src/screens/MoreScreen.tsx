@@ -141,7 +141,7 @@ export function MoreScreen() {
 
         <MenuSection>
           <MenuItem
-            icon={<Pill size={20} color={palette.status.warning[500]} />}
+            icon={<Pill size={20} color={palette.status.warning[700]} />}
             label="Medicamentos"
             badge={activeMedsCount > 0 ? `${activeMedsCount} activos` : undefined}
             onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "medications" } } as any)}
@@ -198,9 +198,9 @@ export function MoreScreen() {
           <MenuItem
             icon={
               loggingOut ? (
-                <ActivityIndicator size="small" color={palette.status.error[500]} />
+                <ActivityIndicator size="small" color={palette.status.error[700]} />
               ) : (
-                <LogOut size={20} color={palette.status.error[500]} />
+                <LogOut size={20} color={palette.status.error[700]} />
               )
             }
             label="Cerrar sesión"

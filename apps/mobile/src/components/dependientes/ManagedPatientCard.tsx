@@ -94,9 +94,9 @@ export function ManagedPatientCard({
                         accessibilityLabel="Revocar delegación"
                     >
                         {revoke.isPending ? (
-                            <ActivityIndicator size="small" color={palette.status.error[500]} />
+                            <ActivityIndicator size="small" color={palette.status.error[700]} />
                         ) : (
-                            <Text style={[styles.revokeBtnText, { color: palette.status.error[500] }]}>
+                            <Text style={[styles.revokeBtnText, { color: palette.status.error[700] }]}>
                                 Revocar
                             </Text>
                         )}

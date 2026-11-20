@@ -73,7 +73,7 @@ export function Select({
       </div>
 
       {error && (
-        <span style={{ fontSize: fontSize.xs, color: palette.status.error[500] }}>{error}</span>
+        <span style={{ fontSize: fontSize.xs, color: palette.status.error[700] }}>{error}</span>
       )}
     </div>
   );

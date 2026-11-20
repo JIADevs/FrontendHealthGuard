@@ -76,7 +76,7 @@ export function DateTimePicker({
       {label && (
         <Text style={[styles.label, { color: t.text.primary }]}>
           {label}
-          {required ? <Text style={{ color: palette.status.error[500] }}> *</Text> : null}
+          {required ? <Text style={{ color: palette.status.error[700] }}> *</Text> : null}
         </Text>
       )}
 
@@ -108,7 +108,7 @@ export function DateTimePicker({
             <View style={[styles.sheet, { backgroundColor: t.surface.bgCard }]}>
               <View style={styles.sheetHeader}>
                 <Pressable onPress={() => setShow(false)} hitSlop={8}>
-                  <Text style={[styles.sheetAction, { color: palette.status.error[500] }]}>Cancelar</Text>
+                  <Text style={[styles.sheetAction, { color: palette.status.error[700] }]}>Cancelar</Text>
                 </Pressable>
                 <Text style={[styles.sheetTitle, { color: t.text.primary }]}>Fecha y hora</Text>
                 <Pressable onPress={confirmIOS} hitSlop={8}>
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: fontSize.xs,
-    color: palette.status.error[500],
+    color: palette.status.error[700],
     backgroundColor: palette.status.error[50],
     paddingHorizontal: spacing[2],
     paddingVertical: spacing[1],

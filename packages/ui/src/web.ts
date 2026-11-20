@@ -6,6 +6,7 @@
 export * from './tokens/tokens';
 export * from './tokens/theme';
 export * from './tokens/semantic';
+export * from './tokens/tones';
 export * from './tokens/cssVariables';
 
 // ─── Utils ───────────────────────────────────────────────────────────────────
@@ -21,6 +22,14 @@ export * from './primitives/ActionButton/ActionButton.types';
 export * from './primitives/ActionButton/ActionButton.web';
 export * from './primitives/Button/Button.types';
 export * from './primitives/Button/Button.web';
+export * from './primitives/IconTile/IconTile.types';
+export * from './primitives/IconTile/IconTile.web';
+export * from './primitives/IconButton/IconButton.types';
+export * from './primitives/IconButton/IconButton.web';
+export * from './primitives/DangerLink/DangerLink.types';
+export * from './primitives/DangerLink/DangerLink.web';
+export * from './composed/ListRow/ListRow.types';
+export * from './composed/ListRow/ListRow.web';
 export * from './primitives/Chip/Chip.types';
 export * from './primitives/Chip/Chip.web';
 export * from './primitives/Pagination/Pagination.types';

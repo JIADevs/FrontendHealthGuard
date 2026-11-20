@@ -1,58 +1,66 @@
-import { TouchableOpacity, Text, View } from 'react-native';
-import { colors, palette, radii, fontSize, fontWeight } from '../../tokens/tokens';
-import type { ChipProps, ChipColor } from './Chip.types';
-
-const unselected: Record<ChipColor, { bg: string; text: string }> = {
-  default: { bg: palette.brand[50],  text: palette.brand[700] },
-  green:   { bg: palette.status.success[50],  text: colors.green[700]   },
-  amber:   { bg: palette.accent.medication[50],    text: palette.accent.medication[800]   },
-};
-
-const selectedPalette: Record<ChipColor, { bg: string; text: string }> = {
-  default: { bg: palette.brand[600],   text: colors.white },
-  green:   { bg: colors.green[700], text: colors.white },
-  amber:   { bg: palette.accent.medication[500], text: colors.white },
-};
+import { Pressable, Text, View } from 'react-native';
+import { Check } from 'lucide-react-native';
+import { radii, nativeFont } from '../../tokens/tokens';
+import { useAppTheme } from '../../tokens/ThemeProvider';
+import { toneColors } from '../../tokens/tones';
+import type { ChipProps } from './Chip.types';
+import { toneFromColor, OPTION_HEIGHT } from './chipStyle';
 
 export function Chip({
   label,
+  tone,
   color = 'default',
+  variant = 'tag',
+  icon,
   size = 'default',
   selected = false,
   onPress,
 }: ChipProps) {
-  const palette = selected ? selectedPalette[color] : unselected[color];
-  const compact = size === 'compact';
+  const t = useAppTheme();
+  const c = toneColors(tone ?? toneFromColor[color], t.mode);
+  const isOption = variant === 'option';
+  const compact = size === 'compact' && !isOption;
 
-  const containerStyle = {
-    backgroundColor: palette.bg,
-    paddingHorizontal: compact ? 10 : 10,
-    paddingVertical: compact ? 0 : 3,
-    minHeight: compact ? 28 : undefined,
-    borderRadius: radii.full,
-    alignSelf: 'flex-start' as const,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  };
+  const container = isOption
+    ? {
+        minHeight: OPTION_HEIGHT,
+        paddingHorizontal: 14,
+        borderRadius: radii.full,
+        borderWidth: 1.5,
+        borderColor: selected ? t.brand.solid : t.border.default,
+        backgroundColor: selected ? t.brand.tint : t.surface.bgCard,
+      }
+    : {
+        minHeight: compact ? 28 : undefined,
+        paddingHorizontal: 10,
+        paddingVertical: compact ? 0 : 5,
+        borderRadius: radii.full,
+        // Seleccionado (filtros v1): relleno con el color del tono y texto blanco
+        backgroundColor: selected ? c.fg : c.bg,
+      };
 
-  const textStyle = {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium as any,
-    color: palette.text,
-    lineHeight: compact ? 16 : undefined,
-  };
+  const fg = isOption ? (selected ? t.brand.text : t.text.primary) : selected ? t.text.onSolid : c.fg;
+
+  const content = (
+    <>
+      {isOption && selected ? <Check size={14} strokeWidth={3} color={fg} /> : icon}
+      <Text style={{ color: fg, fontSize: isOption ? 13 : 12.5, fontFamily: nativeFont('heading', 800) }}>{label}</Text>
+    </>
+  );
+
+  const base = { ...container, flexDirection: 'row' as const, alignItems: 'center' as const, gap: 5, alignSelf: 'flex-start' as const };
 
   if (onPress) {
     return (
-      <TouchableOpacity style={containerStyle} onPress={onPress} activeOpacity={0.7}>
-        <Text style={textStyle}>{label}</Text>
-      </TouchableOpacity>
+      <Pressable
+        style={({ pressed }) => [base, { opacity: pressed ? 0.8 : 1 }]}
+        onPress={onPress}
+        accessibilityRole={isOption ? 'checkbox' : 'button'}
+        accessibilityState={isOption ? { checked: selected } : { selected }}
+      >
+        {content}
+      </Pressable>
     );
   }
-
-  return (
-    <View style={containerStyle}>
-      <Text style={textStyle}>{label}</Text>
-    </View>
-  );
+  return <View style={base}>{content}</View>;
 }

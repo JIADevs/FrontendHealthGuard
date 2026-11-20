@@ -169,11 +169,13 @@ export const colors = {
     50:  '#f0fdf4',
     500: '#22c55e',
     600: '#16a34a',
+    700: '#15803d', // v2 texto de éxito (≥ 4,5:1)
   },
   warning: {
     50:  '#fffbeb',
     500: '#f59e0b',
     600: '#d97706',
+    700: '#b45309', // v2 texto de advertencia (≥ 4,5:1)
   },
   error: {
     50:  '#fef2f2',

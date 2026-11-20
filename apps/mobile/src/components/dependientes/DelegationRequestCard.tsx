@@ -39,7 +39,7 @@ export function DelegationRequestCard({ delegation }: DelegationRequestCardProps
                     disabled={isPending}
                     accessibilityLabel="Rechazar invitación"
                 >
-                    <Text style={[styles.btnText, { color: palette.status.error[500] }]}>Rechazar</Text>
+                    <Text style={[styles.btnText, { color: palette.status.error[700] }]}>Rechazar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.btn, styles.acceptBtn, { backgroundColor: palette.brand[600] }]}

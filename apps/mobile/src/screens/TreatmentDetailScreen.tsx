@@ -234,7 +234,7 @@ export function TreatmentDetailScreen() {
           loading={deleteMut.isPending}
           onConfirm={confirmDelete}
           onCancel={() => setShowDelete(false)}
-          icon={<Trash2 size={26} color={palette.status.error[500]} strokeWidth={2.25} />}
+          icon={<Trash2 size={26} color={palette.status.error[700]} strokeWidth={2.25} />}
           iconTone="danger"
         />
       )}

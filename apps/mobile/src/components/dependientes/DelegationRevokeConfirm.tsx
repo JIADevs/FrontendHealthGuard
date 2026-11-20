@@ -33,7 +33,7 @@ export function DelegationRevokeConfirm({
             loading={loading}
             onConfirm={onConfirm}
             onCancel={onCancel}
-            icon={<UserX size={26} color={palette.status.error[500]} strokeWidth={2.25} />}
+            icon={<UserX size={26} color={palette.status.error[700]} strokeWidth={2.25} />}
             iconTone="danger"
             actionsLayout={actionsLayout}
         />

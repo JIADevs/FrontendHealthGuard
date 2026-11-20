@@ -86,7 +86,7 @@ Chain strategy: none
 
 - [x] 8.1 ADR 0002: mark the button, documents, backpacks, notifications/wellbeing, on-muted text and typography rows as implemented.
 - [x] 8.2 `.docs/architecture/design-system.md`: update "Diferencias principales hoy".
-- [ ] 8.3 After merge: archive this change and merge the deltas into `openspec/specs/` (`shared-ui/`, `mobile/`, `web/`).
+- [x] 8.3 After merge: archive this change and merge the deltas into `openspec/specs/` (`shared-ui/`, `mobile/`, `web/`).
 
 ## Changes during apply
 

@@ -1,29 +1,42 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
+import { radii, spacing, fontSize, nativeFont } from '../../tokens/tokens';
+import { semanticDark, semanticLight } from '../../tokens/semantic';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { CardProps } from './Card.types';
 
-export function Card({ title, subtitle, icon, iconBackground, children, actions, footer, onPress }: CardProps) {
+export function Card({ title, subtitle, icon, iconBackground, children, actions, footer, onPress, variant = 'default', tone }: CardProps) {
   const t = useAppTheme();
+  const s = t.mode === 'dark' ? semanticDark : semanticLight;
+  // v2 (MASTER §6–7): radio 18, borde 1 px + canto inferior de 3 px del color del borde
+  const toneColors = tone === 'streak'
+    ? { bg: s['motivation-streak-bg'], border: s['motivation-streak-border'] }
+    : tone === 'ai'
+    ? { bg: s['feature-ai-bg'], border: s['feature-ai-fg'] }
+    : tone === 'success'
+    ? { bg: s['success-bg'], border: s['success-fg'] }
+    : null;
+  const borderColor = variant === 'selected' ? t.brand.solid : toneColors?.border ?? t.border.default;
+  const pad = variant === 'compact' ? spacing[3] : spacing[4];
 
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: t.surface.bgCard,
-      borderRadius: radii.lg,
+      backgroundColor: toneColors?.bg ?? t.surface.bgCard,
+      borderRadius: radii.card,
       borderWidth: 1,
-      borderColor: t.border.medium,
+      borderBottomWidth: 4,
+      borderColor,
       overflow: 'hidden',
     },
     main: {
       flexDirection: 'row',
       alignItems: 'flex-start',
       gap: spacing[3],
-      padding: spacing[4],
+      padding: pad,
     },
     iconContainer: {
-      width: 44,
-      height: 44,
-      borderRadius: radii.md,
+      width: 40,
+      height: 40,
+      borderRadius: 13,
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
@@ -33,8 +46,8 @@ export function Card({ title, subtitle, icon, iconBackground, children, actions,
       minWidth: 0,
     },
     title: {
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.semibold as any,
+      fontSize: 16,
+      fontFamily: nativeFont('heading', 800),
       color: t.text.primary,
       marginBottom: 2,
     },
@@ -50,9 +63,9 @@ export function Card({ title, subtitle, icon, iconBackground, children, actions,
       flexDirection: 'row',
       alignItems: 'center',
       padding: spacing[3],
-      paddingHorizontal: spacing[4],
+      paddingHorizontal: pad,
       borderTopWidth: 1,
-      borderTopColor: t.border.medium,
+      borderTopColor: t.border.default,
     },
   });
 

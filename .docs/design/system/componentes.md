@@ -12,6 +12,8 @@
 > - **P2** = Documentos, Mochilas y Compartir.
 > - **P3** = resto.
 
+> **Estado en código (2026-11-20, Fase 0.2a, issue #35):** construidos Button, IconButton, IconTile, Typography (roles v2), Chip (tonos y opción), Card (radio, canto, variantes), ListRow y DangerLink. Vista previa: `apps/web` → `/dev/ui` (solo desarrollo).
+
 ## Resumen
 
 | Capa | Extender | Nuevos | Total |

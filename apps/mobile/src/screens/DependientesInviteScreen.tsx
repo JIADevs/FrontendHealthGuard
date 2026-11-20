@@ -124,7 +124,7 @@ export function DependientesInviteScreen() {
                             accessibilityLabel="Email de la invitación"
                         />
                         {emailError ? (
-                            <Text style={[styles.fieldError, { color: palette.status.error[500] }]}>
+                            <Text style={[styles.fieldError, { color: palette.status.error[700] }]}>
                                 {emailError}
                             </Text>
                         ) : null}

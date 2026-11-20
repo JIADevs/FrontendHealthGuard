@@ -68,4 +68,4 @@ Cada paso es un commit; el detalle está en `design.md` y `tasks.md`.
 - Documentos en sky y mochilas en teal en las dos apps.
 - Nunito e Inter cargadas: `Typography` las muestra en mobile y los títulos de web usan `--font-heading`.
 - Ningún uso de `palette.brand[500]` como relleno o texto en `apps/` y `packages/ui`.
-- `pnpm exec tsc --noEmit -p apps/mobile` y `pnpm --filter @helu/web build` pasan.
+- Ningún error de tipos nuevo frente a `dev` en mobile ni en web. `dev` ya tiene errores previos, así que ni `tsc` ni `next build` pasan por completo.

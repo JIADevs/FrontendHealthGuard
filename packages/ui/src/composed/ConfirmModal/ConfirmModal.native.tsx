@@ -2,7 +2,7 @@ import { Modal as RNModal, View, Text, StyleSheet } from 'react-native';
 import { Button } from '../../primitives/Button/Button.native';
 import { Modal } from '../../containers/Modal/Modal.native';
 import { Typography } from '../../primitives/Typography/Typography.native';
-import { palette, radii, spacing, fontSize, fontWeight } from '../../tokens/tokens';
+import { palette, radii, spacing, fontSize, fontWeight, nativeFont } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { ThemeContextValue } from '../../tokens/ThemeProvider';
 import type { ConfirmModalIconTone, ConfirmModalProps } from './ConfirmModal.types';
@@ -18,6 +18,7 @@ export function ConfirmModal({
   title,
   message,
   confirmLabel = 'Confirmar',
+  keepLabel = 'Cancelar',
   confirmVariant = 'danger',
   loading = false,
   onConfirm,
@@ -32,6 +33,7 @@ export function ConfirmModal({
         title={title}
         message={message}
         confirmLabel={confirmLabel}
+        keepLabel={keepLabel}
         confirmVariant={confirmVariant}
         loading={loading}
         onConfirm={onConfirm}
@@ -49,7 +51,7 @@ export function ConfirmModal({
       onClose={onCancel}
       footer={
         <>
-          <Button variant="secondary" onPress={onCancel} disabled={loading}>Cancelar</Button>
+          <Button variant="secondary" onPress={onCancel} disabled={loading}>{keepLabel}</Button>
           <Button variant={confirmVariant} onPress={onConfirm} disabled={loading} loading={loading}>
             {confirmLabel}
           </Button>
@@ -65,6 +67,7 @@ function CenteredConfirmModal({
   title,
   message,
   confirmLabel,
+  keepLabel,
   confirmVariant,
   loading,
   onConfirm,
@@ -73,7 +76,7 @@ function CenteredConfirmModal({
   iconTone,
   actionsLayout,
 }: Required<Pick<ConfirmModalProps, 'title' | 'message' | 'confirmLabel' | 'confirmVariant' | 'loading' | 'onConfirm' | 'onCancel' | 'icon' | 'iconTone'>> &
-  Pick<ConfirmModalProps, 'actionsLayout'>) {
+  Pick<ConfirmModalProps, 'actionsLayout' | 'keepLabel'>) {
   const t = useAppTheme();
   const styles = makeStyles(t, iconTone);
   const stacked = actionsLayout === 'stacked';
@@ -94,6 +97,10 @@ function CenteredConfirmModal({
           <View style={[styles.actions, stacked && styles.actionsStacked]}>
             {stacked ? (
               <>
+                {/* v2: la opción segura va primero */}
+                <Button variant="secondary" fullWidth onPress={onCancel} disabled={loading}>
+                  {keepLabel}
+                </Button>
                 <Button
                   variant={confirmVariant}
                   fullWidth
@@ -103,15 +110,12 @@ function CenteredConfirmModal({
                 >
                   {confirmLabel}
                 </Button>
-                <Button variant="secondary" fullWidth onPress={onCancel} disabled={loading}>
-                  Cancelar
-                </Button>
               </>
             ) : (
               <>
                 <View style={styles.actionFlex}>
                   <Button variant="secondary" fullWidth onPress={onCancel} disabled={loading}>
-                    Cancelar
+                    {keepLabel}
                   </Button>
                 </View>
                 <View style={styles.actionFlex}>
@@ -164,7 +168,7 @@ function makeStyles(t: ThemeContextValue, iconTone: ConfirmModalIconTone) {
     },
     title: {
       fontSize: fontSize.lg,
-      fontWeight: fontWeight.bold,
+      fontFamily: nativeFont('heading', 900),
       color: t.text.primary,
       textAlign: 'center',
       marginBottom: spacing[2],

@@ -5,6 +5,7 @@
 // ─── Foundation ──────────────────────────────────────────────────────────────
 export * from './tokens/tokens';
 export * from './tokens/theme';
+export * from './tokens/semantic';
 export * from './tokens/cssVariables';
 
 // ─── Utils ───────────────────────────────────────────────────────────────────

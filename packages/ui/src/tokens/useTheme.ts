@@ -19,6 +19,7 @@ export function useTheme(): AppTheme & { mode: "light" | "dark" } {
     brand:   { ...theme.brand },
     status:  { ...theme.status },
     accent:  { ...theme.accent },
+    motivation: { ...theme.motivation },
     mode,
   };
 }

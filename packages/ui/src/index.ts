@@ -5,6 +5,7 @@
 // ─── Foundation ──────────────────────────────────────────────────────────────
 export * from './tokens/tokens';
 export * from './tokens/theme';
+export * from './tokens/semantic';
 export * from './tokens/useTheme';
 export { ThemeProvider, useAppTheme } from './tokens/ThemeProvider';
 export type { ThemeContextValue } from './tokens/ThemeProvider';

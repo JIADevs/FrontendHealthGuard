@@ -310,10 +310,13 @@ Decisión del equipo (2026-11-20), después de revisar los mockups web de la v2.
 |---|---|
 | `.docs/design-v2/` pasa a ser `.docs/design/`. La v1 sale de la carpeta y queda en el historial de git (`a79a55b`). `archive/` se conserva | `.docs/design/` |
 | Se trajo de la v1 lo que solo existía allí: la §6c «Estados de carga» de la spec de movimiento, la demo «Estados de carga» de `movimiento.html` y la fila «Esqueleto» de MASTER §7. La §6c suma los esqueletos web de la v2.8 | `system/pages/movimiento-interacciones.md` §6c, `system/movimiento.html#carga`, `MASTER.md` §7 |
+| Se restauró el módulo «Estados vacíos (propuesta)» de la v1 (17 pantallas móviles y 3 web), que se había agregado después de crear la v2 (commit `3d3d6bb`) y quedó fuera en el primer reemplazo. Ahora es el módulo 12; funciona con el kit de la v2, sin desbordes ni errores | `mockups/m9-vacios.js`, `mockups/index.html` (`?v=35`), `mockups/README.md` |
 | README nuevo: une el de la v1 (contenido, Figma, reglas de mantenimiento) con el de la v2 | `README.md` |
 | Rutas y puerto: todo se sirve con `python3 -m http.server 5180 --directory .docs/design` | `README.md`, `mockups/README.md` |
 | ADR 0002 pasa a «aceptada» y su tabla de diferencias apunta a la v2 | `../architecture/adr/0002-adopt-design-system-b.md` |
 | `AGENTS.md`, `CLAUDE.md` y la skill `design-system` apuntan a la v2 (misma ruta, versión y reglas web) | raíz del repo, `.agents/skills/design-system/SKILL.md` |
+
+**Pendiente:** unificar el módulo 12 con los vacíos del módulo 10 (`m7-estados.js`) y con los vacíos web de la v2.8. En la v1, el módulo de vacíos reemplazaba 7 vacíos de los módulos 9 y 10; en la v2 esos vacíos siguen existiendo, así que hoy hay pantallas repetidas (Citas, Medicamentos, Documentos, Búsqueda, Mochilas y Compartidos).
 
 **Resueltos con este cambio:**
 - El pendiente de la v2.6: la v1 todavía mostraba el resumen de errores arriba. Ya no aplica, porque la v1 salió de la carpeta.

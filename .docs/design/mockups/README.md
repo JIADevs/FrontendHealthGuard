@@ -23,6 +23,7 @@ El lienzo es muy grande. Para verlo entero, usa los botones **Zoom 25 % · 40 % 
 | `m6-cuenta.js` | 8 · Dependientes · 9 · Cuenta |
 | `m7-estados.js` | 10 · Estados vacíos, validación, confirmaciones y errores |
 | `m8-carga.js` | 11 · Estados de carga: esqueletos generados desde las pantallas reales (`skel()`), con las clases `.skel`, `.skt` y `.skb` de `kit.css` |
+| `m9-vacios.js` | 12 · Estados vacíos (propuesta): primer uso, ejemplos, plantillas, «sin resultados» útil y «todo al día». Viene de la v1 sin adaptar; pendiente unificarlo con los vacíos del módulo 10 |
 
 ## Ver
 
@@ -31,7 +32,7 @@ python3 -m http.server 5180 --directory .docs/design
 ```
 
 - Todo: `http://localhost:5180/mockups/index.html`
-- Un módulo o varios: `?m=misiones` · `?m=agenda,docs` (ids: `acceso`, `inicio`, `agenda`, `misiones`, `docs`, `mochilas`, `compartir`, `dependientes`, `cuenta`, `estados`, `carga`)
+- Un módulo o varios: `?m=misiones` · `?m=agenda,docs` (ids: `acceso`, `inicio`, `agenda`, `misiones`, `docs`, `mochilas`, `compartir`, `dependientes`, `cuenta`, `estados`, `carga`, `vacios`)
 
 ## Agregar o cambiar una pantalla
 

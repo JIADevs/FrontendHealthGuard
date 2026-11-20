@@ -19,7 +19,7 @@ La v1 (2026-11-17) se reemplazó por esta versión el 2026-11-20 y queda en el h
 | [`system/tokens.json`](./system/tokens.json) · [`tokens.css`](./system/tokens.css) · [`build-tokens.py`](./system/build-tokens.py) | Tokens en tres capas (primitivos → semánticos → componente), claro y oscuro | Valores exactos |
 | [`system/movimiento.html`](./system/movimiento.html) | Vista previa interactiva del movimiento, con las reglas de v2.5 y los estados de carga | Ver y probar el movimiento |
 | [`system/preview.html`](./system/preview.html) · [`formularios.html`](./system/formularios.html) | Vistas previas del sistema y de los formularios | **Sin actualizar:** todavía muestran tamaños de v1 (botón `sm`, chips, botones de ícono) |
-| [`mockups/`](./mockups/README.md) | Lienzo HTML con unas 170 pantallas: 112 móviles y 61 web (estados y esqueletos incluidos) | Referencia de pantallas; se captura a Figma |
+| [`mockups/`](./mockups/README.md) | Lienzo HTML con unas 190 pantallas: 129 móviles y 64 web (estados, esqueletos y la propuesta de vacíos incluidos) | Referencia de pantallas; se captura a Figma |
 | [`audit/`](./audit/) | [Índice del checklist UX](./audit/checklist-ux.md) (132 ítems + 7 de escritorio) e [informe de la auditoría web](./audit/web-grupo-a.md) | Auditar pantallas con la misma numeración |
 | [`CHANGELOG.md`](./CHANGELOG.md) | Cada cambio de la v2, con la pantalla y el ítem que lo motivó, y las decisiones pendientes | Saber por qué algo es como es |
 | [`archive/`](./archive/) | Prototipo gamificado descartado (estilo tipo Duolingo) y scripts de Figma no usados | Solo histórico |

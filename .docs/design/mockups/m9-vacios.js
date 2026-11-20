@@ -1,4 +1,7 @@
-/* Módulo 11 · Estados vacíos (propuesta)
+/* Módulo 12 · Estados vacíos (propuesta)
+   v2.9: viene de la v1 (m8-vacios.js, commit 3d3d6bb), donde se diseñó después de crear la v2. Se trajo tal cual al
+   reemplazar la carpeta. Pendiente: adaptarlo a la v2 y unificarlo con los vacíos del módulo 10 (m7-estados.js) y los
+   vacíos web de la v2.8, que hoy se repiten en parte.
    Principios (checklist de UX, «Empty states»):
    97 Nunca una pantalla en blanco: explicar qué va a aparecer aquí.
    98 Una sola acción clara para llenarla.
@@ -9,7 +12,7 @@
    clínicos ni en el banner de modo gestión) y una sola acción primaria. En los vacíos no se muestra el
    botón flotante «+»: la acción para llenar la pantalla ya está en el contenido. */
 {
-const V=mod('vacios','11 · Estados vacíos (propuesta)','Todas las pantallas que pueden quedar vacías, con cinco principios: explicar qué va a aparecer (97), una sola acción clara (98), un ejemplo o una plantilla (99), «sin resultados» con salida (100) y «todo hecho» como buena noticia (101). Reemplaza los vacíos de citas, medicamentos, documentos, búsqueda, mochilas, compartidos y notificaciones de los módulos 9 y 10, y agrega los que faltaban (primer uso, día sin eventos, mochila sin documentos, filtros, modo gestión, todo al día).');
+const V=mod('vacios','12 · Estados vacíos (propuesta)','v2.9 · Traído de la v1 sin adaptar; pendiente unificarlo con el módulo 10. Todas las pantallas que pueden quedar vacías, con cinco principios: explicar qué va a aparecer (97), una sola acción clara (98), un ejemplo o una plantilla (99), «sin resultados» con salida (100) y «todo hecho» como buena noticia (101). Reemplaza los vacíos de citas, medicamentos, documentos, búsqueda, mochilas, compartidos y notificaciones de los módulos 9 y 10, y agrega los que faltaban (primer uso, día sin eventos, mochila sin documentos, filtros, modo gestión, todo al día).');
 const AG=['Calendario','Citas','Medicamentos','Bienestar'];
 const W='currentColor';
 /* bloque vacío: mascota + título + una frase + acciones */

@@ -1,6 +1,6 @@
 # CHANGELOG · Diseño v2
 
-Cambios de `.docs/design-v2/` respecto a `.docs/design/` (v1, 2026-11-17). Origen: auditoría UX del 2026-11-18 contra un checklist de 132 ítems (leyes UX, formularios, navegación, feedback, estados vacíos, errores, móvil, accesibilidad, tipografía, copy y confianza). El número de cada fila es el ítem del checklist.
+Cambios de la v2 respecto a la v1 (2026-11-17). Hasta la sección 13 la v2 vivía en `.docs/design-v2/` y la v1 en `.docs/design/`, así que en esas secciones `../design/` quiere decir «la v1». Desde la sección 14 la v2 es la versión vigente y está en `.docs/design/`; la v1 queda en el historial de git (`a79a55b`). Origen de la v2: auditoría UX del 2026-11-18 contra un checklist de 132 ítems (leyes UX, formularios, navegación, feedback, estados vacíos, errores, móvil, accesibilidad, tipografía, copy y confianza). El número de cada fila es el ítem del checklist.
 
 Las pantallas cambiadas llevan una nota que empieza por **«v2 ·»** en el lienzo de mockups.
 
@@ -127,7 +127,7 @@ Las pantallas cambiadas llevan una nota que empieza por **«v2 ·»** en el lien
 | **Chips de 44 vs 48 px** | `formularios.md` pedía 48 px en chips; la v2 los deja en 44 (el mínimo del checklist) para que no pesen tanto. Campos siguen en 48. |
 | **Tipo preseleccionado en Nueva misión** | Sigue «Realizar un examen». Falta el dato de cuál es el tipo más común (ítem 6). |
 | **Modo oscuro** | Los tokens existen, pero no hay mockups en oscuro (MASTER §12). |
-| **Web** | No se auditó. Solo cambió lo que hereda del kit o comparte función con móvil (orden de citas, chips, toast de borrado, sin estado en «Nuevo tratamiento»). Hace falta una pasada propia. |
+| **Web** | No se auditó. Solo cambió lo que hereda del kit o comparte función con móvil (orden de citas, chips, toast de borrado, sin estado en «Nuevo tratamiento»). Hace falta una pasada propia. **v2.8–2.8.1:** el grupo A (pantallas que ya existen en el código) está auditado y corregido (secciones 12 y 13); falta el grupo C (Calendario, Bienestar, Misiones, Dependientes, Notificaciones). |
 | **Vistas previas del sistema** | `preview.html` y `formularios.html` no se actualizaron y muestran tamaños de v1 (`movimiento.html` se actualizó en v2.5.1). |
 | **Diferencias con el código** | El código permite archivos de 25 MB; los diseños dicen 10 MB. Hay que alinear uno de los dos. |
 | **`tokens.css` editado a mano** | El generador de `tokens.css` (`generate-tokens.cjs`, de la skill design-system) no está en este equipo. Se regeneró `tokens.json` con `build-tokens.py` y se editaron a mano solo las 3 líneas de tamaño. Al regenerar con la skill, el resultado debería ser idéntico. |
@@ -260,3 +260,65 @@ Nuevo módulo **«11 · Estados de carga»** (`mockups/m8-carga.js`, `?m=carga`)
 ## 11. v2.7.1 · «Fundido cruzado» definido como *fade through*
 
 En `system/pages/movimiento-interacciones.md` (§2 y §3), y también en `../design/`: cuando cambia el contenido dentro de una pantalla (pestañas internas de Agenda, «Tomar» → «✓ Tomado», banner de error → éxito), el contenido anterior sale en 100 ms y **después** entra el nuevo (150 ms; 250 ms con 4 px de subida si es una vista completa). Nunca hay dos contenidos encimados, y un toque nuevo a mitad de camino deja entrar directo la última opción. Entre pantallas completas de la barra inferior se mantiene el fundido simultáneo del navegador. Las dos `system/movimiento.html` muestran ahora contenido distinto en Calendario, Citas y Bienestar para que se vea el cambio.
+
+## 12. v2.8 · Auditoría web (en curso)
+
+Primera parte de la pasada propia de la web que quedó pendiente en la sección 3.
+
+| Qué | Detalle | Dónde |
+|---|---|---|
+| Índice del checklist | Los 132 ítems con la misma numeración de esta auditoría, cómo aplica cada uno en escritorio (✓, ≈, —, manual) y 7 ítems propios de escritorio (W1–W7) | `audit/checklist-ux.md` |
+| **Decisión: objetivos de 44 px también en web** (ítem 113) | La regla de MASTER §6 rige en web aunque se use con mouse; no se adopta el mínimo de 24 px de WCAG 2.2 AA (2.5.8). Motivos: el público de MASTER §1 (30–65 años y cuidadores de adultos mayores) no cambia en escritorio; la web del código tiene cortes a 600, 760 y 768 px, así que también se usa con el dedo en tablet y teléfono; y, medido en los 36 mockups web, todos los botones (126), botones de ícono (84), segmentados (42) y campos (45) ya miden 44 px o más, así que la decisión no cambia ninguna pantalla | `MASTER.md` §6 y §12; `audit/checklist-ux.md` |
+| Informe del grupo A | 24 pantallas web que ya existen en el código: 18 hallazgos (4 altos, 11 medios, 3 bajos), lo que queda para revisar a mano y 6 reglas para un futuro `pages/web.md`. Todavía no se corrigió ningún mockup | `audit/web-grupo-a.md` |
+| **Decisión: 6 reglas web** | (1) En lista + detalle, «Nuevo …» va como secundario y la única primaria es la del detalle. (2) Modales con alto máximo, cuerpo con scroll y pie fijo; página propia solo para Perfil y Configuración. (3) Cabecera fija por página, sin racha ni nivel, con el menú de cuenta en el avatar. (4) Tres anchos: ≥ 1280, 1024–1279 y < 1024 px. (5) URL propia para cada detalle y formulario. (6) Una columna también en web, con pares cortos; **reemplaza** las dos columnas en el modal web que permitía `formularios.md` §5 | `system/pages/web.md`; `formularios.md` §5; `MASTER.md` §7 |
+| Excepción posible (sin usar) | Solo si la auditoría encuentra una pantalla que necesite densidad (por ejemplo, una tabla): controles secundarios dentro de una fila que ya es clicable, solo con mouse, con 24 px como piso. Se documenta pantalla por pantalla | — |
+
+**Hallazgos de la medición** (se corrigen dentro de la auditoría):
+
+- El buscador mide 43 px, pero el token de campo (`--input-height`) es de 48: 7 pantallas web y 12 móviles. Es un desvío del kit, no solo de la web.
+- El enlace «Copiar» mide 40 px de ancho (web y móvil).
+- En el código, la paginación web mide 32 px de alto (`packages/ui/src/primitives/Pagination/Pagination.web.tsx:27`); al implementar pasa a 44.
+
+## 13. v2.8.1 · Mockups web corregidos (grupo A)
+
+Se aplicaron los 18 hallazgos de `audit/web-grupo-a.md` y las 6 reglas de `system/pages/web.md`. El detalle por hallazgo está al final del informe.
+
+| Qué | Dónde |
+|---|---|
+| Token nuevo `color.text.on-muted` (`#475569` / `#CBD5E1`) para texto sobre `surface-muted`, el segmentado y tintes de marca. `tokens.json` regenerado con `build-tokens.py` (solo cambió ese token); en `tokens.css` se agregaron a mano las 2 líneas | `system/build-tokens.py`, `tokens.json`, `tokens.css`, `MASTER.md` §4.1 |
+| Kit: chips grises y segmentado con el token nuevo; buscador a 48 px (`--input-height`); campo con error sin tinte detrás del placeholder (daba 4,39:1); modal con alto máximo; clases `.mfoot`, `.mhd`, `.wfoot`, `.sel`, `.navg`, `.amenu`; tamaños `.w1024` y `.laptop` | `mockups/kit.css` |
+| Kit: barra lateral en dos grupos, cabecera con `act`, menú de cuenta y helpers `wnew`, `mfoot`, `msec`, `amenu`, `wvariant` | `mockups/kit.js`, `mockups/README.md` |
+| Pantallas web corregidas: Inicio, acceso, Citas, Medicamentos, Nueva cita, Nuevo medicamento, Tratamientos, Nuevo tratamiento, Documentos, Detalle, Subir y Editar documento, Mochilas, Nueva mochila, Compartir, Configurar enlace, Enlace listo, Vista pública, Perfil y Configuración | `m1`–`m6` |
+| 25 pantallas web nuevas: error de inicio de sesión, recuperación (3), 2 a 1024 px, 1 en laptop, subiendo, menú de cuenta, vacíos (5), sin resultados, confirmaciones (3), formulario con errores, descartar, no se pudo guardar y esqueletos (4) | `m1`, `m2`, `m4`, `m6`, `m7`, `m8` |
+| También en web fuera del grupo A: «Invitar» como secundario (Dependientes) y Nuevo profesional en una columna | `m2`, `m6` |
+| Componentes nuevos o extendidos: Modal (web), PageActionBar, AccountMenu, AppSidebar | `system/componentes.md` |
+| Parámetro de caché de `index.html`: `?v=29` → `?v=34` | `mockups/index.html` |
+
+**Medición final:** ver «Estado de los arreglos» en el informe. Grupo A sin desvíos medibles; los pendientes de contraste y de una primaria quedan en Misiones y Dependientes (grupo C).
+
+**Efecto en móvil:** el token nuevo, el buscador de 48 px y el campo con error sin tinte también cambian las pantallas móviles. Se midió que ninguna desborda y que chips y segmentos pasan 4,5:1.
+
+**Pendiente:**
+- Modo oscuro sin mockups: el valor oscuro de `text.on-muted` (`#CBD5E1`) no se verificó en pantalla.
+- El generador `generate-tokens.cjs` sigue sin estar en este equipo; al regenerar con la skill, `tokens.css` debería dar lo mismo.
+
+## 14. v2.9 · La v2 pasa a ser la versión vigente
+
+Decisión del equipo (2026-11-20), después de revisar los mockups web de la v2.8.1. Es el primer paso de la Fase 0.
+
+| Qué | Dónde |
+|---|---|
+| `.docs/design-v2/` pasa a ser `.docs/design/`. La v1 sale de la carpeta y queda en el historial de git (`a79a55b`). `archive/` se conserva | `.docs/design/` |
+| Se trajo de la v1 lo que solo existía allí: la §6c «Estados de carga» de la spec de movimiento, la demo «Estados de carga» de `movimiento.html` y la fila «Esqueleto» de MASTER §7. La §6c suma los esqueletos web de la v2.8 | `system/pages/movimiento-interacciones.md` §6c, `system/movimiento.html#carga`, `MASTER.md` §7 |
+| Se restauró el módulo «Estados vacíos (propuesta)» de la v1 (17 pantallas móviles y 3 web), que se había agregado después de crear la v2 (commit `3d3d6bb`) y quedó fuera en el primer reemplazo. Ahora es el módulo 12; funciona con el kit de la v2, sin desbordes ni errores | `mockups/m9-vacios.js`, `mockups/index.html` (`?v=35`), `mockups/README.md` |
+| README nuevo: une el de la v1 (contenido, Figma, reglas de mantenimiento) con el de la v2 | `README.md` |
+| Rutas y puerto: todo se sirve con `python3 -m http.server 5180 --directory .docs/design` | `README.md`, `mockups/README.md` |
+| ADR 0002 pasa a «aceptada» y su tabla de diferencias apunta a la v2 | `../architecture/adr/0002-adopt-design-system-b.md` |
+| `AGENTS.md`, `CLAUDE.md` y la skill `design-system` apuntan a la v2 (misma ruta, versión y reglas web) | raíz del repo, `.agents/skills/design-system/SKILL.md` |
+
+**Pendiente:** unificar el módulo 12 con los vacíos del módulo 10 (`m7-estados.js`) y con los vacíos web de la v2.8. En la v1, el módulo de vacíos reemplazaba 7 vacíos de los módulos 9 y 10; en la v2 esos vacíos siguen existiendo, así que hoy hay pantallas repetidas (Citas, Medicamentos, Documentos, Búsqueda, Mochilas y Compartidos).
+
+**Resueltos con este cambio:**
+- El pendiente de la v2.6: la v1 todavía mostraba el resumen de errores arriba. Ya no aplica, porque la v1 salió de la carpeta.
+- El pendiente de la v2.7: la §6c solo existía en la v1. Ahora está en esta carpeta.
+

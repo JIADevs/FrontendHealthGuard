@@ -69,6 +69,7 @@ semantic = {
         "bg": C("#F6F8FC"), "surface": C(R("white")), "surface-muted": C(R("slate.100")),
         "border": C(R("slate.200")),
         "text": {"primary": C(R("slate.900")), "secondary": C(R("gray.500")), "muted": C(R("slate.500")),
+                 "on-muted": C(R("slate.600")),  # v2.8: texto sobre surface-muted y el segmentado (≥ 4,5:1)
                  "on-solid": C(R("white"))},
         "success": {"bg": C(R("green.50")), "fg": C(R("green.700")), "solid": C(R("green.700")),
                     "edge": C(R("green.800")), "graphic": C(R("green.500"))},
@@ -89,7 +90,7 @@ semantic = {
 }
 
 component = {
-    "button": {"height": D("48px"), "height-sm": D("36px"), "radius": D("{primitive.radius.md}"),
+    "button": {"height": D("48px"), "height-sm": D("44px"), "radius": D("{primitive.radius.md}"),
                "edge-width": D("3px"), "font": F("{primitive.font.heading}"), "weight": W("800"),
                "primary-bg": C("{semantic.color.brand.solid}"), "primary-edge": C("{semantic.color.brand.edge}"),
                "success-bg": C("{semantic.color.success.solid}"), "success-edge": C("{semantic.color.success.edge}"),
@@ -102,7 +103,8 @@ component = {
              "radius": D("{primitive.radius.lg}"), "padding": D("16px"), "edge-width": D("3px")},
     "input": {"bg": C("#F8FAFC"), "border": C("{semantic.color.border}"), "border-focus": C("{semantic.color.brand.focus}"),
               "radius": D("{primitive.radius.md}"), "height": D("48px")},
-    "chip": {"radius": D("{primitive.radius.chip}"), "font-size": D("12.5px")},
+    "chip": {"radius": D("{primitive.radius.chip}"), "font-size": D("12.5px"), "height-option": D("44px")},
+    "icon-button": {"size": D("44px")},
     "sheet": {"radius": D("{primitive.radius.sheet}")},
     "modal": {"radius": D("{primitive.radius.xl}"), "width": D("560px")},
     "tile": {"size": D("40px"), "radius": D("13px")},
@@ -122,6 +124,7 @@ dark = {
         "bg": C(R("slate.950")), "surface": C(R("slate.800")), "surface-muted": C(R("slate.900")),
         "border": C(R("slate.700")),
         "text": {"primary": C(R("slate.50")), "secondary": C(R("slate.400")), "muted": C(R("slate.400")),
+                 "on-muted": C(R("slate.300")),
                  "on-solid": C(R("white"))},
         "success": {"bg": C("rgba(34, 197, 94, 0.12)"), "fg": C(R("green.400"))},
         "warning": {"bg": C("rgba(245, 158, 11, 0.12)"), "fg": C(R("amber.400"))},

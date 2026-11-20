@@ -1,7 +1,8 @@
 # 0002 — Adoptar el sistema de diseño B («Equilibrada»)
 
-- Estado: propuesta
+- Estado: aceptada (2026-11-20)
 - Fecha: 2026-11-17
+- Versión vigente del diseño: v2 (auditoría UX del 2026-11-18 y auditoría web de la v2.8)
 
 ## Contexto
 
@@ -15,18 +16,29 @@ Al revisar el código y la documentación de producto también aparecieron probl
 
 El PRD de Misiones pide acompañar «sin infantilizar» y evitar «gamificación excesiva o celebraciones exageradas».
 
+Después, una auditoría UX de las pantallas móviles (2026-11-18) y una de la web (v2.8) dieron la **v2**. Las pantallas web también tienen reglas propias: lista + detalle, modales, cabecera, anchos de pantalla y URL.
+
 ## Decisión
 
-Adoptar como estado objetivo el sistema de diseño de [`.docs/design/`](../../design/README.md) (MASTER, reglas por módulo, tokens de tres capas, catálogo de componentes) y los mockups HTML de `.docs/design/mockups/`. El código se migra por fases siguiendo [`componentes.md`](../../design/system/componentes.md).
+Adoptar como estado objetivo el sistema de diseño de [`.docs/design/`](../../design/README.md): MASTER, reglas por módulo (incluida la [web](../../design/system/pages/web.md)), tokens de tres capas y catálogo de componentes. También los mockups HTML de `.docs/design/mockups/`.
+
+El código se migra por fases siguiendo [`componentes.md`](../../design/system/componentes.md). La v2 reemplazó a la v1 en esa carpeta el 2026-11-20; la v1 queda en el historial de git (`a79a55b`).
 
 ## Consecuencias
 
-**Se gana:** identidad más cálida y motivadora sin perder seriedad clínica; contraste AA verificado; modo oscuro definido por tokens; reglas comunes para formularios, movimiento y la mascota; diseño de Misiones alineado al PRD.
+**Se gana:**
+- Identidad más cálida y motivadora sin perder seriedad clínica.
+- Contraste AA verificado.
+- Modo oscuro definido por tokens.
+- Reglas comunes para formularios, movimiento, estados de carga y la mascota.
+- Reglas propias para la web.
+- Diseño de Misiones alineado al PRD.
 
 **Se pierde o cuesta:**
 - Cambiar tokens existentes afecta a todos los componentes.
 - Hay que cargar Nunito.
 - Hay que agregar `react-native-reanimated` y `expo-haptics` para el movimiento propuesto.
+- En web, cada detalle y cada formulario necesita su URL, lo que obliga a rehacer la navegación de los modales.
 
 **Diferencias entre el código actual y el objetivo** (actualizar esta tabla a medida que se implemente):
 
@@ -37,12 +49,16 @@ Adoptar como estado objetivo el sistema de diseño de [`.docs/design/`](../../de
 | Documentos | Acento green | Sky |
 | Mochilas | Acento orange | Teal (el naranja queda para la racha) |
 | Notificaciones / bienestar | Notificación en emerald | Notificación en brand; bienestar en emerald |
+| Texto sobre gris | No existe un token propio | `color.text.on-muted` (`#475569`) para chips grises, segmentado y tintes de marca |
 | Tipografía | Solo Inter (no cargada en mobile) | Nunito (títulos, botones) + Inter (cuerpo), ambas cargadas |
 | Radios | 4–20 | Chip 999 · input 14 · tarjeta 18 · hoja 28 |
-| Formularios | Asterisco en obligatorios; validación variable | «(opcional)» en opcionales; reglas de `pages/formularios.md` |
+| Áreas táctiles | Sin mínimo común; la paginación web mide 32 px (`Pagination.web.tsx:27`) | 44 × 44 px visibles en todo control, en móvil y en web |
+| Formularios | Asterisco en obligatorios; validación variable | «(opcional)» en opcionales, una columna (también en web) y el resto de `pages/formularios.md` |
 | Motivación | Racha de check-in sin UI dedicada | Tarjeta de racha con pausas, nivel, insignias y misiones, con opción de ocultarlos |
 | Misiones | No existen en runtime | Módulo según PRD y `pages/misiones.md` |
-| Movimiento | Transiciones nativas de `native-stack` | + fundido en pestañas, hojas con resorte, feedback por acción (`pages/movimiento-interacciones.md`) |
+| Movimiento | Transiciones nativas de `native-stack` | + fundido en pestañas, hojas con resorte, feedback por acción y esqueletos de carga (`pages/movimiento-interacciones.md`) |
+| Acciones optimistas | Solo colores de contexto y revocar delegación (`onMutate` en `reactQueryHooks.ts`) | Toma, check-in y pasos de misión optimistas; revocar delegación espera al servidor |
+| Web: navegación | Barra lateral de 8 entradas con Perfil y Configuraciones; se oculta a 768 px; detalles y formularios en modales sin URL | Barra lateral de 5 destinos + «Más», cuenta en el menú del avatar, cortes a 1280 y 1024 px, URL por detalle y formulario (`pages/web.md`) |
 | Microcopy | Voseo mezclado | Tuteo |
 
-**Pendiente:** implementar por fases (P1: tokens, fuentes, botón, campos, hojas, toast, motivación y misiones). Este ADR pasa a «aceptada» cuando el equipo apruebe el inicio de la fase 1.
+**Siguiente paso:** Fase 0 (P1): tokens, fuentes y componentes base (Button, IconButton, Chip, Card, Typography, Toast con «Deshacer», BottomActionBar, ConfirmModal, DangerLink). Después vienen las pantallas, empezando por Agenda e Inicio en móvil.

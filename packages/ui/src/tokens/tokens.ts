@@ -63,11 +63,27 @@ export const colors = {
     900: '#0c4a6e',
   },
 
+  // Teal (mochilas en v2)
+  teal: {
+    50:  '#f0fdfa',
+    100: '#ccfbf1',
+    200: '#99f6e4',
+    300: '#5eead4',
+    400: '#2dd4bf',
+    500: '#14b8a6',
+    600: '#0d9488',
+    700: '#0f766e',
+    800: '#115e59',
+    900: '#134e4a',
+  },
+
   // Amber
   amber: {
     50:  '#fffbeb',
     100: '#fef3c7',
     200: '#fde68a',
+    300: '#fcd34d',
+    400: '#fbbf24',
     500: '#f59e0b',
     600: '#d97706',
     700: '#b45309',
@@ -89,9 +105,12 @@ export const colors = {
     50:  '#f0fdf4',
     100: '#dcfce7',
     200: '#bbf7d0',
+    300: '#86efac',
+    400: '#4ade80',
     500: '#22c55e',
     600: '#16a34a',
     700: '#15803d',
+    800: '#166534',
   },
 
   // Pink
@@ -99,6 +118,8 @@ export const colors = {
     50:  '#fdf2f8',
     100: '#fce7f3',
     200: '#fbcfe8',
+    300: '#f9a8d4',
+    400: '#f472b6',
     500: '#ec4899',
     600: '#db2777',
     700: '#be185d',
@@ -109,26 +130,33 @@ export const colors = {
     50:  '#fff7ed',
     100: '#ffedd5',
     200: '#fed7aa',
+    300: '#fdba74',
+    400: '#fb923c',
     500: '#f97316',
     600: '#ea580c',
     700: '#c2410c',
+    800: '#9a3412',
   },
 
-  // Violeta (IA, acciones especiales)
+  // Violeta (IA, tratamientos)
   violet: {
     50:  '#f5f3ff',
     100: '#ede9fe',
     200: '#ddd6fe',
+    300: '#c4b5fd',
+    400: '#a78bfa',
     500: '#8b5cf6',
     600: '#7c3aed',
     700: '#6d28d9',
   },
 
-  // Emerald (usado en notificaciones tipo CHECKIN)
+  // Emerald (bienestar y check-ins)
   emerald: {
     50:  '#ecfdf5',
     100: '#d1fae5',
     200: '#a7f3d0',
+    300: '#6ee7b7',
+    400: '#34d399',
     500: '#10b981',
     600: '#059669',
     700: '#047857',
@@ -148,9 +176,12 @@ export const colors = {
   error: {
     50:  '#fef2f2',
     100: '#fee2e2',
+    200: '#fecaca',
+    300: '#fca5a5',
     400: '#f87171',
     500: '#ef4444',
     600: '#dc2626',
+    700: '#b91c1c',
     800: '#991b1b',
   },
 
@@ -191,6 +222,14 @@ export const radii = {
   lg:   16,
   xl:   20,
   full: 9999,
+  /** v2 (MASTER §6): campos y botones */
+  input: 14,
+  /** v2: tarjetas */
+  card:  18,
+  /** v2: modal web */
+  modal: 24,
+  /** v2: hoja inferior (esquinas superiores) */
+  sheet: 28,
 } as const;
 
 // ─── Espaciado ───────────────────────────────────────────────────────────────
@@ -227,19 +266,52 @@ export const fontWeight = {
   semibold:  '600' as const,
   bold:      '700' as const,
   extrabold: '800' as const,
+  black:     '900' as const,
 } as const;
 
+/**
+ * Web: `--font-inter` y `--font-nunito` los define `next/font` en apps/web (layout.tsx).
+ * Títulos, botones y etiquetas usan `heading` (Nunito); el cuerpo usa `body` (Inter). MASTER §5.
+ */
 export const fontFamily = {
   inherit: 'inherit',
-  sans:    'Inter, system-ui, sans-serif',
+  sans:    'var(--font-inter), Inter, system-ui, sans-serif',
+  body:    'var(--font-inter), Inter, system-ui, sans-serif',
+  heading: 'var(--font-nunito), Nunito, system-ui, sans-serif',
   mono:    'JetBrains Mono, Menlo, monospace',
 } as const;
 
-// React Native no acepta fallbacks CSS — solo el nombre exacto de la fuente cargada
+/**
+ * React Native no acepta fallbacks CSS ni elige el archivo por `fontWeight` en Android:
+ * cada peso cargado con expo-font es una familia distinta (apps/mobile/App.tsx).
+ */
 export const nativeFontFamily = {
-  sans: 'Inter',
+  sans: 'Inter_400Regular',
   mono: 'JetBrainsMono',
+  body: {
+    400: 'Inter_400Regular',
+    500: 'Inter_500Medium',
+    600: 'Inter_600SemiBold',
+  },
+  heading: {
+    700: 'Nunito_700Bold',
+    800: 'Nunito_800ExtraBold',
+    900: 'Nunito_900Black',
+  },
 } as const;
+
+export type NativeFontRole = 'body' | 'heading';
+
+/** Familia nativa para un rol y un peso: toma el peso cargado más cercano. */
+export function nativeFont(role: NativeFontRole, weight: number | string = 400): string {
+  const families: Record<number, string> = nativeFontFamily[role];
+  const target = Number(weight) || 400;
+  const loaded = Object.keys(families).map(Number);
+  const closest = loaded.reduce((best, w) =>
+    Math.abs(w - target) < Math.abs(best - target) ? w : best,
+  );
+  return families[closest];
+}
 
 // ─── Overlays ────────────────────────────────────────────────────────────────
 
@@ -317,14 +389,28 @@ export const palette = {
     info:    colors.sky,
   },
 
-  /** Nivel 3 — Acentos por Feature (diferenciación visual) */
+  /**
+   * Nivel 3 — Acentos por Feature (diferenciación visual). v2, MASTER §4.3:
+   * documentos en sky (el verde es solo «completado»), mochilas en teal (el naranja es la racha),
+   * notificaciones en el color de marca y check-ins en `wellbeing` (emerald).
+   */
   accent: {
     ai:           colors.violet,
     medication:   colors.amber,
-    notification: colors.emerald,
-    document:     colors.green,
+    notification: colors.primary,
+    document:     colors.sky,
     calendar:     colors.pink,
-    backpack:     colors.orange,
+    backpack:     colors.teal,
+    wellbeing:    colors.emerald,
+    mission:      colors.primary,
+    treatment:    colors.violet,
+  },
+
+  /** Motivación (MASTER §4.4): racha, nivel e insignias, progreso */
+  motivation: {
+    streak:   colors.orange,
+    level:    colors.amber,
+    progress: colors.green,
   },
 
   /** Neutros */

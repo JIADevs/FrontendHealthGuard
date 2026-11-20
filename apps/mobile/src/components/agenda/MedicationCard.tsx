@@ -115,7 +115,7 @@ function makeStyles(t: ThemeContextValue) {
       alignItems: "center",
       gap: spacing[1],
       marginTop: spacing[1],
-      backgroundColor: t.accent.notifFg,
+      backgroundColor: t.status.successSolid,
       alignSelf: "flex-start",
       paddingHorizontal: spacing[3],
       paddingVertical: 4,

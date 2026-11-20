@@ -7,7 +7,7 @@ export const DELEGATION_COLOR_OPTIONS = [
     { id: "violet", color: palette.accent.ai[500] },
     { id: "amber", color: palette.accent.medication[500] },
     { id: "orange", color: palette.accent.backpack[500] },
-    { id: "emerald", color: palette.accent.notification[500] },
+    { id: "emerald", color: palette.accent.wellbeing[500] },
     { id: "green", color: palette.accent.document[600] },
     { id: "sky", color: palette.status.info[500] },
     { id: "red", color: palette.status.error[500] },

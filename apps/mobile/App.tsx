@@ -119,7 +119,7 @@ export default function App() {
   if (!isHydrated) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={palette.brand[500]} />
+        <ActivityIndicator size="large" color={palette.brand[600]} />
       </View>
     );
   }

@@ -10,7 +10,7 @@ export function Checkbox({ checked, onChange, label, disabled }: CheckboxProps) 
     <View
       style={[
         styles.box,
-        { borderColor: checked ? palette.brand[500] : t.border.medium },
+        { borderColor: checked ? t.brand.solid : t.border.medium },
         checked && styles.boxChecked,
         disabled && styles.disabled,
       ]}
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   boxChecked: {
-    backgroundColor: palette.brand[500],
+    backgroundColor: palette.brand[600],
   },
   disabled: {
     opacity: 0.5,

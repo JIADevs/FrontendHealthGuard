@@ -161,7 +161,7 @@
 .forgotLink {
   font-size: 13px;
   font-weight: 600;
-  color: var(--brand-500);
+  color: var(--color-brand-text);
   text-decoration: none;
   transition: color 0.2s;
 }
@@ -177,8 +177,8 @@
   padding: 14px 24px;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(90deg, var(--brand-400), var(--brand-500));
-  color: white;
+  background: var(--color-brand-solid);
+  color: var(--color-text-on-solid);
   font-size: 16px;
   font-weight: 700;
   font-family: inherit;
@@ -226,7 +226,7 @@
 .footerLink {
   font-size: 15px;
   font-weight: 700;
-  color: var(--brand-500);
+  color: var(--color-brand-text);
   text-decoration: none;
   transition: color 0.2s;
 }

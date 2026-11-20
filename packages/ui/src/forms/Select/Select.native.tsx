@@ -30,7 +30,7 @@ export function Select({
   const borderColor = error
     ? palette.status.error[500]
     : open
-    ? palette.brand[500]
+    ? t.brand.focus
     : t.border.medium;
 
   return (
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     height: 12,
     borderRightWidth: 2,
     borderBottomWidth: 2,
-    borderColor: palette.brand[500],
+    borderColor: palette.brand[600],
     transform: [{ rotate: '45deg' }],
   },
 });

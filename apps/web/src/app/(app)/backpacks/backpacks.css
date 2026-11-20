@@ -183,7 +183,7 @@
 }
 
 .doc-check.checked {
-  background: var(--brand-500);
-  border-color: var(--brand-500);
+  background: var(--color-brand-solid);
+  border-color: var(--color-brand-solid);
   color: white;
 }

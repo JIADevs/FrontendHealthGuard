@@ -117,7 +117,7 @@ export function makeAuthStyles(t: ThemeContextValue) {
     },
     forgotText: {
       fontSize: fontSize.sm,
-      color: palette.brand[500],
+      color: t.brand.text,
       fontWeight: fontWeight.semibold,
     },
 
@@ -154,7 +154,7 @@ export function makeAuthStyles(t: ThemeContextValue) {
     },
     footerLink: {
       fontSize: fontSize.base,
-      color: palette.brand[500],
+      color: t.brand.text,
       fontWeight: fontWeight.bold,
     },
   });

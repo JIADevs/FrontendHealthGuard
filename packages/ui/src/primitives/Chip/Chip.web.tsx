@@ -5,13 +5,13 @@ import type { ChipProps, ChipColor } from './Chip.types';
 
 const unselected: Record<ChipColor, { background: string; color: string }> = {
   default: { background: palette.brand[50],  color: palette.brand[700] },
-  green:   { background: palette.status.success[50],  color: palette.accent.document[700]   },
+  green:   { background: palette.status.success[50],  color: colors.green[700]   },
   amber:   { background: palette.accent.medication[50],    color: palette.accent.medication[800]   },
 };
 
 const selected: Record<ChipColor, { background: string; color: string }> = {
-  default: { background: palette.brand[500],   color: colors.white },
-  green:   { background: palette.accent.document[500], color: colors.white },
+  default: { background: palette.brand[600],   color: colors.white },
+  green:   { background: colors.green[700], color: colors.white },
   amber:   { background: palette.accent.medication[500], color: colors.white },
 };
 

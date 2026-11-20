@@ -31,7 +31,7 @@ export function AuthSubmitButton({
       disabled={disabled}
     >
       <LinearGradient
-        colors={[palette.brand[400], palette.brand[500]]}
+        colors={[palette.brand[600], palette.brand[600]]} /* v2: relleno plano brand.solid */
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.submitGradient}

@@ -42,7 +42,7 @@ export function DelegationRequestCard({ delegation }: DelegationRequestCardProps
                     <Text style={[styles.btnText, { color: palette.status.error[500] }]}>Rechazar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.btn, styles.acceptBtn, { backgroundColor: palette.brand[500] }]}
+                    style={[styles.btn, styles.acceptBtn, { backgroundColor: palette.brand[600] }]}
                     onPress={() => respond.mutate({ id: delegation.id, action: "accept" })}
                     disabled={isPending}
                     accessibilityLabel="Aceptar invitación"

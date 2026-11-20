@@ -54,7 +54,7 @@ export const DOCUMENT_TYPE_VARIANTS: Record<string, DocTypeVariant> = {
   "Informe médico":        { bg: palette.brand[100],            iconColor: palette.brand[600] },
   "Historia clínica":      { bg: palette.brand[100],            iconColor: palette.brand[700] },
   "Vacuna":                { bg: palette.accent.document[50],   iconColor: palette.accent.document[600] },
-  "Odontología":           { bg: palette.accent.backpack[50],   iconColor: palette.accent.backpack[600] },
+  "Odontología":           { bg: colors.orange[50],   iconColor: colors.orange[600] },
 };
 
 const CATEGORY_THEMES: Record<DocumentCategoryKey, DocumentCategoryTheme> = {

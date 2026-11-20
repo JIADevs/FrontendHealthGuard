@@ -39,8 +39,8 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
 
   const activeBtn: React.CSSProperties = {
     ...baseBtn,
-    background: palette.brand[500],
-    borderColor: palette.brand[500],
+    background: palette.brand[600],
+    borderColor: palette.brand[600],
     color: colors.white,
     fontWeight: fontWeight.semibold,
     cursor: 'default',

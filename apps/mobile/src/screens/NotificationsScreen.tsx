@@ -16,10 +16,10 @@ import { Bell, Calendar, Pill, Activity, Info, CheckCircle, Users } from "lucide
 import { navigateForNotification, buildRoutePayloadFromNotification } from "../navigation/notificationRouting";
 
 const TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
-  APPOINTMENT: { icon: Calendar, color: palette.brand[500],              bg: palette.brand[100] },
+  APPOINTMENT: { icon: Calendar, color: palette.brand[700],              bg: palette.brand[100] },
   MEDICATION:  { icon: Pill,     color: palette.status.warning[500],     bg: palette.status.warning[50] },
   CHECKIN:     { icon: Activity, color: palette.accent.wellbeing[700], bg: palette.accent.wellbeing[100] },
-  DELEGATION_INVITE: { icon: Users, color: palette.brand[500],            bg: palette.brand[100] },
+  DELEGATION_INVITE: { icon: Users, color: palette.brand[700],            bg: palette.brand[100] },
   SYSTEM:      { icon: Bell,     color: palette.accent.ai[500],          bg: palette.accent.ai[100] },
   INFO:        { icon: Info,     color: palette.surface[500],            bg: palette.surface[100] },
 };

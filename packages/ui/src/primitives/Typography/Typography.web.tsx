@@ -1,20 +1,24 @@
 "use client";
-import { colors, palette, fontSize, fontWeight, text } from '../../tokens/tokens';
+import { colors, palette, fontSize, fontWeight, fontFamily, text } from '../../tokens/tokens';
 import type { TypographyProps, TypographyVariant, TypographyColor } from './Typography.types';
 
 // ─── Variant → style ─────────────────────────────────────────────────────────
 
+// v2 (MASTER §5): títulos, etiquetas y eyebrows en Nunito; cuerpo en Inter (cargadas con next/font).
+const H = fontFamily.heading;
+const B = fontFamily.body;
+
 const variantStyles: Record<TypographyVariant, React.CSSProperties> = {
-  h1:      { fontSize: fontSize['4xl'], fontWeight: fontWeight.extrabold, lineHeight: 1.2 },
-  h2:      { fontSize: fontSize['3xl'], fontWeight: fontWeight.extrabold, lineHeight: 1.25 },
-  h3:      { fontSize: fontSize.xl,    fontWeight: fontWeight.bold,      lineHeight: 1.3 },
-  h4:      { fontSize: fontSize.lg,    fontWeight: fontWeight.semibold,  lineHeight: 1.4 },
-  body:    { fontSize: fontSize.base,  fontWeight: fontWeight.normal,    lineHeight: 1.6 },
-  bodyLg:  { fontSize: fontSize.md,   fontWeight: fontWeight.normal,    lineHeight: 1.6 },
-  bodySm:  { fontSize: fontSize.sm,   fontWeight: fontWeight.normal,    lineHeight: 1.5 },
-  caption: { fontSize: fontSize.xs,   fontWeight: fontWeight.normal,    lineHeight: 1.4 },
-  label:   { fontSize: fontSize.sm,   fontWeight: fontWeight.semibold,  lineHeight: 1.4 },
-  overline:{ fontSize: fontSize.xs,   fontWeight: fontWeight.semibold,  lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: '0.08em' },
+  h1:      { fontFamily: H, fontSize: fontSize['4xl'], fontWeight: fontWeight.black,     lineHeight: 1.2 },
+  h2:      { fontFamily: H, fontSize: fontSize['3xl'], fontWeight: fontWeight.black,     lineHeight: 1.25 },
+  h3:      { fontFamily: H, fontSize: fontSize.xl,    fontWeight: fontWeight.extrabold, lineHeight: 1.3 },
+  h4:      { fontFamily: H, fontSize: fontSize.lg,    fontWeight: fontWeight.extrabold, lineHeight: 1.4 },
+  body:    { fontFamily: B, fontSize: fontSize.base,  fontWeight: fontWeight.normal,    lineHeight: 1.6 },
+  bodyLg:  { fontFamily: B, fontSize: fontSize.md,   fontWeight: fontWeight.normal,    lineHeight: 1.6 },
+  bodySm:  { fontFamily: B, fontSize: fontSize.sm,   fontWeight: fontWeight.normal,    lineHeight: 1.5 },
+  caption: { fontFamily: B, fontSize: fontSize.xs,   fontWeight: fontWeight.normal,    lineHeight: 1.4 },
+  label:   { fontFamily: H, fontSize: fontSize.sm,   fontWeight: fontWeight.extrabold, lineHeight: 1.4 },
+  overline:{ fontFamily: H, fontSize: fontSize.xs,   fontWeight: fontWeight.black,     lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: '0.08em' },
 };
 
 // ─── Variant → HTML element ───────────────────────────────────────────────────

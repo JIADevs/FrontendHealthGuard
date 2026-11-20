@@ -1,23 +1,27 @@
 import { Text, StyleSheet } from 'react-native';
-import { colors, palette, fontSize, fontWeight, nativeFontFamily } from '../../tokens/tokens';
+import { colors, palette, fontSize, nativeFont } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { TypographyProps, TypographyVariant, TypographyColor } from './Typography.types';
 
 // ─── Variant → style ─────────────────────────────────────────────────────────
 
-const f = nativeFontFamily.sans;
+// v2 (MASTER §5): títulos, etiquetas y eyebrows en Nunito; cuerpo en Inter.
+// Con fuentes cargadas, el peso lo define la familia (Nunito_900Black…), no `fontWeight`:
+// Android no elige el archivo por `fontWeight` y iOS puede caer a la fuente del sistema.
+const heading = (w: number) => ({ fontFamily: nativeFont('heading', w) });
+const body = (w: number) => ({ fontFamily: nativeFont('body', w) });
 
 const variantStyles = StyleSheet.create({
-  h1:      { fontFamily: f, fontSize: fontSize['4xl'], fontWeight: fontWeight.extrabold, lineHeight: 34 },
-  h2:      { fontFamily: f, fontSize: fontSize['3xl'], fontWeight: fontWeight.extrabold, lineHeight: 30 },
-  h3:      { fontFamily: f, fontSize: fontSize.xl,    fontWeight: fontWeight.bold,      lineHeight: 26 },
-  h4:      { fontFamily: f, fontSize: fontSize.lg,    fontWeight: fontWeight.semibold,  lineHeight: 24 },
-  body:    { fontFamily: f, fontSize: fontSize.base,  fontWeight: fontWeight.normal,    lineHeight: 22 },
-  bodyLg:  { fontFamily: f, fontSize: fontSize.md,    fontWeight: fontWeight.normal,    lineHeight: 24 },
-  bodySm:  { fontFamily: f, fontSize: fontSize.sm,    fontWeight: fontWeight.normal,    lineHeight: 20 },
-  caption: { fontFamily: f, fontSize: fontSize.xs,    fontWeight: fontWeight.normal,    lineHeight: 16 },
-  label:   { fontFamily: f, fontSize: fontSize.sm,    fontWeight: fontWeight.semibold,  lineHeight: 20 },
-  overline:{ fontFamily: f, fontSize: fontSize.xs,    fontWeight: fontWeight.semibold,  lineHeight: 16, textTransform: 'uppercase', letterSpacing: 0.8 },
+  h1:      { ...heading(900), fontSize: fontSize['4xl'], lineHeight: 34 },
+  h2:      { ...heading(900), fontSize: fontSize['3xl'], lineHeight: 30 },
+  h3:      { ...heading(800), fontSize: fontSize.xl,    lineHeight: 26 },
+  h4:      { ...heading(800), fontSize: fontSize.lg,    lineHeight: 24 },
+  body:    { ...body(400),    fontSize: fontSize.base,  lineHeight: 22 },
+  bodyLg:  { ...body(400),    fontSize: fontSize.md,    lineHeight: 24 },
+  bodySm:  { ...body(400),    fontSize: fontSize.sm,    lineHeight: 20 },
+  caption: { ...body(400),    fontSize: fontSize.xs,    lineHeight: 16 },
+  label:   { ...heading(800), fontSize: fontSize.sm,    lineHeight: 20 },
+  overline:{ ...heading(900), fontSize: fontSize.xs,    lineHeight: 16, textTransform: 'uppercase', letterSpacing: 0.8 },
 });
 
 // ─── Component ────────────────────────────────────────────────────────────────

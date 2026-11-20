@@ -15,7 +15,7 @@ const iconByAction: Record<ActionType, React.ElementType> = {
 
 const colorByAction: Record<ActionType, { fg: string; bg: string; bgHover: string }> = {
   edit:   { fg: palette.brand[600],     bg: palette.brand[50],     bgHover: palette.brand[100] },
-  create: { fg: palette.accent.document[600],   bg: palette.accent.document[50],   bgHover: palette.accent.document[100] },
+  create: { fg: colors.green[600],   bg: colors.green[50],   bgHover: colors.green[100] },
   delete: { fg: palette.status.error[600],   bg: palette.status.error[50],   bgHover: palette.status.error[100] },
   copy:   { fg: palette.surface[600],   bg: palette.surface[50],   bgHover: palette.surface[100] },
   share:  { fg: palette.accent.ai[600],  bg: palette.accent.ai[50],  bgHover: palette.accent.ai[100] },

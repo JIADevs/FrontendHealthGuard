@@ -205,7 +205,7 @@ export function TreatmentDetailScreen() {
               {treatment.dailyCheckins.map((checkIn) => (
                 <RelatedRow
                   key={checkIn.id}
-                  icon={<HeartPulse size={18} color={t.accent.notifFg} />}
+                  icon={<HeartPulse size={18} color={t.accent.wellbeingFg} />}
                   title={MOOD_LABELS[checkIn.mood] ?? checkIn.mood}
                   subtitle={[formatDate(checkIn.recordedAt), checkIn.notes].filter(Boolean).join(" - ")}
                 />

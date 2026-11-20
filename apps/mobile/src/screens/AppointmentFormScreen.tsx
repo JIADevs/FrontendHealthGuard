@@ -799,7 +799,7 @@ const makeStyles = (t: ThemeContextValue) =>
       alignItems: "center", justifyContent: "center",
     },
     pickerAddBtnSelected: {
-      backgroundColor: "#e53e3e",
+      backgroundColor: t.status.dangerSolid,
     },
     pickerCloseBtn: {
       margin: spacing[4],

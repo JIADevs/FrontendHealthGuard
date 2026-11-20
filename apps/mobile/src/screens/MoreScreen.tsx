@@ -128,7 +128,7 @@ export function MoreScreen() {
               minHeight: 84,
             }}
           >
-            <ActivityIndicator size="small" color={palette.brand[500]} />
+            <ActivityIndicator size="small" color={palette.brand[600]} />
           </View>
         ) : (
           <ProfileCard
@@ -147,13 +147,13 @@ export function MoreScreen() {
             onPress={() => navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "medications" } } as any)}
           />
           <MenuItem
-            icon={<Activity size={20} color={palette.brand[500]} />}
+            icon={<Activity size={20} color={palette.brand[600]} />}
             label="Tratamientos"
             badge={treatments.data?.total ? `${treatments.data.total}` : undefined}
             onPress={() => navigation.navigate("Treatments", { backTitle: "Más" })}
           />
           <MenuItem
-            icon={<Share2 size={20} color={palette.brand[500]} />}
+            icon={<Share2 size={20} color={palette.brand[600]} />}
             label="Compartidos"
             onPress={() => navigation.navigate("SharedHistory", { backTitle: "Más" })}
           />

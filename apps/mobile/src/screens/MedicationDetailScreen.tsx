@@ -408,11 +408,11 @@ function CycleCard({
             <ActionButton action="edit" size="sm" onPress={onEdit} />
             {active && (
               <TouchableOpacity
-                style={[styles.finalizeBtn, { backgroundColor: t.status.warningBg ?? "#FFF3CD" }]}
+                style={[styles.finalizeBtn, { backgroundColor: t.status.warningBg }]}
                 activeOpacity={0.7}
                 onPress={onFinalize}
               >
-                <CheckCircle size={14} color={t.status.warningFg ?? "#856404"} strokeWidth={2} />
+                <CheckCircle size={14} color={t.status.warningFg} strokeWidth={2} />
               </TouchableOpacity>
             )}
             <ActionButton action="delete" size="sm" onPress={onDelete} />

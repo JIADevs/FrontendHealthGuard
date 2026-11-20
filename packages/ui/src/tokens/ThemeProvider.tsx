@@ -30,6 +30,7 @@ export function ThemeProvider({ children, preference = "system" }: ThemeProvider
     brand:   { ...theme.brand },
     status:  { ...theme.status },
     accent:  { ...theme.accent },
+    motivation: { ...theme.motivation },
     mode,
   };
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

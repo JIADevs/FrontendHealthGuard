@@ -133,7 +133,7 @@ export function DependientesInviteScreen() {
                     <TouchableOpacity
                         style={[
                             styles.submitBtn,
-                            { backgroundColor: palette.brand[500] },
+                            { backgroundColor: palette.brand[600] },
                             createMutation.isPending && { opacity: 0.7 },
                         ]}
                         onPress={handleSubmit}

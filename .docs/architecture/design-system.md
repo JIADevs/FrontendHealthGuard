@@ -33,11 +33,13 @@ Temas: `lightTheme` / `darkTheme`. Web inyecta `--brand-*`, `--bg`, `--text-prim
 
 ## Estado objetivo
 
-Este documento describe el código actual. El diseño objetivo (rediseño B, versión 2: tokens nuevos, Nunito + Inter, canto en botones y tarjetas, formularios, movimiento, misiones y reglas web) vive en [`.docs/design/`](../design/README.md). La decisión y la tabla de diferencias código ↔ objetivo están en el [ADR 0002](./adr/0002-adopt-design-system-b.md). Diferencias principales hoy:
+Este documento describe el código actual. El diseño objetivo (rediseño B, versión 2: tokens nuevos, Nunito + Inter, canto en botones y tarjetas, formularios, movimiento, misiones y reglas web) vive en [`.docs/design/`](../design/README.md). La decisión y la tabla de diferencias código ↔ objetivo están en el [ADR 0002](./adr/0002-adopt-design-system-b.md). Estado (Fase 0.1, issue #35):
 
-- `lightTheme.brand.solid` usa `brand[500]` (3,68:1 con texto blanco); el objetivo es `brand[600]`.
-- `palette.accent.document` es green y `backpack` es orange; el objetivo es sky y teal.
-- `fontFamily` solo declara Inter (y mobile no la carga); el objetivo agrega Nunito para títulos y botones.
+- Tokens, tema y variables CSS ya tienen los valores de la v2. Están en `tokens/semantic.ts`, copia de `.docs/design/system/tokens.css`; `pnpm --filter @helu/ui check:tokens` verifica que coincidan.
+- `lightTheme` / `darkTheme` conservan las claves de la v1 y suman las de la v2: `brand.edge/focus/text`, `surface.muted`, `text.onMuted/onSolid`, estados `info` y sólidos, acentos `wellbeing` / `mission` / `treatment` y el grupo `motivation`.
+- Web emite las `--color-*` de la v2 y mantiene los nombres de la v1 como alias.
+- Nunito e Inter se cargan en las dos apps. En mobile, cada peso es una familia: usar `nativeFont(rol, peso)`, no `fontWeight`.
+- Falta la Fase 0.2 (componentes base) y que las pantallas adopten los componentes y las fuentes.
 
 ## Lectura siguiente
 

@@ -108,7 +108,7 @@ export function DependientesScreen() {
         navigation.setOptions({
             headerRight: () => (
                 <TouchableOpacity
-                    style={[styles.inviteBtn, { backgroundColor: palette.brand[500] }]}
+                    style={[styles.inviteBtn, { backgroundColor: palette.brand[600] }]}
                     onPress={() => setInviteSheetVisible(true)}
                     accessibilityLabel="Invitar"
                     accessibilityRole="button"
@@ -124,7 +124,7 @@ export function DependientesScreen() {
         return (
             <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["bottom"]}>
                 <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                    <ActivityIndicator size="large" color={palette.brand[500]} />
+                    <ActivityIndicator size="large" color={palette.brand[600]} />
                 </View>
             </SafeAreaView>
         );
@@ -154,7 +154,7 @@ export function DependientesScreen() {
                 <View style={styles.sectionHeaderRow}>
                     <SectionHeader title="Personas que gestiono" />
                     {managedSectionRefreshing ? (
-                        <ActivityIndicator size="small" color={palette.brand[500]} />
+                        <ActivityIndicator size="small" color={palette.brand[600]} />
                     ) : null}
                 </View>
                 {activeDelegations.length === 0 ? (

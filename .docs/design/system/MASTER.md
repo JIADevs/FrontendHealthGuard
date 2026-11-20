@@ -53,7 +53,7 @@ Mezcla de **Accesible y ético** + **Flat** con una sola concesión de profundid
 
 | Token semántico | Claro | Oscuro | Uso |
 |---|---|---|---|
-| `color.brand.solid` | `#2563EB` (blue-600) | `#3B82F6` | Botón primario, FAB, nav activa |
+| `color.brand.solid` | `#2563EB` (blue-600) | `#2563EB` | Relleno del botón primario y del FAB (en oscuro se mantiene, §4.5: `#3B82F6` daba 3,68:1 con texto blanco). Para íconos y la navegación activa en oscuro, usar `brand.focus` (`#60A5FA`) |
 | `color.brand.edge` | `#1E40AF` | `#1D4ED8` | Borde inferior del botón primario |
 | `color.brand.tint` | `#EFF6FF` | `rgba(59,130,246,.14)` | Fondos de chips, ítems activos |
 | `color.brand.text` | `#1D4ED8` | `#93C5FD` | Texto sobre tinte, enlaces |

@@ -6,7 +6,7 @@ import type { SpinnerProps, SpinnerSize, SpinnerColor } from './Spinner.types';
 const rnSize: Record<SpinnerSize, 'small' | 'large'> = { sm: 'small', md: 'small', lg: 'large' };
 
 const rnColor: Record<SpinnerColor, string> = {
-  primary: palette.brand[500],
+  primary: palette.brand[600],
   white:   colors.white,
 };
 

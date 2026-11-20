@@ -322,3 +322,15 @@ Decisión del equipo (2026-11-20), después de revisar los mockups web de la v2.
 - El pendiente de la v2.6: la v1 todavía mostraba el resumen de errores arriba. Ya no aplica, porque la v1 salió de la carpeta.
 - El pendiente de la v2.7: la §6c solo existía en la v1. Ahora está en esta carpeta.
 
+## 15. v2.9.1 · Relleno de marca en modo oscuro
+
+Al implementar los tokens (change `design-system-v2-foundation`, issue #35) apareció una contradicción: la tabla de MASTER §4.1 y `tokens.css` ponían el relleno de marca en oscuro en `#3B82F6`, pero MASTER §4.5 dice que «los rellenos sólidos de botones se mantienen». Con texto blanco, `#3B82F6` da **3,68:1** y no pasa AA, el mismo problema que la v2 corrigió en claro.
+
+| Qué | Antes | Ahora | Dónde |
+|---|---|---|---|
+| `color.brand.solid` (oscuro) | `#3B82F6` | `#2563EB` (igual que en claro, 5,17:1) | `build-tokens.py`, `tokens.json`, `tokens.css` (1 línea a mano), `MASTER.md` §4.1, `packages/ui/src/tokens/semantic.ts` |
+
+Para íconos y navegación activa en oscuro se usa `brand.focus` (`#60A5FA`): sobre los fondos oscuros pasa 3:1 como gráfico y 4,5:1 como texto.
+
+**Pendiente:** en `tokens.css`, `--button-secondary-fg` usa `--color-brand-solid` como color de texto. En oscuro, sobre `--color-surface`, no llega a 4,5:1 ni con el valor viejo ni con el nuevo. Se resuelve al construir el botón secundario (segunda parte de la Fase 0).
+

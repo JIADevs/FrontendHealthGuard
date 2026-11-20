@@ -46,7 +46,7 @@ export function DetailFooter({ actions }: DetailFooterProps) {
                 key={index}
                 style={[
                   styles.primaryButton,
-                  { backgroundColor: palette.brand[500] },
+                  { backgroundColor: palette.brand[600] },
                   action.disabled && styles.disabledButton,
                 ]}
                 onPress={action.onPress}

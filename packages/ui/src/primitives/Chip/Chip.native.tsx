@@ -4,13 +4,13 @@ import type { ChipProps, ChipColor } from './Chip.types';
 
 const unselected: Record<ChipColor, { bg: string; text: string }> = {
   default: { bg: palette.brand[50],  text: palette.brand[700] },
-  green:   { bg: palette.status.success[50],  text: palette.accent.document[700]   },
+  green:   { bg: palette.status.success[50],  text: colors.green[700]   },
   amber:   { bg: palette.accent.medication[50],    text: palette.accent.medication[800]   },
 };
 
 const selectedPalette: Record<ChipColor, { bg: string; text: string }> = {
-  default: { bg: palette.brand[500],   text: colors.white },
-  green:   { bg: palette.accent.document[500], text: colors.white },
+  default: { bg: palette.brand[600],   text: colors.white },
+  green:   { bg: colors.green[700], text: colors.white },
   amber:   { bg: palette.accent.medication[500], text: colors.white },
 };
 

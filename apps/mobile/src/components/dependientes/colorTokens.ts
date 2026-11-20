@@ -1,4 +1,4 @@
-import { palette } from "@helu/ui";
+import { colors, palette } from "@helu/ui";
 
 /** Closed palette — each entry has a stable id (React key) and a distinct hex color. */
 export const DELEGATION_COLOR_OPTIONS = [
@@ -6,9 +6,9 @@ export const DELEGATION_COLOR_OPTIONS = [
     { id: "pink", color: palette.accent.calendar[500] },
     { id: "violet", color: palette.accent.ai[500] },
     { id: "amber", color: palette.accent.medication[500] },
-    { id: "orange", color: palette.accent.backpack[500] },
-    { id: "emerald", color: palette.accent.notification[500] },
-    { id: "green", color: palette.accent.document[600] },
+    { id: "orange", color: colors.orange[500] },
+    { id: "emerald", color: colors.emerald[500] },
+    { id: "green", color: colors.green[600] },
     { id: "sky", color: palette.status.info[500] },
     { id: "red", color: palette.status.error[500] },
 ] as const;

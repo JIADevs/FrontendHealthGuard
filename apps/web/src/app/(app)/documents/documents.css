@@ -444,9 +444,9 @@
 }
 
 .pagination button.active {
-  background: var(--brand-500);
+  background: var(--color-brand-solid);
   color: white;
-  border-color: var(--brand-500);
+  border-color: var(--color-brand-solid);
 }
 
 .pagination button:disabled {

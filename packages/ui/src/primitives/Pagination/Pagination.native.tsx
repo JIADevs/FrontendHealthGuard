@@ -17,7 +17,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
         onPress={() => onPageChange(page - 1)}
         accessibilityLabel="Página anterior"
       >
-        <ChevronLeft size={18} color={canPrev ? palette.brand[500] : palette.neutral[300]} />
+        <ChevronLeft size={18} color={canPrev ? palette.brand[600] : palette.neutral[300]} />
       </TouchableOpacity>
 
       <Text style={styles.label}>{page} / {totalPages}</Text>
@@ -28,7 +28,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
         onPress={() => onPageChange(page + 1)}
         accessibilityLabel="Página siguiente"
       >
-        <ChevronRight size={18} color={canNext ? palette.brand[500] : palette.neutral[300]} />
+        <ChevronRight size={18} color={canNext ? palette.brand[600] : palette.neutral[300]} />
       </TouchableOpacity>
     </View>
   );

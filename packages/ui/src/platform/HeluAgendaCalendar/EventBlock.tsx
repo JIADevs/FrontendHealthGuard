@@ -112,8 +112,9 @@ function makeStyles(
     compact: boolean,
     medStatus: MedicationStatus | null,
 ) {
-    let bg = t.accent.notifBg;
-    let border = t.accent.notifFg;
+    // Check-in (caso por defecto): acento de bienestar (v2)
+    let bg = t.accent.wellbeingBg;
+    let border = t.accent.wellbeingFg;
 
     if (type === "appointment") {
         bg = t.brand.tintMed;

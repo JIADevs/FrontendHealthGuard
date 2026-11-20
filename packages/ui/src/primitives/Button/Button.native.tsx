@@ -3,7 +3,7 @@ import { colors, palette, radii, spacing, fontSize, fontWeight } from '../../tok
 import type { ButtonProps, ButtonVariant, ButtonSize } from './Button.types';
 
 const bgByVariant: Record<ButtonVariant, string> = {
-  primary:   palette.brand[500],
+  primary:   palette.brand[600], // v2 brand.solid
   secondary: colors.white,
   danger:    palette.status.error[500],
   ghost:     'transparent',

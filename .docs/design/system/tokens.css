@@ -229,7 +229,7 @@
 
 /* === DARK MODE === */
 [data-theme="dark"], .dark {
-  --color-brand-solid: #3B82F6;
+  --color-brand-solid: #2563EB;
   --color-brand-edge: #1D4ED8;
   --color-brand-tint: rgba(59, 130, 246, 0.14);
   --color-brand-tint-border: rgba(59, 130, 246, 0.3);

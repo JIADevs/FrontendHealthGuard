@@ -349,7 +349,7 @@ export function CycleDetailScreen() {
             ]}>
               <View style={[
                 styles.heroBadgeDot,
-                { backgroundColor: active ? "#4ade80" : "rgba(255,255,255,0.55)" },
+                { backgroundColor: active ? colors.green[400] : "rgba(255,255,255,0.55)" },
               ]} />
               <Text style={styles.heroBadgeText}>{active ? "Activo" : "Finalizado"}</Text>
             </View>
@@ -368,7 +368,7 @@ export function CycleDetailScreen() {
             </View>
             {linkedTreatments.map((tr) => (
               <View key={tr.id} style={[styles.treatmentRow, { borderTopColor: t.border.light }]}>
-                <View style={[styles.treatmentDot, { backgroundColor: tr.status === "ACTIVE" ? "#4ade80" : t.border.medium }]} />
+                <View style={[styles.treatmentDot, { backgroundColor: tr.status === "ACTIVE" ? t.status.successGraphic : t.border.medium }]} />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.treatmentName, { color: t.text.primary }]}>{tr.name}</Text>
                   {tr.description ? (

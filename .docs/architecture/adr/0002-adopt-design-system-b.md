@@ -44,13 +44,13 @@ El código se migra por fases siguiendo [`componentes.md`](../../design/system/c
 
 | Tema | Código hoy | Objetivo |
 |---|---|---|
-| Botón primario | `brand.solid = brand[500]` (3,68:1) | `brand[600]` (5,17:1), con canto inferior de 3 px |
+| Botón primario | **Hecho (Fase 0.1):** relleno `brand[600]` (5,17:1) en claro y oscuro. Falta el canto inferior de 3 px | `brand[600]` (5,17:1), con canto inferior de 3 px |
 | Botones éxito / racha | No existen como variantes | `success` (green-700) y `streak` (orange-700) |
-| Documentos | Acento green | Sky |
-| Mochilas | Acento orange | Teal (el naranja queda para la racha) |
-| Notificaciones / bienestar | Notificación en emerald | Notificación en brand; bienestar en emerald |
-| Texto sobre gris | No existe un token propio | `color.text.on-muted` (`#475569`) para chips grises, segmentado y tintes de marca |
-| Tipografía | Solo Inter (no cargada en mobile) | Nunito (títulos, botones) + Inter (cuerpo), ambas cargadas |
+| Documentos | **Hecho (Fase 0.1):** acento sky | Sky |
+| Mochilas | **Hecho (Fase 0.1):** acento teal | Teal (el naranja queda para la racha) |
+| Notificaciones / bienestar | **Hecho (Fase 0.1):** notificación en brand; los check-ins pasaron a `wellbeing` (emerald) | Notificación en brand; bienestar en emerald |
+| Texto sobre gris | **Hecho (Fase 0.1):** `text.onMuted` en el tema y `--color-text-on-muted` en web | `color.text.on-muted` (`#475569`) para chips grises, segmentado y tintes de marca |
+| Tipografía | **Hecho (Fase 0.1):** Nunito e Inter cargadas en mobile (`expo-font`) y web (`next/font`); las usa `Typography`. Las pantallas las adoptan al migrar a los componentes nuevos | Nunito (títulos, botones) + Inter (cuerpo), ambas cargadas |
 | Radios | 4–20 | Chip 999 · input 14 · tarjeta 18 · hoja 28 |
 | Áreas táctiles | Sin mínimo común; la paginación web mide 32 px (`Pagination.web.tsx:27`) | 44 × 44 px visibles en todo control, en móvil y en web |
 | Formularios | Asterisco en obligatorios; validación variable | «(opcional)» en opcionales, una columna (también en web) y el resto de `pages/formularios.md` |
@@ -61,4 +61,6 @@ El código se migra por fases siguiendo [`componentes.md`](../../design/system/c
 | Web: navegación | Barra lateral de 8 entradas con Perfil y Configuraciones; se oculta a 768 px; detalles y formularios en modales sin URL | Barra lateral de 5 destinos + «Más», cuenta en el menú del avatar, cortes a 1280 y 1024 px, URL por detalle y formulario (`pages/web.md`) |
 | Microcopy | Voseo mezclado | Tuteo |
 
-**Siguiente paso:** Fase 0 (P1): tokens, fuentes y componentes base (Button, IconButton, Chip, Card, Typography, Toast con «Deshacer», BottomActionBar, ConfirmModal, DangerLink). Después vienen las pantallas, empezando por Agenda e Inicio en móvil.
+**Fase 0.1 (tokens, tema, variables CSS y fuentes):** hecha en el change `design-system-v2-foundation` (issue #35). Los valores viven en `packages/ui/src/tokens/semantic.ts`, copia de `tokens.css`, y `pnpm --filter @helu/ui check:tokens` verifica que coincidan.
+
+**Siguiente paso:** Fase 0.2: componentes base (Button, IconButton, Chip, Card, Typography, Toast con «Deshacer», BottomActionBar, ConfirmModal, DangerLink). Después vienen las pantallas, empezando por Agenda e Inicio en móvil.

@@ -103,7 +103,7 @@ export function DatePicker({
                 </Pressable>
                 <Text style={[styles.sheetTitle, { color: t.text.primary }]}>Fecha</Text>
                 <Pressable onPress={confirmIOS} hitSlop={8}>
-                  <Text style={[styles.sheetAction, { color: palette.brand[500] }]}>Confirmar</Text>
+                  <Text style={[styles.sheetAction, { color: palette.brand[700] }]}>Confirmar</Text>
                 </Pressable>
               </View>
               <RNDateTimePicker

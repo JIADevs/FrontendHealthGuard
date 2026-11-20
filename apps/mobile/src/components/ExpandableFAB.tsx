@@ -153,7 +153,7 @@ function makeStyles(t: ThemeContextValue) {
       width: 56,
       height: 56,
       borderRadius: radii.full,
-      backgroundColor: palette.brand[500],
+      backgroundColor: palette.brand[600],
       alignItems: 'center',
       justifyContent: 'center',
       elevation: 8,

@@ -10,7 +10,7 @@ const trackColor: Record<SpinnerColor, string> = {
 };
 
 const fgColor: Record<SpinnerColor, string> = {
-  primary: palette.brand[500],
+  primary: palette.brand[600],
   white:   colors.white,
 };
 

@@ -575,7 +575,7 @@ function makePickerStyles(t: ThemeContextValue) {
       justifyContent: "center",
       flexShrink: 0,
     },
-    addBtnSelected: { backgroundColor: "#e53e3e" },
+    addBtnSelected: { backgroundColor: t.status.dangerSolid },
     closeBtn: {
       margin: spacing[4],
       padding: spacing[4],

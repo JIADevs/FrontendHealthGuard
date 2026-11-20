@@ -28,7 +28,7 @@ export function TextField({
   const borderColor = error
     ? palette.status.error[500]
     : focused
-    ? palette.brand[500]
+    ? t.brand.focus
     : t.border.medium;
 
   return (

@@ -8,6 +8,13 @@ import { RootNavigator } from "./src/navigation/RootNavigator";
 import { navigationRef } from "./src/navigation/navigationRef";
 import { useAuthStore, useNotifStore, useUiStore } from "@helu/stores";
 import { useEffect } from "react";
+import { useFonts } from "expo-font";
+import { Inter_400Regular } from "@expo-google-fonts/inter/400Regular";
+import { Inter_500Medium } from "@expo-google-fonts/inter/500Medium";
+import { Inter_600SemiBold } from "@expo-google-fonts/inter/600SemiBold";
+import { Nunito_700Bold } from "@expo-google-fonts/nunito/700Bold";
+import { Nunito_800ExtraBold } from "@expo-google-fonts/nunito/800ExtraBold";
+import { Nunito_900Black } from "@expo-google-fonts/nunito/900Black";
 import { View, ActivityIndicator } from "react-native";
 import { usePushNotifications } from "./src/hooks/usePushNotifications";
 import { setApiAuthProviders, isApiError } from "@helu/api";
@@ -109,6 +116,16 @@ export default function App() {
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const token = useAuthStore((s) => s.token);
   const themePreference = useUiStore((s) => s.theme);
+  // v2 (MASTER §5): Nunito para títulos y botones, Inter para el cuerpo. Cada peso es una
+  // familia distinta en React Native; los nombres coinciden con `nativeFontFamily` de @helu/ui.
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+    Nunito_900Black,
+  });
 
   useEffect(() => {
     if (!useAuthStore.getState().isHydrated) {
@@ -116,10 +133,15 @@ export default function App() {
     }
   }, []);
 
-  if (!isHydrated) {
+  useEffect(() => {
+    // Si las fuentes no cargan, la app sigue con la fuente del sistema en vez de bloquearse.
+    if (fontError) console.warn("[fonts] No se pudieron cargar Nunito/Inter:", fontError);
+  }, [fontError]);
+
+  if (!isHydrated || (!fontsLoaded && !fontError)) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={palette.brand[500]} />
+        <ActivityIndicator size="large" color={palette.brand[600]} />
       </View>
     );
   }

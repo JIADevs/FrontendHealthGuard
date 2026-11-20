@@ -36,7 +36,7 @@ export function TextField({
       {label && (
         <Text style={[styles.label, { color: t.text.primary }]}>
           {label}
-          {required ? <Text style={{ color: palette.status.error[500] }}> *</Text> : null}
+          {required ? <Text style={{ color: palette.status.error[700] }}> *</Text> : null}
         </Text>
       )}
 
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: fontSize.xs,
-    color: palette.status.error[500],
+    color: palette.status.error[700],
     backgroundColor: palette.status.error[50],
     paddingHorizontal: spacing[2],
     paddingVertical: spacing[1],

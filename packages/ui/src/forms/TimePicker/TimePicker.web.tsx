@@ -45,7 +45,7 @@ export function TimePicker({
           }}
         >
           {label}
-          {required && <span style={{ color: palette.status.error[500], marginLeft: 2 }}>*</span>}
+          {required && <span style={{ color: palette.status.error[700], marginLeft: 2 }}>*</span>}
         </label>
       )}
 
@@ -63,7 +63,7 @@ export function TimePicker({
       />
 
       {error && (
-        <span style={{ fontSize: fontSize.xs, color: palette.status.error[500] }}>
+        <span style={{ fontSize: fontSize.xs, color: palette.status.error[700] }}>
           {error}
         </span>
       )}

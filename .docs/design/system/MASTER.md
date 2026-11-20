@@ -164,7 +164,7 @@ Superficies `#0C1222` (fondo) → `#1E293B` (tarjeta) → `#334155` (borde). Los
 | **Insignia (medalla)** | Círculo de 28/46 px con borde inferior de 3 px; bloqueada en gris con candado. |
 | **Banner de modo gestión** | Color del dependiente, avatar, «Gestionando a {nombre}» y botón «Volver a mi cuenta». Fijo arriba en todas las pantallas. |
 | **Estado vacío** | Mascota de 110 px + título H2 + una frase + una o dos acciones. |
-| **Esqueleto** | Bloques `#E9EEF5` con la forma del contenido; nunca un spinner de pantalla completa. |
+| **Esqueleto** | Bloques `--color-border` (brillo más claro en `--color-surface-muted`) con la forma del contenido; nunca un spinner de pantalla completa. Sin esqueleto si hay datos guardados. Reglas completas: `pages/movimiento-interacciones.md` §6c. |
 
 ---
 

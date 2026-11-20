@@ -15,6 +15,30 @@ El movimiento **comunica**, no decora. Cada animación responde a una de estas c
 
 Público adulto y mayor en contexto de salud: movimiento **corto, suave y predecible**. Nada que maree, nada que distraiga de un dato clínico.
 
+## 1b. Reglas de base (v2.5)
+
+Salen de leyes de UX conocidas; la ley va entre paréntesis para que se pueda buscar.
+
+1. **Un movimiento, un significado** (similaridad). Cada patrón de la tabla de abajo significa una sola cosa en toda la app. Si dos cosas distintas se mueven igual, la persona cree que son lo mismo.
+2. **El feedback ocurre donde se tocó** (proximidad). La señal principal es el cambio en el mismo elemento: la fila, el chip, el nodo. El toast de arriba la completa, nunca es la única señal.
+3. **Se anima el contenedor, no sus partes** (región común). La tarjeta entra, sale o se mueve entera. El escalonado va entre tarjetas o grupos, nunca entre el título y el texto de una misma tarjeta.
+4. **Primero se ve, después se guarda** (umbral de Doherty, < 400 ms). En acciones de bajo riesgo, el estado cambia al tocar y se guarda en segundo plano. Ver §8.
+5. **Lo que importa es el mejor momento y el final** (pico-final). Los momentos de nivel medio o alto (§7) se reservan para cuando la app de verdad le resolvió algo a la persona, y los errores terminan en un estado positivo cuando se resuelven.
+
+### Diccionario de movimiento
+
+| Patrón | Significa | Se usa en | No se usa para |
+|---|---|---|---|
+| Entra desde la derecha | Bajé un nivel | Detalle de cita, documento, ciclo, misión | Pestañas, formularios de creación |
+| Sube desde abajo | Tarea temporal que se cierra | Hojas, formularios de creación | Navegación entre secciones |
+| Fundido cruzado (*fade through*: sale 100 ms, después entra 150–250 ms) | Mismo lugar, otro contenido | Pestañas internas, segmentado, «Tomar» → «✓ Tomado» | Cambio de nivel |
+| Rebote corto (`ease-spring`) | Salió bien | Chip marcado, nodo desbloqueado, insignia, número de racha | Errores, borrados, datos clínicos |
+| Resaltado de borde de 1,2 s | Esto es nuevo o aquí quedaste | Elemento nuevo en una lista, campo donde se retoma un borrador | Errores (usan su propio mensaje) |
+| Halo que late (1,8 s, bucle) | Estás aquí | Paso actual de la misión | Carga o espera |
+| Destello que recorre (bucle) | Estoy trabajando | «La IA está leyendo…» | Ubicación o pasos |
+| Esqueleto | Ya viene el contenido | Carga de pantalla y de listas | Acciones del usuario (usan el botón en carga) |
+| Colapso con fundido | Ya no está | Quitar de una lista o de una mochila | Ocultar algo que sigue existiendo |
+
 ## 2. Tokens de movimiento
 
 | Token | Valor | Uso |
@@ -33,7 +57,10 @@ Público adulto y mayor en contexto de salud: movimiento **corto, suave y predec
 
 **Reglas de duración:**
 - **Salir dura entre el 60 y el 70 % de entrar.** La hoja entra en 350 ms y sale en 220 ms.
-- Escalonado de listas: 40 ms por elemento, máximo 6 elementos; el resto aparece de una vez.
+- **«Fundido cruzado» = *fade through*** cuando cambia el contenido dentro de una pantalla (pestañas internas, «Tomar» → «✓ Tomado», un banner que pasa de error a éxito): el contenido anterior **sale** con fundido en 100 ms (`--motion-instant`, lineal) y **después entra** el nuevo en 150 ms. Si es una vista completa (las pestañas internas de Agenda), entra en 250 ms subiendo 4 px (`--motion-ease-standard`). **Nunca hay dos contenidos encimados**: tienen alturas distintas y se leerían uno sobre otro. Si se toca otra pestaña a mitad de camino, la animación se corta y entra directo la última elegida. Entre pantallas completas (barra inferior) sí vale el fundido simultáneo del navegador (`animation: 'fade'`), porque cada pantalla cubre todo el fondo.
+- Escalonado de listas: 40 ms por elemento, máximo 6 elementos; el resto aparece de una vez. **Si la lista tiene grupos** («Hoy», «Mañana», «Esta semana»), se escalona por grupo y cada grupo entra completo (chunking: la persona lee grupos, no filas sueltas).
+- Se anima el contenedor completo (tarjeta, fila, grupo); nunca sus partes por separado.
+- **Secuencias encadenadas** (check-in, paso de misión): todo termina en **1,2 s o menos** y el toast entra cuando termina la animación, no al mismo tiempo, para que no compitan.
 - Máximo **1 o 2 elementos animados a la vez** por pantalla.
 
 ## 3. Transiciones entre pantallas
@@ -41,9 +68,10 @@ Público adulto y mayor en contexto de salud: movimiento **corto, suave y predec
 | Navegación | Móvil (React Navigation) | Web (Next.js) | Por qué |
 |---|---|---|---|
 | **Avanzar a un detalle** (cita, documento, ciclo, misión) | `slide_from_right` (nativo), 350 ms | Fundido + 8 px hacia arriba, 250 ms | Más profundo = desde la derecha |
+| **Continuidad al abrir** (tarjeta → detalle) | El ícono y el color del tipo de la tarjeta se repiten en la cabecera del detalle, en el mismo lugar. La transición compartida (el ícono viaja) es opcional: las de Reanimated siguen siendo experimentales | El ícono viaja con *View Transitions* (`view-transition-name`) cuando el navegador la soporta; si no, fundido | La persona no tiene que recordar qué abrió (Miller) |
 | **Volver** | Desliza a la derecha + gesto de borde (iOS) / botón atrás (Android) | Fundido, 150 ms | Dirección inversa; nunca bloquear el gesto del sistema |
 | **Cambiar de pestaña** (Documentos, Agenda, Inicio, Mochilas, Más) | Fundido cruzado de 150 ms, **sin** deslizar | Cambio inmediato + resaltado de la barra lateral (150 ms) | Las pestañas son hermanas, no hay jerarquía |
-| **Pestañas internas** (Calendario, Citas, Medicamentos, Bienestar) | El indicador del segmentado se desliza 250 ms + fundido del contenido | Igual | Mismo contenedor: fundido cruzado |
+| **Pestañas internas** (Calendario, Citas, Medicamentos, Bienestar) | El indicador del segmentado se desliza 250 ms; el contenido hace *fade through*: sale en 100 ms y entra en 250 ms subiendo 4 px | Igual | Mismo contenedor, otro contenido. Sin deslizar de lado (eso significa «bajé un nivel») y sin dos listas encimadas |
 | **Formulario de creación** (nueva cita, nuevo medicamento) | `slide_from_bottom` / `fullScreenModal`, 350 ms | Modal de 560 px: escala 0,96 → 1 + fundido, 250 ms | Es una tarea temporal que se cierra hacia abajo |
 | **Acción rápida** (toma, check-in, paso de misión, filtros) | Hoja inferior con resorte; fondo oscuro con fundido de 250 ms | Modal centrado | Sale desde donde se tocó (abajo) |
 | **Celebración** | Fundido + escala 0,9 → 1 de la mascota | Igual | Momento especial, sin desplazar |
@@ -83,7 +111,7 @@ Público adulto y mayor en contexto de salud: movimiento **corto, suave y predec
 | **Tarjeta de opción** | El punto del radio crece desde el centro + borde azul | 150 ms |
 | **Campo** | Al enfocar: el borde pasa a azul + halo de 3 px | 150 ms |
 | **Campo con error** | El mensaje entra con fundido + 4 px desde arriba. **Sin sacudida** (molesta y no es accesible) | 150 ms |
-| **Pestaña de la barra inferior** | La pastilla de tinte aparece detrás del ícono con escala 0,8 → 1 | 250 ms |
+| **Pestaña de la barra inferior** | Solo cambia de color, como en `TabNavigator.tsx` (v2.4); el botón central de Inicio cambia de fondo | 150 ms |
 | **Lista que se actualiza** | El elemento nuevo entra resaltado (borde azul 1,2 s); el eliminado se colapsa con fundido | 250 ms |
 | **Deslizar para acción** (si se usa) | Revela la acción con ícono y texto; la acción crítica siempre tiene además un botón visible | Sigue el dedo |
 
@@ -93,16 +121,20 @@ Público adulto y mayor en contexto de salud: movimiento **corto, suave y predec
 
 | Situación | Respuesta visual | Texto | Háptica (móvil)* |
 |---|---|---|---|
-| Acción guardada | Toast desde arriba (250 ms), visible 3–5 s, sale en 150 ms | «Cita guardada» | Ligera (`impactLight`) |
+| Acción guardada | El elemento guardado aparece resaltado en su lista (borde de 1,2 s) + toast desde arriba (250 ms), visible 4 s, sale en 150 ms | «Cita guardada» | Ligera (`impactLight`) |
 | Acción con deshacer | Toast con «Deshacer» durante 5 s | «Documento quitado de la mochila» | — |
-| Toma registrada | La fila cambia «Tomar» → «✓ Tomado» (fundido cruzado) + el anillo de la meta avanza | Toast «Toma registrada a las 1:05 p. m.» | Éxito (`notificationSuccess`) |
-| Check-in guardado | La hoja baja → la llama escala 1 → 1,6 → 1 (600 ms) → el número sube con rebote → el punto del día se llena | Toast «¡13 días seguidos cuidándote!» | Éxito |
+| Toma registrada | **Al tocar** (sin esperar al servidor), la fila cambia «Tomar» → «✓ Tomado» (fundido cruzado) + el anillo de la meta avanza | Toast «Toma registrada a las 1:05 p. m.» | Éxito (`notificationSuccess`) |
+| Check-in guardado | La hoja baja → la llama escala 1 → 1,6 → 1 (600 ms) → el número sube con rebote → el punto del día se llena. Todo en ≤ 1,2 s; la llama y el número esperan la confirmación del servidor | Toast «¡13 días seguidos cuidándote!», al terminar la secuencia | Éxito |
 | Paso de misión completado | El nodo late (escala 1,2), el riel se dibuja hasta el siguiente (700 ms) y el siguiente nodo se desbloquea con rebote | Toast «¡Paso completado! Sigue: …» | Éxito |
 | Misión completada | Pantalla de celebración: **la mascota celebra** (3 saltos, brazos arriba, destellos; ver §6b), estadísticas escalonadas, insignia que gira, confeti de una vez (≤ 1,2 s) | «¡Lo lograste, {nombre}!» | Éxito |
 | Subir de nivel | Toast con estrella + la barra se llena y reinicia | «¡Subiste al Nivel 5 · Constante!» | Éxito |
 | Subida de archivo | Barra de progreso continua → mensaje «La IA está leyendo…» con destello pulsante → resultado | — | — |
-| Error de validación | Mensaje bajo el campo + foco al resumen o al primer error | Causa + cómo corregir | Advertencia (`notificationWarning`) |
+| **Primera lectura de la IA** (solo la primera vez que la persona sube un documento) | Los campos detectados se llenan uno por uno (40 ms cada uno, máximo 6) con su marca de IA. Nivel medio (§7), una sola vez por cuenta | Aviso sobre los campos: «Listo, leímos tu documento. Revisa que todo esté bien.» (sin mascota: son datos clínicos) | Éxito |
+| Borrador recuperado | Al tocar «Continuar borrador», el aviso se colapsa, la pantalla baja hasta el último campo editado y lo resalta (borde de 1,2 s); el teclado no se abre solo | El aviso «Tienes un borrador de … sin guardar» del mockup | — |
+| Error de validación | Mensaje bajo cada campo + la pantalla baja al primer error y le pasa el foco (sin resumen arriba) | Causa + cómo corregir | Advertencia (`notificationWarning`) |
 | Error de red | Banner en la pantalla con «Reintentar»; lo escrito se conserva | «No pudimos guardar. Revisa tu conexión.» | Error |
+| Reintento que funciona | El mismo banner cambia a éxito (fundido cruzado de color, ícono y texto) y se va a los 3 s. No desaparece de golpe: el error termina en un final positivo | «Listo, ya quedó guardado» | Éxito |
+| Acción optimista que falla (§8) | El elemento vuelve a su estado anterior con fundido cruzado (sin sacudida) + toast con la causa y «Reintentar» | «No pudimos registrar la toma. Revisa tu conexión.» | Error |
 | Acción bloqueada (paso aún no disponible) | El nodo **no** se sacude; se muestra un toast explicativo | «Primero completa: Pedir la cita» | — |
 | Carga larga (> 1 s) | Esqueleto; a los 10 s, texto «Esto está tardando más de lo normal» + «Reintentar» | — | — |
 | Cambio de contexto (cuidador) | El banner de color entra desde arriba; el lector de pantalla anuncia | «Ahora gestionas a Juan Pérez» | Ligera |
@@ -132,7 +164,7 @@ Cuando el servidor confirma que la misión está completa, la mascota (pose «Ce
 | Nivel | Cuándo | Qué se mueve |
 |---|---|---|
 | **Discreto** (siempre) | Toma, check-in, guardar | Cambio de estado + toast |
-| **Medio** | Racha +1, paso de misión, subir de nivel | Un elemento hace una animación de énfasis (llama, nodo o barra), una sola vez |
+| **Medio** | Racha +1, paso de misión, subir de nivel, primera lectura de la IA | Un elemento hace una animación de énfasis (llama, nodo o barra), una sola vez |
 | **Alto** | Misión completada | Pantalla de celebración con confeti |
 
 - Nunca dos celebraciones seguidas: si se completa el paso final, solo se muestra la celebración de la misión.
@@ -147,12 +179,24 @@ Cuando el servidor confirma que la misión está completa, la mascota (pose «Ce
   - las barras y anillos cambian sin animar
 - Solo se animan `transform` y `opacity`. Nada de `width`, `height`, `top` ni `left` (evita saltos de layout).
 - Todas las animaciones son **interrumpibles**: un nuevo toque cancela la anterior y fija el estado final explícitamente.
-- La UI nunca se bloquea esperando a que termine una animación. El estado se actualiza al confirmar el servidor, no al terminar la animación.
+- La UI nunca se bloquea esperando a que termine una animación.
+- **Cuándo cambia el estado** (umbral de Doherty: la respuesta debe verse antes de 400 ms):
+
+  | Tipo de acción | Ejemplos | El estado cambia | Si el servidor falla |
+  |---|---|---|---|
+  | **Bajo riesgo y reversible** | Registrar una toma, marcar un chip o un filtro, interruptores, check-in, marcar un paso de misión | Al tocar (actualización optimista) y se guarda en segundo plano | Vuelve atrás y avisa (§6) |
+  | **Alto riesgo o con efecto fuera de la app** | Borrar, compartir o revocar un enlace, eliminar la cuenta, cambiar de perfil gestionado | Cuando el servidor confirma; mientras tanto, el botón en carga | Mensaje de error; nada cambió |
+
+  Las **animaciones motivacionales** (llama, nodo que se desbloquea, subir de nivel, celebración) esperan siempre la confirmación del servidor, aunque el cambio de estado sea optimista: no se celebra algo que no quedó guardado (MASTER, anti-patrones).
 - Bucles permitidos: solo el halo del paso actual (1,8 s) y el destello de «IA leyendo», y se detienen fuera de pantalla.
 
 ## 9. Checklist
 
 - [ ] Cada animación responde a «¿me escuchó?», «¿dónde estoy?», «¿qué cambió?» o «¿funcionó?»
+- [ ] Cada patrón significa lo mismo que en el diccionario (§1b)
+- [ ] El feedback principal ocurre en el elemento tocado; el toast es complementario
+- [ ] Se anima el contenedor, no sus partes; el escalonado va por grupos
+- [ ] Las acciones de bajo riesgo cambian al tocar y vuelven atrás si fallan; las celebraciones esperan al servidor
 - [ ] Entrar con `ease-out`, salir con `ease-in` y salir más rápido que entrar
 - [ ] Máximo 1 o 2 elementos animados a la vez
 - [ ] Gestos del sistema intactos (volver con el borde, pellizcar en documentos)

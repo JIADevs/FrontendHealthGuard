@@ -93,7 +93,7 @@
 |---|---|---|---|
 | **ConfirmModal** | Extender | Ícono circular + pregunta + consecuencia + verbo exacto; variante `danger` | P1 |
 | **DiscardChangesDialog** | Nuevo | «¿Descartar los cambios?»: «Seguir editando» / «Descartar» | P1 |
-| **FormErrorSummary** | Nuevo | «Revisa 2 campos» con enlaces, recibe el foco tras el envío | P2 |
+| ~~FormErrorSummary~~ | **Descartado en v2.6** | Los errores van solo en cada campo; el foco pasa al primer campo con error | — |
 | **InlineBanner** | Nuevo | Aviso dentro de una pantalla o formulario: `info`, `success`, `warning`, `danger`, `ai`, `offline`, con acción opcional | P1 |
 | **Toast** | Nuevo (unificar `sileo` y `react-native-toast-message`) | Ícono en cuadro + texto + acción «Deshacer» opcional; 3–5 s; `aria-live` | P1 |
 | **ListRow** | Nuevo | `IconTile` + título + metadato + acción a la derecha (chip, botón o chevron) | P1 |

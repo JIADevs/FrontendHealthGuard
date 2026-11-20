@@ -16,6 +16,7 @@ Lienzo con todas las pantallas de Helu en móvil (390 × 844) y web (1440 × 900
 | `m5-mochilas-compartir.js` | 6 · Mochilas · 7 · Compartir |
 | `m6-cuenta.js` | 8 · Dependientes · 9 · Cuenta |
 | `m7-estados.js` | 10 · Estados vacíos, validación, confirmaciones y errores |
+| `m8-vacios.js` | 11 · Estados vacíos (propuesta): primer uso, ejemplos, plantillas, «sin resultados» útil y «todo al día» |
 
 ## Ver
 
@@ -24,7 +25,7 @@ python -m http.server 5180 --directory .docs/design
 ```
 
 - Todo: `http://localhost:5180/mockups/index.html`
-- Un módulo o varios: `?m=misiones` · `?m=agenda,docs` (ids: `acceso`, `inicio`, `agenda`, `misiones`, `docs`, `mochilas`, `compartir`, `dependientes`, `cuenta`, `estados`)
+- Un módulo o varios: `?m=misiones` · `?m=agenda,docs` (ids: `acceso`, `inicio`, `agenda`, `misiones`, `docs`, `mochilas`, `compartir`, `dependientes`, `cuenta`, `estados`, `vacios`)
 
 ## Agregar o cambiar una pantalla
 

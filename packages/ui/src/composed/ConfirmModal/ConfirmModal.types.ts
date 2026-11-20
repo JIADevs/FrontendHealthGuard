@@ -7,8 +7,13 @@ export interface ConfirmModalProps {
   title: string;
   /** Confirmation message body */
   message: string;
-  /** Label for the confirm button */
+  /** Label for the confirm button: the exact verb («Cancelar cita», «Revocar acceso») */
   confirmLabel?: string;
+  /**
+   * v2: label of the safe option, shown first («Mantener cita», «Seguir editando»).
+   * Defaults to «Cancelar».
+   */
+  keepLabel?: string;
   /** Button variant for the confirm button */
   confirmVariant?: 'primary' | 'danger';
   /** Whether the confirm action is in progress */

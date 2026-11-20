@@ -1,18 +1,19 @@
 import { useEffect, useRef } from "react";
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react-native";
-import type { ToastConfig } from "react-native-toast-message";
-import { colors, palette, toastBg, radii, spacing, fontSize, fontWeight } from "@helu/ui";
+import Toast, { type ToastConfig } from "react-native-toast-message";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors, useAppTheme, toneColors, nativeFont, spacing, type Tone } from "@helu/ui";
 
-// ─── Colores por tipo (dark toasts) ──────────────────────────────────────────
-// NOTE: Static config — can't use useAppTheme(). Uses palette directly.
-// Toast backgrounds (toastBg) are already dark, so light palette values work.
+// ─── v2 (MASTER §7, «Toast») ────────────────────────────────────────────────
+// Arriba, 320 px, tarjeta clara con borde y elevación 3, ícono en cuadro con el tinte del tono,
+// Nunito 800 14. Dura 4 s; 5 s si trae acción («Deshacer»). Ver src/lib/notify.ts.
 const VARIANTS = {
-  success: { icon: CheckCircle2,  color: palette.status.success[500], bg: toastBg.success, border: palette.status.success[600] },
-  error:   { icon: XCircle,       color: palette.status.error[500],   bg: toastBg.error,   border: palette.status.error[600] },
-  warning: { icon: AlertTriangle, color: palette.status.warning[500], bg: toastBg.warning, border: palette.accent.medication[600] },
-  info:    { icon: Info,           color: palette.brand[400],          bg: toastBg.info,    border: palette.brand[600] },
-} as const;
+  success: { icon: CheckCircle2, tone: "success" },
+  error:   { icon: XCircle,      tone: "danger" },
+  warning: { icon: AlertTriangle, tone: "warning" },
+  info:    { icon: Info,         tone: "info" },
+} as const satisfies Record<string, { icon: unknown; tone: Tone }>;
 
 type VariantKey = keyof typeof VARIANTS;
 
@@ -29,106 +30,101 @@ interface ToastItemProps {
 }
 
 function ToastItem({ text1, text2, type, action }: ToastItemProps) {
+  const t = useAppTheme();
   const variant = VARIANTS[type];
   const Icon = variant.icon;
+  const tone = toneColors(variant.tone, t.mode);
 
-  const translateY = useRef(new Animated.Value(20)).current;
-  const opacity    = useRef(new Animated.Value(0)).current;
-  const scale      = useRef(new Animated.Value(0.95)).current;
+  const translateY = useRef(new Animated.Value(-12)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.spring(translateY, { toValue: 0, useNativeDriver: true, tension: 80, friction: 9 }),
-      Animated.spring(scale,      { toValue: 1, useNativeDriver: true, tension: 80, friction: 9 }),
-      Animated.timing(opacity,    { toValue: 1, duration: 180, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }),
     ]).start();
   }, []);
 
   return (
     <Animated.View
+      accessibilityLiveRegion="polite"
       style={[
         styles.container,
-        {
-          backgroundColor: variant.bg,
-          borderLeftColor: variant.border,
-          opacity,
-          transform: [{ translateY }, { scale }],
-        },
+        { backgroundColor: t.surface.bgCard, borderColor: t.border.default, opacity, transform: [{ translateY }] },
       ]}
     >
-      <View style={[styles.iconWrap, { backgroundColor: variant.border + "22" }]}>
-        <Icon color={variant.color} size={20} strokeWidth={2.5} />
+      <View style={[styles.iconWrap, { backgroundColor: tone.bg }]}>
+        <Icon color={tone.fg} size={17} strokeWidth={2.4} />
       </View>
 
       <View style={styles.textWrap}>
-        {text1 ? <Text style={styles.title} numberOfLines={1}>{text1}</Text> : null}
-        {text2 ? <Text style={styles.subtitle} numberOfLines={2}>{text2}</Text> : null}
+        {text1 ? <Text style={[styles.title, { color: t.text.primary }]} numberOfLines={2}>{text1}</Text> : null}
+        {text2 ? <Text style={[styles.subtitle, { color: t.text.secondary }]} numberOfLines={2}>{text2}</Text> : null}
       </View>
 
       {action?.actionLabel && action.onAction ? (
-        <TouchableOpacity
-          onPress={action.onAction}
-          activeOpacity={0.7}
+        <Pressable
+          onPress={() => {
+            action.onAction?.();
+            Toast.hide();
+          }}
           accessibilityRole="button"
           accessibilityLabel={action.actionLabel}
           style={styles.actionBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={styles.actionLabel}>{action.actionLabel}</Text>
-        </TouchableOpacity>
+          <Text style={[styles.actionLabel, { color: t.brand.text }]}>{action.actionLabel}</Text>
+        </Pressable>
       ) : null}
     </Animated.View>
   );
 }
 
+const item = (type: VariantKey) => (props: { text1?: string; text2?: string; props?: unknown }) => (
+  <ToastItem type={type} text1={props.text1} text2={props.text2} action={props.props as ToastActionProps | undefined} />
+);
+
 export const toastConfig: ToastConfig = {
-  success: (props) => (
-    <ToastItem
-      type="success"
-      text1={props.text1}
-      text2={props.text2}
-      action={props.props as ToastActionProps | undefined}
-    />
-  ),
-  error:   (props) => <ToastItem type="error"   text1={props.text1} text2={props.text2} />,
-  warning: (props) => <ToastItem type="warning" text1={props.text1} text2={props.text2} />,
-  info:    (props) => <ToastItem type="info"    text1={props.text1} text2={props.text2} />,
+  success: item("success"),
+  error: item("error"),
+  warning: item("warning"),
+  info: item("info"),
 };
+
+/** Montar dentro de SafeAreaProvider: ubica el toast arriba, debajo de la barra de estado. */
+export function HeluToast() {
+  const insets = useSafeAreaInsets();
+  return <Toast config={toastConfig} position="top" topOffset={insets.top + 8} visibilityTime={4000} />;
+}
 
 const styles = StyleSheet.create({
   container: {
-    width: "92%",
+    width: 320,
+    maxWidth: "92%",
     flexDirection: "row",
     alignItems: "center",
     gap: spacing[3],
-    paddingVertical: 14,
-    paddingHorizontal: spacing[4],
-    borderRadius: 14,
-    borderLeftWidth: 4,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderBottomWidth: 3,
+    shadowColor: colors.slate[900],
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
     elevation: 8,
   },
   iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.sm,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
   textWrap: { flex: 1, gap: 2 },
-  title:    { color: palette.surface[100], fontSize: 14, fontWeight: fontWeight.bold, letterSpacing: 0.1 },
-  subtitle: { color: palette.surface[400], fontSize: fontSize.xs, lineHeight: 17 },
-  actionBtn: {
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[1],
-  },
-  actionLabel: {
-    color: palette.brand[400],
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-  },
+  title: { fontSize: 14, lineHeight: 18, fontFamily: nativeFont("heading", 800) },
+  subtitle: { fontSize: 13, lineHeight: 17, fontFamily: nativeFont("body", 400) },
+  actionBtn: { minHeight: 44, minWidth: 44, paddingHorizontal: spacing[1], alignItems: "center", justifyContent: "center" },
+  actionLabel: { fontSize: 14, fontFamily: nativeFont("heading", 900) },
 });

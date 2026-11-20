@@ -111,7 +111,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
         <main className="page-content">{children}</main>
       </div>
-      <Toaster position="top-right" />
+      {/* v2 (MASTER §7): arriba al centro, 4 s (5 s con acción, ver src/lib/notify.ts), Nunito en el título */}
+      <Toaster
+        position="top-center"
+        theme="system"
+        options={{
+          duration: 4000,
+          roundness: 16,
+          styles: { title: "helu-toast-title", description: "helu-toast-description", button: "helu-toast-button" },
+        }}
+      />
     </div>
   );
 }

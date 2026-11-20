@@ -12,7 +12,7 @@
 > - **P2** = Documentos, Mochilas y Compartir.
 > - **P3** = resto.
 
-> **Estado en código (2026-11-20, Fase 0.2a, issue #35):** construidos Button, IconButton, IconTile, Typography (roles v2), Chip (tonos y opción), Card (radio, canto, variantes), ListRow y DangerLink. Vista previa: `apps/web` → `/dev/ui` (solo desarrollo).
+> **Estado en código (2026-11-20, Fase 0.2a, issue #35):** construidos Button, IconButton, IconTile, Typography (roles v2), Chip (tonos y opción), Card (radio, canto, variantes), ListRow y DangerLink. **Fase 0.2b:** Toast v2 con `notify()` en cada app, ConfirmModal con `keepLabel` y BottomActionBar. Vista previa: `apps/web` → `/dev/ui` (solo desarrollo).
 
 ## Resumen
 
@@ -136,12 +136,12 @@ Cada componente nuevo sigue el patrón del repo: `Nombre.types.ts` + `Nombre.nat
 
 | Componente | Capa | Estado | Qué es | Prioridad |
 |---|---|---|---|---|
-| **BottomActionBar** | containers | Nuevo | Barra fija inferior con un botón primario de ancho completo (y opcionalmente uno secundario). Respeta el área segura y reserva espacio en el scroll | P1 |
+| **BottomActionBar** | containers | **Hecho (0.2b)** | Barra fija inferior con un botón primario de ancho completo (y opcionalmente uno secundario). Respeta el área segura y reserva espacio en el scroll | P1 |
 | **Legend** | primitives | Nuevo | Fila de puntos o caras con etiqueta, para calendario y gráfico de ánimo | P1 |
 | **MoreDetailsRow** | forms | Nuevo | Fila plegable «Más detalles (opcional)» que dice qué contiene | P1 |
-| **Toast** | containers | Extender | Acción opcional («Deshacer»); 4 s sin acción y 5 s con acción | P1 |
-| **ConfirmModal** | composed | Extender | Opción segura primero, con etiqueta propia (`keepLabel`: «Mantener cita»); solo para lo irreversible | P1 |
-| **DangerLink** | primitives | Nuevo | Enlace rojo con ícono para acciones destructivas al final del contenido | P1 |
+| **Toast** | containers | **Hecho (0.2b)**: `notify()` sobre `sileo` y `react-native-toast-message` | Acción opcional («Deshacer»); 4 s sin acción y 5 s con acción | P1 |
+| **ConfirmModal** | composed | **Hecho (0.2b)** | Opción segura primero, con etiqueta propia (`keepLabel`: «Mantener cita»); solo para lo irreversible | P1 |
+| **DangerLink** | primitives | **Hecho (0.2a)** | Enlace rojo con ícono para acciones destructivas al final del contenido | P1 |
 | **OptionCard** | forms | Extender | Indicador de radio visible además del borde seleccionado | P2 |
 | **ChoiceChips** | forms | Extender | 44 px de alto; el seleccionado lleva ✓ | P1 |
 | **SetupChecklist** | composed | Nuevo | Tarjeta «Configura Helu · n de 4» con anillo, pasos y «Ocultar esta lista» | P2 |
@@ -152,6 +152,6 @@ Cada componente nuevo sigue el patrón del repo: `Nombre.types.ts` + `Nombre.nat
 | **ListRow** (v2.1) | primitives | Extender | Título y metadato en hasta 2 líneas antes de cortarse | P1 |
 | **ButtonStack** (v2.1) | primitives | Nuevo | Acción principal de ancho completo + secundaria fantasma debajo, cuando no entran lado a lado | P2 |
 | **Modal** (v2.8, web) | containers | Extender | Alto máximo = alto visible − 48 px; encabezado y pie fijos, solo el cuerpo hace scroll; foco atrapado y devuelto al cerrar (`pages/web.md` §2) | P1 |
-| **PageActionBar** (v2.8, web) | containers | Nuevo | Pie fijo de las páginas con formulario largo (Perfil): equivalente web de `BottomActionBar` | P2 |
+| **PageActionBar** (v2.8, web) | containers | **Hecho (0.2b)** como `BottomActionBar.web` | Pie fijo de las páginas con formulario largo (Perfil): equivalente web de `BottomActionBar` | P2 |
 | **AccountMenu** (v2.8, web) | composed | Nuevo | Menú del avatar con Perfil, Configuración y Cerrar sesión (`pages/web.md` §3) | P1 |
 | **AppSidebar** (v2.8, web) | composed | Extender | 5 destinos principales + grupo «Más» con título; sin cuenta ni «Cerrar sesión» | P1 |

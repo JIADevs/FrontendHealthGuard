@@ -878,3 +878,8 @@ a {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 }
+
+/* v2 · toasts (sileo, ver (app)/layout.tsx) */
+.helu-toast-title { font-family: var(--font-heading) !important; font-weight: 800 !important; font-size: 14px !important; }
+.helu-toast-description { font-family: var(--font-body) !important; font-size: 13px !important; }
+.helu-toast-button { font-family: var(--font-heading) !important; font-weight: 900 !important; min-height: 44px; }

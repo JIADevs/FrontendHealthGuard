@@ -2,16 +2,18 @@ import { Modal as RNModal, View, Text, StyleSheet } from 'react-native';
 import { Button } from '../../primitives/Button/Button.native';
 import { Modal } from '../../containers/Modal/Modal.native';
 import { Typography } from '../../primitives/Typography/Typography.native';
-import { palette, radii, spacing, fontSize, fontWeight, nativeFont } from '../../tokens/tokens';
+import { IconTile } from '../../primitives/IconTile/IconTile.native';
+import type { Tone } from '../../tokens/tones';
+import { radii, spacing, fontSize, fontWeight, nativeFont } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { ThemeContextValue } from '../../tokens/ThemeProvider';
 import type { ConfirmModalIconTone, ConfirmModalProps } from './ConfirmModal.types';
 
-const ICON_TONE_BG: Record<ConfirmModalIconTone, string> = {
-  danger:  palette.status.error[50],
-  warning: palette.status.warning[50],
-  primary: palette.brand[50],
-  info:    palette.brand[50],
+const ICON_TONE: Record<ConfirmModalIconTone, Tone> = {
+  danger:  'danger',
+  warning: 'warning',
+  primary: 'brand',
+  info:    'info',
 };
 
 export function ConfirmModal({
@@ -78,7 +80,7 @@ function CenteredConfirmModal({
 }: Required<Pick<ConfirmModalProps, 'title' | 'message' | 'confirmLabel' | 'confirmVariant' | 'loading' | 'onConfirm' | 'onCancel' | 'icon' | 'iconTone'>> &
   Pick<ConfirmModalProps, 'actionsLayout' | 'keepLabel'>) {
   const t = useAppTheme();
-  const styles = makeStyles(t, iconTone);
+  const styles = makeStyles(t);
   const stacked = actionsLayout === 'stacked';
 
   return (
@@ -91,7 +93,9 @@ function CenteredConfirmModal({
     >
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <View style={styles.iconWrap}>{icon}</View>
+          <View style={styles.iconWrap}>
+            <IconTile icon={icon} tone={ICON_TONE[iconTone]} size="lg" round />
+          </View>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
           <View style={[styles.actions, stacked && styles.actionsStacked]}>
@@ -138,7 +142,7 @@ function CenteredConfirmModal({
   );
 }
 
-function makeStyles(t: ThemeContextValue, iconTone: ConfirmModalIconTone) {
+function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     backdrop: {
       flex: 1,
@@ -151,19 +155,15 @@ function makeStyles(t: ThemeContextValue, iconTone: ConfirmModalIconTone) {
       width: '100%',
       maxWidth: 360,
       backgroundColor: t.surface.bgCard,
-      borderRadius: radii.xl,
+      borderRadius: radii.modal,
+      borderWidth: 1,
+      borderColor: t.border.default,
       paddingHorizontal: spacing[6],
       paddingTop: spacing[6],
       paddingBottom: spacing[5],
       alignItems: 'center',
     },
     iconWrap: {
-      width: 56,
-      height: 56,
-      borderRadius: radii.lg,
-      backgroundColor: ICON_TONE_BG[iconTone],
-      alignItems: 'center',
-      justifyContent: 'center',
       marginBottom: spacing[4],
     },
     title: {

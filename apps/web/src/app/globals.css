@@ -880,6 +880,18 @@ a {
 }
 
 /* v2 · toasts (sileo, ver (app)/layout.tsx) */
-.helu-toast-title { font-family: var(--font-heading) !important; font-weight: 800 !important; font-size: 14px !important; }
+.helu-toast-title { font-family: var(--font-heading) !important; font-weight: 800 !important; font-size: 14px !important; text-transform: none !important; }
 .helu-toast-description { font-family: var(--font-body) !important; font-size: 13px !important; }
-.helu-toast-button { font-family: var(--font-heading) !important; font-weight: 900 !important; min-height: 44px; }
+.helu-toast-button { font-family: var(--font-heading) !important; font-weight: 900 !important; min-height: 44px; --sileo-btn-bg: transparent; --sileo-btn-bg-hover: color-mix(in oklch, var(--_c) 10%, transparent); border: 1px solid color-mix(in oklch, var(--_c) 40%, transparent) !important; }
+/* sileo usa colores 500 (≈2,3:1 sobre su fondo claro) y su tema va invertido: «dark» pinta el toast claro (#f2f2f2).
+   Tonos 700–800 sobre el toast claro y 400 sobre el oscuro (#1a1a1a): todo ≥ 4,5:1. */
+[data-sileo-viewport][data-theme="dark"] {
+  --sileo-state-success: #166534; --sileo-state-error: #b91c1c; --sileo-state-warning: #92400e;
+  --sileo-state-info: #0369a1; --sileo-state-action: #1d4ed8; --sileo-state-loading: #475569;
+}
+[data-sileo-viewport][data-theme="dark"] [data-sileo-description] { color: #475569; }
+[data-sileo-viewport][data-theme="light"] {
+  --sileo-state-success: #4ade80; --sileo-state-error: #f87171; --sileo-state-warning: #fbbf24;
+  --sileo-state-info: #38bdf8; --sileo-state-action: #60a5fa; --sileo-state-loading: #cbd5e1;
+}
+[data-sileo-viewport][data-theme="light"] [data-sileo-description] { color: rgba(255, 255, 255, 0.78); }

@@ -12,6 +12,11 @@
         "react-native": "*",
         "react-native-safe-area-context": "*"
     },
+    "peerDependenciesMeta": {
+        "react-native-safe-area-context": {
+            "optional": true
+        }
+    },
     "main": "./src/index.ts",
     "types": "./src/index.ts",
     "exports": {

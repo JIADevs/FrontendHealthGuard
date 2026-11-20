@@ -6,6 +6,7 @@
 export * from './tokens/tokens';
 export * from './tokens/theme';
 export * from './tokens/semantic';
+export * from './tokens/tones';
 export * from './tokens/useTheme';
 export { ThemeProvider, useAppTheme } from './tokens/ThemeProvider';
 export type { ThemeContextValue } from './tokens/ThemeProvider';
@@ -25,6 +26,10 @@ export * from './primitives/ActionButton/ActionButton.types';
 export * from './primitives/ActionButton/ActionButton.native';
 export * from './primitives/Button/Button.types';
 export * from './primitives/Button/Button.native';
+export * from './primitives/IconTile/IconTile.types';
+export * from './primitives/IconTile/IconTile.native';
+export * from './primitives/IconButton/IconButton.types';
+export * from './primitives/IconButton/IconButton.native';
 export * from './primitives/Chip/Chip.types';
 export * from './primitives/Chip/Chip.native';
 export * from './primitives/Pagination/Pagination.types';

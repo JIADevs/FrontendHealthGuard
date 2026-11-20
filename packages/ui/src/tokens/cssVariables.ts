@@ -1,6 +1,14 @@
-import { colors, surface, border, radii, overlay, fontFamily } from "./tokens";
+import { colors, radii, overlay, fontFamily } from "./tokens";
 import { palette } from "./tokens";
 import { lightTheme, darkTheme } from "./theme";
+import { semanticLight, semanticDark, type SemanticTokens } from "./semantic";
+
+/** v2: emite la capa semántica como `--color-<clave>` (mismos nombres que `.docs/design/system/tokens.css`). */
+function colorVars(tokens: SemanticTokens, indent: string): string {
+  return Object.entries(tokens)
+    .map(([key, value]) => `${indent}--color-${key}: ${value};`)
+    .join("\n");
+}
 
 /**
  * Helper: convierte hex a RGB para usar en rgba() del dark mode.
@@ -21,6 +29,10 @@ function hexToRgb(hex: string): string {
  *
  * IMPORTANTE: Las variables --brand-* se generan desde palette.brand (fuente de verdad única).
  * Cambiar palette.brand en tokens.ts actualiza automáticamente web y mobile.
+ *
+ * v2: además de los nombres de la v1 (que se mantienen como alias con los valores nuevos),
+ * emite las variables `--color-*`, `--font-heading` / `--font-body` y los radios de la v2.
+ * El CSS nuevo usa las `--color-*`; el de la v1 se migra en la Fase 4 (issue #35).
  */
 export function generateCssVariables(): string {
   const brandRgb = hexToRgb(palette.brand[500]);
@@ -35,6 +47,7 @@ export function generateCssVariables(): string {
     /* Text (dark mode) */
     --text-primary:   ${darkTheme.text.primary};
     --text-secondary: ${darkTheme.text.secondary};
+    --text-muted:     ${darkTheme.text.muted};
 
     /* Border (dark mode — subtle glow) */
     --border: ${darkTheme.border.default};
@@ -94,6 +107,10 @@ export function generateCssVariables(): string {
     --accent-ai-fg:    ${darkTheme.accent.aiFg};
     --accent-notif-bg: ${darkTheme.accent.notifBg};
     --accent-notif-fg: ${darkTheme.accent.notifFg};
+    --accent-backpack-bg:  ${darkTheme.accent.backpackBg};
+    --accent-backpack-fg:  ${darkTheme.accent.backpackFg};
+    --accent-wellbeing-bg: ${darkTheme.accent.wellbeingBg};
+    --accent-wellbeing-fg: ${darkTheme.accent.wellbeingFg};
 
     /* Extended palette (dark overrides) */
     --amber-800:   ${colors.amber[500]};
@@ -107,6 +124,9 @@ export function generateCssVariables(): string {
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.25);
+
+    /* v2 semantic colors (dark) */
+${colorVars(semanticDark, "    ")}
   `;
 
   return `
@@ -171,20 +191,26 @@ export function generateCssVariables(): string {
   --accent-ai-fg:    ${lightTheme.accent.aiFg};
   --accent-notif-bg: ${lightTheme.accent.notifBg};
   --accent-notif-fg: ${lightTheme.accent.notifFg};
+  --accent-backpack-bg:  ${lightTheme.accent.backpackBg};
+  --accent-backpack-fg:  ${lightTheme.accent.backpackFg};
+  --accent-wellbeing-bg: ${lightTheme.accent.wellbeingBg};
+  --accent-wellbeing-fg: ${lightTheme.accent.wellbeingFg};
 
   /* Surfaces (light mode) */
-  --bg:               ${surface.bg};
-  --bg-card:          ${surface.bgCard};
-  --bg-sidebar:       ${surface.bgSidebar};
-  --bg-sidebar-hover: ${surface.bgSidebarHover};
+  --bg:               ${lightTheme.surface.bg};
+  --bg-card:          ${lightTheme.surface.bgCard};
+  --bg-sidebar:       ${lightTheme.surface.bgSidebar};
+  --bg-sidebar-hover: ${lightTheme.surface.bgSidebarHover};
 
   /* Text (light mode) */
-  --text-primary:   ${colors.gray[900]};
-  --text-secondary: ${colors.gray[500]};
+  --text-primary:   ${lightTheme.text.primary};
+  --text-secondary: ${lightTheme.text.secondary};
+  --text-muted:     ${lightTheme.text.muted};
   --text-sidebar:   ${colors.slate[200]};
 
   /* Border (light mode) */
-  --border: ${border.default};
+  --border: ${lightTheme.border.default};
+  --border-light: ${lightTheme.border.light};
 
   /* Overlays */
   --overlay-dark:   ${overlay.darker};
@@ -199,18 +225,27 @@ export function generateCssVariables(): string {
   --radius:      ${radii.md}px;
   --radius-sm:   ${radii.sm}px;
   --radius-full: ${radii.full}px;
+  --radius-input: ${radii.input}px;
+  --radius-card:  ${radii.card}px;
+  --radius-modal: ${radii.modal}px;
+  --radius-sheet: ${radii.sheet}px;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
 
-  /* Font families */
-  --font-sans: ${fontFamily.sans};
-  --font-mono: ${fontFamily.mono};
+  /* Font families (v2: Nunito para títulos, Inter para el cuerpo; next/font define --font-inter y --font-nunito) */
+  --font-sans:    ${fontFamily.sans};
+  --font-body:    ${fontFamily.body};
+  --font-heading: ${fontFamily.heading};
+  --font-mono:    ${fontFamily.mono};
 
   /* Transition */
   --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* v2 semantic colors (light) */
+${colorVars(semanticLight, "  ")}
 }
 
 /* Manual dark: data-theme="dark" on <html> */

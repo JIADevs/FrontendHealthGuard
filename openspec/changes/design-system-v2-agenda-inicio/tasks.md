@@ -76,11 +76,26 @@ Each phase has the same three steps, in order:
 Screens: `LoginScreen`, `SignupScreen`, `components/auth/*`, `AnimatedLoginBackground`.
 Mockups: «Inicio de sesión», «Registro», «Error de inicio de sesión», «Bienvenida (después del registro)».
 
-- [ ] 5.1 Identify: write the gap list here.
-- [ ] 5.2 Build:
+- [x] 5.1 Identify. Gaps against `m1-acceso-inicio.js`, MASTER, `formularios.md` and `movimiento-interacciones.md`:
+  - **Background:** `AnimatedLoginBackground` loops bubbles and waves forever. §8 allows only two loops (the mission halo and the «IA leyendo» shimmer). Replace it with the still brand-tint → `bg` gradient (45 %).
+  - **Header:** a 140 px PNG logo and no mascot. The mockup has the small «helu» wordmark, a 100 px mascot, the H1 and «Tu salud, en un solo lugar». Poses: login «Saluda», signup «Feliz», login error «Pensativa» (MASTER §9). There is no `Mascot` component yet; add it to `@helu/ui` (native) from the kit SVG, so later phases can reuse it.
+  - **Card and fields:** own styles (gray-400 eye icon, 50 px inputs, ad hoc label). Use the v2 `Card` and `TextField`, and add the P1 `PasswordField` (`componentes.md`): eye toggle in `text.secondary`, 44 px target, «Mostrar contraseña» label. `TextField` ignores `autoComplete`; pass it through with `textContentType` (formularios §8: `email` / `password` / `new-password`).
+  - **Dead link:** «¿Olvidaste tu contraseña?» goes nowhere, an anti-pattern (MASTER). Hide it until the reset endpoint exists, as the web mockup note says.
+  - **Buttons:** «Entrar» with an arrow and «Crear Cuenta». Use the v2 `Button`: «Iniciar sesión» / «Iniciando sesión…» and «Crear cuenta» / «Creando cuenta…», with spinner and no double submit.
+  - **Validation:** today the button stays disabled until the fields look filled, and nothing says why. Validate per formularios §6: on blur, live only after the first error, and everything on submit with the error under each field and focus on the first invalid one. Messages: «Escribe tu correo.», «Revisa el correo: debe tener la forma nombre@ejemplo.com.», «Escribe tu contraseña.», «Usa al menos 8 caracteres.». Signup shows the hint «Usa al menos 8 caracteres.» under the password.
+  - **Server errors:** today the raw backend message is shown in a centered red box. Login 400/401 → the danger banner «Correo o contraseña incorrectos. Revisa e intenta de nuevo.» above the fields; it keeps the email and switches the mascot to «Pensativa». Signup «email taken» → error under the email field. 422 → `fieldErrors` per field. Network or 5xx → banner «No pudimos conectar. Revisa tu conexión e intenta de nuevo.». Never English backend text.
+  - **Keyboard:** the email return key goes to the password, and the password return key submits.
+  - **Theme:** `colors.white` and a forced `dark-content` status bar; use theme tokens.
+  - **Bienvenida (after signup):** missing. A one-time screen right after «Crear cuenta»: mascot «Saluda», eyebrow «CUENTA CREADA», «¡Te damos la bienvenida!» (signup has no name yet), three cards (first medication, next appointment, upload a document) and the secondary «Explorar por mi cuenta». Each card opens its form on top of Inicio.
+- [x] 5.2 Build:
   - Login and signup cards, fields and validation as in the mockup (email, password of at least 8 characters, show/hide password), with the mascot greeting.
   - The login error state, and the welcome screen after signup.
-- [ ] 5.3 Review in the simulator against the mockups, fix, and commit.
+  - Done: `Mascot` and `HeluWordmark` (`components/brand`), `PasswordField` in `@helu/ui`, `TextField` gains `trailing`, `onBlur`, `onSubmitEditing`, `inputRef` and passes `autoComplete` / `textContentType`. `Login`, `Signup` and `Welcome` live in `components/auth`; the screens only wire navigation. `AnimatedLoginBackground` and the old `Auth*` field, button and style files are gone.
+- [x] 5.3 Review in the simulator against the mockups, fix, and commit. Fixed during review:
+  - The login placeholders («alejandra@helu.dev», «••••••••») read as filled values next to «Escribe tu correo.». Now «Ej: nombre@ejemplo.com» and no password placeholder.
+  - Validating on blur or submitting with the return key could read a stale render and flag a valid email. Validation and submit now read the latest values from a ref.
+  - The «Ú» of «Únete» was clipped by the title line height.
+  - Checked: empty submit, bad format, wrong credentials (banner + «Pensativa»), existing email on signup, short password, the loading label, signup → Bienvenida → «Nuevo medicamento» → back to Inicio, and login with the return key. The app ignores the system dark mode (it uses its own preference), so dark was not checked here.
 
 ## Phase 6: Inicio — module 2 (`m1-acceso-inicio.js`)
 

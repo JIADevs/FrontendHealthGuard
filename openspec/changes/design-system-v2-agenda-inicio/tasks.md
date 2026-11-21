@@ -111,7 +111,7 @@ Mockups: «Inicio de sesión», «Registro», «Error de inicio de sesión», «
     - Login ↔ Registro cross-fade (150 ms) instead of «entra desde la derecha», which means «bajé un nivel» (§1b). Bienvenida enters with a 250 ms fade.
     - The eye button gets the `surface-muted` press background (§5 «Botón de ícono»); the footer link dims while pressed.
     - Checked: press/release timing, loading label fade, focus ring fade, banner stays put, transitions, and that other screens using `Button` (appointment detail) look the same.
-    - Not checked on the simulator: reduced motion. The code paths use `useReducedMotion` (button press, focus ring, fade through, Reanimated entering), but the setting was not toggled on a device.
+    - Reduced motion, measured with iOS «Reduce Motion» on: the button press and release jump in one frame, the focus ring appears in one step, field errors appear without the fade, and `FadeThrough` swaps content directly (same hook as the loading label). The login screen itself was not re-run with the setting on, because the simulator was signed in to a real account; these are the same shared components.
 
 ## Phase 6: Inicio — module 2 (`m1-acceso-inicio.js`)
 
@@ -134,6 +134,7 @@ Mockups: «Agregar a agenda», «Registrar toma», «Nueva cita · más detalles
 States: Citas / Medicamentos / Bienestar vacío, «Calendario · día sin eventos», «Medicamentos · todo tomado hoy», «¿Cancelar la cita?», «¿Finalizar ciclo?», «Cita no encontrada», «Formulario con errores», «Borrador recuperado», «No se pudo guardar».
 
 - [ ] 7.1 Identify: write the gap list here.
+  - Seen during the phase 5 review: «Nueva cita» with missing date and time puts the focus on «Duración» instead of the first field with an error (formularios §6).
 - [ ] 7.2 Build: the detail and form screens (carried over from 4.8):
   - **Nuevo / Editar medicamento:** sections «Medicamento», «Prescripción», «Periodo del ciclo», «Recordatorios» and «Tratamiento».
     - Fields: «Forma farmacéutica» as `ChoiceChips`; «Dosis por toma», whose unit comes from the form; and «Frecuencia (cada cuánto)» with Horas / Días / Semanas chips.

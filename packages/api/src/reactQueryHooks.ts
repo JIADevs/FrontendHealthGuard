@@ -872,6 +872,23 @@ export function useProfileQuery() {
     });
 }
 
+/**
+ * Returns a function that reads the streak from a fresh profile. It goes through the QueryClient, so
+ * it still resolves after the caller unmounts (the check-in sheet closes before the streak arrives).
+ */
+export function useFetchCurrentStreak() {
+    const qc = useQueryClient();
+    const activePatientId = useAuthStore((s) => s.activePatientId);
+    return async (): Promise<number | null> => {
+        try {
+            const me = await qc.fetchQuery({ queryKey: QK.profile(activePatientId), queryFn: getMe, staleTime: 0 });
+            return me.currentStreak ?? null;
+        } catch {
+            return null;
+        }
+    };
+}
+
 export function useUpdateProfileMutation() {
     const qc = useQueryClient();
     return useMutation({

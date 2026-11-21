@@ -66,11 +66,14 @@ export function StreakCard({ current, longest, week, doneToday, confirmedToday, 
   const numberStyle = useAnimatedStyle(() => ({ transform: [{ scale: number.value }] }));
 
   return (
+    // Kit `.card` con borde naranja: 1 px de `streak-border` alrededor y debajo el mismo canto gris
+    // de 3 px que el resto de tarjetas (`box-shadow: 0 3px 0 var(--line)`), dibujado como un fondo
+    // desplazado para que siga el radio.
+    <View style={{ borderRadius: radii.card, backgroundColor: t.border.default, paddingBottom: 3 }}>
     <View
       style={{
         borderRadius: radii.card,
         borderWidth: 1,
-        borderBottomWidth: 4,
         borderColor: t.motivation.streakBorder,
         overflow: "hidden",
       }}
@@ -198,6 +201,7 @@ export function StreakCard({ current, longest, week, doneToday, confirmedToday, 
           </Button>
         )}
       </LinearGradient>
+    </View>
     </View>
   );
 }

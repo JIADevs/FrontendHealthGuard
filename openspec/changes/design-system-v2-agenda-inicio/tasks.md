@@ -52,9 +52,9 @@ Each commit is checked on mobile and web before the next one starts. Mobile: Exp
 
 ## Phase 4: Mobile Agenda — RF-MOB-AI2, RF-MOB-AI3, RF-MOB-AI4
 
-- [ ] 4.1 Calendar legend stays visible: Tomas, Citas, Check-in, Tareas. Each day-list event states its type in text. Only the urgent action uses primary or success. Do not render mission events.
-- [ ] 4.2 Appointments: «Próximas» and «Anteriores», chronological. Detail hides «¿Pudiste asistir?» before the start time. From that time it offers `ASISTI` and `NO_ASISTI`, plus «Cómo llegar» and «+ Agregar documento». «Cancelar cita» is a `DangerLink` whose confirm offers «Mantener cita» first.
-- [ ] 4.3 New appointment form order: «Fecha y hora», «Profesional», «Modalidad y lugar». `DoctorForm` stays the screen that creates a professional. Dirty close uses `DiscardChangesDialog`.
+- [x] 4.1 Calendar legend stays visible: Tomas, Citas, Check-in, Tareas. Each day-list event states its type in text. Only the urgent action uses primary or success. Do not render mission events.
+- [x] 4.2 Appointments: «Próximas» and «Anteriores», chronological. Detail hides «¿Pudiste asistir?» before the start time. From that time it offers `ASISTI` and `NO_ASISTI`, plus «Cómo llegar» and «+ Agregar documento». «Cancelar cita» is a `DangerLink` whose confirm offers «Mantener cita» first.
+- [x] 4.3 New appointment form order: «Fecha y hora», «Profesional», «Modalidad y lugar». `DoctorForm` stays the screen that creates a professional. Dirty close uses `DiscardChangesDialog`.
 - [ ] 4.4 Medications: «Activos» and «Finalizados». Cycle detail offers «Tomar» when a dose is pending.
 - [ ] 4.5 Wellbeing keeps `DailyCheckInForm` and `MoodPicker`. Face order: Muy mal, Mal, Regular, Bien, Excelente, labels from `moodConfig.ts`. The streak toast fires only after the mutation succeeds.
 - [ ] 4.6 Agenda tasks keep the brand accent and the «Completar» and «Reprogramar» actions.

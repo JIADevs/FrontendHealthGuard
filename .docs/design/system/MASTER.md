@@ -145,7 +145,7 @@ Superficies `#0C1222` (fondo) → `#1E293B` (tarjeta) → `#334155` (borde). Los
 | Espaciado (ritmo 4/8) | 4 · 8 · 12 · 16 · 20 · 24 · 32 · 48 |
 | Padding de pantalla | móvil 16 · web 32 |
 | Gap entre tarjetas | 16 (móvil) · 20 (web) |
-| Radios | chip 999 · input 14 · botón 14 (sm 10) · tarjeta 18 · hoja 28 · modal 24 · teléfono 44 |
+| Radios | chip 999 · chip de opción 12 (v2.9.2) · input 14 · botón 14 (sm 10) · tarjeta 18 · hoja 28 · modal 24 · teléfono 44 |
 | Elevación 1 (tarjeta) | borde 1 px `color.border` + «canto» inferior de 3 px (`box-shadow: 0 3px 0 color.border`, no `border-bottom`, para no cambiar el alto) |
 | Elevación 2 (botón) | canto inferior de 3 px del tono «edge» (`box-shadow: 0 3px 0 edge`). Al presionar: `translateY(3px)` y el canto pasa a 0. El alto no cambia, así que no hay salto de layout |
 | Elevación 3 (toast, menú) | sombra `0 14px 30px -12px rgba(15,23,42,.35)` |
@@ -163,7 +163,7 @@ Superficies `#0C1222` (fondo) → `#1E293B` (tarjeta) → `#334155` (borde). Los
 | **Botón** | Variantes: primario, secundario (blanco con borde), éxito, racha, peligro y fantasma. Alto mín. 48 (sm 44). Si dos botones no entran lado a lado con su texto completo, se apilan: la acción principal arriba, de ancho completo, y la secundaria debajo como fantasma (v2.1). Estados: hover +7 % de brillo; presionado baja 3 px sin cambiar el alto; deshabilitado al 50 % sin borde inferior; cargando con spinner y texto («Guardando…»); foco con anillo de 3 px `#3B82F6` a 2 px de distancia. **Destructivos** (eliminar, revocar, cancelar cita, finalizar ciclo): nunca en la barra inferior ni junto a guardar o editar; van como enlace rojo con ícono al final del contenido. |
 | **Tarjeta** | Superficie, radio 18, padding 16 (compacta 12), elevación 1. Seleccionada: borde `brand.solid`. |
 | **Fila de lista** | Ícono en cuadro de 40 px (radio 13, tinte del módulo) + título 14/600 + metadato 13 + acción a la derecha. Título y metadato ocupan hasta 2 líneas antes de cortarse (v2.1). |
-| **Chip** | Píldora con tinte y texto 700 del tono, Nunito 800 12,5, ícono opcional de 12 px. Los chips **de opción** (seleccionables) miden 44 px de alto y el seleccionado lleva ✓. |
+| **Chip** | Píldora con tinte y texto 700 del tono, Nunito 800 12,5, ícono opcional de 12 px. Los chips **de opción** (seleccionables) miden 44 px de alto y el seleccionado lleva ✓. *(v2.9.2: el chip de opción no es píldora: radio 12, borde de 1,5 px y canto inferior de 3 px, igual que `.pick` en `mockups/kit.css`.)* |
 | **Campo** | Etiqueta visible siempre (Nunito 800 13), caja `#F8FAFC` con borde 1,5 px y radio 14, mín. 48 de alto. En foco, borde azul y fondo blanco. Error bajo el campo en rojo con ícono. |
 | **Pestañas segmentadas** | Contenedor `#EEF2F7`; la activa es blanca con texto `brand.text`. |
 | **Barra de pestañas (móvil)** | Igual a `apps/mobile/src/navigation/TabNavigator.tsx` (v2.4): Documentos (`FileText`), Agenda (`CalendarDays`), **Inicio al centro** (botón circular de 52 px elevado 20 px, ícono `LayoutDashboard` blanco; sólido `brand.solid` si está activo y `text.muted` si no), Mochilas (`Folder`) y Más (`Menu`). Íconos de 24 px; la pestaña activa solo cambia de color a `brand.solid`, sin pastilla. Etiquetas Inter 500 de 11 px (Inicio en 700). Barra de 60 px + área segura, esquinas superiores de 20 px, sombra hacia arriba y sin borde. En modo gestión, el botón central muestra las iniciales del dependiente con un anillo de 3 px de su color de contexto. |

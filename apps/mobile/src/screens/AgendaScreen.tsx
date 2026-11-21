@@ -1,19 +1,13 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  SectionList,
-  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated from "react-native-reanimated";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { isApiError, type DailyCheckIn } from "@helu/api";
-import Toast from "react-native-toast-message";
 
-import { useWellbeingScreen } from "../hooks/useWellbeingScreen";
 import { useMedicationIntakeIntent } from "../hooks/useMedicationIntakeIntent";
 import { useDailyCheckInIntent } from "../hooks/useDailyCheckInIntent";
 import type { AgendaRouteParams } from "../navigation/RootNavigator";
@@ -21,19 +15,15 @@ import { notify } from "../lib/notify";
 import { useTakeDose } from "../components/agenda/useTakeDose";
 
 import {
-  colors, palette,
+  colors,
   radii,
   spacing,
   fontSize,
   fontWeight,
   useAppTheme,
-  Typography,
-  Button,
   SkeletonGroup,
-  Skeleton,
   SkeletonCard,
   useSkeletonVisible,
-  EmptyState,
   HeluAgendaCalendar,
   SegmentedControl,
   useFadeThrough,
@@ -41,15 +31,10 @@ import {
   resolveCycleForDay,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import {
-  Heart,
-} from "lucide-react-native";
 
 import {
-  DailyCheckInListItem,
   DailyCheckInForm,
-  WellbeingFAB,
-  WellbeingHeader,
+  WellbeingTab,
   AgendaFAB,
   AgendaAddSheet,
   MedicationIntakeModal,
@@ -284,117 +269,6 @@ function CalendarTab({
   );
 }
 
-// ─── wellbeing tab ────────────────────────────────────────────────────────────
-
-function WellbeingTab() {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-
-  const [formTarget, setFormTarget] = useState<DailyCheckIn | "new" | null>(null);
-  const screen = useWellbeingScreen();
-
-  const handleEndReached = useCallback(() => {
-    if (screen.hasNextPage && !screen.isFetchingNextPage) {
-      screen.fetchNextPage();
-    }
-  }, [screen.hasNextPage, screen.isFetchingNextPage, screen.fetchNextPage]);
-
-  const renderItem = useCallback(
-    ({ item }: { item: DailyCheckIn }) => (
-      <DailyCheckInListItem
-        checkIn={item}
-        onEdit={(checkIn) => setFormTarget(checkIn)}
-      />
-    ),
-    [],
-  );
-
-  const renderSectionHeader = useCallback(
-    ({ section }: { section: { title: string } }) => (
-      <View style={styles.wellbeingSectionHeader}>
-        <Text style={styles.wellbeingSectionTitle}>{section.title}</Text>
-      </View>
-    ),
-    [styles.wellbeingSectionHeader, styles.wellbeingSectionTitle],
-  );
-
-  const showSkeleton = useSkeletonVisible(screen.isLoading);
-
-  return (
-    <View style={styles.tabContent}>
-      <WellbeingHeader total={screen.total} isLoading={screen.isLoading} />
-
-      {showSkeleton ? (
-        // §6c: cabecera real; grupo con su etiqueta y filas de check-in (cara + texto).
-        <SkeletonGroup label="Cargando check-ins" style={styles.skeletonList}>
-          <Skeleton width={110} height={11} />
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
-        </SkeletonGroup>
-      ) : screen.isError ? (
-        <View style={styles.center}>
-          <Text style={styles.errorText}>
-            No se pudieron cargar tus check-ins. Revisa tu conexión e intenta de nuevo.
-          </Text>
-          <TouchableOpacity onPress={() => screen.refetch()}>
-            <Text style={styles.retryText}>Reintentar</Text>
-          </TouchableOpacity>
-        </View>
-      ) : screen.items.length === 0 ? (
-        <EmptyState
-          icon={<Heart size={48} color={t.border.medium} />}
-          message="No tienes check-ins registrados."
-          action={
-            <Button onPress={() => setFormTarget("new")}>
-              Registrar check-in
-            </Button>
-          }
-        />
-      ) : (
-        <SectionList
-          sections={screen.sections}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          renderSectionHeader={renderSectionHeader}
-          stickySectionHeadersEnabled
-          refreshControl={
-            <RefreshControl
-              refreshing={screen.isRefetching}
-              onRefresh={() => { void screen.refetch(); }}
-              tintColor={t.brand.fg}
-            />
-          }
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.3}
-          contentContainerStyle={styles.wellbeingListContent}
-          ItemSeparatorComponent={() => <View style={styles.wellbeingItemSeparator} />}
-          SectionSeparatorComponent={() => <View style={styles.wellbeingSectionSeparator} />}
-          ListFooterComponent={
-            screen.isFetchingNextPage ? (
-              // §6c «Página siguiente»: 2 filas de esqueleto al final.
-              <SkeletonGroup label="Cargando más check-ins" style={[styles.wellbeingListFooter, { gap: spacing[3] }]}>
-                <SkeletonCard lines={2} />
-                <SkeletonCard lines={2} />
-              </SkeletonGroup>
-            ) : undefined
-          }
-        />
-      )}
-
-      <WellbeingFAB onPress={() => setFormTarget("new")} />
-
-      {formTarget !== null && (
-        <DailyCheckInForm
-          onClose={() => setFormTarget(null)}
-          initialValues={formTarget === "new" ? undefined : formTarget}
-        />
-      )}
-    </View>
-  );
-}
-
 // ─── styles ───────────────────────────────────────────────────────────────────
 
 function makeStyles(t: ThemeContextValue) {
@@ -411,30 +285,6 @@ function makeStyles(t: ThemeContextValue) {
     title:              { fontSize: 26, lineHeight: 30, fontFamily: nativeFont("heading", 900), color: t.text.primary },
     tabContent:         { flex: 1 },
     skeletonList:       { gap: spacing[3], paddingHorizontal: spacing[4], paddingTop: spacing[3] },
-    wellbeingListContent: { paddingBottom: spacing[12] + 56 },
-    wellbeingSectionHeader: {
-      paddingHorizontal: spacing[4],
-      paddingTop: spacing[4],
-      paddingBottom: spacing[2],
-      backgroundColor: t.surface.bg,
-    },
-    wellbeingSectionTitle: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: t.text.secondary,
-      textTransform: "capitalize",
-    },
-    wellbeingItemSeparator: {
-      height: 1,
-      backgroundColor: t.border.light,
-      marginLeft: spacing[4] + 44 + spacing[3],
-    },
-    wellbeingSectionSeparator: {
-      height: spacing[2],
-    },
-    wellbeingListFooter: {
-      paddingVertical: spacing[4],
-    },
     center:{ flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
     iconBtn:            { width: 34, height: 34, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bg },
 

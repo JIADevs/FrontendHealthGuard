@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { DailyCheckIn } from "@helu/api";
+import { formatShortDay } from "@helu/ui";
 import {
     flattenDailyCheckInPages,
     useInfiniteDailyCheckIns,
@@ -32,12 +33,8 @@ function yesterdayLocalDateKey(): string {
 function formatDayHeader(dateKey: string): string {
     if (dateKey === todayLocalDateKey()) return "Hoy";
     if (dateKey === yesterdayLocalDateKey()) return "Ayer";
-    const [y, m, day] = dateKey.split("-").map(Number);
-    return new Date(y, m - 1, day).toLocaleDateString("es-AR", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-    });
+    // «Sáb 31 oct», como el resto de la app (es-CO).
+    return formatShortDay(dateKey);
 }
 
 function capitalizeFirst(text: string): string {

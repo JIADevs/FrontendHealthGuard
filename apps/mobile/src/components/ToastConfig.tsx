@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react-native";
+import { CheckCircle2, XCircle, AlertTriangle, Info, Heart } from "lucide-react-native";
 import Toast, { type ToastConfig } from "react-native-toast-message";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, useAppTheme, toneColors, nativeFont, spacing, type Tone } from "@helu/ui";
@@ -13,6 +13,8 @@ const VARIANTS = {
   error:   { icon: XCircle,      tone: "danger" },
   warning: { icon: AlertTriangle, tone: "warning" },
   info:    { icon: Info,         tone: "info" },
+  // Mockup «Racha sumada»: el check-in que suma a la racha
+  streak:  { icon: Heart,        tone: "streak" },
 } as const satisfies Record<string, { icon: unknown; tone: Tone }>;
 
 type VariantKey = keyof typeof VARIANTS;
@@ -88,6 +90,7 @@ export const toastConfig: ToastConfig = {
   error: item("error"),
   warning: item("warning"),
   info: item("info"),
+  streak: item("streak"),
 };
 
 /** Montar dentro de SafeAreaProvider: ubica el toast arriba, debajo de la barra de estado. */

@@ -3,7 +3,7 @@ import { View, Text, TextInput } from 'react-native';
 import type { TextInputProps } from 'react-native';
 import { spacing } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
-import { fieldBox, FieldLabel, FieldErrorText, fieldTextStyle } from '../fieldKit.native';
+import { fieldBox, FieldFocusRing, FieldLabel, FieldErrorText, fieldTextStyle } from '../fieldKit.native';
 import type { TextFieldProps } from './TextField.types';
 
 /**
@@ -45,7 +45,8 @@ export function TextField({
 
       <View
         style={[
-          fieldBox(t, { focused, error: !!error, disabled }),
+          // El foco lo dibuja `FieldFocusRing` con fundido; la caja base no cambia al enfocar.
+          fieldBox(t, { error: !!error, disabled }),
           {
             flexDirection: 'row',
             alignItems: multiline ? 'flex-start' : 'center',
@@ -55,6 +56,7 @@ export function TextField({
           },
         ]}
       >
+        <FieldFocusRing t={t} visible={focused && !error} />
         {leadingIcon}
         <TextInput
           ref={inputRef}

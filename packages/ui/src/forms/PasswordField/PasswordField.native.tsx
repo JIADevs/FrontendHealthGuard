@@ -27,8 +27,17 @@ export function PasswordField({ mode, leadingIcon, ...rest }: PasswordFieldProps
       trailing={
         <Pressable
           onPress={() => setVisible((v) => !v)}
-          hitSlop={12}
-          style={{ width: 32, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -6 }}
+          hitSlop={8}
+          // Botón de ícono (§5): fondo `surface-muted` al presionar.
+          style={({ pressed }) => ({
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: -8,
+            backgroundColor: pressed ? t.surface.muted : 'transparent',
+          })}
           accessibilityRole="button"
           accessibilityLabel={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
         >

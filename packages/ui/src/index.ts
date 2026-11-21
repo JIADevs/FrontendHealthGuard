@@ -10,6 +10,8 @@ export * from './tokens/tones';
 export * from './tokens/useTheme';
 export { ThemeProvider, useAppTheme } from './tokens/ThemeProvider';
 export type { ThemeContextValue } from './tokens/ThemeProvider';
+// Movimiento v2 (solo native; en web el movimiento va por CSS con los mismos tokens)
+export * from './motion/motion.native';
 export * from './tokens/cssVariables';
 
 // ─── Utils ───────────────────────────────────────────────────────────────────
@@ -47,8 +49,11 @@ export * from './primitives/EmptyState/EmptyState.types';
 export * from './primitives/EmptyState/EmptyState.native';
 
 // ─── Forms ───────────────────────────────────────────────────────────────────
+export { FieldError } from './forms/fieldKit.native';
 export * from './forms/TextField/TextField.types';
 export * from './forms/TextField/TextField.native';
+export * from './forms/PasswordField/PasswordField.types';
+export * from './forms/PasswordField/PasswordField.native';
 export * from './forms/Select/Select.types';
 export * from './forms/Select/Select.native';
 export * from './forms/Checkbox/Checkbox.types';
@@ -62,16 +67,24 @@ export * from './forms/DatePicker/DatePicker.types';
 export * from './forms/DatePicker/DatePicker.native';
 export * from './forms/TimePicker/TimePicker.types';
 export * from './forms/TimePicker/TimePicker.native';
+export * from './forms/ChoiceChips/ChoiceChips.types';
+export * from './forms/ChoiceChips/ChoiceChips.native';
+export * from './forms/SegmentedControl/SegmentedControl.types';
+export * from './forms/SegmentedControl/SegmentedControl.native';
 
 // ─── Containers ──────────────────────────────────────────────────────────────
 export * from './containers/Modal/Modal.types';
 export * from './containers/Modal/Modal.native';
+export * from './containers/BottomSheet/BottomSheet.types';
+export * from './containers/BottomSheet/BottomSheet.native';
 export * from './containers/Card/Card.types';
 export * from './containers/Card/Card.native';
 
 // ─── Composed ────────────────────────────────────────────────────────────────
 export * from './composed/ConfirmModal/ConfirmModal.types';
 export * from './composed/ConfirmModal/ConfirmModal.native';
+export * from './composed/DiscardChangesDialog/DiscardChangesDialog.types';
+export * from './composed/DiscardChangesDialog/DiscardChangesDialog.native';
 
 // ─── Platform ────────────────────────────────────────────────────────────────
 export * from './platform/HeluAgendaCalendar';

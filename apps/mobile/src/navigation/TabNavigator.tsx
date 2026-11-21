@@ -143,6 +143,9 @@ export function TabNavigator() {
     <Tab.Navigator
       initialRouteName="Home"
       screenOptions={{
+        // Pestañas hermanas: fundido cruzado de 150 ms, sin deslizar (movimiento-interacciones.md §3)
+        animation: "fade",
+        transitionSpec: { animation: "timing", config: { duration: 150 } },
         tabBarActiveTintColor: t.brand.fg,
         tabBarInactiveTintColor: t.text.muted,
         headerShown: false,

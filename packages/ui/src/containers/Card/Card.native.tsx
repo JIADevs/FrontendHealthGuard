@@ -4,7 +4,7 @@ import { semanticDark, semanticLight } from '../../tokens/semantic';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { CardProps } from './Card.types';
 
-export function Card({ title, subtitle, icon, iconBackground, children, actions, footer, onPress, variant = 'default', tone }: CardProps) {
+export function Card({ title, subtitle, icon, iconBackground, children, actions, footer, footerDivider = true, onPress, variant = 'default', tone }: CardProps) {
   const t = useAppTheme();
   const s = t.mode === 'dark' ? semanticDark : semanticLight;
   // v2 (MASTER §6–7): radio 18, borde 1 px + canto inferior de 3 px del color del borde
@@ -67,6 +67,7 @@ export function Card({ title, subtitle, icon, iconBackground, children, actions,
       borderTopWidth: 1,
       borderTopColor: t.border.default,
     },
+    footerPlain: { borderTopWidth: 0, paddingTop: 0 },
   });
 
   const inner = (
@@ -92,7 +93,7 @@ export function Card({ title, subtitle, icon, iconBackground, children, actions,
         {actions && <View style={styles.actions}>{actions}</View>}
       </View>
 
-      {footer && <View style={styles.footer}>{footer}</View>}
+      {footer && <View style={[styles.footer, !footerDivider && styles.footerPlain]}>{footer}</View>}
     </>
   );
 

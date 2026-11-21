@@ -317,6 +317,32 @@ export function nativeFont(role: NativeFontRole, weight: number | string = 400):
   return families[closest];
 }
 
+// ─── Movimiento (movimiento-interacciones.md §2) ─────────────────────────────
+
+/** Duraciones en ms y curvas como puntos de control de `cubic-bezier`. */
+export const motion = {
+  instant: 100,
+  fast: 150,
+  base: 250,
+  slow: 350,
+  /** Salida de hojas y modales (60–70 % de la entrada) */
+  exit: 220,
+  emphasis: 700,
+  celebration: 1200,
+  /** Resaltado de «esto es nuevo» */
+  highlight: 1200,
+  /** Escalonado entre grupos, máximo 6 */
+  stagger: 40,
+  /** Brillo del esqueleto */
+  shimmer: 1400,
+  easeOut: [0.2, 0, 0, 1] as const,
+  easeIn: [0.4, 0, 1, 1] as const,
+  easeStandard: [0.2, 0, 0, 1] as const,
+  easeSpring: [0.34, 1.56, 0.64, 1] as const,
+  /** Resorte nativo de hojas y gestos */
+  sheetSpring: { damping: 18, stiffness: 220, mass: 1 },
+} as const;
+
 // ─── Overlays ────────────────────────────────────────────────────────────────
 
 export const overlay = {

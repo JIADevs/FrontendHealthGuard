@@ -1,11 +1,14 @@
 import { useMemo, useRef, useState, useCallback, type ComponentRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Pill, Clock, Check, MoreVertical, Trash2 } from "lucide-react-native";
+import { Pill, Check, MoreVertical, Trash2 } from "lucide-react-native";
 import type { Medication } from "@helu/api";
-import { Card, spacing, fontSize, fontWeight, radii, colors, useAppTheme } from "@helu/ui";
+import { Button, Card, Chip, FadeThrough, spacing, fontSize, nativeFont, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { AgendaRowActionsMenu, measureAgendaRowActionsMenuLeft } from "./AgendaRowActionsMenu";
 import { formatDose, formatFrequency } from "./medicationFormat";
+import { doseStateForCycle } from "./doseRowState";
+import { CycleProgressBar } from "./CycleProgressBar";
+import { currentCycleOf, cycleDayProgress, formatCycleEnd, formatNextDose, isMedicationActive } from "./medicationCycles";
 
 export interface MedicationCardProps {
   medication: Medication;
@@ -15,6 +18,11 @@ export interface MedicationCardProps {
   intakePending?: boolean;
 }
 
+/**
+ * Medication row (mockups `m2-agenda.js` · Medicamentos, inicio-agenda.md · Medicamentos v2).
+ * Active: dose action (pending «Tomar», «Tomado», reason, «Más tarde»), green cycle progress,
+ * next dose and «Ciclo: X de N días». Finished: grey tile, end date and a «Finalizado» chip.
+ */
 export function MedicationCard({
   medication: m,
   onPress,
@@ -24,7 +32,10 @@ export function MedicationCard({
 }: MedicationCardProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const cycle = m.cycles?.[0];
+  const active = isMedicationActive(m);
+  const cycle = currentCycleOf(m);
+  const doseState = active && cycle ? doseStateForCycle(cycle) : null;
+  const progress = active && cycle ? cycleDayProgress(cycle) : null;
 
   const menuTriggerRef = useRef<ComponentRef<typeof View>>(null);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -41,57 +52,95 @@ export function MedicationCard({
 
   const closeMenu = useCallback(() => setMenuVisible(false), []);
 
+  const subtitle = active && cycle
+    ? `${formatDose(cycle.doseAmount, cycle.doseUnit, cycle.dosage)} · ${formatFrequency(cycle.frequency, cycle.frequencyUnit)}`
+    : formatCycleEnd(cycle);
+
+  const nextDose = active ? formatNextDose(cycle?.nextIntakeTime) : "";
+  // A pending dose whose slot already passed is overdue, not «next» (the API keeps the oldest untaken slot).
+  const overdue = doseState?.kind === "pending";
+  const doseLine = nextDose
+    ? `${overdue ? "Toma pendiente" : "Próxima toma"}: ${nextDose}`
+    : "Sin tomas pendientes";
+  const cycleLabel = progress
+    ? progress.total != null
+      ? `Ciclo: ${progress.day} de ${progress.total} días`
+      : `Día ${progress.day} del ciclo`
+    : "";
+
   return (
     <>
-      <TouchableOpacity activeOpacity={0.8} onPress={onPress}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${m.name}, ${active ? "activo" : "finalizado"}`}
+      >
         <Card
           title={m.name}
-          subtitle={
-            cycle
-              ? `${formatDose(cycle.doseAmount, cycle.doseUnit, cycle.dosage)} — ${formatFrequency(cycle.frequency, cycle.frequencyUnit)}`
-              : "Sin ciclo activo"
-          }
-          icon={<Pill size={20} color={t.status.warningFg} />}
-          iconBackground={t.status.warningBg}
+          subtitle={subtitle}
+          icon={<Pill size={20} color={active ? t.accent.medFg : t.text.muted} />}
+          iconBackground={active ? t.accent.medBg : t.surface.muted}
           actions={
-            <View ref={menuTriggerRef} collapsable={false}>
-              <TouchableOpacity
-                onPress={openMenu}
-                style={styles.menuButton}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel={`Opciones de ${m.name}`}
-              >
-                <MoreVertical size={20} color={t.text.muted} />
-              </TouchableOpacity>
+            <View style={styles.headerActions}>
+              {active ? (
+                <FadeThrough value={doseState?.kind ?? "none"}>
+                  {(kind) => (
+                    <>
+                      {cycle && kind === "pending" ? (
+                        <Button
+                          variant="success"
+                          onPress={() => onIntake(cycle.id)}
+                          disabled={intakePending}
+                          loading={intakePending}
+                          loadingLabel="Guardando…"
+                        >
+                          Tomar
+                        </Button>
+                      ) : null}
+                      {kind === "taken" ? (
+                        <Chip label="Tomado" tone="success" icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />} />
+                      ) : null}
+                      {kind === "not-taken" ? (
+                        <Chip label={doseState?.reasonLabel ?? "No tomado"} tone="danger" />
+                      ) : null}
+                      {kind === "later" && cycle?.nextIntakeTime ? <Chip label="Más tarde" tone="neutral" /> : null}
+                    </>
+                  )}
+                </FadeThrough>
+              ) : (
+                <Chip label="Finalizado" tone="neutral" />
+              )}
+              <View ref={menuTriggerRef} collapsable={false}>
+                <TouchableOpacity
+                  onPress={openMenu}
+                  style={styles.menuButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Opciones de ${m.name}`}
+                >
+                  <MoreVertical size={20} color={t.text.muted} />
+                </TouchableOpacity>
+              </View>
             </View>
           }
-        >
-          {cycle?.reason ? <Text style={styles.cardMetaText}>{cycle.reason}</Text> : null}
-          {cycle?.nextIntakeTime ? (
-            <View style={styles.cardMeta}>
-              <Clock size={12} color={t.text.secondary} />
-              <Text style={styles.cardMetaText}>
-                {new Date(cycle.nextIntakeTime).toLocaleString("es-CO", {
-                  month: "short",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </Text>
-            </View>
-          ) : null}
-          {cycle ? (
-            <TouchableOpacity
-              style={styles.intakeBtn}
-              onPress={() => onIntake(cycle.id)}
-              disabled={intakePending}
-            >
-              <Check size={13} color={colors.white} />
-              <Text style={styles.intakeBtnText}>Tomado</Text>
-            </TouchableOpacity>
-          ) : null}
-        </Card>
+          footerDivider={false}
+          footer={
+            progress ? (
+              // Mockup: the bar and the meta row span the whole card, below the header row.
+              <View style={styles.progress}>
+                {progress.ratio != null ? (
+                  <CycleProgressBar ratio={progress.ratio} accessibilityLabel={cycleLabel} />
+                ) : null}
+                <View style={styles.metaRow}>
+                  <Text style={[styles.metaText, styles.metaGrow, overdue && styles.metaOverdue]} numberOfLines={1}>
+                    {doseLine}
+                  </Text>
+                  <Text style={styles.metaText} numberOfLines={1}>{cycleLabel}</Text>
+                </View>
+              </View>
+            ) : undefined
+          }
+        />
       </TouchableOpacity>
 
       <AgendaRowActionsMenu
@@ -107,20 +156,17 @@ export function MedicationCard({
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
-    cardMeta: { flexDirection: "row", alignItems: "center", gap: spacing[1] },
-    cardMetaText: { fontSize: fontSize.sm, color: t.text.secondary },
-    menuButton: { padding: spacing[1] },
-    intakeBtn: {
+    progress: { flex: 1, gap: spacing[2] },
+    metaGrow: { flex: 1 },
+    metaOverdue: { color: t.status.warningFg },
+    metaRow: { flexDirection: "row", justifyContent: "space-between", gap: spacing[3] },
+    metaText: { flexShrink: 1, fontSize: fontSize.sm, fontFamily: nativeFont("body", 400), color: t.text.secondary },
+    headerActions: {
       flexDirection: "row",
       alignItems: "center",
-      gap: spacing[1],
-      marginTop: spacing[1],
-      backgroundColor: t.status.successSolid,
-      alignSelf: "flex-start",
-      paddingHorizontal: spacing[3],
-      paddingVertical: 4,
-      borderRadius: radii.full,
+      gap: spacing[2],
     },
-    intakeBtnText: { color: colors.white, fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
+    // MASTER §6: 44 × 44 visibles
+    menuButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   });
 }

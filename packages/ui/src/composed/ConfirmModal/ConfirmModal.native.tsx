@@ -21,6 +21,7 @@ export function ConfirmModal({
   message,
   confirmLabel = 'Confirmar',
   keepLabel = 'Cancelar',
+  keepVariant = 'secondary',
   confirmVariant = 'danger',
   loading = false,
   onConfirm,
@@ -36,6 +37,7 @@ export function ConfirmModal({
         message={message}
         confirmLabel={confirmLabel}
         keepLabel={keepLabel}
+        keepVariant={keepVariant}
         confirmVariant={confirmVariant}
         loading={loading}
         onConfirm={onConfirm}
@@ -53,10 +55,15 @@ export function ConfirmModal({
       onClose={onCancel}
       footer={
         <>
-          <Button variant="secondary" onPress={onCancel} disabled={loading}>{keepLabel}</Button>
-          <Button variant={confirmVariant} onPress={onConfirm} disabled={loading} loading={loading}>
-            {confirmLabel}
-          </Button>
+          {/* Both options fill the row (no empty gap on the right) and never shrink below their label. */}
+          <View style={{ flexGrow: 1 }}>
+            <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>{keepLabel}</Button>
+          </View>
+          <View style={{ flexGrow: 1 }}>
+            <Button variant={confirmVariant} fullWidth onPress={onConfirm} disabled={loading} loading={loading}>
+              {confirmLabel}
+            </Button>
+          </View>
         </>
       }
     >
@@ -70,6 +77,7 @@ function CenteredConfirmModal({
   message,
   confirmLabel,
   keepLabel,
+  keepVariant = 'secondary',
   confirmVariant,
   loading,
   onConfirm,
@@ -78,7 +86,7 @@ function CenteredConfirmModal({
   iconTone,
   actionsLayout,
 }: Required<Pick<ConfirmModalProps, 'title' | 'message' | 'confirmLabel' | 'confirmVariant' | 'loading' | 'onConfirm' | 'onCancel' | 'icon' | 'iconTone'>> &
-  Pick<ConfirmModalProps, 'actionsLayout' | 'keepLabel'>) {
+  Pick<ConfirmModalProps, 'actionsLayout' | 'keepLabel' | 'keepVariant'>) {
   const t = useAppTheme();
   const styles = makeStyles(t);
   const stacked = actionsLayout === 'stacked';
@@ -102,7 +110,7 @@ function CenteredConfirmModal({
             {stacked ? (
               <>
                 {/* v2: la opción segura va primero */}
-                <Button variant="secondary" fullWidth onPress={onCancel} disabled={loading}>
+                <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>
                   {keepLabel}
                 </Button>
                 <Button
@@ -118,7 +126,7 @@ function CenteredConfirmModal({
             ) : (
               <>
                 <View style={styles.actionFlex}>
-                  <Button variant="secondary" fullWidth onPress={onCancel} disabled={loading}>
+                  <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>
                     {keepLabel}
                   </Button>
                 </View>

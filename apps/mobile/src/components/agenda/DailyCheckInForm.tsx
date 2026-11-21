@@ -1,9 +1,12 @@
-import { useState, useMemo, useEffect } from "react";
-import { ScrollView, TouchableOpacity, View, Text, StyleSheet } from "react-native";
-import Toast from "react-native-toast-message";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Heart, Trash2 } from "lucide-react-native";
 import {
-    Modal,
+    BottomSheet,
     Button,
+    ChoiceChips,
+    DangerLink,
+    IconTile,
     TextField,
     DateTimePicker,
     toISOLocal,
@@ -13,7 +16,7 @@ import {
     ConfirmModal,
     spacing,
     fontSize,
-    fontWeight,
+    nativeFont,
     useAppTheme,
     palette,
 } from "@helu/ui";
@@ -22,10 +25,11 @@ import {
     useCreateDailyCheckInMutation,
     useUpdateDailyCheckInMutation,
     useDeleteDailyCheckInMutation,
+    useFetchCurrentStreak,
     useTreatmentsQuery,
 } from "@helu/api/hooks";
 import type { DailyCheckIn, MoodEnum, Treatment } from "@helu/api";
-import { Trash2 } from "lucide-react-native";
+import { notify } from "../../lib/notify";
 import { MoodPicker } from "./MoodPicker";
 
 interface DailyCheckInFormProps {
@@ -33,6 +37,12 @@ interface DailyCheckInFormProps {
     initialValues?: DailyCheckIn;
 }
 
+/**
+ * Check-in sheet (mockup «Check-in de hoy»). New: eyebrow «CHECK-IN DE HOY», the question as the
+ * title, the five faces, optional treatment and notes, and «Guardar check-in» in the streak color.
+ * The streak toast («¡13 días seguidos cuidándote!») waits for the server: it reads the streak from
+ * the refreshed profile after the check-in is saved (RF-MOB-AI4, movimiento §8).
+ */
 export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormProps) {
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
@@ -47,6 +57,7 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
             : toISOLocal(new Date());
         return clampPickerValueToMax(initial);
     });
+    const initialRecordedAt = useRef(recordedAt);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
@@ -54,17 +65,37 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
         setMood(initialValues.mood);
         setNotes(initialValues.notes ?? "");
         setTreatmentId(initialValues.treatmentId ?? null);
-        setRecordedAt(clampPickerValueToMax(pickerValueFromUtcIso(initialValues.recordedAt)));
+        const nextRecordedAt = clampPickerValueToMax(pickerValueFromUtcIso(initialValues.recordedAt));
+        initialRecordedAt.current = nextRecordedAt;
+        setRecordedAt(nextRecordedAt);
     }, [initialValues]);
 
     const createMutation = useCreateDailyCheckInMutation();
     const updateMutation = useUpdateDailyCheckInMutation();
     const deleteMutation = useDeleteDailyCheckInMutation();
+    const fetchCurrentStreak = useFetchCurrentStreak();
     const treatmentsQuery = useTreatmentsQuery(1, 100);
     const treatments = treatmentsQuery.data?.items ?? [];
 
     const isPending =
         createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+    const dirty =
+        mood !== (initialValues?.mood ?? null) ||
+        notes !== (initialValues?.notes ?? "") ||
+        treatmentId !== (initialValues?.treatmentId ?? null) ||
+        recordedAt !== initialRecordedAt.current;
+
+    const notifyStreak = async () => {
+        // The streak comes from the server; never celebrate something that is not saved.
+        const streak = (await fetchCurrentStreak()) ?? 0;
+        if (streak >= 2) {
+            notify({ tone: "streak", message: `¡${streak} días seguidos cuidándote!` });
+        } else if (streak === 1) {
+            notify({ tone: "streak", message: "Check-in registrado", description: "Es el primer día de tu racha." });
+        } else {
+            notify({ message: "Check-in registrado" });
+        }
+    };
 
     const handleSubmit = () => {
         if (!mood) return;
@@ -82,13 +113,10 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
                 {
                     onSuccess: () => {
                         onClose();
-                        Toast.show({ type: "success", text1: "Check-in actualizado" });
+                        notify({ message: "Check-in actualizado" });
                     },
                     onError: () => {
-                        Toast.show({
-                            type: "error",
-                            text1: "No se pudo actualizar el check-in",
-                        });
+                        notify({ tone: "error", message: "No se pudo actualizar el check-in", description: "Revisa tu conexión e intenta de nuevo." });
                     },
                 },
             );
@@ -98,13 +126,10 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
         createMutation.mutate(payload, {
             onSuccess: () => {
                 onClose();
-                Toast.show({ type: "success", text1: "Check-in registrado" });
+                void notifyStreak();
             },
             onError: () => {
-                Toast.show({
-                    type: "error",
-                    text1: "No se pudo registrar el check-in",
-                });
+                notify({ tone: "error", message: "No se pudo registrar el check-in", description: "Revisa tu conexión e intenta de nuevo." });
             },
         });
     };
@@ -115,87 +140,47 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
             onSuccess: () => {
                 setShowDeleteConfirm(false);
                 onClose();
-                Toast.show({ type: "success", text1: "Check-in eliminado" });
+                notify({ message: "Check-in eliminado" });
             },
             onError: () => {
-                Toast.show({
-                    type: "error",
-                    text1: "No se pudo eliminar el check-in",
-                });
+                notify({ tone: "error", message: "No se pudo eliminar el check-in", description: "Revisa tu conexión e intenta de nuevo." });
             },
         });
     };
 
+    const treatmentOptions = treatments.map((treatment: Treatment) => ({
+        value: treatment.id,
+        label: treatment.name,
+    }));
+
     return (
         <>
-            <Modal
-                title={isEdit ? "Editar check-in" : "Nuevo check-in"}
-                onClose={onClose}
-                footer={
-                    <>
-                        {isEdit ? (
-                            <Button
-                                variant="secondary"
-                                onPress={() => setShowDeleteConfirm(true)}
-                                disabled={isPending}
-                            >
-                                Eliminar
-                            </Button>
-                        ) : null}
-                        <Button variant="secondary" onPress={onClose}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            onPress={handleSubmit}
-                            disabled={!mood || isPending}
-                            loading={isPending && !deleteMutation.isPending}
-                        >
-                            {isEdit ? "Guardar" : "Registrar"}
-                        </Button>
-                    </>
+            <BottomSheet
+                eyebrow={isEdit ? "CHECK-IN" : "CHECK-IN DE HOY"}
+                title={isEdit ? "Editar check-in" : "¿Cómo te sientes hoy?"}
+                icon={
+                    <IconTile
+                        tone="wellbeing"
+                        size="lg"
+                        round
+                        icon={<Heart size={24} strokeWidth={2.4} color={t.accent.wellbeingFg} />}
+                    />
                 }
+                dirty={dirty}
+                onClose={onClose}
             >
-                <View style={styles.section}>
-                    <Text style={styles.label}>¿Cómo te sientes hoy?</Text>
-                    <MoodPicker value={mood} onChange={setMood} />
-                </View>
-
                 <View style={styles.fields}>
-                    {treatments.length > 0 ? (
-                        <View style={styles.treatmentSection}>
+                    {isEdit ? <Text style={styles.label}>¿Cómo te sentías?</Text> : null}
+                    <MoodPicker value={mood} onChange={setMood} />
+
+                    {treatmentOptions.length > 0 ? (
+                        <View style={styles.group}>
                             <Text style={styles.label}>Tratamiento (opcional)</Text>
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.treatmentChips}
-                            >
-                                {treatments.map((treatment: Treatment) => {
-                                    const selected = treatmentId === treatment.id;
-                                    return (
-                                        <TouchableOpacity
-                                            key={treatment.id}
-                                            style={[
-                                                styles.treatmentChip,
-                                                {
-                                                    borderColor: selected ? t.brand.fg : t.border.medium,
-                                                    backgroundColor: selected ? t.brand.tint : t.surface.bgCard,
-                                                },
-                                            ]}
-                                            onPress={() => setTreatmentId(selected ? null : treatment.id)}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.treatmentChipText,
-                                                    { color: selected ? t.brand.fg : t.text.secondary },
-                                                ]}
-                                                numberOfLines={1}
-                                            >
-                                                {treatment.name}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </ScrollView>
+                            <ChoiceChips
+                                options={treatmentOptions}
+                                value={treatmentId}
+                                onChange={(id) => setTreatmentId(id === treatmentId ? null : id)}
+                            />
                         </View>
                     ) : null}
 
@@ -203,9 +188,9 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
                         label="Notas (opcional)"
                         value={notes}
                         onChange={setNotes}
-                        placeholder="¿Algo más que quieras registrar?"
+                        placeholder="Ej: Dormí mal anoche"
                         multiline
-                        numberOfLines={4}
+                        numberOfLines={3}
                     />
 
                     <DateTimePicker
@@ -215,7 +200,32 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
                         maxDate={toISOLocal(new Date())}
                     />
                 </View>
-            </Modal>
+
+                <View style={styles.actions}>
+                    <Button
+                        variant={isEdit ? "primary" : "streak"}
+                        size="lg"
+                        fullWidth
+                        icon={isEdit ? undefined : <Heart size={18} strokeWidth={2.4} color={t.text.onSolid} />}
+                        onPress={handleSubmit}
+                        disabled={!mood || isPending}
+                        loading={isPending && !deleteMutation.isPending}
+                        loadingLabel="Guardando…"
+                    >
+                        {isEdit ? "Guardar cambios" : "Guardar check-in"}
+                    </Button>
+                    {isEdit ? (
+                        <DangerLink
+                            label="Eliminar check-in"
+                            icon={<Trash2 size={16} color={t.status.dangerSolid} />}
+                            onPress={() => setShowDeleteConfirm(true)}
+                            disabled={isPending}
+                        />
+                    ) : (
+                        <Text style={styles.hint}>Tu check-in ayuda a ver cómo evolucionas entre citas.</Text>
+                    )}
+                </View>
+            </BottomSheet>
 
             {showDeleteConfirm && (
                 <ConfirmModal
@@ -235,35 +245,28 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
 
 function makeStyles(t: ThemeContextValue) {
     return StyleSheet.create({
-        section: {
-            marginBottom: spacing[4],
-        },
         fields: {
             gap: spacing[4],
         },
-        treatmentSection: {
+        group: {
             gap: spacing[2],
         },
-        treatmentChips: {
-            gap: spacing[2],
-            paddingRight: spacing[2],
-        },
-        treatmentChip: {
-            maxWidth: 180,
-            paddingHorizontal: spacing[3],
-            paddingVertical: spacing[2],
-            borderRadius: 999,
-            borderWidth: 1,
-        },
-        treatmentChipText: {
-            fontSize: fontSize.sm,
-            fontWeight: fontWeight.medium,
-        },
+        // MASTER «Campo»: etiqueta visible, Nunito 800 13
         label: {
-            fontSize: fontSize.sm,
-            fontWeight: fontWeight.semibold,
+            fontSize: 13,
+            fontFamily: nativeFont("heading", 800),
             color: t.text.primary,
-            marginBottom: spacing[2],
+        },
+        actions: {
+            gap: spacing[3],
+            marginTop: spacing[5],
+            alignItems: "stretch",
+        },
+        hint: {
+            fontSize: fontSize.sm,
+            fontFamily: nativeFont("body", 400),
+            color: t.text.secondary,
+            textAlign: "center",
         },
     });
 }

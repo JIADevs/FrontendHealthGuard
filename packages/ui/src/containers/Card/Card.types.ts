@@ -16,6 +16,8 @@ export interface CardProps {
   actions?: ReactNode;
   /** Bottom row rendered below the main content, separated by a border */
   footer?: ReactNode;
+  /** Line between the main row and the footer. Off for content that belongs to the card body (cycle progress). Default true. */
+  footerDivider?: boolean;
   /** Makes the whole card pressable/clickable */
   onPress?: () => void;
   /** v2: `compact` (padding 12), `selected` (borde de marca, ítem abierto en lista + detalle) */

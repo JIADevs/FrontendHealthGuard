@@ -1,104 +1,80 @@
 import { useMemo } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Pencil } from "lucide-react-native";
-import { spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
+import { View, Text, StyleSheet } from "react-native";
+import { ChevronRight } from "lucide-react-native";
+import { PressableScale, formatClock, nativeFont, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import type { DailyCheckIn } from "@helu/api";
 import { MOOD_CONFIG } from "./moodConfig";
+import { MoodFace } from "./MoodFace";
 
 interface DailyCheckInListItemProps {
     checkIn: DailyCheckIn;
     onEdit?: (checkIn: DailyCheckIn) => void;
 }
 
+/**
+ * Check-in row (mockup Bienestar · `checkItem`): a card with the drawn face, the mood and the time.
+ * The day is the section title, so the row only shows the time. Tapping the card edits it.
+ */
 export function DailyCheckInListItem({ checkIn, onEdit }: DailyCheckInListItemProps) {
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
 
-    const { label, emoji, circleBg } = MOOD_CONFIG[checkIn.mood];
-    const timeLabel = new Date(checkIn.recordedAt).toLocaleString("es-AR", {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    const { label } = MOOD_CONFIG[checkIn.mood];
+    const time = formatClock(new Date(checkIn.recordedAt));
 
-    return (
-        <View
-            style={styles.row}
-            accessible
-            accessibilityLabel={`Check-in de bienestar: ${label}, ${timeLabel}`}
-        >
-            <View style={[styles.emojiCircle, { backgroundColor: circleBg }]}>
-                <Text style={styles.emoji}>{emoji}</Text>
-            </View>
-
+    const body = (
+        <View style={styles.card}>
+            <MoodFace mood={checkIn.mood} size={40} />
             <View style={styles.body}>
                 <Text style={styles.moodLabel}>{label}</Text>
-                <Text style={styles.time}>{timeLabel}</Text>
-                {checkIn.notes ? (
-                    <Text style={styles.notes} numberOfLines={4}>
-                        {checkIn.notes}
-                    </Text>
-                ) : null}
+                <Text style={styles.meta} numberOfLines={2}>
+                    {checkIn.notes ? `${time} · ${checkIn.notes}` : time}
+                </Text>
             </View>
-
-            {onEdit ? (
-                <TouchableOpacity
-                    style={styles.editBtn}
-                    onPress={() => onEdit(checkIn)}
-                    accessibilityLabel="Editar check-in"
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                    <Pencil size={16} color={t.text.secondary} />
-                </TouchableOpacity>
-            ) : null}
+            {onEdit ? <ChevronRight size={18} color={t.text.muted} /> : null}
         </View>
+    );
+
+    if (!onEdit) {
+        return (
+            <View style={styles.wrap} accessible accessibilityLabel={`Check-in: ${label}, ${time}`}>
+                {body}
+            </View>
+        );
+    }
+
+    return (
+        <PressableScale
+            style={styles.wrap}
+            onPress={() => onEdit(checkIn)}
+            accessibilityRole="button"
+            accessibilityLabel={`Check-in: ${label}, ${time}`}
+            accessibilityHint="Abre el check-in para editarlo"
+        >
+            {body}
+        </PressableScale>
     );
 }
 
 function makeStyles(t: ThemeContextValue) {
     return StyleSheet.create({
-        row: {
+        wrap: { paddingHorizontal: spacing[4] },
+        // MASTER «Tarjeta» compacta: radio 18, padding 12, borde 1 px + canto de 3 px
+        card: {
             flexDirection: "row",
-            alignItems: "flex-start",
+            alignItems: "center",
             gap: spacing[3],
-            paddingVertical: spacing[3],
-            paddingHorizontal: spacing[4],
+            padding: spacing[3],
+            minHeight: 64,
+            borderRadius: 18,
+            borderWidth: 1,
+            borderColor: t.border.default,
+            backgroundColor: t.surface.bgCard,
+            boxShadow: `0 3px 0 ${t.border.default}`,
         },
-        emojiCircle: {
-            width: 44,
-            height: 44,
-            borderRadius: radii.full,
-            alignItems: "center",
-            justifyContent: "center",
-        },
-        emoji: {
-            fontSize: fontSize.xl,
-        },
-        body: {
-            flex: 1,
-            gap: spacing[1],
-        },
-        moodLabel: {
-            fontSize: fontSize.base,
-            fontWeight: fontWeight.semibold,
-            color: t.text.primary,
-        },
-        time: {
-            fontSize: fontSize.sm,
-            color: t.text.secondary,
-        },
-        notes: {
-            fontSize: fontSize.sm,
-            color: t.text.secondary,
-            marginTop: spacing[1],
-            lineHeight: 20,
-        },
-        editBtn: {
-            width: 32,
-            height: 32,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: radii.sm,
-        },
+        body: { flex: 1, gap: 2 },
+        moodLabel: { fontSize: 15, fontFamily: nativeFont("heading", 800), color: t.text.primary },
+        meta: { fontSize: 13, fontFamily: nativeFont("body", 400), color: t.text.secondary },
     });
 }

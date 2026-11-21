@@ -1,19 +1,22 @@
 import { useCallback, useMemo, useState } from "react";
-import { View, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, SectionList, RefreshControl } from "react-native";
 import Toast from "react-native-toast-message";
 import {
   useDeleteAppointmentMutation,
-  useUpdateAppointmentStatusMutation,
 } from "@helu/api/hooks";
 import { isApiError, type Appointment } from "@helu/api";
 import {
   spacing,
+  nativeFont,
   radii,
   useAppTheme,
   formatApptDate,
   Pagination,
   cardContentStyle,
-  Spinner,
+  SkeletonGroup,
+  Skeleton,
+  SkeletonCard,
+  useSkeletonVisible,
   ConfirmModal,
   EmptyState,
   SearchField,
@@ -23,13 +26,16 @@ import { CalendarDays, Filter } from "lucide-react-native";
 
 import { useAppointmentsList } from "../../hooks/useAppointmentsList";
 import { AgendaFAB } from "./AgendaFAB";
+import { AgendaEmpty } from "./AgendaEmpty";
+import { usePullToRefresh } from "../../lib/usePullToRefresh";
+import { useAgendaNavigation } from "./AgendaNavigation";
 import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentsFilterSheet } from "./AppointmentsFilterSheet";
 
 export function AppointmentsTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const navigation = require("@react-navigation/native").useNavigation();
+  const nav = useAgendaNavigation();
 
   const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
 
@@ -52,10 +58,10 @@ export function AppointmentsTab() {
     hasActiveFilter,
   } = useAppointmentsList();
 
-  const statusMut = useUpdateAppointmentStatusMutation();
   const deleteMut = useDeleteAppointmentMutation();
 
   const totalPages = appts.data?.totalPages ?? 1;
+  const pull = usePullToRefresh(appts.refetch);
 
   const handleDelete = useCallback(() => {
     if (!deleteTarget) return;
@@ -74,14 +80,9 @@ export function AppointmentsTab() {
     });
   }, [deleteTarget, deleteMut]);
 
-  const handleStatusChange = useCallback(
-    (id: string, status: string) => {
-      statusMut.mutate({ id, status });
-    },
-    [statusMut]
-  );
-
   const items = appts.data?.items ?? [];
+  const showSkeleton = useSkeletonVisible(appts.isLoading);
+  const sections = useMemo(() => splitAppointments(items), [items]);
 
   return (
     <View style={styles.tabContent}>
@@ -106,40 +107,55 @@ export function AppointmentsTab() {
         </TouchableOpacity>
       </View>
 
-      {appts.isLoading ? (
-        <View style={styles.center}>
-          <Spinner size="lg" />
-        </View>
+      {showSkeleton ? (
+        // §6c: el buscador y los filtros se ven reales; las tarjetas son esqueleto.
+        <SkeletonGroup label="Cargando citas" style={[cardContentStyle, { gap: spacing[3] }]}>
+          <Skeleton width={90} height={11} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+        </SkeletonGroup>
       ) : (
-        <FlatList
-          data={items}
+        <SectionList
+          sections={sections}
           keyExtractor={(a) => a.id}
           contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
+          stickySectionHeadersEnabled={false}
           refreshControl={
-            <RefreshControl
-              refreshing={appts.isRefetching}
-              onRefresh={() => { void appts.refetch(); }}
-              tintColor={t.brand.fg}
-            />
+            <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={t.brand.fg} />
           }
+          renderSectionHeader={({ section }) => (
+            <Text style={[styles.sectionTitle, { color: t.text.secondary }]}>{section.title}</Text>
+          )}
           renderItem={({ item: a }) => (
             <AppointmentCard
               appointment={a}
-              onPress={() => navigation.navigate("AppointmentDetail", { id: a.id })}
-              onEdit={() => navigation.navigate("AppointmentForm", { id: a.id })}
+              onPress={() => nav.openAppointment(a.id)}
+              onEdit={() => nav.editAppointment(a.id)}
               onDelete={() => setDeleteTarget(a)}
-              onStatusChange={(status) => handleStatusChange(a.id, status)}
             />
           )}
           ListEmptyComponent={
-            <EmptyState
-              icon={<CalendarDays size={48} color={t.border.medium} />}
-              message={
-                hasActiveFilter
-                  ? "No hay citas que coincidan con los filtros."
-                  : "No tienes citas registradas."
-              }
-            />
+            hasActiveFilter || search ? (
+              <EmptyState
+                icon={<CalendarDays size={48} color={t.border.medium} />}
+                message="No hay citas que coincidan con los filtros."
+              />
+            ) : (
+              <AgendaEmpty
+                pose="happy"
+                title="Aún no tienes citas"
+                description="Agrega tu próxima cita y te la recordamos antes de que llegue."
+                actionLabel="Agregar cita"
+                onAction={nav.newAppointment}
+                example={{
+                  tone: "appointment",
+                  icon: <CalendarDays size={19} strokeWidth={2.2} color={t.accent.calFg} />,
+                  title: "Control de odontología",
+                  meta: "Jue 5 nov · 10:00 a. m. · Consultorio 204",
+                }}
+              />
+            )
           }
           ListFooterComponent={
             items.length > 0 ? (
@@ -172,9 +188,31 @@ export function AppointmentsTab() {
         specialties={specialties}
       />
 
-      <AgendaFAB onPress={() => navigation.navigate("AppointmentForm")} />
+      <AgendaFAB onPress={nav.newAppointment} />
     </View>
   );
+}
+
+function appointmentStartMs(appointment: Appointment): number {
+  const date = appointment.date?.slice(0, 10);
+  const time = appointment.time?.slice(0, 5) ?? "00:00";
+  if (!date) return 0;
+  const ms = new Date(`${date}T${time}`).getTime();
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+function splitAppointments(items: Appointment[]) {
+  const now = Date.now();
+  const upcoming = items
+    .filter((appointment) => appointmentStartMs(appointment) >= now)
+    .sort((a, b) => appointmentStartMs(a) - appointmentStartMs(b));
+  const previous = items
+    .filter((appointment) => appointmentStartMs(appointment) < now)
+    .sort((a, b) => appointmentStartMs(b) - appointmentStartMs(a));
+  return [
+    upcoming.length > 0 ? { title: "Próximas", data: upcoming } : null,
+    previous.length > 0 ? { title: "Anteriores", data: previous } : null,
+  ].filter((section): section is { title: string; data: Appointment[] } => section !== null);
 }
 
 function makeStyles(t: ThemeContextValue) {
@@ -182,6 +220,15 @@ function makeStyles(t: ThemeContextValue) {
     tabContent: { flex: 1 },
     emptyListContent: { flexGrow: 1 },
     center: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
+    // Mockup: eyebrow «PRÓXIMAS» / «ANTERIORES» (Nunito 900 11, mayúsculas, .08em)
+    sectionTitle: {
+      fontSize: 11,
+      fontFamily: nativeFont("heading", 900),
+      letterSpacing: 0.9,
+      textTransform: "uppercase",
+      marginTop: spacing[3],
+      marginBottom: spacing[2],
+    },
     toolbar: {
       flexDirection: "row",
       alignItems: "center",

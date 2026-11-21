@@ -19,6 +19,7 @@ export function ConfirmModal({
   message,
   confirmLabel = 'Confirmar',
   keepLabel = 'Cancelar',
+  keepVariant = 'secondary',
   confirmVariant = 'danger',
   loading = false,
   onConfirm,
@@ -87,7 +88,7 @@ export function ConfirmModal({
           </p>
           <div style={{ display: 'flex', gap: spacing[3], width: '100%' }}>
             <div style={{ flex: 1 }}>
-              <Button variant="secondary" fullWidth onPress={onCancel} disabled={loading}>
+              <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>
                 {keepLabel}
               </Button>
             </div>
@@ -124,7 +125,7 @@ export function ConfirmModal({
             width: '100%',
           }}
         >
-          <Button variant="secondary" onPress={onCancel} disabled={loading}>
+          <Button variant={keepVariant} onPress={onCancel} disabled={loading}>
             {keepLabel}
           </Button>
           <Button variant={confirmVariant} onPress={onConfirm} disabled={loading} loading={loading}>

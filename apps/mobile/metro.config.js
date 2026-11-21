@@ -50,6 +50,9 @@ config.resolver.extraNodeModules = {
     "async-storage",
   ),
   "react-native-toast-message": resolveHoistedPackage("react-native-toast-message"),
+  // Movimiento v2 (movimiento-interacciones.md): una sola copia para la app y @helu/ui
+  "react-native-reanimated": resolveHoistedPackage("react-native-reanimated"),
+  "react-native-worklets": resolveHoistedPackage("react-native-worklets"),
 };
 
 module.exports = config;

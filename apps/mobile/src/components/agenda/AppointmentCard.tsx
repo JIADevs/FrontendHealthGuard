@@ -1,29 +1,30 @@
-import { useMemo, useRef, useState, useCallback, type ComponentRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { CalendarDays, Clock, MapPin, User, MoreVertical, Pencil, Trash2 } from "lucide-react-native";
+import { useEffect, useMemo, useRef, useState, useCallback, type ComponentRef } from "react";
+import Animated from "react-native-reanimated";
+import { useRecentlySaved } from "../../lib/recentlySaved";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import { CalendarDays, Check, Clock, MoreVertical, Pencil, Trash2 } from "lucide-react-native";
 import type { Appointment } from "@helu/api";
 import {
-  Card,
+  Chip,
+  IconTile,
+  PressableScale,
+  useHighlight,
   spacing,
   fontSize,
-  fontWeight,
-  radii,
-  colors,
+  nativeFont,
   useAppTheme,
-  appointmentStatusLabel,
-  formatApptDate,
+  formatClock,
+  formatShortDay,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { AgendaRowActionsMenu, measureAgendaRowActionsMenuLeft } from "./AgendaRowActionsMenu";
-
-const STATUSES = ["PROGRAMADA", "ASISTI", "CANCELADA", "NO_ASISTI"] as const;
+import { MODALITIES } from "../../constants/appointments";
 
 export interface AppointmentCardProps {
   appointment: Appointment;
   onPress: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onStatusChange: (status: string) => void;
 }
 
 export function AppointmentCard({
@@ -31,7 +32,6 @@ export function AppointmentCard({
   onPress,
   onEdit,
   onDelete,
-  onStatusChange,
 }: AppointmentCardProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -51,68 +51,59 @@ export function AppointmentCard({
 
   const closeMenu = useCallback(() => setMenuVisible(false), []);
 
+  // Recién guardada: borde azul que se desvanece en 1,2 s (movimiento-interacciones.md §6).
+  const justSaved = useRecentlySaved((state) => state.appointmentId === a.id);
+  const highlight = useHighlight(justSaved);
+  useEffect(() => {
+    if (!justSaved) return;
+    const timer = setTimeout(() => useRecentlySaved.getState().clearAppointment(), 1300);
+    return () => clearTimeout(timer);
+  }, [justSaved]);
+
+  const time = a.time ? formatClock(a.time.slice(0, 5)) : "";
+  const dateLabel = [formatShortDay(a.date), time].filter(Boolean).join(" · ");
+  const who = [a.doctor, a.specialty].filter(Boolean).join(" · ");
+
   return (
     <>
-      <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
-        <Card
-          title={a.name || a.specialty || "Cita médica"}
-          subtitle={
-            <View style={{ gap: spacing[1] }}>
-              {a.doctor && (
-                <View style={styles.cardMeta}>
-                  <User size={12} color={t.text.secondary} />
-                  <Text style={styles.cardMetaText}>{a.doctor}</Text>
-                </View>
-              )}
-              {(a.location || a.videoCallLink) && (
-                <View style={styles.cardMeta}>
-                  <MapPin size={12} color={t.text.secondary} />
-                  <Text style={styles.cardMetaText} numberOfLines={1}>
-                    {a.modality === "VIRTUAL" ? "Virtual" : a.modality === "DOMICILIARIA" ? "Domiciliaria" : a.location}
-                  </Text>
-                </View>
-              )}
-              <View style={styles.cardMeta}>
-                <Clock size={12} color={t.text.secondary} />
-                <Text style={styles.cardMetaText}>
-                  {formatApptDate(a.date)} {a.time?.slice(0, 5)}
-                </Text>
-              </View>
-              {a.specialty && <Text style={styles.cardMetaText}>• {a.specialty}</Text>}
-              {a.cost && <Text style={styles.cardMetaText}>💰 ${a.cost}</Text>}
-            </View>
-          }
-          icon={<CalendarDays size={20} color={t.brand.fg} />}
-          iconBackground={t.brand.tintMed}
-          actions={
-            <View ref={menuTriggerRef} collapsable={false}>
-              <TouchableOpacity
-                onPress={openMenu}
-                style={styles.menuButton}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Opciones de la cita"
-              >
-                <MoreVertical size={20} color={t.text.muted} />
-              </TouchableOpacity>
-            </View>
-          }
-        >
-          <View style={styles.statusRow}>
-            {STATUSES.map((s) => (
-              <TouchableOpacity
-                key={s}
-                style={[styles.statusPill, a.status === s && styles.statusPillActive]}
-                onPress={() => onStatusChange(s)}
-              >
-                <Text style={[styles.statusPillText, a.status === s && styles.statusPillTextActive]}>
-                  {appointmentStatusLabel(s)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+      {/* Mockup «Citas» (helper `apptCard`): cuadro rosa, título y «profesional · especialidad»,
+          «⋯» de 44 px y debajo los chips grises de fecha y modalidad, más el estado si ya pasó. */}
+      <PressableScale
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${a.name || a.specialty || "Cita médica"}, ${dateLabel}`}
+        style={styles.card}
+      >
+        <View style={styles.row}>
+          <IconTile tone="appointment" icon={<CalendarDays size={19} strokeWidth={2.2} color={t.accent.calFg} />} />
+          <View style={styles.copy}>
+            <Text style={styles.title} numberOfLines={2}>{a.name || a.specialty || "Cita médica"}</Text>
+            {who ? <Text style={styles.sub} numberOfLines={2}>{who}</Text> : null}
           </View>
-        </Card>
-      </TouchableOpacity>
+          <View ref={menuTriggerRef} collapsable={false}>
+            <Pressable
+              onPress={openMenu}
+              style={styles.menuButton}
+              accessibilityRole="button"
+              accessibilityLabel="Opciones de la cita"
+            >
+              <MoreVertical size={18} color={t.text.muted} />
+            </Pressable>
+          </View>
+        </View>
+        <View style={styles.chips}>
+          <Chip label={dateLabel} tone="neutral" icon={<Clock size={12} color={t.text.onMuted} />} />
+          <Chip label={MODALITIES.find((mod) => mod.value === a.modality)?.label ?? "Presencial"} tone="neutral" />
+          {a.status === "ASISTI" ? (
+            <Chip label="Completada" tone="success" icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />} />
+          ) : a.status === "NO_ASISTI" ? (
+            <Chip label="No asistí" tone="neutral" />
+          ) : a.status === "CANCELADA" ? (
+            <Chip label="Cancelada" tone="neutral" />
+          ) : null}
+        </View>
+        <Animated.View pointerEvents="none" style={highlight} />
+      </PressableScale>
 
       <AgendaRowActionsMenu
         visible={menuVisible}
@@ -130,20 +121,21 @@ export function AppointmentCard({
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
-    cardMeta: { flexDirection: "row", alignItems: "center", gap: spacing[1] },
-    cardMetaText: { fontSize: fontSize.sm, color: t.text.secondary },
-    menuButton: { padding: spacing[1] },
-    statusRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing[1], marginTop: spacing[1] },
-    statusPill: {
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: radii.full,
-      backgroundColor: t.border.light,
+    // Kit `.card.tight`
+    card: {
+      gap: 10,
+      padding: 14,
+      borderRadius: 18,
       borderWidth: 1,
-      borderColor: t.border.medium,
+      borderBottomWidth: 4,
+      borderColor: t.border.default,
+      backgroundColor: t.surface.bgCard,
     },
-    statusPillActive: { backgroundColor: t.brand.fg, borderColor: t.brand.fg },
-    statusPillText: { fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: t.text.secondary },
-    statusPillTextActive: { color: colors.white },
+    row: { flexDirection: "row", alignItems: "center", gap: spacing[3] },
+    copy: { flex: 1, minWidth: 0, gap: 2 },
+    title: { fontSize: 14, lineHeight: 18, fontFamily: nativeFont("body", 600), color: t.text.primary },
+    sub: { fontSize: fontSize.sm, lineHeight: 18, fontFamily: nativeFont("body", 400), color: t.text.secondary },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
+    menuButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   });
 }

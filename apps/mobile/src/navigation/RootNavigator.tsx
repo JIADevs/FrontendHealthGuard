@@ -4,6 +4,8 @@ import { useAuthStore } from "@helu/stores";
 import { TabNavigator } from "./TabNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
 import { SignupScreen } from "../screens/SignupScreen";
+import { WelcomeScreen } from "../screens/WelcomeScreen";
+import { useWelcomeStore } from "../lib/welcomeStore";
 import { ScannerScreen } from "../screens/ScannerScreen";
 import { DocumentUploadScreen } from "../screens/DocumentUploadScreen";
 import { DocumentDetailScreen } from "../screens/DocumentDetailScreen";
@@ -22,7 +24,6 @@ import { AppointmentDetailScreen } from "../screens/AppointmentDetailScreen";
 import { AgendaTaskDetailScreen } from "../screens/AgendaTaskDetailScreen";
 import { AgendaTaskFormScreen } from "../screens/AgendaTaskFormScreen";
 import { AppointmentFormScreen } from "../screens/AppointmentFormScreen";
-import { DoctorFormScreen } from "../screens/DoctorFormScreen";
 import { MedicationFormScreen } from "../screens/MedicationFormScreen";
 import { MedicationDetailScreen } from "../screens/MedicationDetailScreen";
 import { CycleDetailScreen } from "../screens/CycleDetailScreen";
@@ -61,13 +62,14 @@ export interface AgendaRouteParams {
 export type RootStackParamList = {
   Auth: undefined;
   Signup: undefined;
+  /** Una sola vez, justo después de crear la cuenta (m1 · «Bienvenida»). */
+  Welcome: undefined;
   MainTabs: { screen: "Agenda"; params: AgendaRouteParams } | undefined;
 
   AppointmentDetail: { id: string };
   AgendaTaskDetail: { id: string; intent?: "complete" | "reschedule" };
   AgendaTaskForm: { id?: string } | undefined;
   AppointmentForm: { id?: string } | undefined;
-  DoctorForm: undefined;
   MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string } | undefined;
   MedicationDetail: { id: string };
   CycleDetail: { cycleId: string; medicationId: string; medicationName: string };
@@ -116,6 +118,17 @@ export type RootStackParamList = {
   };
 };
 
+/**
+ * Formularios (crear o editar): tarea temporal que se cierra hacia abajo, 350 ms
+ * (movimiento-interacciones.md §3). Los detalles siguen entrando desde la derecha.
+ */
+const FORM_SCREEN_OPTIONS = {
+  headerShown: false,
+  animation: "slide_from_bottom",
+  gestureDirection: "vertical",
+  animationDuration: 350,
+} as const;
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const ScannerScreenLight = withDocumentsTheme(ScannerScreen);
@@ -129,6 +142,7 @@ const SharedDetailScreenLight = withDocumentsTheme(SharedDetailScreen);
 
 export function RootNavigator() {
   const token = useAuthStore((s) => s.token);
+  const welcomePending = useWelcomeStore((s) => s.pending);
   const t = useAppTheme();
 
   return (
@@ -146,6 +160,8 @@ export function RootNavigator() {
     >
       {token ? (
         <>
+          {/* Primera en la lista para que sea la pantalla inicial al entrar después del registro. */}
+          {welcomePending ? <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ animation: "fade", animationDuration: 250 }} /> : null}
           <Stack.Screen name="MainTabs" component={TabNavigator} />
           <Stack.Screen
             name="Scanner"
@@ -303,22 +319,17 @@ export function RootNavigator() {
           <Stack.Screen
             name="AgendaTaskForm"
             component={AgendaTaskFormScreen}
-            options={{ headerShown: false, animation: "slide_from_right" }}
+            options={FORM_SCREEN_OPTIONS}
           />
           <Stack.Screen
             name="AppointmentForm"
             component={AppointmentFormScreen}
-            options={{ headerShown: false, animation: "slide_from_right" }}
-          />
-          <Stack.Screen
-            name="DoctorForm"
-            component={DoctorFormScreen}
-            options={{ headerShown: false, animation: "slide_from_right" }}
+            options={FORM_SCREEN_OPTIONS}
           />
           <Stack.Screen
             name="MedicationForm"
             component={MedicationFormScreen}
-            options={{ headerShown: false, animation: "slide_from_right" }}
+            options={FORM_SCREEN_OPTIONS}
           />
           <Stack.Screen
             name="MedicationDetail"
@@ -343,7 +354,7 @@ export function RootNavigator() {
           <Stack.Screen
             name="TreatmentForm"
             component={TreatmentFormScreen}
-            options={{ headerShown: false, animation: "slide_from_right" }}
+            options={FORM_SCREEN_OPTIONS}
           />
           <Stack.Screen
             name="Dependientes"
@@ -369,10 +380,11 @@ export function RootNavigator() {
       ) : (
         <>
           <Stack.Screen name="Auth" component={LoginScreen} />
+          {/* Inicio de sesión y registro son hermanas: fundido, no «entra desde la derecha» (§1b). */}
           <Stack.Screen
             name="Signup"
             component={SignupScreen}
-            options={{ headerShown: false }}
+            options={{ headerShown: false, animation: "fade", animationDuration: 150 }}
           />
         </>
       )}

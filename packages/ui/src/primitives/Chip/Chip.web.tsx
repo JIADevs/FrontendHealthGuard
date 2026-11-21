@@ -13,6 +13,7 @@ export function Chip({
   icon,
   size = 'default',
   selected = false,
+  selectionMode = 'multiple',
   onPress,
 }: ChipProps) {
   const c = toneVars(tone ?? toneFromColor[color]);
@@ -26,11 +27,14 @@ export function Chip({
         gap: 6,
         minHeight: OPTION_HEIGHT,
         padding: '0 14px',
-        borderRadius: radii.full,
-        border: `1.5px solid ${selected ? 'var(--color-brand-solid)' : 'var(--color-border)'}`,
+        // Kit `.pick` (mockups): radio 12, borde de 1,5 px y canto inferior de 3 px.
+        borderRadius: 12,
+        border: `1.5px solid ${selected ? 'var(--color-brand-focus)' : 'var(--color-border)'}`,
+        boxShadow: `0 3px 0 ${selected ? 'var(--color-brand-focus)' : 'var(--color-border)'}`,
         background: selected ? 'var(--color-brand-tint)' : 'var(--color-surface)',
-        color: selected ? 'var(--color-brand-text)' : 'var(--color-text-primary)',
+        color: selected ? 'var(--color-brand-text)' : 'var(--color-text-secondary)',
         font: `800 13px ${fontFamily.heading}`,
+        transition: 'background 150ms, border-color 150ms, box-shadow 150ms, color 150ms',
         cursor: onPress ? 'pointer' : 'default',
         boxSizing: 'border-box',
       }
@@ -60,7 +64,13 @@ export function Chip({
 
   if (onPress) {
     return (
-      <button type="button" style={style} onClick={onPress} aria-pressed={isOption ? selected : undefined}>
+      <button
+        type="button"
+        style={style}
+        onClick={onPress}
+        role={isOption ? (selectionMode === 'single' ? 'radio' : 'checkbox') : undefined}
+        aria-checked={isOption ? selected : undefined}
+      >
         {content}
       </button>
     );

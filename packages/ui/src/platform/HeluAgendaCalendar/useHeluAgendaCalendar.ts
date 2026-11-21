@@ -114,7 +114,7 @@ function bufferedFetchRange(
 export function useHeluAgendaCalendar(initialDate?: string) {
     const anchor = initialDate ?? todayLocalDateKey();
     const [selectedDate, setSelectedDate] = useState(anchor);
-    const [viewMode, setViewModeState] = useState<CalendarViewMode>("day");
+    const [viewMode, setViewModeState] = useState<CalendarViewMode>("week");
     const initialDayRange = dayFetchRange(anchor);
     const [rangeStart, setRangeStart] = useState(initialDayRange.start);
     const [rangeEnd, setRangeEnd] = useState(initialDayRange.end);
@@ -214,7 +214,7 @@ export function useHeluAgendaCalendar(initialDate?: string) {
     const selectDate = useCallback(
         (date: string) => {
             setSelectedDate(date);
-            if (viewMode === "week" || viewMode === "month") {
+            if (viewMode === "month") {
                 setViewModeState("day");
                 const next = expandRangeToCoverDate(date, rangeStart, rangeEnd);
                 if (next.start !== rangeStart) setRangeStart(next.start);

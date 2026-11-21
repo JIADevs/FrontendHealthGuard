@@ -11,7 +11,7 @@ export function IconTile({ icon, tone = 'neutral', size = 'md', round = false }:
     <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={{ width: z, height: z, borderRadius: round ? z / 2 : 13, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+      style={{ width: z, height: z, borderRadius: round ? z / 2 : size === 'lg' ? 16 : 13, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
     >
       {icon}
     </View>

@@ -334,3 +334,11 @@ Para íconos y navegación activa en oscuro se usa `brand.focus` (`#60A5FA`): so
 
 **Pendiente:** en `tokens.css`, `--button-secondary-fg` usa `--color-brand-solid` como color de texto. En oscuro, sobre `--color-surface`, no llega a 4,5:1 ni con el valor viejo ni con el nuevo. Se resuelve al construir el botón secundario (segunda parte de la Fase 0).
 
+## 16. v2.9.2 · El chip de opción sigue al kit de los mockups
+
+El MASTER decía que todo chip es píldora (radio 999), pero todas las pantallas de `mockups/` dibujan los chips de opción con `.pick`: radio 12, borde de 1,5 px y canto inferior de 3 px. Al comparar la implementación de Agenda (Fase 1) con los mockups, se decidió que manda el kit.
+
+| Cambio | Dónde |
+|---|---|
+| Chip de opción (seleccionable): radio 12, borde 1,5 px y canto de 3 px; seleccionado en `brand.focus` con ✓. Los chips de etiqueta siguen siendo píldora | `MASTER.md` §6–7; `packages/ui` `Chip` variante `option` |
+

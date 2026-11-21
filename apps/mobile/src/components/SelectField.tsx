@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity } from "react-native";
 import { useState, useMemo } from "react";
-import { spacing, useAppTheme } from "@helu/ui";
+import { colors, nativeFont, radii, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { ChevronDown, ChevronUp, Search } from "lucide-react-native";
 
@@ -33,20 +33,28 @@ export function SelectField({ label, value, placeholder, options, onChange, requ
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.label, { color: t.text.primary }]}>
-        {label} {required && "*"}
-      </Text>
+      {/* formularios.md §2: etiqueta visible siempre; «(opcional)» va en el texto de la etiqueta, sin asterisco. */}
+      <Text style={[styles.label, { color: t.text.primary }]}>{label}</Text>
       <TouchableOpacity
-        style={[styles.selector, { backgroundColor: t.surface.bgCard, borderColor: t.border.medium }]}
+        style={[
+          styles.selector,
+          {
+            backgroundColor: isOpen ? t.surface.bgCard : t.mode === "dark" ? t.surface.muted : colors.slate[50],
+            borderColor: isOpen ? t.brand.focus : t.border.default,
+          },
+        ]}
         onPress={() => setIsOpen(!isOpen)}
+        accessibilityRole="button"
+        accessibilityLabel={value ? `${label}: ${value}` : label}
+        accessibilityState={{ expanded: isOpen }}
       >
-        <Text style={[styles.text, { color: value ? t.text.primary : t.text.muted }]}>
+        <Text style={[styles.text, { color: value ? t.text.primary : t.text.muted }]} numberOfLines={1}>
           {value || placeholder}
         </Text>
         {isOpen ? (
-          <ChevronUp size={20} color={t.text.secondary} />
+          <ChevronUp size={18} color={t.text.muted} />
         ) : (
-          <ChevronDown size={20} color={t.text.secondary} />
+          <ChevronDown size={18} color={t.text.muted} />
         )}
       </TouchableOpacity>
 
@@ -87,27 +95,30 @@ export function SelectField({ label, value, placeholder, options, onChange, requ
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing[2],
+    gap: 6,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 13,
+    fontFamily: nativeFont("heading", 800),
   },
   selector: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[3],
+    gap: 10,
+    minHeight: 48,
+    borderWidth: 1.5,
+    borderRadius: radii.input,
+    paddingHorizontal: 14,
   },
   text: {
-    fontSize: 16,
+    flex: 1,
+    fontSize: 15,
+    fontFamily: nativeFont("body", 400),
   },
   dropdown: {
-    borderWidth: 1,
-    borderRadius: 8,
+    borderWidth: 1.5,
+    borderRadius: radii.input,
     marginTop: spacing[1],
   },
   searchContainer: {

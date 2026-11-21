@@ -5,7 +5,8 @@ import Toast from "react-native-toast-message";
  * Borrar algo recuperable se confirma con `notify({ ..., action: { label: "Deshacer", onPress } })`,
  * no con un modal. Misma firma que `apps/web/src/lib/notify.ts`.
  */
-export type NotifyTone = "success" | "error" | "warning" | "info";
+/** `streak` is mobile-only for now: the web gets it with its check-in screen (task 8.3). */
+export type NotifyTone = "success" | "error" | "warning" | "info" | "streak";
 
 export interface NotifyOptions {
   message: string;

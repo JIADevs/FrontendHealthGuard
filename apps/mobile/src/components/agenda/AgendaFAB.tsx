@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { TouchableOpacity, StyleSheet } from "react-native";
 import { Plus } from "lucide-react-native";
-import { colors, radii, spacing, useAppTheme } from "@helu/ui";
+import { spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 interface AgendaFABProps {
@@ -20,28 +20,26 @@ export function AgendaFAB({ onPress }: AgendaFABProps) {
       accessibilityRole="button"
       accessibilityLabel="Agregar a agenda"
     >
-      <Plus color={colors.white} size={28} />
+      <Plus color={t.text.onSolid} size={26} strokeWidth={2.6} />
     </TouchableOpacity>
   );
 }
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
+    // Kit `.fab`: 58 px, radio 20 y canto inferior de 4 px del tono «edge».
     fab: {
       position: "absolute",
       right: spacing[5],
       bottom: spacing[6],
-      width: 56,
-      height: 56,
-      borderRadius: radii.full,
+      width: 58,
+      height: 58,
+      borderRadius: 20,
       backgroundColor: t.brand.solid,
+      borderBottomWidth: 4,
+      borderBottomColor: t.brand.edge,
       alignItems: "center",
       justifyContent: "center",
-      elevation: 8,
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
       zIndex: 90,
     },
   });

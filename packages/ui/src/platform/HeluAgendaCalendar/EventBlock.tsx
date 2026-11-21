@@ -4,9 +4,8 @@ import { Stethoscope, FlaskConical, Pill, CheckCircle2, XCircle, ListTodo } from
 import { spacing, fontSize, fontWeight, radii } from "../../tokens/tokens";
 import { useAppTheme } from "../../tokens/ThemeProvider";
 import type { ThemeContextValue } from "../../tokens/ThemeProvider";
-import { eventLabel, type AgendaEvent } from "./mapCalendarApiToEvents";
+import { eventDetailLine, eventLabel, type AgendaEvent } from "./mapCalendarApiToEvents";
 import { MOOD_EMOJI } from "./moodEmoji";
-import { NOT_TAKEN_REASON_LABELS_ES, formatMedDose } from "./medicationIntakeUtils";
 
 type MedicationStatus = "PENDING" | "TAKEN" | "NOT_TAKEN";
 
@@ -30,43 +29,7 @@ export function EventBlock({ event, compact = false, onPress }: EventBlockProps)
     );
 
     const title = eventLabel(event);
-    let subtitle = "";
-    if (event.type === "checkin") {
-        subtitle = new Date(event.data.recordedAt).toLocaleTimeString("es-CO", {
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    } else if (event.type === "medication") {
-        const dose = formatMedDose(event.data.doseAmount, event.data.doseUnit, event.data.dosage);
-        const doseLabel = dose ? `${dose} · ${event.intakeTime}` : event.intakeTime;
-
-        if (event.intake?.status === "TAKEN" && event.intake.takenAt) {
-            const takenAtMs = new Date(event.intake.takenAt).getTime();
-            const scheduledMs = new Date(event.intake.scheduledTime).getTime();
-            const isLate = takenAtMs - scheduledMs > 5 * 60_000;
-            const takenLabel = new Date(event.intake.takenAt).toLocaleTimeString("es-CO", {
-                hour: "2-digit",
-                minute: "2-digit",
-            });
-            subtitle = isLate ? `Tomado tarde · ${takenLabel}` : `Tomado · ${takenLabel}`;
-        } else if (event.intake?.status === "NOT_TAKEN") {
-            const reasonLabel = event.intake.notTakenReason
-                ? NOT_TAKEN_REASON_LABELS_ES[event.intake.notTakenReason]
-                : "";
-            subtitle = reasonLabel ? `No tomado · ${reasonLabel}` : "No tomado";
-        } else {
-            subtitle = doseLabel;
-        }
-    } else if (event.type === "task") {
-        const timeLabel = new Date(event.data.startAt).toLocaleTimeString("es-CO", {
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-        const statusLabel = event.data.status === "completed" ? "Completada" : "Pendiente";
-        subtitle = `${timeLabel} · ${statusLabel}`;
-    } else {
-        subtitle = event.data.time?.slice(0, 5) ?? "";
-    }
+    const subtitle = eventDetailLine(event);
 
     return (
         <TouchableOpacity
@@ -92,7 +55,7 @@ export function EventBlock({ event, compact = false, onPress }: EventBlockProps)
                     <Pill size={14} color={t.accent.medFg} />
                 ) : null}
                 {!compact && event.type === "task" ? (
-                    <ListTodo size={14} color={t.accent.backpackFg} />
+                    <ListTodo size={14} color={t.accent.missionFg} />
                 ) : null}
                 {event.type === "checkin" ? (
                     <Text style={styles.emoji}>{MOOD_EMOJI[event.data.mood]}</Text>
@@ -134,8 +97,8 @@ function makeStyles(
             border = t.accent.medFg;
         }
     } else if (type === "task") {
-        bg = t.accent.backpackBg;
-        border = t.accent.backpackFg;
+        bg = t.accent.missionBg;
+        border = t.accent.missionFg;
     }
 
     return StyleSheet.create({

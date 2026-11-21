@@ -67,7 +67,10 @@ const sources = [
 ];
 const used = new Map();
 for (const file of sources) {
-  for (const [, name] of read(file).matchAll(/var\((--[a-zA-Z0-9-]+)/g)) {
+  // `(?!\$\{)`: un nombre armado en un template (`var(--color-${key})`, tones.ts) no es una variable
+  // incompleta; sus claves salen de `semantic.ts`, que ya se compara arriba.
+  for (const [, name, next] of read(file).matchAll(/var\((--[a-zA-Z0-9-]+)(.?)/g)) {
+    if (next === "$") continue;
     if (!used.has(name)) used.set(name, relative(repo, file));
   }
 }

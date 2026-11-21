@@ -3,7 +3,8 @@
  *
  * Pattern:
  *  - Query hooks  → handle cache keys, staleTime, placeholderData
- *  - Mutation hooks → handle cache invalidation in onSettled
+ *  - Mutation hooks → handle cache invalidation in onSettled.
+ *    Dose logging and check-in also patch the cache in onMutate and roll back on error.
  *    The caller adds platform-specific toast/navigation via mutate(data, { onSuccess, onError })
  */
 import {
@@ -114,13 +115,18 @@ import type {
     UserUpdate,
     DelegationRequest,
     DelegationContextColors,
-    DependentDelegation,
-    ManagerDelegation,
     DailyCheckInCreate,
     DailyCheckInUpdate,
 } from "./schemas";
 import type { ShareStatusFilter } from "./shares/schemas";
 import { invalidateBackpackQueries } from "./backpackQueryUtils";
+import {
+    applyOptimisticCheckIn,
+    applyOptimisticIntake,
+    buildOptimisticCheckIn,
+    patchQueryFamilies,
+    restoreQuerySnapshot,
+} from "./optimisticCache";
 import {
     useSharesQuery,
     useShareDocumentMutation as useShareDocumentMutationCore,
@@ -514,8 +520,10 @@ export function useUpdateAgendaTaskMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ id, task }: { id: string; task: AgendaTaskUpdate }) => updateAgendaTask(id, task),
-        onSuccess: (_data, variables) => {
-            qc.removeQueries({ queryKey: QK.agendaTask(variables.id) });
+        // The API returns the updated task: write it to the detail cache instead of dropping it,
+        // so the open detail changes in place (no full-screen spinner, movimiento §6c).
+        onSuccess: (task, variables) => {
+            qc.setQueryData(QK.agendaTask(variables.id), task);
         },
         onSettled: () => invalidateAgendaTaskQueries(qc),
     });
@@ -526,8 +534,10 @@ export function useCompleteAgendaTaskMutation() {
     return useMutation({
         mutationFn: ({ id, result }: { id: string; result?: AgendaTaskComplete }) =>
             completeAgendaTask(id, result ?? {}),
-        onSuccess: (_data, variables) => {
-            qc.removeQueries({ queryKey: QK.agendaTask(variables.id) });
+        // The API returns the updated task: write it to the detail cache instead of dropping it,
+        // so the open detail changes in place (no full-screen spinner, movimiento §6c).
+        onSuccess: (task, variables) => {
+            qc.setQueryData(QK.agendaTask(variables.id), task);
         },
         onSettled: () => invalidateAgendaTaskQueries(qc),
     });
@@ -538,8 +548,10 @@ export function useRescheduleAgendaTaskMutation() {
     return useMutation({
         mutationFn: ({ id, schedule }: { id: string; schedule: AgendaTaskReschedule }) =>
             rescheduleAgendaTask(id, schedule),
-        onSuccess: (_data, variables) => {
-            qc.removeQueries({ queryKey: QK.agendaTask(variables.id) });
+        // The API returns the updated task: write it to the detail cache instead of dropping it,
+        // so the open detail changes in place (no full-screen spinner, movimiento §6c).
+        onSuccess: (task, variables) => {
+            qc.setQueryData(QK.agendaTask(variables.id), task);
         },
         onSettled: () => invalidateAgendaTaskQueries(qc),
     });
@@ -741,13 +753,27 @@ export function useDeleteMedicationCycleMutation() {
     });
 }
 
+/**
+ * Caches that show a dose: medication lists (`["medications", …]`), the medication detail
+ * (`["medication", id]`) and the calendar. A dose mutation patches and refreshes all three.
+ */
+const INTAKE_QUERY_FAMILIES = [["medications"], ["medication"], ["calendar"]] as const;
+
 export function useConfirmIntakeMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (id: string) => confirmIntake(id),
+        onMutate: (cycleId) =>
+            patchQueryFamilies(qc, INTAKE_QUERY_FAMILIES, (data) =>
+                applyOptimisticIntake(data, cycleId),
+            ),
+        onError: (_error, _cycleId, context) => {
+            restoreQuerySnapshot(qc, context);
+        },
         onSettled: () => {
-            qc.invalidateQueries({ queryKey: ["medications"] });
-            qc.invalidateQueries({ queryKey: ["calendar"] });
+            for (const queryKey of INTAKE_QUERY_FAMILIES) {
+                qc.invalidateQueries({ queryKey });
+            }
         },
     });
 }
@@ -757,9 +783,17 @@ export function useRecordIntakeMutation() {
     return useMutation({
         mutationFn: ({ cycleId, payload }: { cycleId: string; payload: MedicationIntakeCreate }) =>
             recordIntake(cycleId, payload),
+        onMutate: ({ cycleId, payload }) =>
+            patchQueryFamilies(qc, INTAKE_QUERY_FAMILIES, (data) =>
+                applyOptimisticIntake(data, cycleId, payload),
+            ),
+        onError: (_error, _variables, context) => {
+            restoreQuerySnapshot(qc, context);
+        },
         onSettled: () => {
-            qc.invalidateQueries({ queryKey: ["medications"] });
-            qc.invalidateQueries({ queryKey: ["calendar"] });
+            for (const queryKey of INTAKE_QUERY_FAMILIES) {
+                qc.invalidateQueries({ queryKey });
+            }
         },
     });
 }
@@ -844,6 +878,23 @@ export function useProfileQuery() {
     });
 }
 
+/**
+ * Returns a function that reads the streak from a fresh profile. It goes through the QueryClient, so
+ * it still resolves after the caller unmounts (the check-in sheet closes before the streak arrives).
+ */
+export function useFetchCurrentStreak() {
+    const qc = useQueryClient();
+    const activePatientId = useAuthStore((s) => s.activePatientId);
+    return async (): Promise<number | null> => {
+        try {
+            const me = await qc.fetchQuery({ queryKey: QK.profile(activePatientId), queryFn: getMe, staleTime: 0 });
+            return me.currentStreak ?? null;
+        } catch {
+            return null;
+        }
+    };
+}
+
 export function useUpdateProfileMutation() {
     const qc = useQueryClient();
     return useMutation({
@@ -916,36 +967,6 @@ export function useRevokeDelegationMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (id: string) => revokeDelegation(id),
-        onMutate: async (id) => {
-            const token = useAuthStore.getState().token;
-            await qc.cancelQueries({ queryKey: delegationKeys.all() });
-            const managedKey = delegationKeys.managed(token);
-            const managersKey = delegationKeys.managers(token);
-            const previousManaged = qc.getQueryData<DependentDelegation[]>(managedKey);
-            const previousManagers = qc.getQueryData<ManagerDelegation[]>(managersKey);
-            if (previousManaged) {
-                qc.setQueryData(
-                    managedKey,
-                    previousManaged.filter((d) => d.id !== id),
-                );
-            }
-            if (previousManagers) {
-                qc.setQueryData(
-                    managersKey,
-                    previousManagers.filter((m) => m.id !== id),
-                );
-            }
-            return { previousManaged, previousManagers, managedKey, managersKey };
-        },
-        onError: (_error, _id, context) => {
-            if (!context) return;
-            if (context.previousManaged !== undefined) {
-                qc.setQueryData(context.managedKey, context.previousManaged);
-            }
-            if (context.previousManagers !== undefined) {
-                qc.setQueryData(context.managersKey, context.previousManagers);
-            }
-        },
         onSettled: async () => {
             await qc.invalidateQueries({ queryKey: delegationKeys.all() });
         },
@@ -996,11 +1017,22 @@ export function useCreateDailyCheckInMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (payload: DailyCheckInCreate) => createDailyCheckIn(payload),
+        onMutate: (payload) => {
+            const checkIn = buildOptimisticCheckIn(payload);
+            return patchQueryFamilies(qc, [["daily-checkins"], ["calendar"]], (data, key) =>
+                applyOptimisticCheckIn(data, key, checkIn),
+            );
+        },
+        onError: (_error, _payload, context) => {
+            restoreQuerySnapshot(qc, context);
+        },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["daily-checkins"] });
-            qc.invalidateQueries({ queryKey: ["treatments"] });
-            qc.invalidateQueries({ queryKey: ["calendar"] });
             qc.invalidateQueries({ queryKey: ["me"] });
+            qc.invalidateQueries({ queryKey: ["treatments"] });
+        },
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: ["daily-checkins"] });
+            qc.invalidateQueries({ queryKey: ["calendar"] });
         },
     });
 }

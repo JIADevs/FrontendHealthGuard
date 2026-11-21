@@ -47,6 +47,7 @@ export interface CycleEditFormActions {
   setEndDate: (v: string) => void;
   setReminderMode: (v: ReminderMode) => void;
   toggleReminderOffset: (minutes: number) => void;
+  setReminderOffsets: (minutes: number[]) => void;
   setTreatmentIds: (v: string[]) => void;
   clearError: () => void;
   handleSave: () => void;
@@ -173,7 +174,7 @@ export function useMedicationCycleEditCore({
     error, saving,
     setPharmaceuticalForm, setConcentration, setDoseAmount, setDoseUnit,
     setFrequency, setFrequencyUnit, setPrice, setReason, setNotes, setEndDate,
-    setReminderMode, toggleReminderOffset, setTreatmentIds,
+    setReminderMode, toggleReminderOffset, setReminderOffsets, setTreatmentIds,
     clearError: () => setError(null),
     handleSave,
   };

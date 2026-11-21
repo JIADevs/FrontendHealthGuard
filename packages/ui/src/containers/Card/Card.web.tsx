@@ -10,7 +10,7 @@ const toneStyle = {
   success: { bg: 'var(--color-success-bg)', border: 'var(--color-success-fg)' },
 } as const;
 
-export function Card({ title, subtitle, icon, iconBackground, children, actions, footer, onPress, variant = 'default', tone }: CardProps) {
+export function Card({ title, subtitle, icon, iconBackground, children, actions, footer, footerDivider = true, onPress, variant = 'default', tone }: CardProps) {
   const [hovered, setHovered] = useState(false);
   // v2 (MASTER §6–7): radio 18, borde 1 px + canto inferior de 3 px (box-shadow, no cambia el alto)
   const borderColor = variant === 'selected' ? 'var(--color-brand-solid)' : tone ? toneStyle[tone].border : 'var(--color-border)';
@@ -96,8 +96,8 @@ export function Card({ title, subtitle, icon, iconBackground, children, actions,
           style={{
             display: 'flex',
             alignItems: 'center',
-            padding: `${spacing[3]}px ${pad}px`,
-            borderTop: '1px solid var(--color-border)',
+            padding: footerDivider ? `${spacing[3]}px ${pad}px` : `0 ${pad}px ${spacing[3]}px`,
+            borderTop: footerDivider ? '1px solid var(--color-border)' : 'none',
           }}
           onClick={(e) => e.stopPropagation()}
         >

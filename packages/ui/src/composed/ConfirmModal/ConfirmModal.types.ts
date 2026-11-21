@@ -14,6 +14,11 @@ export interface ConfirmModalProps {
    * Defaults to «Cancelar».
    */
   keepLabel?: string;
+  /**
+   * v2: style of the safe option. `secondary` by default; `primary` when keeping is the
+   * recommended path («Seguir editando», formularios.md §7.4).
+   */
+  keepVariant?: 'secondary' | 'primary';
   /** Button variant for the confirm button */
   confirmVariant?: 'primary' | 'danger';
   /** Whether the confirm action is in progress */

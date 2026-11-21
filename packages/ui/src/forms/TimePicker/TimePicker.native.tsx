@@ -4,6 +4,8 @@ import RNDateTimePicker from '@react-native-community/datetimepicker';
 import { Clock } from 'lucide-react-native';
 import { colors, palette, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
+import { fieldBox, FieldLabel, FieldErrorText, fieldTextStyle } from '../fieldKit.native';
+import { formatClock, formatShortDay } from '../../utils/formatters';
 import type { TimePickerProps } from './TimePicker.types';
 
 function toDate(value: string): Date {
@@ -18,13 +20,6 @@ function toTimeString(date: Date): string {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function formatDisplay(value: string): string {
-  if (!value) return '';
-  const [hours, minutes] = value.split(':').map(Number);
-  const d = new Date();
-  d.setHours(hours, minutes, 0, 0);
-  return d.toLocaleTimeString('es-ES', { timeStyle: 'short' });
-}
 
 export function TimePicker({
   label,
@@ -39,7 +34,6 @@ export function TimePicker({
   const [show, setShow] = useState(false);
   const [tempDate, setTempDate] = useState<Date>(toDate(value));
 
-  const borderColor = error ? palette.status.error[500] : t.border.medium;
 
   function open() {
     if (disabled) return;
@@ -66,34 +60,26 @@ export function TimePicker({
   }
 
   return (
-    <View style={styles.container}>
-      {label && (
-        <Text style={[styles.label, { color: t.text.primary }]}>
-          {label}
-          {required ? <Text style={{ color: palette.status.error[700] }}> *</Text> : null}
-        </Text>
-      )}
+    <View style={{ gap: 6 }}>
+      {label ? <FieldLabel t={t} label={label} /> : null}
 
       <Pressable
         onPress={open}
         accessibilityRole="button"
         accessibilityLabel={label}
+        accessibilityHint={error}
         style={[
-          styles.field,
-          {
-            borderColor,
-            backgroundColor: disabled ? t.border.light : t.surface.bg,
-          },
-          disabled && styles.disabled,
+          fieldBox(t, { error: !!error, disabled }),
+          { flexDirection: 'row', alignItems: 'center', gap: 10 },
         ]}
       >
-        <Text style={[styles.fieldText, { color: value ? t.text.primary : t.text.muted }]}>
-          {value ? formatDisplay(value) : (placeholder ?? 'Seleccionar hora')}
-        </Text>
         <Clock size={18} color={t.text.muted} />
+        <Text style={[fieldTextStyle(t, !!value), { flex: 1 }]} numberOfLines={1}>
+          {value ? formatClock(value) : (placeholder ?? 'Elige la hora')}
+        </Text>
       </Pressable>
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      <FieldErrorText t={t} message={error} />
 
       {/* iOS — bottom sheet con spinner */}
       {show && Platform.OS === 'ios' && (

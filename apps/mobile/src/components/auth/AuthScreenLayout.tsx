@@ -1,53 +1,46 @@
 import type { ReactNode } from "react";
-import { useMemo } from "react";
-import {
-  View,
-  KeyboardAvoidingView,
-  ScrollView,
-  StatusBar,
-  Platform,
-} from "react-native";
+import { View, KeyboardAvoidingView, ScrollView, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, palette, spacing, useAppTheme } from "@helu/ui";
-import { AnimatedLoginBackground } from "../AnimatedLoginBackground";
-import { makeAuthStyles } from "./authStyles";
+import { spacing, useAppTheme } from "@helu/ui";
 
 interface AuthScreenLayoutProps {
   children: ReactNode;
+  /** Barra inferior fija (Bienvenida); va fuera del scroll. */
+  bottomBar?: ReactNode;
 }
 
-export function AuthScreenLayout({ children }: AuthScreenLayoutProps) {
+/**
+ * Fondo de Acceso (m1 · kit `phone({bg:'linear-gradient(#E6EFFF,#F6F8FC 45%)'})`): tinte de marca
+ * que se funde en el fondo a la altura del 45 %. Quieto: los bucles decorativos no están permitidos
+ * (movimiento-interacciones.md §8).
+ */
+export function AuthScreenLayout({ children, bottomBar }: AuthScreenLayoutProps) {
   const t = useAppTheme();
-  const styles = useMemo(() => makeAuthStyles(t), [t]);
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.screen}>
-      <StatusBar barStyle="dark-content" />
-
+    <View style={{ flex: 1, backgroundColor: t.surface.bg }}>
       <LinearGradient
-        colors={[palette.brand[50], colors.white]}
-        locations={[0, 0.5]}
-        style={styles.bgGradient}
+        colors={[t.brand.tint, t.surface.bg]}
+        locations={[0, 0.45]}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
       />
-
-      <AnimatedLoginBackground />
-
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
-          contentContainerStyle={[
-            styles.scrollContent,
-            { paddingTop: insets.top + spacing[6] },
-          ]}
+          contentContainerStyle={{
+            flexGrow: 1,
+            gap: spacing[4],
+            paddingHorizontal: spacing[4],
+            paddingTop: insets.top + spacing[4],
+            paddingBottom: bottomBar ? spacing[4] : insets.bottom + spacing[6],
+          }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {children}
         </ScrollView>
+        {bottomBar}
       </KeyboardAvoidingView>
     </View>
   );

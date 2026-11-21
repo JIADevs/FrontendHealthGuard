@@ -1,50 +1,64 @@
 import { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Pill, CheckCircle2, XCircle } from "lucide-react-native";
-import { radii, spacing, fontSize, fontWeight, useAppTheme, formatMedDose } from "@helu/ui";
+import { Pill, Check } from "lucide-react-native";
+import { Button, Chip, FadeThrough, IconTile, spacing, fontSize, nativeFont, useAppTheme, formatMedDose, formatClock } from "@helu/ui";
 import type { ThemeContextValue, AgendaEvent } from "@helu/ui";
+import { doseStateForEvent } from "../agenda/doseRowState";
 
 type MedicationEvent = Extract<AgendaEvent, { type: "medication" }>;
 
 interface MedicationDoseListItemProps {
   event: MedicationEvent;
   onPress: () => void;
+  onTake?: () => void;
+  taking?: boolean;
   isLast?: boolean;
 }
 
-function statusColors(t: ThemeContextValue, status: "TAKEN" | "NOT_TAKEN" | "PENDING") {
-  if (status === "TAKEN") return { fg: t.status.successFg, bg: t.status.successBg };
-  if (status === "NOT_TAKEN") return { fg: t.status.errorFg, bg: t.status.errorBg };
-  return { fg: t.accent.medFg, bg: t.accent.medBg };
-}
-
-export function MedicationDoseListItem({ event, onPress, isLast }: MedicationDoseListItemProps) {
+export function MedicationDoseListItem({ event, onPress, onTake, taking = false, isLast }: MedicationDoseListItemProps) {
   const t = useAppTheme();
-  const status = event.intake?.status ?? "PENDING";
-  const { fg, bg } = statusColors(t, status);
+  const doseState = doseStateForEvent(event);
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const dose = formatMedDose(event.data.doseAmount, event.data.doseUnit, event.data.dosage);
-  const statusLabel = status === "TAKEN" ? "Tomado" : status === "NOT_TAKEN" ? "No tomado" : "Pendiente";
-  const StatusIcon = status === "TAKEN" ? CheckCircle2 : status === "NOT_TAKEN" ? XCircle : Pill;
 
   return (
-    <TouchableOpacity
-      style={[styles.item, !isLast && styles.itemBorder]}
-      activeOpacity={0.7}
-      onPress={onPress}
-    >
-      <View style={[styles.iconWrap, { backgroundColor: bg }]}>
-        <StatusIcon size={18} color={fg} />
-      </View>
-      <View style={styles.info}>
-        <Text style={[styles.title, { color: t.text.primary }]}>{event.data.name}</Text>
-        <Text style={[styles.subtitle, { color: t.text.secondary }]}>
-          {dose} · {event.intakeTime}
-        </Text>
-      </View>
-      <Text style={[styles.statusLabel, { color: fg }]}>{statusLabel}</Text>
-    </TouchableOpacity>
+    <View style={[styles.item, !isLast && styles.itemBorder]}>
+      <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={onPress}>
+        {/* Mockup «Medicamentos de hoy»: cuadro ámbar de 40 px; el estado va a la derecha en texto. */}
+        <IconTile tone="medication" icon={<Pill size={19} strokeWidth={2.2} color={t.accent.medFg} />} />
+        <View style={styles.info}>
+          <Text style={[styles.title, { color: t.text.primary }]} numberOfLines={1}>{event.data.name}</Text>
+          <Text style={[styles.subtitle, { color: t.text.secondary }]}>
+            {formatClock(event.intakeTime)} · {dose}
+          </Text>
+        </View>
+      </TouchableOpacity>
+      {/* «Tomar» → «✓ Tomado» con fade through (movimiento-interacciones.md §2 y §6). */}
+      <FadeThrough value={doseState.kind}>
+        {(kind) => (
+          <>
+            {kind === "pending" && onTake ? (
+              <Button
+                variant="success"
+                icon={<Check size={16} strokeWidth={3} color={t.text.onSolid} />}
+                onPress={onTake}
+                disabled={taking}
+                loading={taking}
+                loadingLabel="Guardando…"
+              >
+                Tomar
+              </Button>
+            ) : null}
+            {kind === "taken" ? (
+              <Chip label="Tomado" tone="success" icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />} />
+            ) : null}
+            {kind === "not-taken" ? <Chip label={doseState.reasonLabel ?? "No tomado"} tone="danger" /> : null}
+            {kind === "later" ? <Chip label="Más tarde" tone="neutral" /> : null}
+          </>
+        )}
+      </FadeThrough>
+    </View>
   );
 }
 
@@ -61,27 +75,25 @@ function makeStyles(t: ThemeContextValue) {
       borderBottomWidth: 1,
       borderBottomColor: t.border.light,
     },
-    iconWrap: {
-      width: 40,
-      height: 40,
-      borderRadius: radii.full,
+    row: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: "row",
       alignItems: "center",
-      justifyContent: "center",
+      gap: spacing[3],
     },
     info: {
       flex: 1,
       gap: 2,
     },
+    // MASTER §5: dato en fila Inter 600, metadato Inter 400 13
     title: {
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.bold,
+      fontSize: 14,
+      fontFamily: nativeFont("body", 600),
     },
     subtitle: {
       fontSize: fontSize.sm,
-    },
-    statusLabel: {
-      fontSize: fontSize.xs,
-      fontWeight: fontWeight.semibold,
+      fontFamily: nativeFont("body", 400),
     },
   });
 }

@@ -62,16 +62,22 @@ export * from './forms/DatePicker/DatePicker.types';
 export * from './forms/DatePicker/DatePicker.native';
 export * from './forms/TimePicker/TimePicker.types';
 export * from './forms/TimePicker/TimePicker.native';
+export * from './forms/ChoiceChips/ChoiceChips.types';
+export * from './forms/ChoiceChips/ChoiceChips.native';
 
 // ─── Containers ──────────────────────────────────────────────────────────────
 export * from './containers/Modal/Modal.types';
 export * from './containers/Modal/Modal.native';
+export * from './containers/BottomSheet/BottomSheet.types';
+export * from './containers/BottomSheet/BottomSheet.native';
 export * from './containers/Card/Card.types';
 export * from './containers/Card/Card.native';
 
 // ─── Composed ────────────────────────────────────────────────────────────────
 export * from './composed/ConfirmModal/ConfirmModal.types';
 export * from './composed/ConfirmModal/ConfirmModal.native';
+export * from './composed/DiscardChangesDialog/DiscardChangesDialog.types';
+export * from './composed/DiscardChangesDialog/DiscardChangesDialog.native';
 
 // ─── Platform ────────────────────────────────────────────────────────────────
 export * from './platform/HeluAgendaCalendar';

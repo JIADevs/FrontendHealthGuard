@@ -12,6 +12,8 @@
 
 Decision needed before apply: No. Issue #35 and the proposal already lock this wave into one PR. The commits are the review slices.
 
+Each commit is checked on mobile and web before the next one starts. Mobile: Expo Go 58 against the local API. Web: `pnpm dev:web`. A slice with no new screen still has to boot both apps. The note under that commit says what can actually be seen.
+
 ### Work-Unit Commit Map
 
 | Commit | Scope |
@@ -32,13 +34,14 @@ Decision needed before apply: No. Issue #35 and the proposal already lock this w
 - [x] 1.2 `onError` restores that snapshot. `onSettled` invalidates `medications` and `calendar`.
 - [x] 1.3 `useCreateDailyCheckInMutation`: insert today's check-in into `daily-checkins` and `calendar` in `onMutate`. Do not write `currentStreak` there. Restore on error. On success, invalidate `me`, `treatments`, `daily-checkins`, and `calendar`.
 - [x] 1.4 Remove `onMutate` from `useRevokeDelegationMutation`. Keep the `onSettled` invalidation of `delegationKeys.all()`. Leave `useUpdateDelegationColorsMutation` as it is.
+- [ ] 1.5 Boot mobile and web. Mobile: in Dependientes, revoking keeps the row until the server answers. A check-in still saves, and the streak toast still waits for success. Web: Agenda still loads and «Tomado» still saves. Web has no Dependientes or check-in screen yet, so those two paths are not visible there.
 
 ## Phase 2: Primitives — RF-UI-AI1, RF-UI-AI2, RF-UI-AI3
 
-- [ ] 2.1 `containers/BottomSheet` (native entry only): grabber, header, scroll body, keyboard inset, and a discard confirmation when `dirty` is true. Do not export it from the web entry.
-- [ ] 2.2 `forms/ChoiceChips`, native and web: `options`, `value`, `multiple`, `onChange`. Each option is `Chip` `variant="option"`, at least 44 px, with a check when selected.
-- [ ] 2.3 `composed/DiscardChangesDialog`, native and web: renders `ConfirmModal`, safe option first.
-- [ ] 2.4 Export the three from `src/index.ts`. Export only `ChoiceChips` and `DiscardChangesDialog` from `src/web.ts`.
+- [x] 2.1 `containers/BottomSheet` (native entry only): grabber, header, scroll body, keyboard inset, and a discard confirmation when `dirty` is true. Do not export it from the web entry.
+- [x] 2.2 `forms/ChoiceChips`, native and web: `options`, `value`, `multiple`, `onChange`. Each option is `Chip` `variant="option"`, at least 44 px, with a check when selected.
+- [x] 2.3 `composed/DiscardChangesDialog`, native and web: renders `ConfirmModal`, safe option first.
+- [x] 2.4 Export the three from `src/index.ts`. Export only `ChoiceChips` and `DiscardChangesDialog` from `src/web.ts`.
 - [ ] 2.5 `pnpm --filter @helu/ui check:tokens` passes. No hex literals in the new files.
 
 ## Phase 3: Mobile doses — RF-MOB-AI1, RF-MOB-AI6

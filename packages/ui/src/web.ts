@@ -57,6 +57,8 @@ export * from './forms/DatePicker/DatePicker.types';
 export * from './forms/DatePicker/DatePicker.web';
 export * from './forms/TimePicker/TimePicker.types';
 export * from './forms/TimePicker/TimePicker.web';
+export * from './forms/ChoiceChips/ChoiceChips.types';
+export * from './forms/ChoiceChips/ChoiceChips.web';
 
 // ─── Containers ──────────────────────────────────────────────────────────────
 export * from './containers/Modal/Modal.types';
@@ -67,3 +69,5 @@ export * from './containers/Card/Card.web';
 // ─── Composed ────────────────────────────────────────────────────────────────
 export * from './composed/ConfirmModal/ConfirmModal.types';
 export * from './composed/ConfirmModal/ConfirmModal.web';
+export * from './composed/DiscardChangesDialog/DiscardChangesDialog.types';
+export * from './composed/DiscardChangesDialog/DiscardChangesDialog.web';

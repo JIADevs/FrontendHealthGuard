@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, SectionList, RefreshControl } from "react-native";
 import Toast from "react-native-toast-message";
-import { useNavigation } from "@react-navigation/native";
 import { useDeleteMedicationMutation } from "@helu/api/hooks";
 import { isApiError, type Medication } from "@helu/api";
 import {
@@ -24,6 +23,7 @@ import { Pill, Filter } from "lucide-react-native";
 
 import { useMedicationsList } from "../../hooks/useMedicationsList";
 import { AgendaFAB } from "./AgendaFAB";
+import { useAgendaNavigation } from "./AgendaNavigation";
 import { MedicationCard } from "./MedicationCard";
 import { MedicationsFilterSheet } from "./MedicationsFilterSheet";
 import { useTakeDose } from "./useTakeDose";
@@ -39,7 +39,7 @@ type MedicationSection = { title: string; data: Medication[] };
 export function MedicationsTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const navigation = useNavigation<any>();
+  const nav = useAgendaNavigation();
 
   const [deleteTarget, setDeleteTarget] = useState<Medication | null>(null);
 
@@ -138,7 +138,7 @@ export function MedicationsTab() {
           renderItem={({ item: m }) => (
             <MedicationCard
               medication={m}
-              onPress={() => navigation.navigate("MedicationDetail", { id: m.id })}
+              onPress={() => nav.openMedication(m.id)}
               onDelete={() => setDeleteTarget(m)}
               onIntake={takeDose.take}
               intakePending={!!takeDose.takingCycleId && takeDose.takingCycleId === currentCycleOf(m)?.id}
@@ -183,7 +183,7 @@ export function MedicationsTab() {
         treatments={treatments}
       />
 
-      <AgendaFAB onPress={() => navigation.navigate("MedicationForm")} />
+      <AgendaFAB onPress={nav.newMedication} />
     </View>
   );
 }

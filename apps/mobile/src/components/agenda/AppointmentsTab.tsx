@@ -26,13 +26,14 @@ import { CalendarDays, Filter } from "lucide-react-native";
 
 import { useAppointmentsList } from "../../hooks/useAppointmentsList";
 import { AgendaFAB } from "./AgendaFAB";
+import { useAgendaNavigation } from "./AgendaNavigation";
 import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentsFilterSheet } from "./AppointmentsFilterSheet";
 
 export function AppointmentsTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const navigation = require("@react-navigation/native").useNavigation();
+  const nav = useAgendaNavigation();
 
   const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
 
@@ -130,8 +131,8 @@ export function AppointmentsTab() {
           renderItem={({ item: a }) => (
             <AppointmentCard
               appointment={a}
-              onPress={() => navigation.navigate("AppointmentDetail", { id: a.id })}
-              onEdit={() => navigation.navigate("AppointmentForm", { id: a.id })}
+              onPress={() => nav.openAppointment(a.id)}
+              onEdit={() => nav.editAppointment(a.id)}
               onDelete={() => setDeleteTarget(a)}
             />
           )}
@@ -176,7 +177,7 @@ export function AppointmentsTab() {
         specialties={specialties}
       />
 
-      <AgendaFAB onPress={() => navigation.navigate("AppointmentForm")} />
+      <AgendaFAB onPress={nav.newAppointment} />
     </View>
   );
 }

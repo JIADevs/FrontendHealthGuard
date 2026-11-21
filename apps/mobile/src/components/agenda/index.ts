@@ -18,3 +18,4 @@ export { MedicationsFilterSheet } from "./MedicationsFilterSheet";
 export { PendingDoseButton } from "./PendingDoseButton";
 export { CompleteTaskSheet } from "./CompleteTaskSheet";
 export { RescheduleTaskSheet } from "./RescheduleTaskSheet";
+export { AgendaNavigationProvider, useAgendaNavigation, type AgendaNavigation } from "./AgendaNavigation";

@@ -118,13 +118,36 @@ Mockups: «Inicio de sesión», «Registro», «Error de inicio de sesión», «
 Screens: `HomeScreen`, `components/home/*`.
 Mockups: «Inicio», «Inicio · primer uso», «Inicio · todo al día», «Check-in de hoy», «Racha sumada», plus the Inicio skeleton (m8) and empty states (m9).
 
-- [ ] 6.1 Identify: write the gap list here.
-- [ ] 6.2 Build:
+- [x] 6.1 Identify. Gaps against `m1-acceso-inicio.js` (Inicio, primer uso, todo al día, Check-in, Racha sumada), `inicio-agenda.md` § Inicio, `m8-carga.js` and the motion and form docs:
+  - **Header:** a blue band with «Helu, Juan», the appointment subtitle and three chips. The mockup has a light header: the small «helu» wordmark and the bell (44 px icon button, red dot when there are unread notifications). Racha and nivel are not in the header.
+  - **Greeting:** missing. Mascot «Saluda» (66 px) next to a card «¡Hola, {nombre}!» with «Tienes N cosas para hoy. Lo siguiente: tu {medicamento} a la {hora}.» (pending doses + today's appointments + the check-in if it is pending).
+  - **Block order (inicio-agenda.md):** greeting → Medicamentos de hoy → racha → acciones rápidas → próximas citas → documentos recientes. Today «Próximas citas» comes before the medications and there is a «Tu día» counters card that is not in the mockup. Missions (block 4) stay out: no API.
+  - **Medicamentos de hoy:** one card with the title, a «X de N» chip and the dose rows; «Tomar» (success, 48 px) is the only primary action on the screen. Today each dose is a separate card.
+  - **Racha card:** missing. Flame tile, «N días» / «de racha cuidándote», «Récord {longestStreak}», the week L–D (done days filled, today outlined while pending), secondary «Hacer check-in de hoy» or the success banner «Check-in hecho. Mañana sumas el día N+1.». The «2 pausas» line stays out: the API has no pauses. The «Mostrar racha y nivel» setting does not exist yet (Phase 13), so the card always shows.
+  - **Check-in from Inicio:** opens the existing `DailyCheckInForm` sheet. After the server confirms: the toast (already there), the flame scales 1 → 1,6 → 1 (600 ms), the number goes up with a bounce, today's dot fills, and the greeting reads «¡Así se hace!» (movimiento §6, «Racha sumada»). Nothing moves with reduced motion.
+  - **Primer uso:** missing. While setup is incomplete and not hidden, block 2 is «EMPIEZA EN 4 PASOS · Configura Helu · k de 4» with a ring, the four steps (account always done; first medication, appointment and document from the list totals), a primary button for the next step and «Ocultar esta lista» → the `home_setup_checklist_hidden` preference. The greeting says «Empecemos por lo que más te sirve.». (m9 proposes 3 steps; m1 and the spec say 4.)
+  - **Todo al día:** missing. With no pending dose and the check-in done: mascot «Celebra» (static), «¡Todo al día!» and what comes next.
+  - **Acciones rápidas:** horizontal chips in the header labelled «Subir Documento». The mockup has three equal tiles (Subir, Escanear, Compartir), brand tint only.
+  - **Próximas citas / Documentos recientes:** one card per section with «Ver todas» / «Ver todos» and rows with the feature tile; tappable rows respond with `PressableScale` (§5).
+  - **Loading:** `ActivityIndicator` per section. §6c: greeting and mascot are real at once; the medications card (with the block for its button), the next appointment and the racha are skeletons; content enters with a 150 ms fade. Pull to refresh shows the spinner only for the pull gesture.
+  - **Structure (4.7 rule):** `HomeScreen` is 500 lines of UI. Move it into `components/home/` and leave the screen wiring navigation.
+- [x] 6.2 Build:
   - Add `SetupChecklist`, the streak card and the «Todo al día» state under `components/home/`. `HomeScreen` only orders them.
   - «Tomar» is the only primary action while a dose is pending. The streak card reads `currentStreak` and `longestStreak`, and its check-in action is secondary.
-  - The checklist steps are the account (always done), the first medication, the first appointment and the first document, derived from the existing list queries. «Ocultar esta lista» calls `setPreference("home_setup_checklist_hidden", true)` and the list stays hidden while that is true.
+  - The checklist steps are the account (always done), the first medication, the first appointment and the first document, derived from the existing list queries. «Ocultar esta lista» saves `home_setup_checklist_hidden = { hidden: true }` (the backend only stores objects, `PreferenceUpdate.value: dict`) and the list stays hidden while that is set.
   - Inicio renders no missions, level or badges.
-- [ ] 6.3 Review in the simulator against the mockups, fix, and commit.
+  - Done: `components/home/` holds `Home` (composition and skeletons), `HomeHeader`, `HomeGreeting`, `TodayMedsCard`, `StreakCard` (+ `Flame`), `QuickActions`, `UpcomingAppointmentsCard`, `RecentDocumentsCard`, `SetupChecklist` (+ `ProgressRing`), `HomeRow`, `SeeAllLink`, `useHomeData` and `useSetupHidden`. `HomeScreen` builds the `HomeNavigation` callbacks. The old list items and the iCloud duplicate `HomeScreen 2.tsx` are gone.
+- [x] 6.3 Review in the simulator against the mockups, fix, and commit. Checked on iPhone 17e with a test account (first use, check-in, hide list, todo al día). Fixed during review:
+  - The greeting had a double space and «m..» when the next item had no time; sentences are now trimmed and joined.
+  - The quick action tiles had different widths; each tile now sits in a `flex: 1` wrapper.
+  - The greeting message changed while data loaded. Until everything that decides it has loaded, it now shows the neutral «¡Hola!» with the «Saluda» pose and two skeleton lines. Before, it showed «¡Todo al día!» for about 5 s on first use and then switched to the setup greeting.
+  - «0 días» now reads «Empieza hoy». The sub-label follows the state.
+  - The celebration ran on the optimistic check-in, under the sheet, and the banner promised «día 1». It now runs when the server confirms (`lastInteractionDate` becomes today), after the sheet closes. The banner names the next day only once the streak is confirmed.
+  - First use: the meds, appointments and documents skeletons appeared and then vanished. Now a single skeleton holds the first slot until the setup state is known, and the checklist or the meds card replaces it in place. The lists that first use hides show no skeleton.
+  - «Ocultar esta lista» always failed and rolled back with the error toast: the backend rejects a bare `true` (422). It now saves an object; the list hides at once and the greeting becomes «¡Todo al día!».
+  - Email fields had iOS autocorrect on, which rewrote «helu» while typing. `TextField` now turns autocorrect and spell check off by default for literal fields (email keyboard, password, `autoCapitalize="none"`), with an `autoCorrect` prop to override. Login with a typed email was checked.
+  - Motion, measured frame by frame: on check-in the flame grows to about 2.5× its area and back in about 570 ms, then the number bounces and today's dot fills. With iOS «Reduce Motion» on, the flame does not scale and the number changes in one frame. The content enters with the 150 ms fade, and skeletons stay at least 300 ms.
+  - `tsc`: 53 errors, all pre-existing (56 before Phase 5); `check:tokens` OK.
 
 ## Phase 7: Agenda, citas y medicamentos — module 3 (`m2-agenda.js`)
 

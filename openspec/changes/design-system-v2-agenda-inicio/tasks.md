@@ -69,7 +69,11 @@ Each commit is checked on mobile and web before the next one starts. Mobile: Exp
   - Bienestar is now `components/agenda/WellbeingTab`, out of `AgendaScreen`. It shows the «Tu bienestar» card (latest mood, legend, 7-day bars with faces) and check-ins as cards grouped by day. Only the pull gesture shows the refresh spinner.
   - Not done: the mockup's symptom chips («Dolor», «Cansancio»…). The check-in API has no symptoms field, and backend changes are out of scope.
   - Checked 2026-11-21 on the iOS simulator with `juan@helu.dev`. The test check-ins were deleted.
-- [ ] 4.6 Agenda tasks keep the brand accent and the «Completar» and «Reprogramar» actions.
+- [x] 4.6 Agenda tasks keep the brand accent and the «Completar» and «Reprogramar» actions.
+  - The day list already had the brand border and «Completar». The task detail used the backpack accent; it now uses brand, with the «Pendiente» chip in amber.
+  - «Completar tarea» (success) and «Reprogramar» (secondary) sit in `BottomActionBar`. They open `CompleteTaskSheet` (optional comment, documents and backpacks as `ChoiceChips`) and `RescheduleTaskSheet` (date and time, errors under the field). Both are module components on `BottomSheet` and replace the v1 modals. The copy is in tuteo and says «Reprogramar», not «Reagendar».
+  - Fixes found here: complete, reschedule and update wrote nothing back and dropped the detail cache (`removeQueries`), so the open detail fell back to a full-screen spinner. They now write the returned task into it. The detail also read `.data` from `useQueries` arrays, so linked and result documents showed their ids instead of their names. That also clears 8 type errors (mobile tsc: 64 → 56).
+  - Checked 2026-11-21 on the iOS simulator with `juan@helu.dev`. The API has no delete for tasks, so the two test tasks («… (prueba 4.6)») are still in that seed account.
 - [ ] 4.7 Screens (`AgendaScreen`, `AppointmentDetail`, `AppointmentForm`, `MedicationDetail`, `CycleDetail`, `DoctorForm`, `MedicationForm`) only pass props and callbacks.
 - [ ] 4.8 The detail and form screens follow the v2 mockups (`m2-agenda.js`). This starts after 4.7, on the module components that 4.7 extracts.
   - **Nuevo / Editar medicamento:** sections «Medicamento», «Prescripción», «Periodo del ciclo», «Recordatorios» and «Tratamiento».

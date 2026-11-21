@@ -118,7 +118,7 @@ export function AppointmentsTab() {
           refreshControl={
             <RefreshControl
               refreshing={appts.isRefetching}
-              onRefresh={() => appts.refetch()}
+              onRefresh={() => { void appts.refetch(); }}
               tintColor={t.brand.fg}
             />
           }
@@ -144,7 +144,7 @@ export function AppointmentsTab() {
           ListFooterComponent={
             items.length > 0 ? (
               <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-            ) : null
+            ) : undefined
           }
         />
       )}

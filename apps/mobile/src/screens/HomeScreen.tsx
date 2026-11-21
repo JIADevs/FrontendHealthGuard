@@ -79,7 +79,7 @@ export function HomeScreen() {
     <View style={styles.container}>
       {/* Status bar strip — brand color behind clock/signal */}
       <View style={[styles.statusBarBg, { height: insets.top }]} />
-      <StatusBar barStyle="light-content" translucent={false} />
+      <StatusBar barStyle="light-content" />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}

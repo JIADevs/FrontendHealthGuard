@@ -126,7 +126,7 @@ export function TreatmentsScreen() {
           refreshControl={
             <RefreshControl
               refreshing={treatmentsQuery.isRefetching}
-              onRefresh={() => treatmentsQuery.refetch()}
+              onRefresh={() => { void treatmentsQuery.refetch(); }}
               colors={[t.brand.fg]}
               tintColor={t.brand.fg}
             />

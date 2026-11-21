@@ -110,7 +110,7 @@ export function DocumentsScreen() {
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
-              onRefresh={() => refetch()}
+              onRefresh={() => { void refetch(); }}
               colors={[t.brand.fg]}
               tintColor={t.brand.fg}
             />

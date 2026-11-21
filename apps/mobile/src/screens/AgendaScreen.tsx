@@ -348,7 +348,7 @@ function WellbeingTab() {
           refreshControl={
             <RefreshControl
               refreshing={screen.isRefetching}
-              onRefresh={screen.refetch}
+              onRefresh={() => { void screen.refetch(); }}
               tintColor={t.brand.fg}
             />
           }
@@ -360,7 +360,7 @@ function WellbeingTab() {
           ListFooterComponent={
             screen.isFetchingNextPage ? (
               <ActivityIndicator style={styles.wellbeingListFooter} color={t.brand.fg} />
-            ) : null
+            ) : undefined
           }
         />
       )}

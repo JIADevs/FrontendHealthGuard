@@ -1,3 +1,4 @@
+import type { ComponentRef } from "react";
 import { useRef } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing, radii, fontSize } from '../../tokens/tokens';
@@ -40,7 +41,7 @@ export function SearchField({
   accessibilityLabel,
 }: SearchFieldProps) {
   const t = useAppTheme();
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   return (
     <TouchableOpacity

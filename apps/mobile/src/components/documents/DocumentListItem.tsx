@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useCallback } from "react";
+import { useMemo, useRef, useState, useCallback, type ComponentRef } from "react";
 import { View, TouchableOpacity, StyleSheet, Text } from "react-native";
 import { MoreVertical } from "lucide-react-native";
 import type { Document } from "@helu/api";
@@ -39,7 +39,7 @@ export function DocumentListItem({ document, onPress, actions }: DocumentListIte
   const category = useMemo(() => resolveDocumentTheme(document, t), [document, t]);
   const styles = useMemo(() => makeStyles(t), [t]);
 
-  const menuTriggerRef = useRef<View>(null);
+  const menuTriggerRef = useRef<ComponentRef<typeof View>>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuTop, setMenuTop] = useState(0);
   const [menuLeft, setMenuLeft] = useState(0);

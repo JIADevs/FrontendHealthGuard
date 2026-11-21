@@ -514,7 +514,7 @@ export function ShareDocumentsScreen() {
           refreshControl={
             <RefreshControl
               refreshing={docs.isRefetching}
-              onRefresh={() => docs.refetch()}
+              onRefresh={() => { void docs.refetch(); }}
               tintColor={t.brand.fg}
             />
           }

@@ -63,9 +63,27 @@ Each commit is checked on mobile and web before the next one starts. Mobile: Exp
   - `PendingDoseButton` is the detail's primary action in both the cycle and the medication detail, and fades through to «✓ Tomado».
   - Fix found here: dose mutations now also patch and invalidate `["medication", id]`, so the detail updates optimistically. Before, it kept the old dose until a reload.
   - Checked 2026-11-21 on the iOS simulator with temporary test medications on `juan@helu.dev`, deleted afterwards.
-- [ ] 4.5 Wellbeing keeps `DailyCheckInForm` and `MoodPicker`. Face order: Muy mal, Mal, Regular, Bien, Excelente, labels from `moodConfig.ts`. The streak toast fires only after the mutation succeeds.
+- [x] 4.5 Wellbeing keeps `DailyCheckInForm` and `MoodPicker`. Face order: Muy mal, Mal, Regular, Bien, Excelente, labels from `moodConfig.ts`. The streak toast fires only after the mutation succeeds.
+  - Faces are drawn (`MoodFace`, red to emerald, as in the kit) instead of emoji. The check-in sheet follows the mockup: «CHECK-IN DE HOY», `ChoiceChips` for the treatment, and «Guardar check-in» in the streak color. Editing uses «Guardar cambios», and «Eliminar check-in» is a `DangerLink`.
+  - The streak toast reads `currentStreak` from a fresh profile after the save (`useFetchCurrentStreak` in `@helu/api`): «¡N días seguidos cuidándote!», or «Es el primer día de tu racha.» for day one. `notify` gains a mobile-only `streak` tone.
+  - Bienestar is now `components/agenda/WellbeingTab`, out of `AgendaScreen`. It shows the «Tu bienestar» card (latest mood, legend, 7-day bars with faces) and check-ins as cards grouped by day. Only the pull gesture shows the refresh spinner.
+  - Not done: the mockup's symptom chips («Dolor», «Cansancio»…). The check-in API has no symptoms field, and backend changes are out of scope.
+  - Checked 2026-11-21 on the iOS simulator with `juan@helu.dev`. The test check-ins were deleted.
 - [ ] 4.6 Agenda tasks keep the brand accent and the «Completar» and «Reprogramar» actions.
 - [ ] 4.7 Screens (`AgendaScreen`, `AppointmentDetail`, `AppointmentForm`, `MedicationDetail`, `CycleDetail`, `DoctorForm`, `MedicationForm`) only pass props and callbacks.
+- [ ] 4.8 The detail and form screens follow the v2 mockups (`m2-agenda.js`). This starts after 4.7, on the module components that 4.7 extracts.
+  - **Nuevo / Editar medicamento:** sections «Medicamento», «Prescripción», «Periodo del ciclo», «Recordatorios» and «Tratamiento».
+    - Fields: «Forma farmacéutica» as `ChoiceChips`; «Dosis por toma», whose unit comes from the form; and «Frecuencia (cada cuánto)» with Horas / Días / Semanas chips.
+    - A summary is calculated under the frequency: «1 tableta cada 12 horas · 2 tomas al día».
+    - Optional fields say «(opcional)». «Guardar medicamento» sits in `BottomActionBar`.
+  - **Detalle de medicamento:** «Editar» goes in the header. The header card shows the name and «Próxima toma», then `PendingDoseButton`. Cycles are grouped into ACTIVOS / ANTERIORES with the green bar and «X de N días». «Nuevo ciclo» is secondary.
+  - **Detalle de ciclo:** a green ring «día/total», the «En curso» / «Finalizado» chip, and the dates.
+    - Rows: Dosis, Frecuencia, Concentración and Razón.
+    - Then «Historial de tomas».
+    - «Editar» goes in the header. «Finalizar ciclo» is a `DangerLink` at the end, and its confirm puts the safe option first. The blue hero and `DetailFooter` are removed.
+  - **Detalle de tarea:** a tile with the title, date and status chip, then notes and the «Aviso» row. «Completar tarea» is the success button and «Reprogramar» is secondary.
+  - **Nuevo profesional:** one column, with «(opcional)» on Teléfono and Notas. A dirty close uses `DiscardChangesDialog`.
+  - Not in this task: the weekly goal ring (out of scope in the proposal).
 
 ## Phase 5: Mobile Inicio — RF-MOB-AI5
 

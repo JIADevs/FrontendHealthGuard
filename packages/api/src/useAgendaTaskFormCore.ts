@@ -35,6 +35,7 @@ export interface AgendaTaskFormActions {
   setDocumentIds: (v: string[]) => void;
   setBackpackIds: (v: string[]) => void;
   toggleReminderOffset: (minutes: number) => void;
+  setReminderOffsets: (minutes: number[]) => void;
   clearError: () => void;
   handleSave: () => void;
 }
@@ -111,7 +112,7 @@ export function useAgendaTaskFormCore({
       return;
     }
     if (reminderOffsets.length === 0) {
-      setError("Debés elegir al menos un aviso.");
+      setError("Elige al menos un aviso.");
       return;
     }
 
@@ -180,6 +181,7 @@ export function useAgendaTaskFormCore({
     setDocumentIds,
     setBackpackIds,
     toggleReminderOffset,
+    setReminderOffsets,
     clearError: () => setError(null),
     handleSave,
   };

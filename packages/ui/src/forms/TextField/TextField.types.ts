@@ -14,6 +14,11 @@ export interface TextFieldProps {
   keyboardType?: 'default' | 'number-pad' | 'numbers-and-punctuation' | 'email-address' | 'phone-pad';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   autoComplete?: string;
+  /**
+   * Autocorrección y corrector ortográfico del teclado. Por defecto se apagan en campos literales
+   * (correo, contraseña, `autoCapitalize="none"`): iOS reescribe «helu» y daña el correo.
+   */
+  autoCorrect?: boolean;
   id?: string;
   autoFocus?: boolean;
   returnKeyType?: 'done' | 'go' | 'next' | 'search' | 'send';

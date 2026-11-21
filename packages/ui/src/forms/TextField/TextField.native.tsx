@@ -31,6 +31,7 @@ export function TextField({
   trailing,
   secureTextEntry,
   autoComplete,
+  autoCorrect,
   textContentType,
   onBlur,
   onSubmitEditing,
@@ -38,6 +39,9 @@ export function TextField({
 }: TextFieldProps) {
   const t = useAppTheme();
   const [focused, setFocused] = useState(false);
+  const literal =
+    keyboardType === 'email-address' || type === 'password' || !!secureTextEntry || autoCapitalize === 'none';
+  const correct = autoCorrect ?? !literal;
 
   return (
     <View style={{ gap: 6 }}>
@@ -75,6 +79,8 @@ export function TextField({
           accessibilityHint={error}
           secureTextEntry={secureTextEntry ?? type === 'password'}
           autoComplete={autoComplete as TextInputProps['autoComplete']}
+          autoCorrect={correct}
+          spellCheck={correct}
           textContentType={textContentType}
           onSubmitEditing={onSubmitEditing}
           submitBehavior={onSubmitEditing && returnKeyType === 'next' ? 'submit' : undefined}

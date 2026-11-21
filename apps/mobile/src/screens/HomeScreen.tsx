@@ -10,7 +10,8 @@ import {
   RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDashboardCore, useCalendarEventsQuery } from "@helu/api/hooks";
+import { useDashboardCore, useCalendarEventsQuery, useConfirmIntakeMutation } from "@helu/api/hooks";
+import { isApiError } from "@helu/api";
 import { useAuthStore } from "@helu/stores";
 import {
   colors,
@@ -25,6 +26,7 @@ import {
   mapCalendarApiToEvents,
   filterEventsForDates,
   todayLocalDateKey,
+  resolveCycleForDay,
 } from "@helu/ui";
 import type { ThemeContextValue, AgendaEvent } from "@helu/ui";
 import {
@@ -38,6 +40,7 @@ import {
 } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import Toast from "react-native-toast-message";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { AppointmentListItem, MedicationDoseListItem, DocumentListItem } from "../components/home";
 import { MedicationIntakeModal } from "../components/agenda";
@@ -74,6 +77,24 @@ export function HomeScreen() {
 
   // Modal state
   const [selectedDoseEvent, setSelectedDoseEvent] = useState<MedicationEvent | null>(null);
+  const confirmIntake = useConfirmIntakeMutation();
+
+  const handleTake = (event: MedicationEvent) => {
+    const cycle = resolveCycleForDay(event.data, event.dayKey);
+    if (!cycle) {
+      Toast.show({ type: "error", text1: "No se pudo confirmar la toma" });
+      return;
+    }
+    confirmIntake.mutate(cycle.id, {
+      onSuccess: () => Toast.show({ type: "success", text1: "Toma confirmada" }),
+      onError: (err) =>
+        Toast.show({
+          type: "error",
+          text1: "No se pudo confirmar la toma",
+          text2: isApiError(err) ? err.message : "Intenta de nuevo",
+        }),
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -256,6 +277,11 @@ export function HomeScreen() {
                     event={event}
                     isLast
                     onPress={() => setSelectedDoseEvent(event)}
+                    onTake={() => handleTake(event)}
+                    taking={
+                      confirmIntake.isPending &&
+                      confirmIntake.variables === resolveCycleForDay(event.data, event.dayKey)?.id
+                    }
                   />
                 </View>
               ))

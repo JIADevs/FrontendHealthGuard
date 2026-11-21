@@ -46,9 +46,9 @@ Each commit is checked on mobile and web before the next one starts. Mobile: Exp
 
 ## Phase 3: Mobile doses — RF-MOB-AI1, RF-MOB-AI6
 
-- [ ] 3.1 Extend `MedicationIntakeModal` so its body sits in `BottomSheet`. Keep the three reasons. Show them only after «No la tomé». «Cambiar hora» stays optional and calls `useRecordIntakeMutation`.
-- [ ] 3.2 `MedicationCard` and `home/MedicationDoseListItem`: pending shows «Tomar» at 48 px and calls `useConfirmIntakeMutation`. Taken, not-taken (with the reason), and «Más tarde» match the four row states. A future dose has no «Tomar».
-- [ ] 3.3 An Agenda deep link with `intent: "medication-intake"` or `"daily-checkin"` opens the matching sheet. The tabs `calendar`, `appointments`, `medications`, and `wellbeing` stay.
+- [x] 3.1 Extend `MedicationIntakeModal` so its body sits in `BottomSheet`. Keep the three reasons. Show them only after «No la tomé». «Cambiar hora» stays optional and calls `useRecordIntakeMutation`.
+- [x] 3.2 `MedicationCard` and `home/MedicationDoseListItem`: pending shows «Tomar» at 48 px and calls `useConfirmIntakeMutation`. Taken, not-taken (with the reason), and «Más tarde» match the four row states. A future dose has no «Tomar».
+- [x] 3.3 An Agenda deep link with `intent: "medication-intake"` or `"daily-checkin"` opens the matching sheet. The tabs `calendar`, `appointments`, `medications`, and `wellbeing` stay.
 
 ## Phase 4: Mobile Agenda — RF-MOB-AI2, RF-MOB-AI3, RF-MOB-AI4
 

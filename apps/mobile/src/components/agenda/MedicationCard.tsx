@@ -2,10 +2,11 @@ import { useMemo, useRef, useState, useCallback, type ComponentRef } from "react
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Pill, Clock, Check, MoreVertical, Trash2 } from "lucide-react-native";
 import type { Medication } from "@helu/api";
-import { Card, spacing, fontSize, fontWeight, radii, colors, useAppTheme } from "@helu/ui";
+import { Button, Card, spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { AgendaRowActionsMenu, measureAgendaRowActionsMenuLeft } from "./AgendaRowActionsMenu";
 import { formatDose, formatFrequency } from "./medicationFormat";
+import { doseStateForCycle } from "./doseRowState";
 
 export interface MedicationCardProps {
   medication: Medication;
@@ -25,6 +26,7 @@ export function MedicationCard({
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const cycle = m.cycles?.[0];
+  const doseState = cycle ? doseStateForCycle(cycle) : null;
 
   const menuTriggerRef = useRef<ComponentRef<typeof View>>(null);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -54,16 +56,45 @@ export function MedicationCard({
           icon={<Pill size={20} color={t.status.warningFg} />}
           iconBackground={t.status.warningBg}
           actions={
-            <View ref={menuTriggerRef} collapsable={false}>
-              <TouchableOpacity
-                onPress={openMenu}
-                style={styles.menuButton}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel={`Opciones de ${m.name}`}
-              >
-                <MoreVertical size={20} color={t.text.muted} />
-              </TouchableOpacity>
+            <View style={styles.headerActions}>
+              {cycle && doseState?.kind === "pending" ? (
+                <Button
+                  variant="success"
+                  onPress={() => onIntake(cycle.id)}
+                  disabled={intakePending}
+                  loading={intakePending}
+                  loadingLabel="Guardando…"
+                >
+                  Tomar
+                </Button>
+              ) : null}
+              {doseState?.kind === "taken" ? (
+                <View style={styles.takenRow}>
+                  <Check size={14} color={t.status.successFg} />
+                  <Text style={styles.takenText}>Tomado</Text>
+                </View>
+              ) : null}
+              {doseState?.kind === "not-taken" ? (
+                <View style={styles.missedChip}>
+                  <Text style={styles.missedText}>{doseState.reasonLabel ?? "No tomado"}</Text>
+                </View>
+              ) : null}
+              {doseState?.kind === "later" && cycle?.nextIntakeTime ? (
+                <View style={styles.laterChip}>
+                  <Text style={styles.laterText}>Más tarde</Text>
+                </View>
+              ) : null}
+              <View ref={menuTriggerRef} collapsable={false}>
+                <TouchableOpacity
+                  onPress={openMenu}
+                  style={styles.menuButton}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Opciones de ${m.name}`}
+                >
+                  <MoreVertical size={20} color={t.text.muted} />
+                </TouchableOpacity>
+              </View>
             </View>
           }
         >
@@ -80,16 +111,6 @@ export function MedicationCard({
                 })}
               </Text>
             </View>
-          ) : null}
-          {cycle ? (
-            <TouchableOpacity
-              style={styles.intakeBtn}
-              onPress={() => onIntake(cycle.id)}
-              disabled={intakePending}
-            >
-              <Check size={13} color={colors.white} />
-              <Text style={styles.intakeBtnText}>Tomado</Text>
-            </TouchableOpacity>
           ) : null}
         </Card>
       </TouchableOpacity>
@@ -109,18 +130,33 @@ function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     cardMeta: { flexDirection: "row", alignItems: "center", gap: spacing[1] },
     cardMetaText: { fontSize: fontSize.sm, color: t.text.secondary },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing[2],
+    },
     menuButton: { padding: spacing[1] },
-    intakeBtn: {
+    takenRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing[1],
-      marginTop: spacing[1],
-      backgroundColor: t.status.successSolid,
-      alignSelf: "flex-start",
-      paddingHorizontal: spacing[3],
-      paddingVertical: 4,
-      borderRadius: radii.full,
     },
-    intakeBtnText: { color: colors.white, fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
+    takenText: { color: t.status.successFg, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+    missedChip: {
+      alignSelf: "flex-start",
+      backgroundColor: t.status.errorBg,
+      borderRadius: radii.full,
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[1],
+    },
+    missedText: { color: t.status.errorFg, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+    laterChip: {
+      alignSelf: "flex-start",
+      backgroundColor: t.border.light,
+      borderRadius: radii.full,
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[1],
+    },
+    laterText: { color: t.text.secondary, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
   });
 }

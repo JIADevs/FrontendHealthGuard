@@ -1,14 +1,17 @@
 import { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Pill, CheckCircle2, XCircle } from "lucide-react-native";
-import { radii, spacing, fontSize, fontWeight, useAppTheme, formatMedDose } from "@helu/ui";
+import { Button, radii, spacing, fontSize, fontWeight, useAppTheme, formatMedDose } from "@helu/ui";
 import type { ThemeContextValue, AgendaEvent } from "@helu/ui";
+import { doseStateForEvent } from "../agenda/doseRowState";
 
 type MedicationEvent = Extract<AgendaEvent, { type: "medication" }>;
 
 interface MedicationDoseListItemProps {
   event: MedicationEvent;
   onPress: () => void;
+  onTake?: () => void;
+  taking?: boolean;
   isLast?: boolean;
 }
 
@@ -18,33 +21,52 @@ function statusColors(t: ThemeContextValue, status: "TAKEN" | "NOT_TAKEN" | "PEN
   return { fg: t.accent.medFg, bg: t.accent.medBg };
 }
 
-export function MedicationDoseListItem({ event, onPress, isLast }: MedicationDoseListItemProps) {
+export function MedicationDoseListItem({ event, onPress, onTake, taking = false, isLast }: MedicationDoseListItemProps) {
   const t = useAppTheme();
-  const status = event.intake?.status ?? "PENDING";
+  const doseState = doseStateForEvent(event);
+  const status = doseState.kind === "taken" ? "TAKEN" : doseState.kind === "not-taken" ? "NOT_TAKEN" : "PENDING";
   const { fg, bg } = statusColors(t, status);
   const styles = useMemo(() => makeStyles(t), [t]);
 
   const dose = formatMedDose(event.data.doseAmount, event.data.doseUnit, event.data.dosage);
-  const statusLabel = status === "TAKEN" ? "Tomado" : status === "NOT_TAKEN" ? "No tomado" : "Pendiente";
   const StatusIcon = status === "TAKEN" ? CheckCircle2 : status === "NOT_TAKEN" ? XCircle : Pill;
 
   return (
-    <TouchableOpacity
-      style={[styles.item, !isLast && styles.itemBorder]}
-      activeOpacity={0.7}
-      onPress={onPress}
-    >
-      <View style={[styles.iconWrap, { backgroundColor: bg }]}>
-        <StatusIcon size={18} color={fg} />
-      </View>
-      <View style={styles.info}>
-        <Text style={[styles.title, { color: t.text.primary }]}>{event.data.name}</Text>
-        <Text style={[styles.subtitle, { color: t.text.secondary }]}>
-          {dose} · {event.intakeTime}
-        </Text>
-      </View>
-      <Text style={[styles.statusLabel, { color: fg }]}>{statusLabel}</Text>
-    </TouchableOpacity>
+    <View style={[styles.item, !isLast && styles.itemBorder]}>
+      <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={onPress}>
+        <View style={[styles.iconWrap, { backgroundColor: bg }]}>
+          <StatusIcon size={18} color={fg} />
+        </View>
+        <View style={styles.info}>
+          <Text style={[styles.title, { color: t.text.primary }]}>{event.data.name}</Text>
+          <Text style={[styles.subtitle, { color: t.text.secondary }]}>
+            {dose} · {event.intakeTime}
+          </Text>
+        </View>
+      </TouchableOpacity>
+      {doseState.kind === "pending" && onTake ? (
+        <Button
+          variant="success"
+          onPress={onTake}
+          disabled={taking}
+          loading={taking}
+          loadingLabel="Guardando…"
+        >
+          Tomar
+        </Button>
+      ) : null}
+      {doseState.kind === "taken" ? <Text style={styles.takenText}>Tomado</Text> : null}
+      {doseState.kind === "not-taken" ? (
+        <View style={styles.missedChip}>
+          <Text style={styles.missedText}>{doseState.reasonLabel ?? "No tomado"}</Text>
+        </View>
+      ) : null}
+      {doseState.kind === "later" ? (
+        <View style={styles.laterChip}>
+          <Text style={styles.laterText}>Más tarde</Text>
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -60,6 +82,11 @@ function makeStyles(t: ThemeContextValue) {
     itemBorder: {
       borderBottomWidth: 1,
       borderBottomColor: t.border.light,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing[3],
     },
     iconWrap: {
       width: 40,
@@ -79,8 +106,33 @@ function makeStyles(t: ThemeContextValue) {
     subtitle: {
       fontSize: fontSize.sm,
     },
-    statusLabel: {
-      fontSize: fontSize.xs,
+    takenText: {
+      color: t.status.successFg,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+    },
+    missedChip: {
+      alignSelf: "flex-start",
+      backgroundColor: t.status.errorBg,
+      borderRadius: radii.full,
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[1],
+    },
+    missedText: {
+      color: t.status.errorFg,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+    },
+    laterChip: {
+      alignSelf: "flex-start",
+      backgroundColor: t.border.light,
+      borderRadius: radii.full,
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[1],
+    },
+    laterText: {
+      color: t.text.secondary,
+      fontSize: fontSize.sm,
       fontWeight: fontWeight.semibold,
     },
   });

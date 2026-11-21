@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import Toast from "react-native-toast-message";
-import { Check, X } from "lucide-react-native";
 import {
-    Modal,
+    BottomSheet,
     Button,
+    ChoiceChips,
     TextField,
     DateTimePicker,
     toISOLocal,
@@ -12,23 +12,20 @@ import {
     pickerValueFromUtcIso,
     clampPickerValueToMax,
     resolveCycleForDay,
+    NOT_TAKEN_REASON_LABELS_ES,
     spacing,
     fontSize,
-    fontWeight,
-    radii,
     useAppTheme,
 } from "@helu/ui";
 import type { ThemeContextValue, AgendaEvent } from "@helu/ui";
-import { useRecordIntakeMutation } from "@helu/api/hooks";
+import { useConfirmIntakeMutation, useRecordIntakeMutation } from "@helu/api/hooks";
 import { isApiError, type NotTakenReason } from "@helu/api";
 
 type MedicationEvent = Extract<AgendaEvent, { type: "medication" }>;
 
-const REASON_OPTIONS: { value: NotTakenReason; label: string }[] = [
-    { value: "FORGOT", label: "Se me olvidó" },
-    { value: "NOT_PURCHASED", label: "No lo compré" },
-    { value: "OTHER", label: "Otro" },
-];
+const REASON_OPTIONS = (Object.entries(NOT_TAKEN_REASON_LABELS_ES) as [NotTakenReason, string][]).map(
+    ([value, label]) => ({ value, label }),
+);
 
 interface MedicationIntakeModalProps {
     event: MedicationEvent;
@@ -48,7 +45,8 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
         month: "long",
     });
 
-    const [answer, setAnswer] = useState<"TAKEN" | "NOT_TAKEN" | null>(existingIntake?.status ?? null);
+    const [missed, setMissed] = useState(existingIntake?.status === "NOT_TAKEN");
+    const [changeTime, setChangeTime] = useState(false);
     const [takenAtValue, setTakenAtValue] = useState(() =>
         existingIntake?.takenAt
             ? clampPickerValueToMax(pickerValueFromUtcIso(existingIntake.takenAt))
@@ -57,110 +55,120 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
     const [reason, setReason] = useState<NotTakenReason | null>(existingIntake?.notTakenReason ?? null);
     const [notes, setNotes] = useState(existingIntake?.notes ?? "");
 
+    const confirmMutation = useConfirmIntakeMutation();
     const recordMutation = useRecordIntakeMutation();
+    const saving = confirmMutation.isPending || recordMutation.isPending;
 
-    const canSubmit =
-        !!cycle && (answer === "TAKEN" || (answer === "NOT_TAKEN" && !!reason));
+    const dirty =
+        missed !== (existingIntake?.status === "NOT_TAKEN") ||
+        changeTime ||
+        reason !== (existingIntake?.notTakenReason ?? null) ||
+        notes !== (existingIntake?.notes ?? "");
 
-    const handleSubmit = () => {
-        if (!cycle || !answer) return;
+    const showError = (err: unknown) => {
+        Toast.show({
+            type: "error",
+            text1: "No se pudo registrar la toma",
+            text2: isApiError(err) ? err.message : "Intenta de nuevo",
+        });
+    };
 
-        const scheduledTime = toUtcIsoFromPickerValue(scheduledLocalValue);
-        const payload =
-            answer === "TAKEN"
-                ? { status: "TAKEN" as const, scheduledTime, takenAt: toUtcIsoFromPickerValue(takenAtValue) }
-                : {
-                      status: "NOT_TAKEN" as const,
-                      scheduledTime,
-                      notTakenReason: reason!,
-                      notes: notes.trim() || undefined,
-                  };
+    const saveTakenNow = () => {
+        if (!cycle) return;
+        confirmMutation.mutate(cycle.id, {
+            onSuccess: () => {
+                onClose();
+                Toast.show({ type: "success", text1: "Toma registrada" });
+            },
+            onError: showError,
+        });
+    };
 
+    const saveChangedTime = () => {
+        if (!cycle) return;
         recordMutation.mutate(
-            { cycleId: cycle.id, payload },
+            {
+                cycleId: cycle.id,
+                payload: {
+                    status: "TAKEN",
+                    scheduledTime: toUtcIsoFromPickerValue(scheduledLocalValue),
+                    takenAt: toUtcIsoFromPickerValue(takenAtValue),
+                },
+            },
             {
                 onSuccess: () => {
                     onClose();
-                    Toast.show({
-                        type: "success",
-                        text1: answer === "TAKEN" ? "Toma registrada" : "Registrado como no tomada",
-                    });
+                    Toast.show({ type: "success", text1: "Toma registrada" });
                 },
-                onError: (err) => {
-                    Toast.show({
-                        type: "error",
-                        text1: "No se pudo registrar la toma",
-                        text2: isApiError(err) ? err.message : "Intenta de nuevo",
-                    });
+                onError: showError,
+            },
+        );
+    };
+
+    const saveMissed = () => {
+        if (!cycle || !reason) return;
+        recordMutation.mutate(
+            {
+                cycleId: cycle.id,
+                payload: {
+                    status: "NOT_TAKEN",
+                    scheduledTime: toUtcIsoFromPickerValue(scheduledLocalValue),
+                    notTakenReason: reason,
+                    notes: notes.trim() || undefined,
                 },
+            },
+            {
+                onSuccess: () => {
+                    onClose();
+                    Toast.show({ type: "success", text1: "Registrado como no tomada" });
+                },
+                onError: showError,
             },
         );
     };
 
     return (
-        <Modal
+        <BottomSheet
             title={event.data.name}
+            eyebrow={`Dosis de las ${event.intakeTime}`}
+            dirty={dirty}
             onClose={onClose}
-            footer={
-                <>
-                    <Button variant="secondary" onPress={onClose}>
-                        Cancelar
-                    </Button>
-                    <Button onPress={handleSubmit} disabled={!canSubmit || recordMutation.isPending} loading={recordMutation.isPending}>
-                        Guardar
-                    </Button>
-                </>
-            }
         >
-            <Text style={styles.subtitle}>
-                Dosis de las {event.intakeTime} · {dayLabel}
-            </Text>
+            <Text style={styles.subtitle}>{dayLabel}</Text>
 
             {!cycle ? (
-                <Text style={styles.errorText}>
-                    No se encontró el ciclo de tratamiento para esta fecha.
-                </Text>
+                <Text style={styles.errorText}>No se encontró el ciclo de tratamiento para esta fecha.</Text>
             ) : (
                 <>
-                    <View style={styles.section}>
-                        <Text style={styles.label}>¿Tomaste esta dosis?</Text>
-                        <View style={styles.answerRow}>
-                            <TouchableOpacity
-                                style={[styles.answerOption, answer === "TAKEN" && styles.answerOptionSelectedTaken]}
-                                onPress={() => setAnswer("TAKEN")}
-                                accessibilityRole="radio"
-                                accessibilityState={{ selected: answer === "TAKEN" }}
-                            >
-                                <Check size={16} color={answer === "TAKEN" ? t.status.successFg : t.text.secondary} />
-                                <Text
-                                    style={[
-                                        styles.answerOptionText,
-                                        answer === "TAKEN" && { color: t.status.successFg, fontWeight: fontWeight.semibold },
-                                    ]}
-                                >
-                                    Sí, la tomé
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.answerOption, answer === "NOT_TAKEN" && styles.answerOptionSelectedMissed]}
-                                onPress={() => setAnswer("NOT_TAKEN")}
-                                accessibilityRole="radio"
-                                accessibilityState={{ selected: answer === "NOT_TAKEN" }}
-                            >
-                                <X size={16} color={answer === "NOT_TAKEN" ? t.status.errorFg : t.text.secondary} />
-                                <Text
-                                    style={[
-                                        styles.answerOptionText,
-                                        answer === "NOT_TAKEN" && { color: t.status.errorFg, fontWeight: fontWeight.semibold },
-                                    ]}
-                                >
-                                    No la tomé
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
+                    <Text style={styles.label}>¿Tomaste esta dosis?</Text>
+                    <View style={styles.actions}>
+                        <Button
+                            variant="success"
+                            fullWidth
+                            onPress={saveTakenNow}
+                            disabled={saving}
+                            loading={confirmMutation.isPending}
+                            loadingLabel="Guardando…"
+                        >
+                            Sí, la tomé
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            fullWidth
+                            onPress={() => {
+                                setMissed(true);
+                                setChangeTime(false);
+                            }}
+                            disabled={saving}
+                        >
+                            No la tomé
+                        </Button>
+                        <Button variant="ghost" fullWidth onPress={() => setChangeTime(true)} disabled={saving}>
+                            Cambiar hora
+                        </Button>
                     </View>
 
-                    {answer === "TAKEN" ? (
+                    {changeTime ? (
                         <View style={styles.section}>
                             <DateTimePicker
                                 label="¿A qué hora la tomaste?"
@@ -168,31 +176,30 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
                                 onChange={(value) => setTakenAtValue(clampPickerValueToMax(value))}
                                 maxDate={toISOLocal(new Date())}
                             />
+                            <Button
+                                variant="primary"
+                                fullWidth
+                                onPress={saveChangedTime}
+                                disabled={saving}
+                                loading={recordMutation.isPending && !missed}
+                                loadingLabel="Guardando…"
+                            >
+                                Guardar hora
+                            </Button>
                         </View>
                     ) : null}
 
-                    {answer === "NOT_TAKEN" ? (
+                    {missed ? (
                         <View style={styles.section}>
                             <Text style={styles.label}>¿Por qué no la tomaste?</Text>
-                            <View style={styles.reasonRow} accessibilityRole="radiogroup">
-                                {REASON_OPTIONS.map((option) => {
-                                    const isSelected = reason === option.value;
-                                    return (
-                                        <TouchableOpacity
-                                            key={option.value}
-                                            style={[styles.reasonChip, isSelected && styles.reasonChipSelected]}
-                                            onPress={() => setReason(option.value)}
-                                            accessibilityRole="radio"
-                                            accessibilityState={{ selected: isSelected }}
-                                        >
-                                            <Text style={[styles.reasonChipText, isSelected && styles.reasonChipTextSelected]}>
-                                                {option.label}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-
+                            <ChoiceChips
+                                options={REASON_OPTIONS}
+                                value={reason}
+                                onChange={(value) => {
+                                    const match = REASON_OPTIONS.find((option) => option.value === value);
+                                    if (match) setReason(match.value);
+                                }}
+                            />
                             <View style={styles.notesField}>
                                 <TextField
                                     label="Detalles (opcional)"
@@ -201,11 +208,21 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
                                     placeholder="Agrega más contexto si quieres"
                                 />
                             </View>
+                            <Button
+                                variant="danger"
+                                fullWidth
+                                onPress={saveMissed}
+                                disabled={!reason || saving}
+                                loading={recordMutation.isPending && missed}
+                                loadingLabel="Guardando…"
+                            >
+                                Guardar
+                            </Button>
                         </View>
                     ) : null}
                 </>
             )}
-        </Modal>
+        </BottomSheet>
     );
 }
 
@@ -217,12 +234,8 @@ function makeStyles(t: ThemeContextValue) {
             marginBottom: spacing[4],
             textTransform: "capitalize",
         },
-        section: {
-            marginBottom: spacing[4],
-        },
         label: {
             fontSize: fontSize.sm,
-            fontWeight: fontWeight.semibold,
             color: t.text.primary,
             marginBottom: spacing[2],
         },
@@ -230,56 +243,12 @@ function makeStyles(t: ThemeContextValue) {
             fontSize: fontSize.sm,
             color: t.status.errorFg,
         },
-        answerRow: {
-            flexDirection: "row",
-            gap: spacing[3],
-        },
-        answerOption: {
-            flex: 1,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: spacing[1],
-            paddingVertical: spacing[3],
-            borderRadius: radii.md,
-            borderWidth: 1,
-            borderColor: t.border.light,
-        },
-        answerOptionSelectedTaken: {
-            borderColor: t.status.successFg,
-            backgroundColor: t.status.successBg,
-        },
-        answerOptionSelectedMissed: {
-            borderColor: t.status.errorFg,
-            backgroundColor: t.status.errorBg,
-        },
-        answerOptionText: {
-            fontSize: fontSize.sm,
-            color: t.text.secondary,
-        },
-        reasonRow: {
-            flexDirection: "row",
-            flexWrap: "wrap",
+        actions: {
             gap: spacing[2],
         },
-        reasonChip: {
-            paddingHorizontal: spacing[3],
-            paddingVertical: spacing[2],
-            borderRadius: radii.full,
-            borderWidth: 1,
-            borderColor: t.border.light,
-        },
-        reasonChipSelected: {
-            borderColor: t.brand.fg,
-            backgroundColor: t.brand.tintMed,
-        },
-        reasonChipText: {
-            fontSize: fontSize.sm,
-            color: t.text.secondary,
-        },
-        reasonChipTextSelected: {
-            color: t.brand.fg,
-            fontWeight: fontWeight.semibold,
+        section: {
+            marginTop: spacing[4],
+            gap: spacing[3],
         },
         notesField: {
             marginTop: spacing[3],

@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { ScrollView, TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import Toast from "react-native-toast-message";
 import {
-    Modal,
+    BottomSheet,
     Button,
     TextField,
     DateTimePicker,
@@ -47,6 +47,7 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
             : toISOLocal(new Date());
         return clampPickerValueToMax(initial);
     });
+    const initialRecordedAt = useRef(recordedAt);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
@@ -54,7 +55,9 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
         setMood(initialValues.mood);
         setNotes(initialValues.notes ?? "");
         setTreatmentId(initialValues.treatmentId ?? null);
-        setRecordedAt(clampPickerValueToMax(pickerValueFromUtcIso(initialValues.recordedAt)));
+        const nextRecordedAt = clampPickerValueToMax(pickerValueFromUtcIso(initialValues.recordedAt));
+        initialRecordedAt.current = nextRecordedAt;
+        setRecordedAt(nextRecordedAt);
     }, [initialValues]);
 
     const createMutation = useCreateDailyCheckInMutation();
@@ -65,6 +68,11 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
 
     const isPending =
         createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+    const dirty =
+        mood !== (initialValues?.mood ?? null) ||
+        notes !== (initialValues?.notes ?? "") ||
+        treatmentId !== (initialValues?.treatmentId ?? null) ||
+        recordedAt !== initialRecordedAt.current;
 
     const handleSubmit = () => {
         if (!mood) return;
@@ -128,32 +136,10 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
 
     return (
         <>
-            <Modal
+            <BottomSheet
                 title={isEdit ? "Editar check-in" : "Nuevo check-in"}
+                dirty={dirty}
                 onClose={onClose}
-                footer={
-                    <>
-                        {isEdit ? (
-                            <Button
-                                variant="secondary"
-                                onPress={() => setShowDeleteConfirm(true)}
-                                disabled={isPending}
-                            >
-                                Eliminar
-                            </Button>
-                        ) : null}
-                        <Button variant="secondary" onPress={onClose}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            onPress={handleSubmit}
-                            disabled={!mood || isPending}
-                            loading={isPending && !deleteMutation.isPending}
-                        >
-                            {isEdit ? "Guardar" : "Registrar"}
-                        </Button>
-                    </>
-                }
             >
                 <View style={styles.section}>
                     <Text style={styles.label}>¿Cómo te sientes hoy?</Text>
@@ -215,7 +201,29 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
                         maxDate={toISOLocal(new Date())}
                     />
                 </View>
-            </Modal>
+
+                <View style={styles.actions}>
+                    {isEdit ? (
+                        <Button
+                            variant="secondary"
+                            onPress={() => setShowDeleteConfirm(true)}
+                            disabled={isPending}
+                        >
+                            Eliminar
+                        </Button>
+                    ) : null}
+                    <Button variant="secondary" onPress={onClose}>
+                        Cancelar
+                    </Button>
+                    <Button
+                        onPress={handleSubmit}
+                        disabled={!mood || isPending}
+                        loading={isPending && !deleteMutation.isPending}
+                    >
+                        {isEdit ? "Guardar" : "Registrar"}
+                    </Button>
+                </View>
+            </BottomSheet>
 
             {showDeleteConfirm && (
                 <ConfirmModal
@@ -264,6 +272,14 @@ function makeStyles(t: ThemeContextValue) {
             fontWeight: fontWeight.semibold,
             color: t.text.primary,
             marginBottom: spacing[2],
+        },
+        actions: {
+            flexDirection: "row",
+            gap: spacing[3],
+            marginTop: spacing[4],
+            paddingTop: spacing[4],
+            borderTopWidth: 1,
+            borderTopColor: t.border.medium,
         },
     });
 }

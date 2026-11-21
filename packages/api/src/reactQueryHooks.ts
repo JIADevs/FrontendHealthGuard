@@ -747,20 +747,27 @@ export function useDeleteMedicationCycleMutation() {
     });
 }
 
+/**
+ * Caches that show a dose: medication lists (`["medications", …]`), the medication detail
+ * (`["medication", id]`) and the calendar. A dose mutation patches and refreshes all three.
+ */
+const INTAKE_QUERY_FAMILIES = [["medications"], ["medication"], ["calendar"]] as const;
+
 export function useConfirmIntakeMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (id: string) => confirmIntake(id),
         onMutate: (cycleId) =>
-            patchQueryFamilies(qc, [["medications"], ["calendar"]], (data) =>
+            patchQueryFamilies(qc, INTAKE_QUERY_FAMILIES, (data) =>
                 applyOptimisticIntake(data, cycleId),
             ),
         onError: (_error, _cycleId, context) => {
             restoreQuerySnapshot(qc, context);
         },
         onSettled: () => {
-            qc.invalidateQueries({ queryKey: ["medications"] });
-            qc.invalidateQueries({ queryKey: ["calendar"] });
+            for (const queryKey of INTAKE_QUERY_FAMILIES) {
+                qc.invalidateQueries({ queryKey });
+            }
         },
     });
 }
@@ -771,15 +778,16 @@ export function useRecordIntakeMutation() {
         mutationFn: ({ cycleId, payload }: { cycleId: string; payload: MedicationIntakeCreate }) =>
             recordIntake(cycleId, payload),
         onMutate: ({ cycleId, payload }) =>
-            patchQueryFamilies(qc, [["medications"], ["calendar"]], (data) =>
+            patchQueryFamilies(qc, INTAKE_QUERY_FAMILIES, (data) =>
                 applyOptimisticIntake(data, cycleId, payload),
             ),
         onError: (_error, _variables, context) => {
             restoreQuerySnapshot(qc, context);
         },
         onSettled: () => {
-            qc.invalidateQueries({ queryKey: ["medications"] });
-            qc.invalidateQueries({ queryKey: ["calendar"] });
+            for (const queryKey of INTAKE_QUERY_FAMILIES) {
+                qc.invalidateQueries({ queryKey });
+            }
         },
     });
 }

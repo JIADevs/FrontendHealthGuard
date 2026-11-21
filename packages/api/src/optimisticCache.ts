@@ -57,6 +57,9 @@ export function applyOptimisticIntake(
         const items = mapMedications(data.items, cycleId, payload);
         return items === data.items ? data : { ...data, items };
     }
+    if (isMedication(data)) {
+        return patchMedication(data, cycleId, payload);
+    }
     return data;
 }
 
@@ -171,8 +174,13 @@ function sameDay(left: string, right: string): boolean {
     return left.slice(0, 10) === right.slice(0, 10);
 }
 
+// Hermes has no global `crypto`, so this builds a v4-shaped id with Math.random.
+// It only tags cache entries until the server answers; it is not a security token.
 function newOptimisticId(): string {
-    return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+        const nibble = Math.floor(Math.random() * 16);
+        return (char === "x" ? nibble : (nibble & 0x3) | 0x8).toString(16);
+    });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -188,6 +196,11 @@ function isCalendarDays(data: unknown): data is CalendarDay[] {
 
 function isMedicationPage(data: unknown): data is MedicationPage {
     return isRecord(data) && Array.isArray(data.items) && typeof data.total === "number";
+}
+
+/** The medication detail (`["medication", id]`): one medication with its cycles. */
+function isMedication(data: unknown): data is Medication {
+    return isRecord(data) && typeof data.id === "string" && Array.isArray(data.cycles);
 }
 
 function isCheckInPage(data: unknown): data is DailyCheckInPage {

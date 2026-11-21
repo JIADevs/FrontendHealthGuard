@@ -1,152 +1,174 @@
-import { View, Text, StyleSheet, ScrollView, useWindowDimensions } from "react-native";
+import { useState, type ReactNode } from "react";
+import { View, Text, StyleSheet, ScrollView, Linking, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
-import { useAppTheme, Spinner, spacing, colors } from "@helu/ui";
+import {
+  useAppTheme,
+  Spinner,
+  spacing,
+  fontSize,
+  nativeFont,
+  Button,
+  Chip,
+  DangerLink,
+  ConfirmModal,
+  IconButton,
+  IconTile,
+  formatClock,
+  formatShortDay,
+  type ThemeContextValue,
+  type Tone,
+} from "@helu/ui";
+import { isApiError } from "@helu/api";
 import {
   useAppointmentByIdQuery,
-  useDeleteAppointmentMutation,
   useUpdateAppointmentStatusMutation,
   useTreatmentsByIdsQuery,
   useDocumentsByIdsQuery,
   useBackpacksByIdsQuery,
 } from "@helu/api/hooks";
 import {
-  Calendar, Clock, MapPin, FileText, Stethoscope, Video, Trash2, Edit, Share2,
-  FileCheck, DollarSign, ClipboardList, FlaskConical, Bell, Tag, Home,
-  Package, Folder, Activity,
+  CalendarDays,
+  Clock,
+  MapPin,
+  Video,
+  Bell,
+  FileText,
+  Backpack,
+  Activity,
+  Edit,
+  Check,
+  Plus,
+  XCircle,
 } from "lucide-react-native";
-import type { RootStackParamList } from "../navigation/RootNavigator";
-import { APPOINTMENT_STATUSES } from "../constants/appointments";
-import { StatusBadge } from "../components/StatusBadge";
-import { ConfirmDialog } from "../components/ConfirmDialog";
-import { DetailHeader } from "../components/DetailHeader";
-import { DetailFooter, type FooterAction } from "../components/DetailFooter";
 import Toast from "react-native-toast-message";
-import { useState, Fragment } from "react";
+import type { RootStackParamList } from "../navigation/RootNavigator";
+import { ScreenHeader } from "../components/ScreenHeader";
 
 type AppointmentDetailRouteProp = RouteProp<RootStackParamList, "AppointmentDetail">;
 
 const MODALITY_LABELS: Record<string, string> = {
   PRESENCIAL: "Presencial",
   VIRTUAL: "Virtual",
-  DOMICILIARIA: "A domicilio",
+  DOMICILIARIA: "Domiciliaria",
 };
 
-// A card-style detail cell used in the grid
-function DetailCell({
-  label,
-  value,
+function reminderLine(offsets: number[] | undefined): string {
+  if (!offsets || offsets.length === 0) return "Sin recordatorio";
+  if (offsets.length === 1 && offsets[0] === 0) return "A la hora de la cita";
+  return offsets
+    .map((minutes) => {
+      if (minutes >= 1440) {
+        const days = Math.round(minutes / 1440);
+        return days === 1 ? "1 día antes" : `${days} días antes`;
+      }
+      if (minutes >= 60) {
+        const hours = Math.round(minutes / 60);
+        return hours === 1 ? "1 hora antes" : `${hours} horas antes`;
+      }
+      return `${minutes} min antes`;
+    })
+    .join(", ");
+}
+
+/** «hoy», «mañana», «en 2 días», «ayer», «hace 3 días». */
+function relativeDay(isoDate: string): string {
+  const day = new Date(`${isoDate.slice(0, 10)}T00:00:00`).getTime();
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const diff = Math.round((day - today) / 86_400_000);
+  if (diff === 0) return "hoy";
+  if (diff === 1) return "mañana";
+  if (diff === -1) return "ayer";
+  return diff > 1 ? `en ${diff} días` : `hace ${-diff} días`;
+}
+
+const WEEKDAY_LONG = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+/** Fila del mockup (`row`): cuadro de 40 px, título Inter 600 14, metadato 13 y algo a la derecha. */
+function InfoRow({
+  t,
+  tone,
   icon,
-  fullWidth = false,
+  title,
+  meta,
+  right,
 }: {
-  label: string;
-  value: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: any;
-  fullWidth?: boolean;
+  t: ThemeContextValue;
+  tone: Tone;
+  icon: ReactNode;
+  title: string;
+  meta?: string;
+  right?: ReactNode;
 }) {
-  const t = useAppTheme();
   return (
-    <View
-      style={[
-        cellStyles.cell,
-        { backgroundColor: t.surface.card },
-        fullWidth && cellStyles.fullWidth,
-      ]}
-    >
-      <Text style={[cellStyles.label, { color: t.text.secondary }]}>{label}</Text>
-      <View style={cellStyles.row}>
-        <View style={cellStyles.icon}>{icon}</View>
-        <Text style={[cellStyles.value, { color: t.text.primary }]} numberOfLines={fullWidth ? 4 : 2}>
-          {value}
-        </Text>
+    <View style={styles.row}>
+      <IconTile tone={tone} icon={icon} />
+      <View style={styles.rowCopy}>
+        <Text style={[styles.rowTitle, { color: t.text.primary }]} numberOfLines={2}>{title}</Text>
+        {meta ? <Text style={[styles.rowMeta, { color: t.text.secondary }]} numberOfLines={2}>{meta}</Text> : null}
       </View>
+      {right}
     </View>
   );
 }
 
-const cellStyles = StyleSheet.create({
-  cell: {
-    flex: 1,
-    borderRadius: 12,
-    padding: spacing[3],
-    gap: spacing[2],
-    minWidth: 0,
-  },
-  fullWidth: {
-    flex: 0,
-    width: "100%",
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[2],
-  },
-  icon: {
-    width: 20,
-    alignItems: "center",
-  },
-  value: {
-    fontSize: 15,
-    fontWeight: "500",
-    flex: 1,
-  },
-});
+function InlineLink({ t, label, icon, onPress }: { t: ThemeContextValue; label: string; icon?: ReactNode; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="link" style={styles.inlineLink}>
+      {icon}
+      <Text style={[styles.link, { color: t.brand.text }]}>{label}</Text>
+    </Pressable>
+  );
+}
 
 export function AppointmentDetailScreen() {
   const t = useAppTheme();
-  const { width: screenWidth } = useWindowDimensions();
   const navigation = useNavigation();
   const route = useRoute<AppointmentDetailRouteProp>();
   const { id } = route.params;
 
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const { data: appointment, isLoading } = useAppointmentByIdQuery(id);
 
   const treatmentResults = useTreatmentsByIdsQuery(appointment?.treatmentIds ?? []);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const treatments = treatmentResults.map((r: any) => r.data).filter(Boolean);
-  const preDocResults  = useDocumentsByIdsQuery(appointment?.preDocumentIds  ?? []);
+  const preDocResults = useDocumentsByIdsQuery(appointment?.preDocumentIds ?? []);
   const postDocResults = useDocumentsByIdsQuery(appointment?.postDocumentIds ?? []);
-  const prePackResults  = useBackpacksByIdsQuery(appointment?.preBackpackIds  ?? []);
+  const prePackResults = useBackpacksByIdsQuery(appointment?.preBackpackIds ?? []);
   const postPackResults = useBackpacksByIdsQuery(appointment?.postBackpackIds ?? []);
 
-  const deleteMut = useDeleteAppointmentMutation();
   const statusMut = useUpdateAppointmentStatusMutation();
 
-  const handleDelete = () => setShowDeleteDialog(true);
-
-  const confirmDelete = () => {
-    deleteMut.mutate(id, {
-      onSuccess: () => {
-        Toast.show({ type: "success", text1: "Cita eliminada" });
-        setShowDeleteDialog(false);
-        setTimeout(() => navigation.goBack(), 500);
-      },
-      onError: () => {
-        Toast.show({ type: "error", text1: "Error al eliminar la cita" });
-        setShowDeleteDialog(false);
-      },
+  const showError = (err: unknown) =>
+    Toast.show({
+      type: "error",
+      text1: "No se pudo actualizar la cita",
+      text2: isApiError(err) ? err.message : "Revisa tu conexión e intenta de nuevo.",
     });
+
+  const setStatus = (status: "ASISTI" | "NO_ASISTI" | "CANCELADA", success: string, after?: () => void) => {
+    statusMut.mutate(
+      { id, status },
+      {
+        onSuccess: () => {
+          setShowCancelDialog(false);
+          Toast.show({ type: "success", text1: success });
+          after?.();
+        },
+        onError: showError,
+      },
+    );
   };
 
-  const handleMarkAsCompleted = () => {
-    statusMut.mutate({ id, status: "ASISTI" }, {
-      onSuccess: () => Toast.show({ type: "success", text1: "Estado actualizado" }),
-    });
-  };
-
-  const handleEdit = () => navigation.navigate("AppointmentForm", { id: appointment.id });
-  const handleShare = () => console.log("Compartir cita");
+  const nav = navigation as unknown as { navigate: (name: string, params?: object) => void };
+  const handleEdit = () => nav.navigate("AppointmentForm", { id });
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: t.surface.bg }]}>
         <View style={styles.centered}><Spinner size="lg" /></View>
       </SafeAreaView>
     );
@@ -154,537 +176,264 @@ export function AppointmentDetailScreen() {
 
   if (!appointment) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: t.surface.bg }]}>
+        <ScreenHeader title="Cita" />
         <View style={styles.centered}>
-          <Text style={{ color: t.text.secondary }}>Cita no encontrada</Text>
+          <Text style={[styles.sub, { color: t.text.secondary }]}>No encontramos esta cita. Puede que la hayan eliminado.</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const currentStatus = APPOINTMENT_STATUSES.find((s) => s.value === appointment.status);
   const isExam = appointment.type === "EXAM";
-
-  const dateObj = new Date(appointment.date + "T00:00:00");
-  const formattedDay = dateObj.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
-  const formattedWeekday = dateObj.toLocaleDateString("es-ES", { weekday: "long" });
-  const formattedWeekdayCap = formattedWeekday.charAt(0).toUpperCase() + formattedWeekday.slice(1);
-
-  const addMinutes = (timeStr: string, minutes: number) => {
-    const [hours, mins] = timeStr.split(":").map(Number);
-    const d = new Date();
-    d.setHours(hours, mins + minutes, 0, 0);
-    return d.toTimeString().slice(0, 5);
-  };
-
-  const timeValue = appointment.time?.slice(0, 5) ?? "";
-  const [timeHour] = timeValue.split(":");
-  const timeAmPm = Number(timeHour) >= 12 ? "PM" : "AM";
-  const endTime = appointment.duration
-    ? addMinutes(timeValue, appointment.duration)
-    : null;
-
-  const titleParts = [];
-  if (appointment.specialty) titleParts.push(appointment.specialty);
-  if (appointment.doctor) titleParts.push(appointment.doctor);
-  const title = titleParts.length > 0
-    ? titleParts.join("\n")
-    : appointment.name || (isExam ? "Examen médico" : "Cita médica");
-
-  const locationValue = [appointment.clinic, appointment.location].filter(Boolean).join("\n");
+  const title = appointment.name || appointment.specialty || (isExam ? "Examen médico" : "Cita médica");
+  const who = [appointment.doctor, appointment.specialty].filter(Boolean).join(" · ");
+  const date = appointment.date?.slice(0, 10) ?? "";
+  const time = appointment.time?.slice(0, 5) ?? "";
+  const startMs = new Date(`${date}T${time || "00:00"}`).getTime();
+  const hasStarted = Number.isFinite(startMs) && startMs <= Date.now();
+  const cancelled = appointment.status === "CANCELADA";
+  const answered = appointment.status === "ASISTI" || appointment.status === "NO_ASISTI";
+  const isVirtual = appointment.modality === "VIRTUAL";
+  const address = [appointment.clinic, appointment.location].filter(Boolean).join(", ");
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const preDocs   = preDocResults.map((r: any)  => r.data).filter(Boolean);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const postDocs  = postDocResults.map((r: any) => r.data).filter(Boolean);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const prePacks  = prePackResults.map((r: any)  => r.data).filter(Boolean);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const postPacks = postPackResults.map((r: any) => r.data).filter(Boolean);
-  const hasAttachments = preDocs.length + postDocs.length + prePacks.length + postPacks.length > 0;
+  const pick = (results: any[]) => results.map((r) => r.data).filter(Boolean);
+  const preDocs = pick(preDocResults);
+  const postDocs = pick(postDocResults);
+  const prePacks = pick(prePackResults);
+  const postPacks = pick(postPackResults);
 
-  const footerActions: FooterAction[] = [
-    {
-      label: "Reprogramar",
-      onPress: handleEdit,
-      icon: <Calendar size={18} color={t.text.primary} />,
-      variant: "outline",
-    },
-    {
-      label: "Cancelar cita",
-      onPress: handleDelete,
-      variant: "destructive",
-    },
-    {
-      label: "Marcar como completada",
-      onPress: handleMarkAsCompleted,
-      variant: "primary",
-      disabled: appointment.status === "ASISTI",
-    },
-  ];
+  const statusChip =
+    appointment.status === "ASISTI" ? (
+      <Chip label="Completada" tone="success" icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />} />
+    ) : appointment.status === "NO_ASISTI" ? (
+      <Chip label="No asistí" tone="neutral" />
+    ) : cancelled ? (
+      <Chip label="Cancelada" tone="neutral" />
+    ) : (
+      <Chip label="Programada" tone="brand" icon={<Clock size={12} color={t.brand.text} />} />
+    );
+
+  const grayIcon = (Icon: typeof Clock) => <Icon size={19} strokeWidth={2.2} color={t.text.muted} />;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <DetailHeader
-        actions={[
-          { icon: Edit, label: "Editar", onPress: handleEdit },
-          { icon: Trash2, label: "Eliminar", onPress: handleDelete, destructive: true },
-        ]}
+    <SafeAreaView style={[styles.container, { backgroundColor: t.surface.bg }]} edges={["top", "bottom"]}>
+      <ScreenHeader
+        title={isExam ? "Examen" : "Cita"}
+        right={
+          <IconButton
+            icon={<Edit size={17} color={t.text.onMuted} />}
+            accessibilityLabel="Editar cita"
+            onPress={handleEdit}
+          />
+        }
       />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-
-        {/* ── Hero card ── */}
-        <View style={[styles.heroCard, { backgroundColor: t.brand.solid }]}>
-          <View style={styles.heroTop}>
-            <View style={[styles.heroIcon, { backgroundColor: t.brand.tintStrong }]}>
-              {isExam
-                ? <FlaskConical size={28} color={colors.white} />
-                : <Stethoscope size={28} color={colors.white} />
-              }
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Resumen: cuadro grande del módulo, título H2 y chips de estado y atributos (mockup «Detalle de cita»). */}
+        <View style={[styles.card, cardColors(t)]}>
+          <View style={styles.summaryRow}>
+            <IconTile
+              tone="appointment"
+              size="lg"
+              icon={<CalendarDays size={24} strokeWidth={2.2} color={t.accent.calFg} />}
+            />
+            <View style={styles.rowCopy}>
+              <Text style={[styles.h2, { color: t.text.primary }]}>{title}</Text>
+              {who ? <Text style={[styles.sub, { color: t.text.secondary }]}>{who}</Text> : null}
             </View>
-            <Text style={styles.heroTitle}>{title}</Text>
           </View>
-          <View style={styles.heroBadges}>
-            {currentStatus && (
-              <StatusBadge status={currentStatus.value} label={currentStatus.label} />
-            )}
-            <StatusBadge status="INFO" label={MODALITY_LABELS[appointment.modality] ?? appointment.modality} />
-            {appointment.tags?.map((tag: string) => (
-              <Fragment key={tag}>
-                <StatusBadge status="INFO" label={tag} />
-              </Fragment>
-            ))}
+          <View style={styles.chips}>
+            {statusChip}
+            <Chip label={MODALITY_LABELS[appointment.modality] ?? appointment.modality} tone="neutral" />
+            <Chip label={isExam ? "Examen" : "Cita médica"} tone="neutral" />
           </View>
         </View>
 
-        {/* ── Quick stats strip ── */}
-        <View style={[styles.statsStrip, { backgroundColor: t.surface.card }]}>
-          <View style={styles.statItem}>
-            <Calendar size={16} color={t.text.secondary} />
-            <Text style={[styles.statMain, { color: t.text.primary }]}>{formattedDay}</Text>
-            <Text style={[styles.statSub, { color: t.text.secondary }]}>{formattedWeekdayCap}</Text>
-          </View>
-
-          <View style={[styles.statDivider, { backgroundColor: t.border.default }]} />
-
-          <View style={styles.statItem}>
-            <Clock size={16} color={t.text.secondary} />
-            <Text style={[styles.statMain, { color: t.text.primary }]}>{timeValue}</Text>
-            <Text style={[styles.statSub, { color: t.text.secondary }]}>
-              {endTime ? `hasta ${endTime}` : timeAmPm}
+        {/* Desde la hora de la cita, la acción principal es confirmar la asistencia. */}
+        {hasStarted && !cancelled && !answered ? (
+          <View style={[styles.card, cardColors(t)]}>
+            <Text style={[styles.h3, { color: t.text.primary }]}>¿Pudiste asistir?</Text>
+            <Text style={[styles.sub, { color: t.text.secondary }]}>
+              Nunca la marcamos sola aunque haya pasado la hora.
             </Text>
+            <Button
+              variant="success"
+              fullWidth
+              icon={<Check size={17} strokeWidth={3} color={t.text.onSolid} />}
+              onPress={() => setStatus("ASISTI", "Asistencia registrada")}
+              disabled={statusMut.isPending}
+              loading={statusMut.isPending}
+              loadingLabel="Guardando…"
+            >
+              Sí, asistí
+            </Button>
+            <Button
+              variant="secondary"
+              fullWidth
+              onPress={() => setStatus("NO_ASISTI", "Quedó como no asistida", handleEdit)}
+              disabled={statusMut.isPending}
+            >
+              No pude, reprogramar
+            </Button>
           </View>
+        ) : null}
 
-          {appointment.cost != null && (
-            <>
-              <View style={[styles.statDivider, { backgroundColor: t.border.default }]} />
-              <View style={styles.statItem}>
-                <DollarSign size={16} color={t.text.secondary} />
-                <Text style={[styles.statMain, { color: t.text.primary }]}>
-                  {appointment.cost.toLocaleString("es-CO")}
-                </Text>
-                <Text style={[styles.statSub, { color: t.text.secondary }]}>Costo</Text>
-              </View>
-            </>
-          )}
+        {/* Cuándo, dónde y recordatorio: filas grises con «Cómo llegar» en la fila del lugar. */}
+        <View style={[styles.card, cardColors(t)]}>
+          <InfoRow
+            t={t}
+            tone="neutral"
+            icon={grayIcon(Clock)}
+            title={[formatShortDay(date), formatClock(time)].filter(Boolean).join(" · ")}
+            meta={[appointment.duration ? `${appointment.duration} minutos` : null, date ? relativeDay(date) : null]
+              .filter(Boolean)
+              .join(" · ")}
+          />
+          {isVirtual && appointment.videoCallLink ? (
+            <InfoRow
+              t={t}
+              tone="neutral"
+              icon={grayIcon(Video)}
+              title="Videollamada"
+              meta={appointment.videoCallLink}
+              right={<InlineLink t={t} label="Abrir" onPress={() => void Linking.openURL(appointment.videoCallLink!)} />}
+            />
+          ) : address ? (
+            <InfoRow
+              t={t}
+              tone="neutral"
+              icon={grayIcon(MapPin)}
+              title={appointment.location || appointment.clinic || ""}
+              meta={appointment.location && appointment.clinic ? appointment.clinic : undefined}
+              right={
+                <InlineLink
+                  t={t}
+                  label="Cómo llegar"
+                  onPress={() => void Linking.openURL(`http://maps.apple.com/?q=${encodeURIComponent(address)}`)}
+                />
+              }
+            />
+          ) : null}
+          <InfoRow t={t} tone="neutral" icon={grayIcon(Bell)} title="Recordatorio" meta={reminderLine(appointment.reminderOffsets)} />
+          {treatments.length > 0 ? (
+            <InfoRow
+              t={t}
+              tone="neutral"
+              icon={grayIcon(Activity)}
+              title={treatments.length === 1 ? "Tratamiento" : "Tratamientos"}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              meta={treatments.map((tr: any) => tr.name).join(", ")}
+            />
+          ) : null}
+          {appointment.notes ? (
+            <InfoRow t={t} tone="neutral" icon={grayIcon(FileText)} title="Notas" meta={appointment.notes} />
+          ) : null}
         </View>
 
-        {/* ── Detail cards ── */}
-        <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Detalles</Text>
-
-        <View style={styles.grid}>
-          {/* Row: Lugar + Tipo de cita + Servicio (todos juntos si existen) */}
-          {(() => {
-            const locationIcon = appointment.modality === "DOMICILIARIA"
-              ? <Home size={18} color={t.text.secondary} />
-              : appointment.modality === "VIRTUAL"
-              ? <Video size={18} color={t.text.secondary} />
-              : <MapPin size={18} color={t.text.secondary} />;
-
-            const examOrServiceLabel = isExam && appointment.examType ? "Tipo de examen" : "Servicio";
-            const examOrServiceValue = isExam && appointment.examType ? appointment.examType : appointment.service;
-            const examOrServiceIcon = isExam && appointment.examType
-              ? <FlaskConical size={18} color={t.text.secondary} />
-              : <ClipboardList size={18} color={t.text.secondary} />;
-
-            const cells = [
-              locationValue ? { label: "Lugar", value: locationValue, icon: locationIcon } : null,
-              appointment.consultationType ? { label: "Tipo de cita", value: appointment.consultationType, icon: <Stethoscope size={18} color={t.text.secondary} /> } : null,
-              examOrServiceValue ? { label: examOrServiceLabel, value: examOrServiceValue, icon: examOrServiceIcon } : null,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ].filter(Boolean) as { label: string; value: string; icon: any }[];
-
-            if (cells.length === 0) return null;
-            if (cells.length === 1) return (
-              <DetailCell label={cells[0].label} value={cells[0].value} icon={cells[0].icon} fullWidth />
-            );
-
-            // Determine how many columns fit without text wrapping.
-            // cellPadding (12*2) + iconArea (20 icon + 8 gap) = 52px overhead per cell.
-            const OVERHEAD = spacing[3] * 2 + 20 + spacing[2];
-            const CONTENT_PAD = spacing[4] * 2;
-            const CHAR_WIDTH = 8; // ~8px per char at fontSize 15 medium
-            const maxLineLen = (s: string) => Math.max(...s.split("\n").map(l => l.length));
-            const fitsInCols = (n: number) => {
-              const gap = spacing[2] * (n - 1);
-              const textW = (screenWidth - CONTENT_PAD - gap) / n - OVERHEAD;
-              const maxChars = Math.floor(textW / CHAR_WIDTH);
-              return cells.every(c => maxLineLen(c.value) <= maxChars);
-            };
-            const colCount = cells.length === 2
-              ? (fitsInCols(2) ? 2 : 1)
-              : (fitsInCols(3) ? 3 : fitsInCols(2) ? 2 : 1);
-
-            if (colCount === 1) {
-              return (
-                <>
-                  {cells.map(c => (
-                    <Fragment key={c.label}>
-                      <DetailCell label={c.label} value={c.value} icon={c.icon} fullWidth />
-                    </Fragment>
-                  ))}
-                </>
-              );
-            }
-
-            const rows: (typeof cells)[] = [];
-            for (let i = 0; i < cells.length; i += colCount) {
-              rows.push(cells.slice(i, i + colCount));
-            }
-            return (
-              <>
-                {rows.map((row, ri) => (
-                  <View key={ri} style={styles.gridRow}>
-                    {row.map(c => (
-                      <Fragment key={c.label}>
-                        <DetailCell label={c.label} value={c.value} icon={c.icon} />
-                      </Fragment>
-                    ))}
-                  </View>
-                ))}
-              </>
-            );
-          })()}
-
-          {appointment.modality === "VIRTUAL" && appointment.videoCallLink && (
-            <DetailCell
-              label="Link de videollamada"
-              value={appointment.videoCallLink}
-              fullWidth
-              icon={<Video size={18} color={t.text.secondary} />}
-            />
-          )}
-
-          {appointment.treatmentTags && appointment.treatmentTags.length > 0 && (
-            <DetailCell
-              label="Etiquetas de tratamiento"
-              value={appointment.treatmentTags.join(", ")}
-              fullWidth
-              icon={<Tag size={18} color={t.text.secondary} />}
-            />
-          )}
-
-          {appointment.customReminder && (
-            <DetailCell
-              label="Recordatorio"
-              value={appointment.customReminder}
-              fullWidth
-              icon={<Bell size={18} color={t.text.secondary} />}
-            />
-          )}
-
-          {appointment.notes && (
-            <DetailCell
-              label="Notas"
-              value={appointment.notes}
-              fullWidth
-              icon={<FileText size={18} color={t.text.secondary} />}
-            />
-          )}
+        {/* Documentos y mochilas: para llevar y obtenidos después, con «+ Agregar documento». */}
+        <View style={[styles.card, cardColors(t)]}>
+          <Text style={[styles.h3, { color: t.text.primary }]}>Documentos y mochilas</Text>
+          <Text style={[styles.lbl, { color: t.text.primary }]}>Para llevar</Text>
+          {preDocs.length + prePacks.length === 0 ? (
+            <Text style={[styles.meta, { color: t.text.secondary }]}>Nada para llevar todavía.</Text>
+          ) : null}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {preDocs.map((doc: any) => (
+            <InfoRow key={doc.id} t={t} tone="document" icon={<FileText size={19} strokeWidth={2.2} color={t.accent.docFg} />} title={doc.title} meta="Documento" />
+          ))}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {prePacks.map((pack: any) => (
+            <InfoRow key={pack.id} t={t} tone="backpack" icon={<Backpack size={19} strokeWidth={2.2} color={t.accent.backpackFg} />} title={`Mochila «${pack.name}»`} />
+          ))}
+          <Text style={[styles.lbl, { color: t.text.primary }]}>Obtenidos después</Text>
+          {postDocs.length + postPacks.length === 0 ? (
+            <Text style={[styles.meta, { color: t.text.secondary }]}>Aún no hay documentos.</Text>
+          ) : null}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {postDocs.map((doc: any) => (
+            <InfoRow key={doc.id} t={t} tone="document" icon={<FileText size={19} strokeWidth={2.2} color={t.accent.docFg} />} title={doc.title} meta="Documento" />
+          ))}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {postPacks.map((pack: any) => (
+            <InfoRow key={pack.id} t={t} tone="backpack" icon={<Backpack size={19} strokeWidth={2.2} color={t.accent.backpackFg} />} title={`Mochila «${pack.name}»`} />
+          ))}
+          <InlineLink
+            t={t}
+            label="Agregar documento"
+            icon={<Plus size={14} strokeWidth={2.6} color={t.brand.text} />}
+            onPress={() => nav.navigate("DocumentUpload", { initialKind: "FILE" })}
+          />
         </View>
 
-        {/* ── Tratamientos ── */}
-        {(appointment.treatmentIds?.length ?? 0) > 0 && (
+        {/* Cita futura: «Reprogramar» secundario y la nota de cuándo se podrá marcar. */}
+        {!hasStarted && !cancelled ? (
           <>
-            <Text style={[styles.sectionTitle, { color: t.text.primary }]}>
-              {(appointment.treatmentIds?.length ?? 0) === 1 ? "Tratamiento" : "Tratamientos"}
-            </Text>
-            {treatments.length > 0 ? (
-              treatments.map((tr: any) => (
-                <View key={tr.id} style={[styles.treatmentCard, { backgroundColor: t.surface.card }]}>
-                  <View style={[styles.treatmentIcon, { backgroundColor: t.brand.tintMed }]}>
-                    <Activity size={20} color={t.brand.fg} />
-                  </View>
-                  <View style={styles.treatmentBody}>
-                    <Text style={[styles.treatmentName, { color: t.text.primary }]}>{tr.name}</Text>
-                    {tr.description ? (
-                      <Text style={[styles.treatmentDesc, { color: t.text.secondary }]} numberOfLines={2}>
-                        {tr.description}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <StatusBadge
-                    status={tr.status}
-                    label={
-                      tr.status === "ACTIVE" ? "Activo"
-                      : tr.status === "COMPLETED" ? "Completado"
-                      : "Inactivo"
-                    }
-                  />
-                </View>
-              ))
-            ) : (
-              <View style={[styles.treatmentCard, { backgroundColor: t.surface.card }]}>
-                <View style={[styles.treatmentIcon, { backgroundColor: t.brand.tintMed }]}>
-                  <Activity size={20} color={t.brand.fg} />
-                </View>
-                <View style={styles.treatmentBody}>
-                  <Text style={[styles.treatmentDesc, { color: t.text.secondary }]}>Cargando tratamientos…</Text>
-                </View>
-              </View>
-            )}
+            <Button
+              variant="secondary"
+              fullWidth
+              icon={<CalendarDays size={16} color={t.brand.text} />}
+              onPress={handleEdit}
+            >
+              Reprogramar
+            </Button>
+            {date && time ? (
+              <Text style={[styles.meta, styles.center, { color: t.text.secondary }]}>
+                Podrás marcarla como completada desde el{" "}
+                {WEEKDAY_LONG[new Date(`${date}T12:00:00`).getDay()]} a las {formatClock(time)}.
+              </Text>
+            ) : null}
           </>
-        )}
+        ) : null}
 
-        {/* ── Documentos y mochilas ── */}
-        <Text style={[styles.sectionTitle, { color: t.text.primary }]}>Documentos y mochilas</Text>
-
-        {hasAttachments ? (
-          <View style={styles.attachmentsList}>
-            {preDocs.length > 0 && (
-              <View style={styles.attachmentGroup}>
-                <Text style={[styles.attachmentGroupLabel, { color: t.text.secondary }]}>Documentos para llevar</Text>
-                {preDocs.map((doc: any) => (
-                  <View key={doc.id} style={[styles.attachmentRow, { backgroundColor: t.surface.card }]}>
-                    <FileCheck size={16} color={t.brand.fg} />
-                    <Text style={[styles.attachmentRowText, { color: t.text.primary }]} numberOfLines={1}>
-                      {doc.title}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-            {prePacks.length > 0 && (
-              <View style={styles.attachmentGroup}>
-                <Text style={[styles.attachmentGroupLabel, { color: t.text.secondary }]}>Mochilas para llevar</Text>
-                {prePacks.map((pack: any) => (
-                  <View key={pack.id} style={[styles.attachmentRow, { backgroundColor: t.surface.card }]}>
-                    <Package size={16} color={t.brand.fg} />
-                    <Text style={[styles.attachmentRowText, { color: t.text.primary }]} numberOfLines={1}>
-                      {pack.name}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-            {/* Luego lo que salió de la cita */}
-            {postDocs.length > 0 && (
-              <View style={styles.attachmentGroup}>
-                <Text style={[styles.attachmentGroupLabel, { color: t.text.secondary }]}>Documentos obtenidos</Text>
-                {postDocs.map((doc: any) => (
-                  <View key={doc.id} style={[styles.attachmentRow, { backgroundColor: t.surface.card }]}>
-                    <Folder size={16} color={t.brand.fg} />
-                    <Text style={[styles.attachmentRowText, { color: t.text.primary }]} numberOfLines={1}>
-                      {doc.title}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-            {postPacks.length > 0 && (
-              <View style={styles.attachmentGroup}>
-                <Text style={[styles.attachmentGroupLabel, { color: t.text.secondary }]}>Mochilas obtenidas</Text>
-                {postPacks.map((pack: any) => (
-                  <View key={pack.id} style={[styles.attachmentRow, { backgroundColor: t.surface.card }]}>
-                    <Package size={16} color={t.brand.fg} />
-                    <Text style={[styles.attachmentRowText, { color: t.text.primary }]} numberOfLines={1}>
-                      {pack.name}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-        ) : (
-          <View style={[styles.emptyAttachments, { borderColor: t.border.default }]}>
-            <FileCheck size={28} color={t.text.muted} strokeWidth={1.5} />
-            <Text style={[styles.emptyAttachmentsText, { color: t.text.muted }]}>
-              Sin documentos ni mochilas adjuntas
-            </Text>
-          </View>
-        )}
-
+        {/* Una cita ya marcada (asistí / no asistí) queda en el historial: no se ofrece cancelarla. */}
+        {!cancelled && !answered ? (
+          <DangerLink
+            label="Cancelar cita"
+            icon={<XCircle size={16} strokeWidth={2.2} color={t.status.errorFg} />}
+            onPress={() => setShowCancelDialog(true)}
+            disabled={statusMut.isPending}
+          />
+        ) : null}
       </ScrollView>
 
-      <DetailFooter actions={footerActions} />
-
-      <ConfirmDialog
-        visible={showDeleteDialog}
-        icon={<Trash2 size={24} color={colors.error[600]} />}
-        title="¿Eliminar cita?"
-        message="Esta acción no se puede deshacer."
-        cancelText="Cancelar"
-        confirmText="Eliminar"
-        onCancel={() => setShowDeleteDialog(false)}
-        onConfirm={confirmDelete}
-        destructive
-      />
-
+      {showCancelDialog ? (
+        <ConfirmModal
+          title="¿Cancelar cita?"
+          message="La cita queda cancelada en tu historial. No se borra."
+          keepLabel="Mantener cita"
+          confirmLabel="Cancelar cita"
+          confirmVariant="danger"
+          loading={statusMut.isPending}
+          onCancel={() => setShowCancelDialog(false)}
+          onConfirm={() => setStatus("CANCELADA", "Cita cancelada")}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
 
+const cardColors = (t: ThemeContextValue) => ({ backgroundColor: t.surface.bgCard, borderColor: t.border.default });
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  scroll: { flex: 1 },
-  content: {
-    padding: spacing[4],
-    gap: spacing[4],
-    paddingBottom: spacing[8],
-  },
-
-  // Hero card
-  heroCard: {
-    borderRadius: 16,
-    padding: spacing[4],
-    gap: spacing[3],
-  },
-  heroTop: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing[3],
-  },
-  heroIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: "center",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  heroTitle: {
-    flex: 1,
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.white,
-    lineHeight: 28,
-  },
-  heroBadges: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing[2],
-  },
-
-  // Quick stats strip
-  statsStrip: {
-    flexDirection: "row",
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: spacing[3],
-    paddingHorizontal: spacing[2],
-    gap: 2,
-  },
-  statMain: {
-    fontSize: 13,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  statSub: {
-    fontSize: 11,
-    textAlign: "center",
-    textTransform: "capitalize",
-  },
-  statDivider: {
-    width: 1,
-    marginVertical: spacing[3],
-  },
-
-  // Section titles
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-
-  // Detail grid
-  grid: {
-    gap: spacing[2],
-  },
-  gridRow: {
-    flexDirection: "row",
-    gap: spacing[2],
-  },
-
-  // Treatment card
-  treatmentCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 12,
-    padding: spacing[3],
-    gap: spacing[3],
-  },
-  treatmentIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  treatmentBody: {
-    flex: 1,
-    gap: 2,
-  },
-  treatmentName: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  treatmentDesc: {
-    fontSize: 12,
-  },
-
-  // Attachments list
-  attachmentsList: {
-    gap: spacing[3],
-  },
-  attachmentGroup: {
-    gap: spacing[2],
-  },
-  attachmentGroupLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  attachmentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[2],
-    borderRadius: 10,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[3],
-  },
-  attachmentRowText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  emptyAttachments: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing[4],
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderRadius: 12,
-    gap: spacing[2],
-  },
-  emptyAttachmentsText: {
-    fontSize: 13,
-  },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", padding: spacing[6] },
+  content: { padding: spacing[4], gap: spacing[4], paddingBottom: spacing[8] },
+  // Kit `.card`: radio 18, borde 1 px + canto de 3 px, padding 16 y separación 12
+  card: { borderRadius: 18, borderWidth: 1, borderBottomWidth: 4, padding: spacing[4], gap: spacing[3] },
+  summaryRow: { flexDirection: "row", alignItems: "center", gap: spacing[4] },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing[3] },
+  rowCopy: { flex: 1, minWidth: 0, gap: 2 },
+  rowTitle: { fontSize: 14, lineHeight: 18, fontFamily: nativeFont("body", 600) },
+  rowMeta: { fontSize: fontSize.sm, lineHeight: 18, fontFamily: nativeFont("body", 400) },
+  h2: { fontSize: 19, lineHeight: 23, fontFamily: nativeFont("heading", 900) },
+  h3: { fontSize: fontSize.md, fontFamily: nativeFont("heading", 800) },
+  sub: { fontSize: 14, lineHeight: 21, fontFamily: nativeFont("body", 400) },
+  lbl: { fontSize: fontSize.sm, fontFamily: nativeFont("heading", 800) },
+  meta: { fontSize: fontSize.sm, lineHeight: 18, fontFamily: nativeFont("body", 400) },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2] },
+  center: { textAlign: "center" },
+  inlineLink: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44, alignSelf: "flex-start" },
+  link: { fontSize: fontSize.sm, fontFamily: nativeFont("heading", 800) },
 });

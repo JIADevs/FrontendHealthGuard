@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, useCallback, type ComponentRef } from "react
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Pill, Clock, Check, MoreVertical, Trash2 } from "lucide-react-native";
 import type { Medication } from "@helu/api";
-import { Button, Card, spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
+import { Button, Card, Chip, spacing, fontSize, nativeFont, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { AgendaRowActionsMenu, measureAgendaRowActionsMenuLeft } from "./AgendaRowActionsMenu";
 import { formatDose, formatFrequency } from "./medicationFormat";
@@ -53,8 +53,8 @@ export function MedicationCard({
               ? `${formatDose(cycle.doseAmount, cycle.doseUnit, cycle.dosage)} — ${formatFrequency(cycle.frequency, cycle.frequencyUnit)}`
               : "Sin ciclo activo"
           }
-          icon={<Pill size={20} color={t.status.warningFg} />}
-          iconBackground={t.status.warningBg}
+          icon={<Pill size={20} color={t.accent.medFg} />}
+          iconBackground={t.accent.medBg}
           actions={
             <View style={styles.headerActions}>
               {cycle && doseState?.kind === "pending" ? (
@@ -69,21 +69,12 @@ export function MedicationCard({
                 </Button>
               ) : null}
               {doseState?.kind === "taken" ? (
-                <View style={styles.takenRow}>
-                  <Check size={14} color={t.status.successFg} />
-                  <Text style={styles.takenText}>Tomado</Text>
-                </View>
+                <Chip label="Tomado" tone="success" icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />} />
               ) : null}
               {doseState?.kind === "not-taken" ? (
-                <View style={styles.missedChip}>
-                  <Text style={styles.missedText}>{doseState.reasonLabel ?? "No tomado"}</Text>
-                </View>
+                <Chip label={doseState.reasonLabel ?? "No tomado"} tone="danger" />
               ) : null}
-              {doseState?.kind === "later" && cycle?.nextIntakeTime ? (
-                <View style={styles.laterChip}>
-                  <Text style={styles.laterText}>Más tarde</Text>
-                </View>
-              ) : null}
+              {doseState?.kind === "later" && cycle?.nextIntakeTime ? <Chip label="Más tarde" tone="neutral" /> : null}
               <View ref={menuTriggerRef} collapsable={false}>
                 <TouchableOpacity
                   onPress={openMenu}
@@ -129,34 +120,13 @@ export function MedicationCard({
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     cardMeta: { flexDirection: "row", alignItems: "center", gap: spacing[1] },
-    cardMetaText: { fontSize: fontSize.sm, color: t.text.secondary },
+    cardMetaText: { fontSize: fontSize.sm, fontFamily: nativeFont("body", 400), color: t.text.secondary },
     headerActions: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing[2],
     },
-    menuButton: { padding: spacing[1] },
-    takenRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[1],
-    },
-    takenText: { color: t.status.successFg, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
-    missedChip: {
-      alignSelf: "flex-start",
-      backgroundColor: t.status.errorBg,
-      borderRadius: radii.full,
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[1],
-    },
-    missedText: { color: t.status.errorFg, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
-    laterChip: {
-      alignSelf: "flex-start",
-      backgroundColor: t.border.light,
-      borderRadius: radii.full,
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[1],
-    },
-    laterText: { color: t.text.secondary, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+    // MASTER §6: 44 × 44 visibles
+    menuButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   });
 }

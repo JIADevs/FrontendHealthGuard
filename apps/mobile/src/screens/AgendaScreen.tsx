@@ -10,7 +10,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRoute, useNavigation } from "@react-navigation/native";
-import { type DailyCheckIn } from "@helu/api";
+import { isApiError, type DailyCheckIn } from "@helu/api";
+import { useConfirmIntakeMutation } from "@helu/api/hooks";
+import Toast from "react-native-toast-message";
 
 import { useWellbeingScreen } from "../hooks/useWellbeingScreen";
 import { useMedicationIntakeIntent } from "../hooks/useMedicationIntakeIntent";
@@ -29,12 +31,13 @@ import {
   Spinner,
   EmptyState,
   HeluAgendaCalendar,
+  SegmentedControl,
+  nativeFont,
+  resolveCycleForDay,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import {
   Heart,
-  Menu,
-  ChevronLeft,
 } from "lucide-react-native";
 
 import {
@@ -42,7 +45,6 @@ import {
   DailyCheckInForm,
   WellbeingFAB,
   WellbeingHeader,
-  AgendaMenuSheet,
   AgendaFAB,
   AgendaAddSheet,
   MedicationIntakeModal,
@@ -54,11 +56,12 @@ import type { AgendaEvent } from "@helu/ui";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-const LIST_VIEW_TITLES: Record<Exclude<AgendaView, "calendar">, string> = {
-  appointments: "Citas",
-  medications: "Medicamentos",
-  wellbeing: "Bienestar",
-};
+const AGENDA_TABS: { value: AgendaView; label: string }[] = [
+  { value: "calendar", label: "Calendario" },
+  { value: "appointments", label: "Citas" },
+  { value: "medications", label: "Medicamentos" },
+  { value: "wellbeing", label: "Bienestar" },
+];
 
 function isAgendaView(value: string | undefined): value is AgendaView {
   return (
@@ -78,7 +81,6 @@ export function AgendaScreen() {
   const navigation = useNavigation();
   const params = (route.params ?? {}) as AgendaRouteParams;
   const [view, setView] = useState<AgendaView>("calendar");
-  const [menuOpen, setMenuOpen] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [checkInFormOpen, setCheckInFormOpen] = useState(false);
   const [intentIntakeEvent, setIntentIntakeEvent] = useState<
@@ -140,40 +142,23 @@ export function AgendaScreen() {
     }
   }, [checkInIntentEnabled, checkInIntent, intentAt]);
 
-  const isListView = view !== "calendar";
   const intentLoading =
     (medicationIntentEnabled && medicationIntent.status === "loading") ||
     (checkInIntentEnabled && checkInIntent.status === "loading");
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* Mockup «Agenda»: título H1 y las 4 pestañas siempre visibles (control segmentado). */}
       <View style={styles.header}>
-        {isListView ? (
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => setView("calendar")}
-            accessibilityLabel="Volver al calendario"
-          >
-            <ChevronLeft size={22} color={t.brand.fg} />
-            <Text style={styles.backLabel}>Calendario</Text>
-          </TouchableOpacity>
-        ) : (
-          <Typography variant="h2">Agenda Médica</Typography>
-        )}
-
-        {isListView && view !== "wellbeing" ? (
-          <Typography variant="h3">{LIST_VIEW_TITLES[view]}</Typography>
-        ) : !isListView ? (
-          <TouchableOpacity
-            style={styles.menuBtn}
-            onPress={() => setMenuOpen(true)}
-            accessibilityLabel="Abrir menú de agenda"
-          >
-            <Menu size={22} color={t.text.primary} />
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.headerSpacer} />
-        )}
+        <Text style={styles.title} accessibilityRole="header">Agenda</Text>
+        <SegmentedControl
+          accessibilityLabel="Vista de la agenda"
+          options={AGENDA_TABS}
+          value={view}
+          onChange={(next) => {
+            if (isAgendaView(next)) setView(next);
+          }}
+        />
       </View>
 
       {intentLoading ? (
@@ -212,12 +197,6 @@ export function AgendaScreen() {
         </>
       ) : null}
 
-      <AgendaMenuSheet
-        visible={menuOpen}
-        activeView={view}
-        onClose={() => setMenuOpen(false)}
-        onSelect={setView}
-      />
     </SafeAreaView>
   );
 }
@@ -236,6 +215,7 @@ function CalendarTab({
   const navigation = useNavigation();
   const [intakeEvent, setIntakeEvent] = useState<Extract<AgendaEvent, { type: "medication" }> | null>(null);
   const [checkInEvent, setCheckInEvent] = useState<Extract<AgendaEvent, { type: "checkin" }> | null>(null);
+  const confirmIntake = useConfirmIntakeMutation();
 
   useEffect(() => {
     if (intentIntakeEvent) {
@@ -260,6 +240,31 @@ function CalendarTab({
             "AgendaTaskDetail",
             { id: event.data.id },
           )
+        }
+        onMedicationTake={(event) => {
+          const cycle = resolveCycleForDay(event.data, event.dayKey);
+          if (!cycle) {
+            Toast.show({ type: "error", text1: "No se pudo confirmar la toma" });
+            return;
+          }
+          confirmIntake.mutate(cycle.id, {
+            onSuccess: () => Toast.show({ type: "success", text1: "Toma confirmada" }),
+            onError: (err) =>
+              Toast.show({
+                type: "error",
+                text1: "No se pudo confirmar la toma",
+                text2: isApiError(err) ? err.message : "Intenta de nuevo",
+              }),
+          });
+        }}
+        onTaskComplete={(event) =>
+          (navigation as { navigate: (name: string, params: { id: string; intent: "complete" }) => void }).navigate(
+            "AgendaTaskDetail",
+            { id: event.data.id, intent: "complete" },
+          )
+        }
+        takingCycleId={
+          confirmIntake.isPending ? confirmIntake.variables : undefined
         }
       />
 
@@ -382,20 +387,15 @@ function WellbeingTab() {
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     container:          { flex: 1, backgroundColor: t.surface.bg },
+    // Mockup: cabecera sobre el fondo de pantalla, H1 Nunito 900 26 y el segmentado debajo.
     header:             {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
       paddingHorizontal: spacing[4],
-      paddingVertical: spacing[4],
-      backgroundColor: t.surface.bgCard,
-      borderBottomWidth: 1,
-      borderBottomColor: t.border.medium,
+      paddingTop: spacing[3],
+      paddingBottom: spacing[3],
+      gap: spacing[3],
+      backgroundColor: t.surface.bg,
     },
-    backBtn:            { flexDirection: "row", alignItems: "center", gap: spacing[1], flex: 1 },
-    backLabel:          { fontSize: fontSize.base, fontWeight: fontWeight.medium, color: t.brand.fg },
-    menuBtn:            { width: 40, height: 40, alignItems: "center", justifyContent: "center", borderRadius: radii.md },
-    headerSpacer:       { width: 40 },
+    title:              { fontSize: 26, lineHeight: 30, fontFamily: nativeFont("heading", 900), color: t.text.primary },
     tabContent:         { flex: 1 },
     wellbeingListContent: { paddingBottom: spacing[12] + 56 },
     wellbeingSectionHeader: {

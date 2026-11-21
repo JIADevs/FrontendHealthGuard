@@ -1,16 +1,6 @@
-import { useMemo } from "react";
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Pressable,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Stethoscope, Pill, Heart, ListTodo, X } from "lucide-react-native";
-import { colors, fontSize, fontWeight, overlay, radii, spacing, useAppTheme } from "@helu/ui";
-import type { ThemeContextValue } from "@helu/ui";
+import { Pressable, View, Text, StyleSheet } from "react-native";
+import { CalendarDays, CheckSquare, ChevronRight, Heart, Pill, Plus } from "lucide-react-native";
+import { BottomSheet, IconTile, nativeFont, spacing, useAppTheme, type Tone } from "@helu/ui";
 
 export interface AgendaAddSheetProps {
   visible: boolean;
@@ -21,6 +11,10 @@ export interface AgendaAddSheetProps {
   onAddCheckIn: () => void;
 }
 
+/**
+ * Hoja del botón «+» (mockup «Agregar a agenda»): encabezado «AGENDA · ¿Qué quieres agregar?»
+ * y una tarjeta por opción con el color de su módulo (aquí el módulo es la opción, MASTER §4.3 v2.1).
+ */
 export function AgendaAddSheet({
   visible,
   onClose,
@@ -30,163 +24,70 @@ export function AgendaAddSheet({
   onAddCheckIn,
 }: AgendaAddSheetProps) {
   const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-  const insets = useSafeAreaInsets();
+  if (!visible) return null;
 
-  const handleAppointment = () => {
-    onClose();
-    onAddAppointment();
-  };
-
-  const handleMedication = () => {
-    onClose();
-    onAddMedication();
-  };
-
-  const handleTask = () => {
-    onClose();
-    onAddTask();
-  };
-
-  const handleCheckIn = () => {
-    onClose();
-    onAddCheckIn();
-  };
+  const options: { tone: Tone; icon: typeof Heart; title: string; subtitle: string; onPress: () => void }[] = [
+    { tone: "wellbeing", icon: Heart, title: "Registrar check-in", subtitle: "Cómo te sientes hoy", onPress: onAddCheckIn },
+    { tone: "appointment", icon: CalendarDays, title: "Nueva cita", subtitle: "Consulta, examen o control", onPress: onAddAppointment },
+    { tone: "medication", icon: Pill, title: "Nuevo medicamento", subtitle: "Con recordatorios de cada toma", onPress: onAddMedication },
+    { tone: "mission", icon: CheckSquare, title: "Nueva tarea", subtitle: "Recoger, llamar o enviar algo", onPress: onAddTask },
+  ];
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      statusBarTranslucent
-      presentationStyle="overFullScreen"
-      onRequestClose={onClose}
+    <BottomSheet
+      eyebrow="AGENDA"
+      title="¿Qué quieres agregar?"
+      icon={<IconTile tone="brand" size="lg" round icon={<Plus size={24} strokeWidth={2.4} color={t.brand.text} />} />}
+      onClose={onClose}
     >
-      <View style={styles.modalRoot}>
-        <Pressable style={styles.modalBackdropTouch} onPress={onClose} accessibilityLabel="Cerrar" />
-        <View style={[styles.modalSheet, { paddingBottom: spacing[5] + insets.bottom }]}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Agregar a agenda</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Cerrar"
-            >
-              <X size={22} color={t.text.secondary} />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={handleAppointment}
-            activeOpacity={0.7}
+      <View style={styles.list}>
+        {options.map(({ tone, icon: Icon, title, subtitle, onPress }) => (
+          <Pressable
+            key={title}
+            onPress={() => {
+              onClose();
+              onPress();
+            }}
             accessibilityRole="button"
-            accessibilityLabel="Nueva cita"
+            accessibilityLabel={`${title}, ${subtitle}`}
+            style={({ pressed }) => [
+              styles.card,
+              { backgroundColor: t.surface.bgCard, borderColor: t.border.default, opacity: pressed ? 0.85 : 1 },
+            ]}
           >
-            <View style={[styles.optionIcon, { backgroundColor: t.brand.tint }]}>
-              <Stethoscope size={22} color={t.brand.fg} strokeWidth={2.25} />
+            <IconTile tone={tone} icon={<Icon size={19} strokeWidth={2.2} color={toneColor(t, tone)} />} />
+            <View style={styles.copy}>
+              <Text style={[styles.title, { color: t.text.primary }]}>{title}</Text>
+              <Text style={[styles.subtitle, { color: t.text.secondary }]}>{subtitle}</Text>
             </View>
-            <Text style={styles.optionLabel}>Nueva cita</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={handleMedication}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Nuevo medicamento"
-          >
-            <View style={[styles.optionIcon, { backgroundColor: t.accent.medBg }]}>
-              <Pill size={22} color={t.accent.medFg} strokeWidth={2.25} />
-            </View>
-            <Text style={styles.optionLabel}>Nuevo medicamento</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={handleTask}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Nueva tarea"
-          >
-            <View style={[styles.optionIcon, { backgroundColor: t.accent.backpackBg }]}>
-              <ListTodo size={22} color={t.accent.backpackFg} strokeWidth={2.25} />
-            </View>
-            <Text style={styles.optionLabel}>Nueva tarea</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={handleCheckIn}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Registrar check-in"
-          >
-            <View style={[styles.optionIcon, { backgroundColor: t.brand.tint }]}>
-              <Heart size={22} color={t.brand.fg} strokeWidth={2.25} />
-            </View>
-            <Text style={styles.optionLabel}>Registrar check-in</Text>
-          </TouchableOpacity>
-        </View>
+            <ChevronRight size={18} color={t.text.muted} />
+          </Pressable>
+        ))}
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 
-function makeStyles(t: ThemeContextValue) {
-  return StyleSheet.create({
-    modalRoot: {
-      flex: 1,
-      justifyContent: "flex-end",
-    },
-    modalBackdropTouch: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: overlay.darker,
-    },
-    modalSheet: {
-      backgroundColor: t.surface.bgCard,
-      borderTopLeftRadius: radii.xl,
-      borderTopRightRadius: radii.xl,
-      padding: spacing[5],
-      gap: spacing[2],
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 12,
-      elevation: 16,
-    },
-    modalHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: spacing[2],
-    },
-    modalTitle: {
-      fontSize: fontSize.lg,
-      fontWeight: fontWeight.bold,
-      color: t.text.primary,
-    },
-    optionRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],
-      paddingVertical: spacing[3],
-      paddingHorizontal: spacing[2],
-      borderRadius: radii.md,
-    },
-    optionIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: radii.full,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    optionLabel: {
-      flex: 1,
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.medium,
-      color: t.text.primary,
-    },
-  });
+function toneColor(t: ReturnType<typeof useAppTheme>, tone: Tone): string {
+  if (tone === "wellbeing") return t.accent.wellbeingFg;
+  if (tone === "appointment") return t.accent.calFg;
+  if (tone === "medication") return t.accent.medFg;
+  return t.accent.missionFg;
 }
+
+const styles = StyleSheet.create({
+  list: { gap: spacing[3] },
+  // Kit `.card.tight`
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing[3],
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderBottomWidth: 4,
+  },
+  copy: { flex: 1, gap: 2 },
+  title: { fontSize: 14, fontFamily: nativeFont("body", 600) },
+  subtitle: { fontSize: 13, fontFamily: nativeFont("body", 400) },
+});

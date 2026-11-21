@@ -1,10 +1,11 @@
 ﻿import React, { useRef, useEffect, type ComponentRef } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  KeyboardAvoidingView, Platform, Modal, Pressable, TextInput,
+  KeyboardAvoidingView, Platform, Pressable, AccessibilityInfo,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useMemo, useState } from "react";
 import {
   useAppTheme,
@@ -12,7 +13,19 @@ import {
   DatePicker,
   TimePicker,
   Spinner,
+  DiscardChangesDialog,
+  BottomActionBar,
+  BOTTOM_ACTION_BAR_HEIGHT,
+  BottomSheet,
+  Button,
+  ChoiceChips,
+  SegmentedControl,
+  IconTile,
+  type Tone,
   spacing,
+  fontSize,
+  radii,
+  nativeFont,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { useAppointmentForm } from "../hooks/useAppointmentForm";
@@ -27,13 +40,12 @@ import {
 import {
   Plus, ChevronDown, ChevronUp, Calendar, Clock, MapPin, Video, Phone,
   User, Building2, FileText, Stethoscope, Briefcase, ClipboardList, Timer,
-  DollarSign, Activity, FolderOpen, Backpack, Bell, X, Search,
+  DollarSign, Activity, FolderOpen, Backpack, Bell, X, Check, AlertCircle,
 } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { MODALITIES } from "../constants/appointments";
 import { SelectField } from "../components/SelectField";
-import { FormHeader } from "../components/FormHeader";
-import { AddDoctorModal } from "../components/AddDoctorModal";
+import { ScreenHeader } from "../components/ScreenHeader";
 
 type AppointmentFormRouteProp = RouteProp<RootStackParamList, "AppointmentForm">;
 
@@ -65,82 +77,49 @@ function PickerModal({ visible, onClose, title, items, selected, onToggle }: Pic
     if (!visible) setSearch("");
   }, [visible]);
 
+  if (!visible) return null;
+
   const filtered = search.trim()
     ? items.filter((item) => item.label.toLowerCase().includes(search.toLowerCase()))
     : items;
 
+  // v2: selección múltiple en la hoja compartida (formularios.md §4: fila seleccionable con casilla).
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(_e: any) => _e.stopPropagation()}>
-          <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>{title}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <X size={22} color={t.text.primary} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.sheetDivider} />
-          {/* Buscador */}
-          <View style={styles.pickerSearchContainer}>
-            <Search size={16} color={t.text.secondary} />
-            <TextInput
-              style={styles.pickerSearchInput}
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Buscar..."
-              placeholderTextColor={t.text.muted}
-            />
-            {search.length > 0 && (
-              <TouchableOpacity onPress={() => setSearch("")}>
-                <X size={16} color={t.text.secondary} />
-              </TouchableOpacity>
-            )}
-          </View>
-          <ScrollView
-            style={styles.sheetScroll}
-            contentContainerStyle={{ gap: spacing[2], paddingBottom: spacing[2] }}
-          >
-            {filtered.length === 0 && (
-              <Text style={styles.emptyText}>No hay elementos disponibles</Text>
-            )}
-            {filtered.map((item) => {
-              const isSelected = selected.includes(item.id);
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[styles.pickerCard, isSelected && styles.pickerCardSelected]}
-                  onPress={() => onToggle(item.id)}
-                  activeOpacity={0.7}
-                >
-                  {/* Icono izquierda */}
-                  <View style={styles.pickerCardIcon}>
-                    <FileText size={20} color={t.text.secondary} />
-                  </View>
-                  {/* Texto */}
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.pickerRowTitle} numberOfLines={1}>{item.label}</Text>
-                    {item.sub && <Text style={styles.pickerRowSub}>{item.sub}</Text>}
-                  </View>
-                  {/* Botón + / × */}
-                  <View style={[styles.pickerAddBtn, isSelected && styles.pickerAddBtnSelected]}>
-                    {isSelected
-                      ? <X size={22} color="#fff" />
-                      : <Plus size={22} color="#fff" />
-                    }
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-          {/* Botón cerrar al estilo de la screenshot */}
-          <TouchableOpacity style={styles.pickerCloseBtn} onPress={onClose}>
-            <Text style={styles.pickerCloseBtnText}>Cerrar</Text>
-          </TouchableOpacity>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    <BottomSheet title={title} onClose={onClose}>
+      <TextField label="Buscar" value={search} onChange={setSearch} placeholder="Escribe un nombre" autoCapitalize="none" />
+      <View style={styles.pickerList}>
+        {filtered.length === 0 && <Text style={styles.emptyText}>No hay elementos para elegir</Text>}
+        {filtered.map((item) => {
+          const isSelected = selected.includes(item.id);
+          return (
+            <Pressable
+              key={item.id}
+              style={({ pressed }) => [styles.pickerRow, isSelected && styles.pickerRowSelected, pressed && { opacity: 0.8 }]}
+              onPress={() => onToggle(item.id)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: isSelected }}
+              accessibilityLabel={item.sub ? `${item.label}, ${item.sub}` : item.label}
+            >
+              <View style={styles.pickerRowCopy}>
+                <Text style={styles.pickerRowTitle} numberOfLines={2}>{item.label}</Text>
+                {item.sub ? <Text style={styles.pickerRowSub} numberOfLines={2}>{item.sub}</Text> : null}
+              </View>
+              <View style={[styles.checkbox, isSelected && styles.checkboxOn]}>
+                {isSelected ? <Check size={16} strokeWidth={3} color={t.text.onSolid} /> : null}
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={styles.pickerFooter}>
+        <Button fullWidth onPress={onClose}>
+          {selected.length === 0 ? "Listo" : selected.length === 1 ? "Listo · 1 elegido" : `Listo · ${selected.length} elegidos`}
+        </Button>
+      </View>
+    </BottomSheet>
   );
 }
+
 
 // ─── Chip tag ──────────────────────────────────────────────────────────────────
 
@@ -148,15 +127,37 @@ function ChipTag({ label, onRemove }: { label: string; onRemove: () => void }) {
   const t = useAppTheme();
   return (
     <View style={{
-      flexDirection: "row", alignItems: "center", gap: 4,
-      backgroundColor: t.brand.bg, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4,
-      borderWidth: 1, borderColor: t.brand.fg,
+      flexDirection: "row", alignItems: "center", gap: spacing[1],
+      backgroundColor: t.brand.tint, borderRadius: radii.full, paddingLeft: spacing[3],
+      borderWidth: 1, borderColor: t.brand.tintBorder, minHeight: 44,
     }}>
-      <Text style={{ fontSize: 13, color: t.brand.fg }}>{label}</Text>
-      <TouchableOpacity onPress={onRemove}>
-        <X size={13} color={t.brand.fg} />
-      </TouchableOpacity>
+      <Text style={{ fontSize: 13, color: t.brand.text, fontFamily: nativeFont("heading", 800) }}>{label}</Text>
+      <Pressable
+        onPress={onRemove}
+        accessibilityRole="button"
+        accessibilityLabel={`Quitar ${label}`}
+        style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}
+      >
+        <X size={14} color={t.brand.text} />
+      </Pressable>
     </View>
+  );
+}
+
+/** Fila «Agregar …» del mockup: cuadro del módulo, texto y «+» azul. */
+function AddRow({ tone, icon: Icon, label, onPress }: { tone: Tone; icon: typeof FileText; label: string; onPress: () => void }) {
+  const t = useAppTheme();
+  const color = tone === "document" ? t.accent.docFg : t.accent.backpackFg;
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: spacing[3], minHeight: 44, opacity: pressed ? 0.7 : 1 })}
+    >
+      <IconTile tone={tone} icon={<Icon size={19} strokeWidth={2.2} color={color} />} />
+      <Text style={{ flex: 1, fontSize: 14, fontFamily: nativeFont("body", 600), color: t.text.primary }}>{label}</Text>
+      <Plus size={18} color={t.brand.solid} />
+    </Pressable>
   );
 }
 
@@ -189,18 +190,74 @@ function AppointmentFormEditor({ id }: { id: string }) {
   return <AppointmentFormBody appointment={appointment ?? null} />;
 }
 
+function appointmentDraft(form: {
+  name: string;
+  date: string;
+  time: string;
+  modality: string;
+  location: string;
+  videoCallLink: string;
+  specialty: string;
+  service: string;
+  consultationType: string;
+  duration: string;
+  doctorId: string;
+  doctor: string;
+  clinic: string;
+  cost: string;
+  notes: string;
+  treatmentIds: string[];
+  preDocumentIds: string[];
+  postDocumentIds: string[];
+  preBackpackIds: string[];
+  postBackpackIds: string[];
+  reminderMode: string;
+  reminderOffsets: number[];
+}) {
+  return JSON.stringify({
+    name: form.name,
+    date: form.date,
+    time: form.time,
+    modality: form.modality,
+    location: form.location,
+    videoCallLink: form.videoCallLink,
+    specialty: form.specialty,
+    service: form.service,
+    consultationType: form.consultationType,
+    duration: form.duration,
+    doctorId: form.doctorId,
+    doctor: form.doctor,
+    clinic: form.clinic,
+    cost: form.cost,
+    notes: form.notes,
+    treatmentIds: form.treatmentIds,
+    preDocumentIds: form.preDocumentIds,
+    postDocumentIds: form.postDocumentIds,
+    preBackpackIds: form.preBackpackIds,
+    postBackpackIds: form.postBackpackIds,
+    reminderMode: form.reminderMode,
+    reminderOffsets: [...form.reminderOffsets].sort((a, b) => a - b),
+  });
+}
+
 // ─── Form body ────────────────────────────────────────────────────────────────
 
 function AppointmentFormBody({ appointment }: { appointment: any }) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const allowLeave = useRef(false);
+  const baseline = useRef<string | null>(null);
+  const nameTouched = useRef(Boolean(appointment?.name));
+  const [askDiscard, setAskDiscard] = useState(false);
 
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(
-    !!(appointment?.duration || appointment?.notes || appointment?.service || appointment?.consultationType || appointment?.cost)
+    !!(
+      appointment?.duration || appointment?.notes || appointment?.service || appointment?.consultationType || appointment?.cost
+      || appointment?.treatmentIds?.length || appointment?.preDocumentIds?.length || appointment?.postDocumentIds?.length
+      || appointment?.preBackpackIds?.length || appointment?.postBackpackIds?.length
+    )
   );
-  const [showAddDoctorModal, setShowAddDoctorModal] = useState(false);
-
   // Picker modals for documents/backpacks/treatments
   const [showTreatmentPicker, setShowTreatmentPicker] = useState(false);
   const [showPreDocPicker, setShowPreDocPicker] = useState(false);
@@ -209,11 +266,54 @@ function AppointmentFormBody({ appointment }: { appointment: any }) {
   const [showPostBpPicker, setShowPostBpPicker] = useState(false);
 
   const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const insets = useSafeAreaInsets();
+  // formularios.md §6: al enviar con errores, bajar al primer campo con error y anunciar cuántos.
+  const sectionY = useRef({ dateTime: 0, place: 0 });
+  const [saveAttempt, setSaveAttempt] = useState(0);
 
   const form = useAppointmentForm({
     initial: appointment,
-    onClose: () => navigation.goBack(),
+    onClose: () => {
+      allowLeave.current = true;
+      navigation.goBack();
+    },
   });
+
+  const suggestedName = [form.specialty, form.doctor].filter(Boolean).join(" — ");
+
+  const fieldErrorCount = Object.keys(form.fieldErrors).length;
+  useEffect(() => {
+    if (saveAttempt === 0 || fieldErrorCount === 0) return;
+    const firstY = form.fieldErrors.date || form.fieldErrors.time ? sectionY.current.dateTime : sectionY.current.place;
+    scrollViewRef.current?.scrollTo({ y: Math.max(0, firstY - spacing[4]), animated: true });
+    AccessibilityInfo.announceForAccessibility(fieldErrorCount === 1 ? "Revisa 1 campo" : `Revisa ${fieldErrorCount} campos`);
+    // Solo al intentar guardar; la corrección en vivo no vuelve a mover la pantalla.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveAttempt]);
+
+  const handleSave = () => {
+    form.handleSave();
+    setSaveAttempt((n) => n + 1);
+  };
+
+  useEffect(() => {
+    if (nameTouched.current || !suggestedName) return;
+    form.setName(suggestedName);
+  }, [suggestedName, form]);
+
+  if (baseline.current === null) {
+    baseline.current = appointmentDraft(form);
+  }
+  const nameForCompare = !nameTouched.current && (form.name === "" || form.name === suggestedName) ? "" : form.name;
+  const dirty = appointmentDraft({ ...form, name: nameForCompare }) !== baseline.current;
+
+  useEffect(() => {
+    return navigation.addListener("beforeRemove", (event) => {
+      if (!dirty || allowLeave.current) return;
+      event.preventDefault();
+      setAskDiscard(true);
+    });
+  }, [navigation, dirty]);
 
   const doctorsQuery = useDoctorsQuery("", 1, 100);
   const doctors = doctorsQuery.data?.items ?? [];
@@ -253,394 +353,237 @@ function AppointmentFormBody({ appointment }: { appointment: any }) {
     }
   }
 
+  const togglePick = (list: string[], setter: (v: string[]) => void, id: string) =>
+    setter(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
+
+  const reminderValue =
+    form.reminderMode === "none"
+      ? "none"
+      : form.reminderMode === "before" && form.reminderOffsets.length === 1
+        ? String(form.reminderOffsets[0])
+        : null;
+
+  const chipsFor = (ids: string[], items: { id: string; label: string }[], setter: (v: string[]) => void) =>
+    ids.length > 0 ? (
+      <View style={styles.chipRow}>
+        {ids.map((id) => (
+          <React.Fragment key={id}>
+            <ChipTag label={labelForId(id, items)} onRemove={() => setter(ids.filter((x) => x !== id))} />
+          </React.Fragment>
+        ))}
+      </View>
+    ) : null;
+
+  // Mockup «Nueva cita» (v2): lo esencial primero (cuándo, con quién, dónde y recordatorio);
+  // lo opcional queda plegado en «Más detalles». Barra fija con «Guardar cita».
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <FormHeader
-        title={appointment ? "Editar cita" : "Nueva cita"}
-        onSave={form.handleSave}
-        saveButtonText={form.isEdit ? "Guardar cambios" : "Guardar"}
-      />
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <ScreenHeader title={appointment ? "Editar cita" : "Nueva cita"} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
-        <ScrollView ref={scrollViewRef} style={styles.scroll} contentContainerStyle={styles.content}>
-
-          {/* ── INFORMACIÓN BÁSICA ─────────────────────────────────────────── */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Calendar size={20} color={t.brand.fg} />
-              <Text style={styles.cardTitle}>Información básica</Text>
-            </View>
-
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: BOTTOM_ACTION_BAR_HEIGHT + insets.bottom + spacing[8] },
+          ]}
+        >
+          <View style={styles.card} onLayout={(e) => { sectionY.current.dateTime = e.nativeEvent.layout.y; }}>
+            <Text style={styles.cardTitle}>Fecha y hora</Text>
             <View style={styles.row}>
               <View style={styles.halfField}>
-                <View style={styles.labelWithIcon}>
-                  <Calendar size={16} color={t.text.secondary} />
-                  <Text style={styles.label}>Fecha *</Text>
-                </View>
-                <DatePicker label="" value={form.date} onChange={form.setDate} placeholder="Seleccionar fecha" required />
+                <DatePicker label="Fecha" value={form.date} onChange={form.setDate} placeholder="Elige la fecha" error={form.fieldErrors.date} />
               </View>
               <View style={styles.halfField}>
-                <View style={styles.labelWithIcon}>
-                  <Clock size={16} color={t.text.secondary} />
-                  <Text style={styles.label}>Hora *</Text>
-                </View>
-                <TimePicker label="" value={form.time} onChange={form.setTime} placeholder="Seleccionar hora" required />
+                <TimePicker label="Hora" value={form.time} onChange={form.setTime} placeholder="Elige la hora" error={form.fieldErrors.time} />
               </View>
             </View>
-
-            <View>
-              <Text style={styles.label}>Modalidad *</Text>
-              <View style={styles.pillRow}>
-                {MODALITIES.map((mod) => {
-                  const icon = mod.value === "PRESENCIAL" ? MapPin : mod.value === "VIRTUAL" ? Video : Phone;
-                  const IconComponent = icon;
-                  return (
-                    <TouchableOpacity
-                      key={mod.value}
-                      style={[styles.pill, form.modality === mod.value && styles.pillActive]}
-                      onPress={() => form.setModality(mod.value)}
-                    >
-                      <IconComponent size={16} color={form.modality === mod.value ? t.brand.fg : t.text.secondary} />
-                      <Text style={[styles.pillText, form.modality === mod.value && styles.pillTextActive]}>
-                        {mod.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-
-            {form.modality === "PRESENCIAL" && (
-              <View>
-                <View style={styles.labelWithIcon}>
-                  <MapPin size={16} color={t.text.secondary} />
-                  <Text style={styles.label}>Lugar *</Text>
-                </View>
-                <TextField label="" value={form.location} onChange={form.setLocation} placeholder="Ej: Calle 123, Bogotá" />
-              </View>
-            )}
-
-            {form.modality === "VIRTUAL" && (
-              <View>
-                <View style={styles.labelWithIcon}>
-                  <Video size={16} color={t.text.secondary} />
-                  <Text style={styles.label}>Link de videollamada *</Text>
-                </View>
-                <TextField label="" value={form.videoCallLink} onChange={form.setVideoCallLink} placeholder="https://meet.google.com/..." />
-              </View>
-            )}
+            <TextField label="Duración" value={form.duration} onChange={form.setDuration} placeholder="30" keyboardType="number-pad" unit="min" />
           </View>
 
-          {/* ── PROFESIONAL DE SALUD ───────────────────────────────────────── */}
           <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Stethoscope size={20} color={t.brand.fg} />
-              <Text style={styles.cardTitle}>Profesional de salud</Text>
+            <Text style={styles.cardTitle}>Profesional</Text>
+            <View style={{ gap: 6 }}>
+              <Text style={styles.label}>Tipo de consulta</Text>
+              <SegmentedControl
+                accessibilityLabel="Tipo de consulta"
+                options={[
+                  { value: "APPOINTMENT", label: "Cita médica" },
+                  { value: "EXAM", label: "Examen" },
+                ]}
+                value={form.type}
+                onChange={(value) => form.setType(value as "APPOINTMENT" | "EXAM")}
+              />
             </View>
-
+            <SelectField
+              label="Especialidad" value={form.specialty} placeholder="Seleccionar especialidad"
+              options={specialties} onChange={form.setSpecialty}
+            />
             <View>
-              <View style={styles.labelWithIcon}>
-                <User size={16} color={t.text.secondary} />
-                <Text style={styles.label}>Profesional</Text>
-              </View>
               <SelectField
-                label="" value={form.doctor} placeholder="Seleccionar profesional"
+                label="Profesional de salud" value={form.doctor} placeholder="Seleccionar profesional"
                 options={doctors.map((d: any) => d.name)} onChange={handleDoctorSelect}
               />
-              <TouchableOpacity style={styles.addButton} onPress={() => setShowAddDoctorModal(true)}>
-                <Plus size={16} color={t.brand.fg} />
-                <Text style={styles.addButtonText}>Agregar nuevo profesional</Text>
-              </TouchableOpacity>
+              <Pressable style={styles.addButton} onPress={() => navigation.navigate("DoctorForm")} accessibilityRole="button">
+                <Text style={styles.addButtonText}>+ Agregar nuevo profesional</Text>
+              </Pressable>
             </View>
+            <TextField
+              label="Nombre de la cita (opcional)"
+              value={form.name}
+              onChange={(value) => {
+                nameTouched.current = true;
+                form.setName(value);
+              }}
+              placeholder="Ej: Odontología · Dra. Ruiz"
+              helper="Si lo dejas vacío, se completa solo."
+            />
+          </View>
 
-            <View>
-              <View style={styles.labelWithIcon}>
-                <Briefcase size={16} color={t.text.secondary} />
-                <Text style={styles.label}>Especialidad</Text>
-              </View>
-              <SelectField
-                label="" value={form.specialty} placeholder="Seleccionar especialidad"
-                options={specialties} onChange={form.setSpecialty}
+          <View style={styles.card} onLayout={(e) => { sectionY.current.place = e.nativeEvent.layout.y; }}>
+            <Text style={styles.cardTitle}>Modalidad y lugar</Text>
+            <SegmentedControl
+              accessibilityLabel="Modalidad"
+              options={MODALITIES.map((mod) => ({ value: mod.value, label: mod.label }))}
+              value={form.modality}
+              onChange={(value) => form.setModality(value as (typeof MODALITIES)[number]["value"])}
+            />
+            {form.modality === "VIRTUAL" ? (
+              <TextField
+                label="Enlace de la videollamada"
+                value={form.videoCallLink}
+                onChange={form.setVideoCallLink}
+                placeholder="https://meet.google.com/..."
+                autoCapitalize="none"
+                leadingIcon={<Video size={18} color={t.text.muted} />}
+                error={form.fieldErrors.videoCallLink}
               />
-            </View>
-
-            <View>
-              <View style={styles.labelWithIcon}>
-                <Building2 size={16} color={t.text.secondary} />
-                <Text style={styles.label}>Clínica / Hospital / IPS</Text>
-              </View>
-              <TextField label="" value={form.clinic} onChange={form.setClinic} placeholder="Ej: Hospital San José" />
-            </View>
-
-            <View>
-              <View style={styles.labelWithIcon}>
-                <Activity size={16} color={t.text.secondary} />
-                <Text style={styles.label}>Tratamiento</Text>
-              </View>
-              {form.treatmentIds.length > 0 && (
-                <View style={styles.chipRow}>
-                  {(form.treatmentIds as string[]).map((id: string) => (
-                    <React.Fragment key={id}>
-                      <ChipTag
-                        label={labelForId(id, treatmentItems)}
-                        onRemove={() => form.setTreatmentIds((form.treatmentIds as string[]).filter((x: string) => x !== id))}
-                      />
-                    </React.Fragment>
-                  ))}
-                </View>
-              )}
-              <TouchableOpacity style={styles.addButton} onPress={() => setShowTreatmentPicker(true)}>
-                <Plus size={16} color={t.brand.fg} />
-                <Text style={styles.addButtonText}>Agregar tratamiento</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* ── DOCUMENTOS Y MOCHILAS ─────────────────────────────────────── */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <FolderOpen size={20} color={t.brand.fg} />
-              <Text style={styles.cardTitle}>Documentos y mochilas</Text>
-            </View>
-
-            {/* Antes de la cita — documentos */}
-            <View>
-              <Text style={styles.sectionSubtitle}>Antes de la cita</Text>
-              <View style={styles.labelWithIcon}>
-                <FileText size={16} color={t.text.secondary} />
-                <Text style={styles.label}>Documentos a llevar</Text>
-              </View>
-              {form.preDocumentIds.length > 0 && (
-                <View style={styles.chipRow}>
-                  {(form.preDocumentIds as string[]).map((id: string) => (
-                    <React.Fragment key={id}>
-                      <ChipTag
-                        label={labelForId(id, docItems)}
-                        onRemove={() => form.setPreDocumentIds((form.preDocumentIds as string[]).filter((x: string) => x !== id))}
-                      />
-                    </React.Fragment>
-                  ))}
-                </View>
-              )}
-              <TouchableOpacity style={styles.addButton} onPress={() => setShowPreDocPicker(true)}>
-                <Plus size={16} color={t.brand.fg} />
-                <Text style={styles.addButtonText}>Agregar documentos</Text>
-              </TouchableOpacity>
-
-              <View style={[styles.labelWithIcon, { marginTop: spacing[2] }]}>
-                <Backpack size={16} color={t.text.secondary} />
-                <Text style={styles.label}>Mochilas a llevar</Text>
-              </View>
-              {form.preBackpackIds.length > 0 && (
-                <View style={styles.chipRow}>
-                  {(form.preBackpackIds as string[]).map((id: string) => (
-                    <React.Fragment key={id}>
-                      <ChipTag
-                        label={labelForId(id, bpItems)}
-                        onRemove={() => form.setPreBackpackIds((form.preBackpackIds as string[]).filter((x: string) => x !== id))}
-                      />
-                    </React.Fragment>
-                  ))}
-                </View>
-              )}
-              <TouchableOpacity style={styles.addButton} onPress={() => setShowPreBpPicker(true)}>
-                <Plus size={16} color={t.brand.fg} />
-                <Text style={styles.addButtonText}>Agregar mochilas</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.separator} />
-
-            {/* Después de la cita — documentos */}
-            <View>
-              <Text style={styles.sectionSubtitle}>Después de la cita</Text>
-              <View style={styles.labelWithIcon}>
-                <FileText size={16} color={t.text.secondary} />
-                <Text style={styles.label}>Documentos obtenidos</Text>
-              </View>
-              {form.postDocumentIds.length > 0 && (
-                <View style={styles.chipRow}>
-                  {(form.postDocumentIds as string[]).map((id: string) => (
-                    <React.Fragment key={id}>
-                      <ChipTag
-                        label={labelForId(id, docItems)}
-                        onRemove={() => form.setPostDocumentIds((form.postDocumentIds as string[]).filter((x: string) => x !== id))}
-                      />
-                    </React.Fragment>
-                  ))}
-                </View>
-              )}
-              <TouchableOpacity style={styles.addButton} onPress={() => setShowPostDocPicker(true)}>
-                <Plus size={16} color={t.brand.fg} />
-                <Text style={styles.addButtonText}>Agregar documentos</Text>
-              </TouchableOpacity>
-
-              <View style={[styles.labelWithIcon, { marginTop: spacing[2] }]}>
-                <Backpack size={16} color={t.text.secondary} />
-                <Text style={styles.label}>Mochilas obtenidas</Text>
-              </View>
-              {form.postBackpackIds.length > 0 && (
-                <View style={styles.chipRow}>
-                  {(form.postBackpackIds as string[]).map((id: string) => (
-                    <React.Fragment key={id}>
-                      <ChipTag
-                        label={labelForId(id, bpItems)}
-                        onRemove={() => form.setPostBackpackIds((form.postBackpackIds as string[]).filter((x: string) => x !== id))}
-                      />
-                    </React.Fragment>
-                  ))}
-                </View>
-              )}
-              <TouchableOpacity style={styles.addButton} onPress={() => setShowPostBpPicker(true)}>
-                <Plus size={16} color={t.brand.fg} />
-                <Text style={styles.addButtonText}>Agregar mochilas</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* ── RECORDATORIO ──────────────────────────────────────────────── */}
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Bell size={20} color={t.brand.fg} />
-              <Text style={styles.cardTitle}>Recordatorio</Text>
-            </View>
-
-            <View style={styles.pillRow}>
-              {(["none", "at_time", "before"] as const).map((mode) => {
-                const label =
-                  mode === "none" ? "Sin recordatorio" :
-                  mode === "at_time" ? "A la hora de la cita" :
-                  "Antes de la cita";
-                const selected = form.reminderMode === mode;
-                return (
-                  <TouchableOpacity
-                    key={mode}
-                    style={[styles.pill, selected && styles.pillActive]}
-                    onPress={() => form.setReminderMode(mode)}
-                  >
-                    <Text style={[styles.pillText, selected && styles.pillTextActive]}>
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {form.reminderMode === "before" && (
-              <View style={{ marginTop: spacing[3] }}>
-                <Text style={styles.label}>¿Con cuánta anticipación?</Text>
-                <View style={[styles.pillRow, { marginTop: spacing[2] }]}>
-                  {REMINDER_PRESET_MINUTES.map(({ label, value }) => {
-                    const selected = form.reminderOffsets.includes(value);
-                    return (
-                      <TouchableOpacity
-                        key={value}
-                        style={[styles.pill, selected && styles.pillActive]}
-                        onPress={() => form.toggleReminderOffset(value)}
-                      >
-                        <Text style={[styles.pillText, selected && styles.pillTextActive]}>
-                          {label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
+            ) : (
+              <TextField
+                label="Lugar"
+                value={form.location}
+                onChange={form.setLocation}
+                placeholder="Ej: Calle 123, Bogotá"
+                leadingIcon={<MapPin size={18} color={t.text.muted} />}
+                error={form.fieldErrors.location}
+              />
             )}
+            <TextField label="Clínica / Hospital / IPS (opcional)" value={form.clinic} onChange={form.setClinic} placeholder="Ej: Hospital San José" />
           </View>
 
-          {/* ── DETALLES ADICIONALES (colapsable) ─────────────────────────── */}
-          <TouchableOpacity
-            style={styles.collapsibleHeader}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Recordatorio</Text>
+            <ChoiceChips
+              options={[
+                { value: "none", label: "Sin recordatorio" },
+                { value: "60", label: "1 hora antes" },
+                { value: "1440", label: "1 día antes" },
+                { value: "2880", label: "2 días antes" },
+              ]}
+              value={reminderValue}
+              onChange={(value) => {
+                if (value === "none") {
+                  form.setReminderMode("none");
+                  return;
+                }
+                form.setReminderMode("before");
+                form.setReminderOffsets([Number(value)]);
+              }}
+            />
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showAdditionalDetails }}
+            style={styles.moreRow}
             onPress={() => {
               const opening = !showAdditionalDetails;
               setShowAdditionalDetails(opening);
-              if (opening) {
-                setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
-              }
+              if (opening) setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
             }}
           >
-            <Text style={styles.collapsibleHeaderText}>Detalles adicionales</Text>
-            {showAdditionalDetails
-              ? <ChevronUp size={20} color={t.text.secondary} />
-              : <ChevronDown size={20} color={t.text.secondary} />
-            }
-          </TouchableOpacity>
-
-          {showAdditionalDetails && (
-            <View style={styles.card}>
-              <View style={styles.collapsibleContent}>
-                <View>
-                  <View style={styles.labelWithIcon}>
-                    <FileText size={16} color={t.text.secondary} />
-                    <Text style={styles.label}>Nombre de la cita</Text>
-                  </View>
-                  <TextField label="" value={form.name} onChange={form.setName} placeholder="Ej: Neurología — Dr. Rivera" />
-                </View>
-
-                <View>
-                  <View style={styles.labelWithIcon}>
-                    <ClipboardList size={16} color={t.text.secondary} />
-                    <Text style={styles.label}>Servicio</Text>
-                  </View>
-                  <SelectField
-                    label="" value={form.service} placeholder="Seleccionar servicio"
-                    options={services} onChange={form.setService}
-                  />
-                </View>
-
-                <View>
-                  <View style={styles.labelWithIcon}>
-                    <Stethoscope size={16} color={t.text.secondary} />
-                    <Text style={styles.label}>Tipo de consulta</Text>
-                  </View>
-                  <SelectField
-                    label="" value={form.consultationType} placeholder="Seleccionar tipo de consulta"
-                    options={consultationTypes} onChange={form.setConsultationType}
-                  />
-                </View>
-
-                <View style={styles.row}>
-                  <View style={styles.halfField}>
-                    <View style={styles.labelWithIcon}>
-                      <Timer size={16} color={t.text.secondary} />
-                      <Text style={styles.label}>Duración (min)</Text>
-                    </View>
-                    <TextField label="" value={form.duration} onChange={form.setDuration} placeholder="30" keyboardType="numeric" />
-                  </View>
-                  <View style={styles.halfField}>
-                    <View style={styles.labelWithIcon}>
-                      <DollarSign size={16} color={t.text.secondary} />
-                      <Text style={styles.label}>Costo</Text>
-                    </View>
-                    <TextField label="" value={form.cost} onChange={form.setCost} placeholder="0" keyboardType="numeric" />
-                  </View>
-                </View>
-
-                <View>
-                  <View style={styles.labelWithIcon}>
-                    <FileText size={16} color={t.text.secondary} />
-                    <Text style={styles.label}>Notas</Text>
-                  </View>
-                  <TextField label="" value={form.notes} onChange={form.setNotes} placeholder="Agregar notas" multiline numberOfLines={4} />
-                </View>
-              </View>
+            <View style={styles.collapsibleCopy}>
+              <Text style={styles.moreTitle}>Más detalles (opcional)</Text>
+              <Text style={styles.collapsibleHint}>Documentos para llevar, tratamiento, notas y costo</Text>
             </View>
-          )}
+            {showAdditionalDetails
+              ? <ChevronUp size={18} strokeWidth={2.4} color={t.brand.solid} />
+              : <ChevronDown size={18} strokeWidth={2.4} color={t.brand.solid} />}
+          </Pressable>
 
-          {form.error && <Text style={styles.errorText}>{form.error}</Text>}
+          {showAdditionalDetails ? (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Más detalles</Text>
+
+              <Text style={styles.label}>Para llevar a la cita</Text>
+              <AddRow tone="document" icon={FileText} label="Agregar documentos" onPress={() => setShowPreDocPicker(true)} />
+              {chipsFor(form.preDocumentIds as string[], docItems, form.setPreDocumentIds)}
+              <AddRow tone="backpack" icon={Backpack} label="Agregar mochilas" onPress={() => setShowPreBpPicker(true)} />
+              {chipsFor(form.preBackpackIds as string[], bpItems, form.setPreBackpackIds)}
+
+              <View style={{ gap: 6 }}>
+                <Text style={styles.label}>Tratamiento (opcional)</Text>
+                <Pressable style={styles.selectBox} onPress={() => setShowTreatmentPicker(true)} accessibilityRole="button">
+                  <Text style={styles.selectPlaceholder}>Agregar tratamiento</Text>
+                  <ChevronDown size={18} color={t.text.muted} />
+                </Pressable>
+                {chipsFor(form.treatmentIds as string[], treatmentItems, form.setTreatmentIds)}
+              </View>
+
+              <TextField label="Notas (opcional)" value={form.notes} onChange={form.setNotes} placeholder="Ej: Llevar los exámenes anteriores" multiline numberOfLines={4} />
+              <TextField label="Costo (opcional)" value={form.cost} onChange={form.setCost} placeholder="Ej: $ 45.000" keyboardType="number-pad" />
+
+              {/* Campos que el mockup no muestra pero la cita ya guarda: se conservan al final. */}
+              <SelectField
+                label="Servicio (opcional)" value={form.service} placeholder="Seleccionar servicio"
+                options={services} onChange={form.setService}
+              />
+              <SelectField
+                label="Tipo de atención (opcional)" value={form.consultationType} placeholder="Seleccionar tipo de atención"
+                options={consultationTypes} onChange={form.setConsultationType}
+              />
+              <Text style={styles.label}>Obtenidos después de la cita</Text>
+              <AddRow tone="document" icon={FileText} label="Agregar documentos obtenidos" onPress={() => setShowPostDocPicker(true)} />
+              {chipsFor(form.postDocumentIds as string[], docItems, form.setPostDocumentIds)}
+              <AddRow tone="backpack" icon={Backpack} label="Agregar mochilas obtenidas" onPress={() => setShowPostBpPicker(true)} />
+              {chipsFor(form.postBackpackIds as string[], bpItems, form.setPostBackpackIds)}
+            </View>
+          ) : null}
+
+          {/* Error del servidor o de red (los de validación van en cada campo). */}
+          {form.error && fieldErrorCount === 0 ? (
+            <View style={styles.errorBanner} accessibilityRole="alert" accessibilityLiveRegion="polite">
+              <AlertCircle size={18} color={t.status.errorFg} />
+              <Text style={styles.errorText}>{form.error}</Text>
+            </View>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {/* ── Modals ─────────────────────────────────────────────────────────── */}
-      <AddDoctorModal
-        visible={showAddDoctorModal}
-        onClose={() => setShowAddDoctorModal(false)}
-        onCreated={(name) => { form.setDoctor(name); setShowAddDoctorModal(false); }}
+      <BottomActionBar
+        primary={{
+          label: form.isEdit ? "Guardar cambios" : "Guardar cita",
+          onPress: handleSave,
+          loading: form.saving,
+          loadingLabel: "Guardando…",
+          disabled: form.saving,
+        }}
       />
+
+      {askDiscard ? (
+        <DiscardChangesDialog
+          onKeep={() => setAskDiscard(false)}
+          onDiscard={() => {
+            allowLeave.current = true;
+            setAskDiscard(false);
+            navigation.goBack();
+          }}
+        />
+      ) : null}
 
       <PickerModal
         visible={showTreatmentPicker} onClose={() => setShowTreatmentPicker(false)}
@@ -705,112 +648,74 @@ const makeStyles = (t: ThemeContextValue) =>
     keyboardView: { flex: 1 },
     scroll: { flex: 1 },
     content: { padding: spacing[4], gap: spacing[4] },
+    // MASTER §6–7: tarjeta radio 18, borde 1 px + canto inferior de 3 px
     card: {
       backgroundColor: t.surface.bgCard,
-      borderRadius: 16,
+      borderRadius: radii.card,
       padding: spacing[4],
-      gap: spacing[4],
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 2,
+      gap: spacing[3],
       borderWidth: 1,
-      borderColor: t.border.light,
+      borderBottomWidth: 4,
+      borderColor: t.border.default,
     },
     cardHeader: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
-    cardTitle: { fontSize: 17, fontWeight: "700", color: t.text.primary },
+    // MASTER §5: título de tarjeta (H3) Nunito 800 16
+    cardTitle: { fontSize: fontSize.md, fontFamily: nativeFont("heading", 800), color: t.text.primary },
     labelWithIcon: { flexDirection: "row", alignItems: "center", gap: spacing[1], marginBottom: spacing[2] },
-    label: { fontSize: 14, fontWeight: "600", color: t.text.primary },
+    // formularios.md §2: etiqueta Nunito 800 13
+    label: { fontSize: fontSize.sm, fontFamily: nativeFont("heading", 800), color: t.text.primary },
+    labelStandalone: { marginBottom: spacing[2] },
+    // MASTER §5: eyebrow Nunito 900 11, mayúsculas, .08em
     sectionSubtitle: {
-      fontSize: 13, fontWeight: "700", color: t.brand.fg,
-      textTransform: "uppercase", letterSpacing: 0.5, marginBottom: spacing[2],
+      fontSize: fontSize.xs, fontFamily: nativeFont("heading", 900), color: t.text.secondary,
+      textTransform: "uppercase", letterSpacing: 0.9, marginBottom: spacing[2],
     },
-    separator: { height: 1, backgroundColor: t.border.light },
-    addButton: { flexDirection: "row", alignItems: "center", gap: spacing[1], paddingVertical: spacing[2], marginTop: spacing[1] },
-    addButtonText: { fontSize: 14, color: t.brand.fg, fontWeight: "500" },
+    separator: { height: 1, backgroundColor: t.border.default },
+    addButton: { flexDirection: "row", alignItems: "center", gap: spacing[1], minHeight: 44, alignSelf: "flex-start" },
+    addButtonText: { fontSize: 13, color: t.brand.text, fontFamily: nativeFont("heading", 800) },
     row: { flexDirection: "row", gap: spacing[2] },
     halfField: { flex: 1 },
-    pillRow: { flexDirection: "row", gap: spacing[2], flexWrap: "wrap" },
-    pill: {
-      flexDirection: "row", alignItems: "center", gap: spacing[1],
-      paddingHorizontal: spacing[3], paddingVertical: spacing[2],
-      borderRadius: 20, backgroundColor: t.surface.bg, borderWidth: 1, borderColor: t.border.medium,
-    },
-    pillActive: { backgroundColor: t.brand.bg, borderColor: t.brand.fg },
-    pillText: { fontSize: 14, color: t.text.primary },
-    pillTextActive: { color: t.brand.fg, fontWeight: "600" },
     chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2], marginBottom: spacing[2] },
-    collapsibleHeader: {
-      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-      paddingVertical: spacing[3], paddingHorizontal: spacing[4],
-      backgroundColor: t.surface.bgCard, borderRadius: 12, borderWidth: 1, borderColor: t.border.light,
+    // Kit `.more`: borde punteado, texto azul Nunito 800 14 y chevron azul
+    moreRow: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: spacing[2],
+      minHeight: 48, paddingVertical: spacing[3], paddingHorizontal: 14,
+      borderRadius: radii.input, borderWidth: 1.5, borderStyle: "dashed", borderColor: t.border.default,
     },
-    collapsibleHeaderText: { fontSize: 15, fontWeight: "600", color: t.text.primary },
+    moreTitle: { fontSize: 14, fontFamily: nativeFont("heading", 800), color: t.brand.text },
+    selectBox: {
+      flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48, paddingHorizontal: 14,
+      borderRadius: radii.input, borderWidth: 1.5, borderColor: t.border.default, backgroundColor: t.surface.bg,
+    },
+    selectPlaceholder: { flex: 1, fontSize: 15, fontFamily: nativeFont("body", 400), color: t.text.muted },
+    collapsibleCopy: { flex: 1, gap: spacing[1] },
+    collapsibleHeaderText: { fontSize: fontSize.md, fontFamily: nativeFont("heading", 800), color: t.text.primary },
+    collapsibleHint: { fontSize: fontSize.sm, fontFamily: nativeFont("body", 400), color: t.text.secondary },
     collapsibleContent: { gap: spacing[4] },
-    errorText: { color: t.status.errorFg, fontSize: 14, marginTop: spacing[2] },
-    numberInput: {
-      width: 56, borderWidth: 1, borderColor: t.border.medium,
-      borderRadius: 10, paddingHorizontal: spacing[3], paddingVertical: spacing[2],
-      fontSize: 15, color: t.text.primary, backgroundColor: t.surface.bg, textAlign: "center",
-    },
-    // Picker modal
-    overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-    sheet: {
-      backgroundColor: t.surface.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-      maxHeight: "75%", paddingBottom: spacing[4],
-    },
-    sheetHeader: {
-      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-      paddingHorizontal: spacing[4], paddingVertical: spacing[4],
-    },
-    sheetTitle: { fontSize: 17, fontWeight: "600", color: t.text.primary },
-    sheetDivider: { height: 1, backgroundColor: t.border.light, marginBottom: spacing[2] },
-    sheetScroll: { paddingHorizontal: spacing[4] },
-    pickerRowTitle: { fontSize: 15, color: t.text.primary, fontWeight: "500" },
-    pickerRowSub: { fontSize: 13, color: t.text.secondary },
-    pickerSearchContainer: {
+    errorBanner: {
       flexDirection: "row", alignItems: "center", gap: spacing[2],
-      marginHorizontal: spacing[4], marginBottom: spacing[3],
-      borderWidth: 1, borderColor: t.border.medium, borderRadius: 10,
-      paddingHorizontal: spacing[3], paddingVertical: spacing[2],
-      backgroundColor: t.surface.bg,
+      padding: spacing[3], borderRadius: radii.input,
+      backgroundColor: t.status.errorBg, borderWidth: 1, borderColor: t.status.dangerBorder,
     },
-    pickerSearchInput: { flex: 1, fontSize: 15, color: t.text.primary },
-    // Tarjeta estilo "agregar documento en mochila"
-    pickerCard: {
+    errorText: { flex: 1, color: t.status.errorFg, fontSize: 14, fontFamily: nativeFont("body", 500) },
+    // Hoja de selección múltiple
+    pickerList: { gap: spacing[2], marginTop: spacing[3] },
+    pickerRow: {
       flexDirection: "row", alignItems: "center", gap: spacing[3],
-      padding: spacing[3],
-      borderRadius: 16, borderWidth: 1, borderColor: t.border.light,
+      minHeight: 56, padding: spacing[3],
+      borderRadius: radii.input, borderWidth: 1.5, borderColor: t.border.default,
       backgroundColor: t.surface.bgCard,
     },
-    pickerCardSelected: {
-      borderColor: t.brand.fg,
-      backgroundColor: t.brand.bg,
+    pickerRowSelected: { borderColor: t.brand.solid, backgroundColor: t.brand.tint },
+    pickerRowCopy: { flex: 1, gap: 2 },
+    pickerRowTitle: { fontSize: 14, color: t.text.primary, fontFamily: nativeFont("body", 600) },
+    pickerRowSub: { fontSize: 13, color: t.text.secondary, fontFamily: nativeFont("body", 400) },
+    // formularios.md: casilla de 24 px con radio 8
+    checkbox: {
+      width: 24, height: 24, borderRadius: radii.sm, borderWidth: 1.5, borderColor: t.border.default,
+      alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bgCard,
     },
-    pickerCardIcon: {
-      width: 46, height: 46, borderRadius: 12,
-      backgroundColor: t.surface.bg,
-      alignItems: "center", justifyContent: "center",
-    },
-    pickerAddBtn: {
-      width: 52, height: 52, borderRadius: 14,
-      backgroundColor: t.brand.fg,
-      alignItems: "center", justifyContent: "center",
-    },
-    pickerAddBtnSelected: {
-      backgroundColor: t.status.dangerSolid,
-    },
-    pickerCloseBtn: {
-      margin: spacing[4],
-      padding: spacing[4],
-      backgroundColor: t.surface.bgCard,
-      borderRadius: 16,
-      alignItems: "center",
-      borderWidth: 1,
-      borderColor: t.border.light,
-    },
-    pickerCloseBtnText: { fontSize: 16, fontWeight: "600", color: t.text.primary },
-    emptyText: { fontSize: 14, color: t.text.secondary, textAlign: "center", paddingVertical: spacing[6] },
-    doctorInitials: { fontSize: 16, fontWeight: "600", color: t.text.primary },
+    checkboxOn: { backgroundColor: t.brand.solid, borderColor: t.brand.solid },
+    pickerFooter: { marginTop: spacing[4] },
+    emptyText: { fontSize: 14, color: t.text.secondary, textAlign: "center", paddingVertical: spacing[6], fontFamily: nativeFont("body", 400) },
   });

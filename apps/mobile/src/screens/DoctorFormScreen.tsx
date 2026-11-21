@@ -12,6 +12,7 @@ import type { ThemeContextValue } from "@helu/ui";
 import { useDoctorForm } from "../hooks/useDoctorForm";
 import { useAppointmentOptionsQuery } from "@helu/api/hooks";
 import { SelectField } from "../components/SelectField";
+import { FormHeader } from "../components/FormHeader";
 
 export function DoctorFormScreen() {
   const t = useAppTheme();
@@ -28,7 +29,8 @@ export function DoctorFormScreen() {
   const specialties = optionsQuery.data?.specialties ?? [];
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <FormHeader title="Nuevo profesional" onSave={form.handleSave} showSaveButton={false} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <TextField
           label="Nombre *"

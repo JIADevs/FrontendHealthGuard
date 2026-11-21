@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import Toast from "react-native-toast-message";
+import { View, Text, StyleSheet, Pressable } from "react-native";
+import { Check, Pill } from "lucide-react-native";
+import { notify } from "../../lib/notify";
 import {
     BottomSheet,
     Button,
@@ -15,7 +16,10 @@ import {
     NOT_TAKEN_REASON_LABELS_ES,
     spacing,
     fontSize,
+    nativeFont,
     useAppTheme,
+    IconTile,
+    formatClock,
 } from "@helu/ui";
 import type { ThemeContextValue, AgendaEvent } from "@helu/ui";
 import { useConfirmIntakeMutation, useRecordIntakeMutation } from "@helu/api/hooks";
@@ -39,14 +43,20 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
     const cycle = useMemo(() => resolveCycleForDay(event.data, event.dayKey), [event]);
     const existingIntake = event.intake;
     const scheduledLocalValue = `${event.dayKey}T${event.intakeTime}`;
-    const dayLabel = new Date(`${event.dayKey}T12:00:00`).toLocaleDateString("es-CO", {
+    const dayLabelRaw = new Date(`${event.dayKey}T12:00:00`).toLocaleDateString("es-CO", {
         weekday: "long",
         day: "numeric",
         month: "long",
-    });
+    }).replace(",", "");
+    const dayLabel = dayLabelRaw.charAt(0).toUpperCase() + dayLabelRaw.slice(1);
 
-    const [missed, setMissed] = useState(existingIntake?.status === "NOT_TAKEN");
-    const [changeTime, setChangeTime] = useState(false);
+    // Pasos de la hoja (inicio-agenda.md · Hoja de toma): primero la pregunta; «No la tomé» y
+    // «Cambiar hora» abren un segundo paso con una sola acción principal.
+    const [step, setStep] = useState<"ask" | "missed" | "time">(
+        existingIntake?.status === "NOT_TAKEN" ? "missed" : "ask",
+    );
+    const missed = step === "missed";
+    const changeTime = step === "time";
     const [takenAtValue, setTakenAtValue] = useState(() =>
         existingIntake?.takenAt
             ? clampPickerValueToMax(pickerValueFromUtcIso(existingIntake.takenAt))
@@ -59,26 +69,28 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
     const recordMutation = useRecordIntakeMutation();
     const saving = confirmMutation.isPending || recordMutation.isPending;
 
+    // Solo cuenta lo que la persona escribió o eligió; cambiar de paso no es un cambio que perder.
+    const [initialTakenAt] = useState(takenAtValue);
     const dirty =
-        missed !== (existingIntake?.status === "NOT_TAKEN") ||
-        changeTime ||
-        reason !== (existingIntake?.notTakenReason ?? null) ||
-        notes !== (existingIntake?.notes ?? "");
+        (missed && reason !== (existingIntake?.notTakenReason ?? null)) ||
+        (missed && notes !== (existingIntake?.notes ?? "")) ||
+        (changeTime && takenAtValue !== initialTakenAt);
 
     const showError = (err: unknown) => {
-        Toast.show({
-            type: "error",
-            text1: "No se pudo registrar la toma",
-            text2: isApiError(err) ? err.message : "Intenta de nuevo",
+        notify({
+            tone: "error",
+            message: "No se pudo registrar la toma",
+            description: isApiError(err) ? err.message : "Revisa tu conexión e intenta de nuevo.",
         });
     };
+
 
     const saveTakenNow = () => {
         if (!cycle) return;
         confirmMutation.mutate(cycle.id, {
             onSuccess: () => {
                 onClose();
-                Toast.show({ type: "success", text1: "Toma registrada" });
+                notify({ message: `Toma registrada a las ${formatClock(new Date())}` });
             },
             onError: showError,
         });
@@ -98,7 +110,7 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
             {
                 onSuccess: () => {
                     onClose();
-                    Toast.show({ type: "success", text1: "Toma registrada" });
+                    notify({ message: `Toma registrada a las ${formatClock(new Date(toUtcIsoFromPickerValue(takenAtValue)))}` });
                 },
                 onError: showError,
             },
@@ -120,107 +132,103 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
             {
                 onSuccess: () => {
                     onClose();
-                    Toast.show({ type: "success", text1: "Registrado como no tomada" });
+                    notify({ message: "Registrada como no tomada" });
                 },
                 onError: showError,
             },
         );
     };
 
+    const isToday = event.dayKey === toISOLocal(new Date()).slice(0, 10);
+    const sheetTitle =
+        step === "missed" ? "¿Por qué no la tomaste?" : step === "time" ? "¿A qué hora la tomaste?" : "¿Tomaste esta dosis?";
+
+    // Mockup «Registrar toma»: ícono redondo del módulo, eyebrow «NOMBRE · HORA» y la pregunta como título.
     return (
         <BottomSheet
-            title={event.data.name}
-            eyebrow={`Dosis de las ${event.intakeTime}`}
+            title={sheetTitle}
+            eyebrow={`${event.data.name} · ${formatClock(event.intakeTime)}`.toUpperCase()}
+            icon={<IconTile tone="medication" size="lg" round icon={<Pill size={24} strokeWidth={2.4} color={t.accent.medFg} />} />}
             dirty={dirty}
             onClose={onClose}
         >
-            <Text style={styles.subtitle}>{dayLabel}</Text>
+            {!isToday ? <Text style={styles.subtitle}>{dayLabel}</Text> : null}
 
             {!cycle ? (
                 <Text style={styles.errorText}>No se encontró el ciclo de tratamiento para esta fecha.</Text>
-            ) : (
-                <>
-                    <Text style={styles.label}>¿Tomaste esta dosis?</Text>
-                    <View style={styles.actions}>
-                        <Button
-                            variant="success"
-                            fullWidth
-                            onPress={saveTakenNow}
+            ) : step === "ask" ? (
+                <View style={styles.actions}>
+                    <Button
+                        variant="success"
+                        fullWidth
+                        icon={<Check size={17} strokeWidth={3} color={t.text.onSolid} />}
+                        onPress={saveTakenNow}
+                        disabled={saving}
+                        loading={confirmMutation.isPending}
+                        loadingLabel="Guardando…"
+                    >
+                        Sí, la tomé
+                    </Button>
+                    <View style={styles.timeRow}>
+                        <Text style={styles.meta}>Se registra a las {formatClock(new Date())}</Text>
+                        <Pressable
+                            onPress={() => setStep("time")}
                             disabled={saving}
-                            loading={confirmMutation.isPending}
-                            loadingLabel="Guardando…"
+                            accessibilityRole="button"
+                            style={styles.inlineLink}
                         >
-                            Sí, la tomé
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            fullWidth
-                            onPress={() => {
-                                setMissed(true);
-                                setChangeTime(false);
-                            }}
-                            disabled={saving}
-                        >
-                            No la tomé
-                        </Button>
-                        <Button variant="ghost" fullWidth onPress={() => setChangeTime(true)} disabled={saving}>
-                            Cambiar hora
-                        </Button>
+                            <Text style={styles.link}>Cambiar hora</Text>
+                        </Pressable>
                     </View>
-
-                    {changeTime ? (
-                        <View style={styles.section}>
-                            <DateTimePicker
-                                label="¿A qué hora la tomaste?"
-                                value={takenAtValue}
-                                onChange={(value) => setTakenAtValue(clampPickerValueToMax(value))}
-                                maxDate={toISOLocal(new Date())}
-                            />
-                            <Button
-                                variant="primary"
-                                fullWidth
-                                onPress={saveChangedTime}
-                                disabled={saving}
-                                loading={recordMutation.isPending && !missed}
-                                loadingLabel="Guardando…"
-                            >
-                                Guardar hora
-                            </Button>
-                        </View>
-                    ) : null}
-
-                    {missed ? (
-                        <View style={styles.section}>
-                            <Text style={styles.label}>¿Por qué no la tomaste?</Text>
-                            <ChoiceChips
-                                options={REASON_OPTIONS}
-                                value={reason}
-                                onChange={(value) => {
-                                    const match = REASON_OPTIONS.find((option) => option.value === value);
-                                    if (match) setReason(match.value);
-                                }}
-                            />
-                            <View style={styles.notesField}>
-                                <TextField
-                                    label="Detalles (opcional)"
-                                    value={notes}
-                                    onChange={setNotes}
-                                    placeholder="Agrega más contexto si quieres"
-                                />
-                            </View>
-                            <Button
-                                variant="danger"
-                                fullWidth
-                                onPress={saveMissed}
-                                disabled={!reason || saving}
-                                loading={recordMutation.isPending && missed}
-                                loadingLabel="Guardando…"
-                            >
-                                Guardar
-                            </Button>
-                        </View>
-                    ) : null}
-                </>
+                    <Button variant="secondary" fullWidth onPress={() => setStep("missed")} disabled={saving}>
+                        No la tomé
+                    </Button>
+                </View>
+            ) : step === "time" ? (
+                <View style={styles.actions}>
+                    <DateTimePicker
+                        label="Hora de la toma"
+                        value={takenAtValue}
+                        onChange={(value) => setTakenAtValue(clampPickerValueToMax(value))}
+                        maxDate={toISOLocal(new Date())}
+                    />
+                    <Button
+                        fullWidth
+                        onPress={saveChangedTime}
+                        disabled={saving}
+                        loading={recordMutation.isPending}
+                        loadingLabel="Guardando…"
+                    >
+                        Guardar hora
+                    </Button>
+                </View>
+            ) : (
+                <View style={styles.actions}>
+                    <ChoiceChips
+                        options={REASON_OPTIONS}
+                        value={reason}
+                        onChange={(value) => {
+                            const match = REASON_OPTIONS.find((option) => option.value === value);
+                            if (match) setReason(match.value);
+                        }}
+                    />
+                    <TextField
+                        label="Detalles (opcional)"
+                        value={notes}
+                        onChange={setNotes}
+                        placeholder="Ej: Se me acabaron las pastillas"
+                    />
+                    <Button
+                        fullWidth
+                        onPress={saveMissed}
+                        disabled={!reason || saving}
+                        loading={recordMutation.isPending}
+                        loadingLabel="Guardando…"
+                    >
+                        Guardar motivo
+                    </Button>
+                    <Text style={[styles.meta, styles.center]}>No pasa nada: mañana sigues sumando.</Text>
+                </View>
             )}
         </BottomSheet>
     );
@@ -230,28 +238,36 @@ function makeStyles(t: ThemeContextValue) {
     return StyleSheet.create({
         subtitle: {
             fontSize: fontSize.sm,
+            fontFamily: nativeFont("body", 400),
             color: t.text.secondary,
-            marginBottom: spacing[4],
-            textTransform: "capitalize",
-        },
-        label: {
-            fontSize: fontSize.sm,
-            color: t.text.primary,
-            marginBottom: spacing[2],
+            marginBottom: spacing[3],
         },
         errorText: {
             fontSize: fontSize.sm,
+            fontFamily: nativeFont("body", 400),
             color: t.status.errorFg,
         },
         actions: {
-            gap: spacing[2],
-        },
-        section: {
-            marginTop: spacing[4],
             gap: spacing[3],
         },
-        notesField: {
-            marginTop: spacing[3],
+        timeRow: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            flexWrap: "wrap",
+            columnGap: 6,
+        },
+        meta: {
+            fontSize: fontSize.sm,
+            fontFamily: nativeFont("body", 400),
+            color: t.text.secondary,
+        },
+        center: { textAlign: "center" },
+        inlineLink: { minHeight: 44, justifyContent: "center" },
+        link: {
+            fontSize: fontSize.sm,
+            fontFamily: nativeFont("heading", 800),
+            color: t.brand.text,
         },
     });
 }

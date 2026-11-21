@@ -45,6 +45,7 @@ import {
 import { MODALITIES } from "../../constants/appointments";
 import { SelectField } from "../SelectField";
 import { AddRow, ChipTag, PickerModal } from "./LinkPicker";
+import { DoctorSheet } from "./DoctorSheet";
 import { ScreenHeader } from "../ScreenHeader";
 import { haptics } from "../../lib/haptics";
 
@@ -69,8 +70,6 @@ export type SubscribeBeforeLeave = (handler: (prevent: () => void) => void) => (
 export interface AppointmentFormNav {
   /** Leaves the form (after saving, or after confirming «Descartar») */
   onClose: () => void;
-  /** «+ Agregar nuevo profesional» */
-  onAddDoctor: () => void;
   subscribeBeforeLeave: SubscribeBeforeLeave;
 }
 
@@ -179,6 +178,7 @@ function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: Appo
   const baseline = useRef<string | null>(null);
   const nameTouched = useRef(Boolean(appointment?.name));
   const [askDiscard, setAskDiscard] = useState(false);
+  const [addingDoctor, setAddingDoctor] = useState(false);
 
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(
     !!(
@@ -274,6 +274,14 @@ function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: Appo
     return list.find((i) => i.id === id)?.label ?? id.slice(0, 8);
   }
 
+  // A professional just created in «Nuevo profesional» arrives in the list after the refetch: link its id then.
+  useEffect(() => {
+    if (!form.doctor || form.doctorId) return;
+    const match = doctors.find((d: any) => d.name === form.doctor);
+    if (match) form.setDoctorId(match.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doctors, form.doctor]);
+
   function handleDoctorSelect(name: string) {
     const selected = doctors.find((d: any) => d.name === name);
     form.setDoctor(name);
@@ -360,7 +368,7 @@ function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: Appo
                 label="Profesional de salud" value={form.doctor} placeholder="Seleccionar profesional"
                 options={doctors.map((d: any) => d.name)} onChange={handleDoctorSelect}
               />
-              <Pressable style={styles.addButton} onPress={nav.onAddDoctor} accessibilityRole="button">
+              <Pressable style={styles.addButton} onPress={() => setAddingDoctor(true)} accessibilityRole="button">
                 <Text style={styles.addButtonText}>+ Agregar nuevo profesional</Text>
               </Pressable>
             </View>
@@ -504,6 +512,8 @@ function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: Appo
           disabled: form.saving,
         }}
       />
+
+      {addingDoctor ? <DoctorSheet onSaved={handleDoctorSelect} onClose={() => setAddingDoctor(false)} /> : null}
 
       {askDiscard ? (
         <DiscardChangesDialog

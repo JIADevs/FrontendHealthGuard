@@ -26,6 +26,7 @@ import { CalendarDays, Filter } from "lucide-react-native";
 
 import { useAppointmentsList } from "../../hooks/useAppointmentsList";
 import { AgendaFAB } from "./AgendaFAB";
+import { AgendaEmpty } from "./AgendaEmpty";
 import { usePullToRefresh } from "../../lib/usePullToRefresh";
 import { useAgendaNavigation } from "./AgendaNavigation";
 import { AppointmentCard } from "./AppointmentCard";
@@ -135,14 +136,26 @@ export function AppointmentsTab() {
             />
           )}
           ListEmptyComponent={
-            <EmptyState
-              icon={<CalendarDays size={48} color={t.border.medium} />}
-              message={
-                hasActiveFilter
-                  ? "No hay citas que coincidan con los filtros."
-                  : "No tienes citas registradas."
-              }
-            />
+            hasActiveFilter || search ? (
+              <EmptyState
+                icon={<CalendarDays size={48} color={t.border.medium} />}
+                message="No hay citas que coincidan con los filtros."
+              />
+            ) : (
+              <AgendaEmpty
+                pose="happy"
+                title="Aún no tienes citas"
+                description="Agrega tu próxima cita y te la recordamos antes de que llegue."
+                actionLabel="Agregar cita"
+                onAction={nav.newAppointment}
+                example={{
+                  tone: "appointment",
+                  icon: <CalendarDays size={19} strokeWidth={2.2} color={t.accent.calFg} />,
+                  title: "Control de odontología",
+                  meta: "Jue 5 nov · 10:00 a. m. · Consultorio 204",
+                }}
+              />
+            )
           }
           ListFooterComponent={
             items.length > 0 ? (

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ScrollView, Text, View, StyleSheet, Pressable } from "react-native";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { IconButton } from "../../primitives/IconButton/IconButton.native";
@@ -20,6 +21,8 @@ export interface HeluAgendaCalendarProps {
     onMedicationTake?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
     onTaskComplete?: (event: Extract<AgendaEvent, { type: "task" }>) => void;
     takingCycleId?: string;
+    /** Content for a day with no events (mockup «Calendario · día sin eventos»). Defaults to a short line. */
+    renderEmptyDay?: (dateKey: string) => ReactNode;
 }
 
 export function HeluAgendaCalendar({
@@ -30,6 +33,7 @@ export function HeluAgendaCalendar({
     onTaskPress,
     onMedicationTake,
     onTaskComplete,
+    renderEmptyDay,
     takingCycleId,
 }: HeluAgendaCalendarProps) {
     const calendar = useHeluAgendaCalendar(initialDate);
@@ -84,7 +88,11 @@ export function HeluAgendaCalendar({
                 <Animated.View entering={contentEntering} style={styles.list}>
                     <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
                         {dayEvents.length === 0 ? (
-                            <Text style={[styles.empty, { color: t.text.secondary }]}>Nada para este día</Text>
+                            renderEmptyDay ? (
+                                renderEmptyDay(calendar.selectedDate)
+                            ) : (
+                                <Text style={[styles.empty, { color: t.text.secondary }]}>Nada para este día</Text>
+                            )
                         ) : (
                             <DayEventList
                                 events={dayEvents}

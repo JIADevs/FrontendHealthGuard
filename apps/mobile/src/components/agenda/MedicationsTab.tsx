@@ -15,6 +15,7 @@ import {
   SkeletonCard,
   useSkeletonVisible,
   ConfirmModal,
+  Chip,
   EmptyState,
   SearchField,
 } from "@helu/ui";
@@ -23,6 +24,7 @@ import { Pill, Filter } from "lucide-react-native";
 
 import { useMedicationsList } from "../../hooks/useMedicationsList";
 import { usePullToRefresh } from "../../lib/usePullToRefresh";
+import { AgendaEmpty } from "./AgendaEmpty";
 import { AgendaFAB } from "./AgendaFAB";
 import { useAgendaNavigation } from "./AgendaNavigation";
 import { MedicationCard } from "./MedicationCard";
@@ -142,14 +144,27 @@ export function MedicationsTab() {
             />
           )}
           ListEmptyComponent={
-            <EmptyState
-              icon={<Pill size={48} color={t.border.medium} />}
-              message={
-                hasActiveFilter
-                  ? "No hay medicamentos que coincidan con los filtros."
-                  : "No tienes medicamentos registrados."
-              }
-            />
+            hasActiveFilter || search ? (
+              <EmptyState
+                icon={<Pill size={48} color={t.border.medium} />}
+                message="No hay medicamentos que coincidan con los filtros."
+              />
+            ) : (
+              <AgendaEmpty
+                pose="point"
+                title="Aún no tienes medicamentos"
+                description="Registra uno y te avisamos en cada toma. Tú solo tocas «Tomar»."
+                actionLabel="Agregar medicamento"
+                onAction={nav.newMedication}
+                example={{
+                  tone: "medication",
+                  icon: <Pill size={19} strokeWidth={2.2} color={t.accent.medFg} />,
+                  title: "Losartán 50 mg",
+                  meta: "Cada 12 horas · 7:00 a. m. y 7:00 p. m.",
+                  trailing: <Chip label="Tomar" tone="success" />,
+                }}
+              />
+            )
           }
           ListFooterComponent={
             items.length > 0 ? (

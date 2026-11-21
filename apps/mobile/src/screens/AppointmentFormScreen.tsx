@@ -19,7 +19,6 @@ export function AppointmentFormScreen() {
     <AppointmentForm
       id={id}
       onClose={() => navigation.goBack()}
-      onAddDoctor={() => navigation.navigate("DoctorForm")}
       subscribeBeforeLeave={subscribeBeforeLeave}
     />
   );

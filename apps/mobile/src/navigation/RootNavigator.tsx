@@ -24,7 +24,6 @@ import { AppointmentDetailScreen } from "../screens/AppointmentDetailScreen";
 import { AgendaTaskDetailScreen } from "../screens/AgendaTaskDetailScreen";
 import { AgendaTaskFormScreen } from "../screens/AgendaTaskFormScreen";
 import { AppointmentFormScreen } from "../screens/AppointmentFormScreen";
-import { DoctorFormScreen } from "../screens/DoctorFormScreen";
 import { MedicationFormScreen } from "../screens/MedicationFormScreen";
 import { MedicationDetailScreen } from "../screens/MedicationDetailScreen";
 import { CycleDetailScreen } from "../screens/CycleDetailScreen";
@@ -71,7 +70,6 @@ export type RootStackParamList = {
   AgendaTaskDetail: { id: string; intent?: "complete" | "reschedule" };
   AgendaTaskForm: { id?: string } | undefined;
   AppointmentForm: { id?: string } | undefined;
-  DoctorForm: undefined;
   MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string } | undefined;
   MedicationDetail: { id: string };
   CycleDetail: { cycleId: string; medicationId: string; medicationName: string };
@@ -326,11 +324,6 @@ export function RootNavigator() {
           <Stack.Screen
             name="AppointmentForm"
             component={AppointmentFormScreen}
-            options={FORM_SCREEN_OPTIONS}
-          />
-          <Stack.Screen
-            name="DoctorForm"
-            component={DoctorFormScreen}
             options={FORM_SCREEN_OPTIONS}
           />
           <Stack.Screen

@@ -12,6 +12,7 @@ import { useDailyCheckInIntent } from "../../hooks/useDailyCheckInIntent";
 import type { AgendaRouteParams } from "../../navigation/RootNavigator";
 import { notify } from "../../lib/notify";
 import { useTakeDose } from "./useTakeDose";
+import { EmptyDayCard } from "./AgendaEmpty";
 import { useAgendaNavigation } from "./AgendaNavigation";
 
 import {
@@ -169,6 +170,7 @@ export function Agenda({ params }: AgendaProps) {
         <CalendarTab
           intentIntakeEvent={intentIntakeEvent}
           onIntentIntakeConsumed={() => setIntentIntakeEvent(null)}
+          onAdd={() => setAddSheetOpen(true)}
         />
       ) : tabFade.shown === "appointments" ? (
         <AppointmentsTab />
@@ -204,12 +206,18 @@ export function Agenda({ params }: AgendaProps) {
 
 // ─── calendar tab ─────────────────────────────────────────────────────────────
 
+const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const weekdayOf = (dateKey: string) => WEEKDAYS[new Date(`${dateKey}T12:00:00`).getDay()]!;
+
 function CalendarTab({
   intentIntakeEvent,
   onIntentIntakeConsumed,
+  onAdd,
 }: {
   intentIntakeEvent: Extract<AgendaEvent, { type: "medication" }> | null;
   onIntentIntakeConsumed: () => void;
+  /** Opens «¿Qué quieres agregar?» from an empty day */
+  onAdd: () => void;
 }) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -242,6 +250,7 @@ function CalendarTab({
         }}
         onTaskComplete={(event) => nav.openTask(event.data.id, "complete")}
         takingCycleId={takeDose.takingCycleId}
+        renderEmptyDay={(dateKey) => <EmptyDayCard weekday={weekdayOf(dateKey)} onAdd={onAdd} />}
       />
 
       {intakeEvent ? (

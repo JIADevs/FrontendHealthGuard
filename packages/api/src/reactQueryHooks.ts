@@ -520,8 +520,10 @@ export function useUpdateAgendaTaskMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ id, task }: { id: string; task: AgendaTaskUpdate }) => updateAgendaTask(id, task),
-        onSuccess: (_data, variables) => {
-            qc.removeQueries({ queryKey: QK.agendaTask(variables.id) });
+        // The API returns the updated task: write it to the detail cache instead of dropping it,
+        // so the open detail changes in place (no full-screen spinner, movimiento §6c).
+        onSuccess: (task, variables) => {
+            qc.setQueryData(QK.agendaTask(variables.id), task);
         },
         onSettled: () => invalidateAgendaTaskQueries(qc),
     });
@@ -532,8 +534,10 @@ export function useCompleteAgendaTaskMutation() {
     return useMutation({
         mutationFn: ({ id, result }: { id: string; result?: AgendaTaskComplete }) =>
             completeAgendaTask(id, result ?? {}),
-        onSuccess: (_data, variables) => {
-            qc.removeQueries({ queryKey: QK.agendaTask(variables.id) });
+        // The API returns the updated task: write it to the detail cache instead of dropping it,
+        // so the open detail changes in place (no full-screen spinner, movimiento §6c).
+        onSuccess: (task, variables) => {
+            qc.setQueryData(QK.agendaTask(variables.id), task);
         },
         onSettled: () => invalidateAgendaTaskQueries(qc),
     });
@@ -544,8 +548,10 @@ export function useRescheduleAgendaTaskMutation() {
     return useMutation({
         mutationFn: ({ id, schedule }: { id: string; schedule: AgendaTaskReschedule }) =>
             rescheduleAgendaTask(id, schedule),
-        onSuccess: (_data, variables) => {
-            qc.removeQueries({ queryKey: QK.agendaTask(variables.id) });
+        // The API returns the updated task: write it to the detail cache instead of dropping it,
+        // so the open detail changes in place (no full-screen spinner, movimiento §6c).
+        onSuccess: (task, variables) => {
+            qc.setQueryData(QK.agendaTask(variables.id), task);
         },
         onSettled: () => invalidateAgendaTaskQueries(qc),
     });

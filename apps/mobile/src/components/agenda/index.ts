@@ -16,3 +16,5 @@ export { MedicationCard } from "./MedicationCard";
 export { MedicationsTab } from "./MedicationsTab";
 export { MedicationsFilterSheet } from "./MedicationsFilterSheet";
 export { PendingDoseButton } from "./PendingDoseButton";
+export { CompleteTaskSheet } from "./CompleteTaskSheet";
+export { RescheduleTaskSheet } from "./RescheduleTaskSheet";

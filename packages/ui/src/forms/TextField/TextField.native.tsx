@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, TextInput } from 'react-native';
+import type { TextInputProps } from 'react-native';
 import { spacing } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import { fieldBox, FieldLabel, FieldErrorText, fieldTextStyle } from '../fieldKit.native';
@@ -27,6 +28,13 @@ export function TextField({
   leadingIcon,
   unit,
   helper,
+  trailing,
+  secureTextEntry,
+  autoComplete,
+  textContentType,
+  onBlur,
+  onSubmitEditing,
+  inputRef,
 }: TextFieldProps) {
   const t = useAppTheme();
   const [focused, setFocused] = useState(false);
@@ -49,6 +57,7 @@ export function TextField({
       >
         {leadingIcon}
         <TextInput
+          ref={inputRef}
           value={value}
           onChangeText={onChange}
           placeholder={placeholder}
@@ -62,9 +71,16 @@ export function TextField({
           returnKeyType={returnKeyType}
           accessibilityLabel={accessibilityLabel ?? label}
           accessibilityHint={error}
-          secureTextEntry={type === 'password'}
+          secureTextEntry={secureTextEntry ?? type === 'password'}
+          autoComplete={autoComplete as TextInputProps['autoComplete']}
+          textContentType={textContentType}
+          onSubmitEditing={onSubmitEditing}
+          submitBehavior={onSubmitEditing && returnKeyType === 'next' ? 'submit' : undefined}
           onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onBlur={() => {
+            setFocused(false);
+            onBlur?.();
+          }}
           style={[
             fieldTextStyle(t, true),
             { flex: 1, paddingVertical: multiline ? 0 : spacing[3] },
@@ -72,6 +88,7 @@ export function TextField({
           ]}
         />
         {unit ? <Text style={fieldTextStyle(t, false)}>{unit}</Text> : null}
+        {trailing}
       </View>
 
       {error ? (

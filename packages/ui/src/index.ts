@@ -51,6 +51,8 @@ export * from './primitives/EmptyState/EmptyState.native';
 // ─── Forms ───────────────────────────────────────────────────────────────────
 export * from './forms/TextField/TextField.types';
 export * from './forms/TextField/TextField.native';
+export * from './forms/PasswordField/PasswordField.types';
+export * from './forms/PasswordField/PasswordField.native';
 export * from './forms/Select/Select.types';
 export * from './forms/Select/Select.native';
 export * from './forms/Checkbox/Checkbox.types';

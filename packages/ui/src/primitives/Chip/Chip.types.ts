@@ -24,5 +24,10 @@ export interface ChipProps {
   /** `compact` matches the 28px dashed “+” control in tag editors (solo `tag`). */
   size?: ChipSize;
   selected?: boolean;
+  /**
+   * Solo `option`: `single` se anuncia como `radio` (dentro de un `radiogroup`) y `multiple`
+   * como `checkbox`, ambos con su estado `checked` (formularios.md §9). Por defecto `multiple`.
+   */
+  selectionMode?: 'single' | 'multiple';
   onPress?: () => void;
 }

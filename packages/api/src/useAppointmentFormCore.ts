@@ -52,9 +52,17 @@ export interface AppointmentFormState {
   reminderOffsets: number[];
   /** Inline validation / API error — display directly in the form UI. */
   error: string | null;
+  /**
+   * Per-field validation errors (formularios.md §6). Empty until the first save attempt;
+   * after that they update live, so a fixed field loses its error right away.
+   */
+  fieldErrors: AppointmentFieldErrors;
   saving: boolean;
   isEdit: boolean;
 }
+
+export type AppointmentField = "date" | "time" | "location" | "videoCallLink";
+export type AppointmentFieldErrors = Partial<Record<AppointmentField, string>>;
 
 export interface AppointmentFormActions {
   setName: (v: string) => void;
@@ -83,6 +91,8 @@ export interface AppointmentFormActions {
   setPreBackpackIds: (v: string[]) => void;
   setPostBackpackIds: (v: string[]) => void;
   setReminderMode: (v: ReminderMode) => void;
+  /** Reemplaza los avisos «antes de la cita» (minutos). */
+  setReminderOffsets: (v: number[]) => void;
   toggleReminderOffset: (minutes: number) => void;
   clearError: () => void;
   handleSave: () => void;
@@ -147,6 +157,17 @@ export function useAppointmentFormCore({
     initialReminderMode === "before" ? initialOffsets : [30],
   );
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  // Mensajes con causa + cómo arreglarlo (formularios.md §6).
+  const validationErrors: AppointmentFieldErrors = {};
+  if (!date) validationErrors.date = "Elige la fecha de la cita.";
+  if (!time) validationErrors.time = "Elige la hora de la cita.";
+  if (modality === "PRESENCIAL" && !location.trim()) validationErrors.location = "Escribe el lugar de la cita.";
+  if (modality === "VIRTUAL" && !videoCallLink.trim()) {
+    validationErrors.videoCallLink = "Escribe el enlace de la videollamada.";
+  }
+  const fieldErrors: AppointmentFieldErrors = submitted ? validationErrors : {};
 
   const createMut = useCreateAppointmentMutation();
   const updateMut = useUpdateAppointmentMutation();
@@ -159,6 +180,7 @@ export function useAppointmentFormCore({
   }
 
   function handleSave() {
+    setSubmitted(true);
     if (!date || !time) {
       setError("Fecha y hora son obligatorios.");
       return;
@@ -233,12 +255,12 @@ export function useAppointmentFormCore({
     type, status, examType, cost, notes, customReminder, treatmentTags,
     treatmentIds, preDocumentIds, postDocumentIds, preBackpackIds, postBackpackIds,
     reminderMode, reminderOffsets,
-    error, saving, isEdit,
+    error, fieldErrors, saving, isEdit,
     setName, setDate, setTime, setModality, setLocation, setVideoCallLink,
     setSpecialty, setService, setConsultationType, setDuration, setDoctorId, setDoctor, setClinic,
     setType, setStatus, setExamType, setCost, setNotes, setCustomReminder, setTreatmentTags,
     setTreatmentIds, setPreDocumentIds, setPostDocumentIds, setPreBackpackIds, setPostBackpackIds,
-    setReminderMode, toggleReminderOffset,
+    setReminderMode, setReminderOffsets, toggleReminderOffset,
     clearError: () => setError(null),
     handleSave,
   };

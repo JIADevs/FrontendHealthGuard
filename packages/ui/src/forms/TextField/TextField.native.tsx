@@ -1,9 +1,14 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { colors, palette, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
+import { View, Text, TextInput } from 'react-native';
+import { spacing } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
+import { fieldBox, FieldLabel, FieldErrorText, fieldTextStyle } from '../fieldKit.native';
 import type { TextFieldProps } from './TextField.types';
 
+/**
+ * Campo de texto v2 (formularios.md §2–3). Lo opcional se marca en la etiqueta con
+ * «(opcional)»; `required` ya no dibuja asterisco y solo se conserva por compatibilidad.
+ */
 export function TextField({
   label,
   value,
@@ -11,7 +16,6 @@ export function TextField({
   placeholder,
   error,
   disabled,
-  required,
   multiline,
   numberOfLines = 4,
   type,
@@ -20,89 +24,61 @@ export function TextField({
   autoFocus,
   returnKeyType,
   accessibilityLabel,
+  leadingIcon,
+  unit,
+  helper,
 }: TextFieldProps) {
   const t = useAppTheme();
   const [focused, setFocused] = useState(false);
-  const isPassword = type === 'password';
-
-  const borderColor = error
-    ? palette.status.error[500]
-    : focused
-    ? t.brand.focus
-    : t.border.medium;
 
   return (
-    <View style={styles.container}>
-      {label && (
-        <Text style={[styles.label, { color: t.text.primary }]}>
-          {label}
-          {required ? <Text style={{ color: palette.status.error[700] }}> *</Text> : null}
-        </Text>
-      )}
+    <View style={{ gap: 6 }}>
+      {label ? <FieldLabel t={t} label={label} /> : null}
 
-      <TextInput
-        value={value}
-        onChangeText={onChange}
-        placeholder={placeholder}
-        placeholderTextColor={t.text.muted}
-        editable={!disabled}
-        multiline={multiline}
-        numberOfLines={multiline ? numberOfLines : undefined}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        autoFocus={autoFocus}
-        returnKeyType={returnKeyType}
-        accessibilityLabel={accessibilityLabel ?? label}
-        secureTextEntry={isPassword}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+      <View
         style={[
-          styles.input,
+          fieldBox(t, { focused, error: !!error, disabled }),
           {
-            borderColor,
-            color: t.text.primary,
-            backgroundColor: disabled ? t.border.light : t.surface.bgCard,
+            flexDirection: 'row',
+            alignItems: multiline ? 'flex-start' : 'center',
+            gap: 10,
+            paddingVertical: multiline ? spacing[3] : 0,
+            minHeight: multiline ? 84 : 48,
           },
-          multiline && styles.multiline,
-          disabled && styles.disabled,
         ]}
-      />
+      >
+        {leadingIcon}
+        <TextInput
+          value={value}
+          onChangeText={onChange}
+          placeholder={placeholder}
+          placeholderTextColor={t.text.muted}
+          editable={!disabled}
+          multiline={multiline}
+          numberOfLines={multiline ? numberOfLines : undefined}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          autoFocus={autoFocus}
+          returnKeyType={returnKeyType}
+          accessibilityLabel={accessibilityLabel ?? label}
+          accessibilityHint={error}
+          secureTextEntry={type === 'password'}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          style={[
+            fieldTextStyle(t, true),
+            { flex: 1, paddingVertical: multiline ? 0 : spacing[3] },
+            multiline && { minHeight: 60, textAlignVertical: 'top' },
+          ]}
+        />
+        {unit ? <Text style={fieldTextStyle(t, false)}>{unit}</Text> : null}
+      </View>
 
-      {error && (
-        <Text style={styles.error}>{error}</Text>
-      )}
+      {error ? (
+        <FieldErrorText t={t} message={error} />
+      ) : helper ? (
+        <Text style={[fieldTextStyle(t, false), { fontSize: 13, color: t.text.secondary }]}>{helper}</Text>
+      ) : null}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing[2],
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[3],
-    fontSize: fontSize.md,
-  },
-  multiline: {
-    height: 120,
-    textAlignVertical: 'top',
-  },
-  disabled: {
-    opacity: 0.6,
-  },
-  error: {
-    fontSize: fontSize.xs,
-    color: palette.status.error[700],
-    backgroundColor: palette.status.error[50],
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[1],
-    borderRadius: radii.xs,
-  },
-});

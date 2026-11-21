@@ -78,12 +78,6 @@ export function MonthGridView({
                 ))}
             </View>
 
-            <View style={styles.legend}>
-                <LegendItem color={t.accent.calFg} label="Citas" styles={styles} />
-                <LegendItem color={t.accent.medFg} label="Medicamentos" styles={styles} />
-                <LegendItem color={t.accent.wellbeingFg} label="Check-in" styles={styles} />
-                <LegendItem color={t.accent.backpackFg} label="Tareas" styles={styles} />
-            </View>
         </ScrollView>
     );
 }
@@ -139,27 +133,10 @@ function MonthCell({
                     <View style={[styles.dot, { backgroundColor: theme.accent.wellbeingFg }]} />
                 ) : null}
                 {activity.hasTasks ? (
-                    <View style={[styles.dot, { backgroundColor: theme.accent.backpackFg }]} />
+                    <View style={[styles.dot, { backgroundColor: theme.accent.missionFg }]} />
                 ) : null}
             </View>
         </TouchableOpacity>
-    );
-}
-
-function LegendItem({
-    color,
-    label,
-    styles,
-}: {
-    color: string;
-    label: string;
-    styles: ReturnType<typeof makeStyles>;
-}) {
-    return (
-        <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: color }]} />
-            <Text style={styles.legendLabel}>{label}</Text>
-        </View>
     );
 }
 

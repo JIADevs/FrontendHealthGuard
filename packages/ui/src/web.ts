@@ -59,6 +59,8 @@ export * from './forms/TimePicker/TimePicker.types';
 export * from './forms/TimePicker/TimePicker.web';
 export * from './forms/ChoiceChips/ChoiceChips.types';
 export * from './forms/ChoiceChips/ChoiceChips.web';
+export * from './forms/SegmentedControl/SegmentedControl.types';
+export * from './forms/SegmentedControl/SegmentedControl.web';
 
 // ─── Containers ──────────────────────────────────────────────────────────────
 export * from './containers/Modal/Modal.types';

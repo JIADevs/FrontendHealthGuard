@@ -1,3 +1,4 @@
+import { formatClock } from "../../utils/formatters";
 import type {
     AgendaTask,
     Appointment,
@@ -12,6 +13,8 @@ import {
     medicationIntakeSortKey,
     resolveCycleForDay,
     findIntakeForSlot,
+    formatMedDose,
+    NOT_TAKEN_REASON_LABELS_ES,
 } from "./medicationIntakeUtils";
 
 export type AgendaEvent =
@@ -132,6 +135,40 @@ export function eventHourFraction(event: AgendaEvent): number {
     const timePart = event.data.time?.slice(0, 5) ?? "09:00";
     const [h, m] = timePart.split(":").map(Number);
     return h + (m || 0) / 60;
+}
+
+export function eventDetailLine(event: AgendaEvent): string {
+    if (event.type === "medication") {
+        const dose = formatMedDose(event.data.doseAmount, event.data.doseUnit, event.data.dosage);
+        if (event.intake?.status === "TAKEN") {
+            const takenAtMs = event.intake.takenAt ? new Date(event.intake.takenAt).getTime() : NaN;
+            const scheduledMs = new Date(event.intake.scheduledTime).getTime();
+            const isLate = Number.isFinite(takenAtMs) && takenAtMs - scheduledMs > 5 * 60_000;
+            return isLate ? "Toma · Tomado tarde" : "Toma · Tomado";
+        }
+        if (event.intake?.status === "NOT_TAKEN") {
+            const reason = event.intake.notTakenReason
+                ? NOT_TAKEN_REASON_LABELS_ES[event.intake.notTakenReason]
+                : "";
+            return reason ? `Toma · ${reason}` : "Toma · No tomado";
+        }
+        return dose ? `Toma · ${dose}` : "Toma";
+    }
+    if (event.type === "checkin") return "Check-in";
+    if (event.type === "task") {
+        return event.data.status === "completed" ? "Tarea · Completada" : "Tarea";
+    }
+    const who = event.data.doctor || event.data.specialty;
+    if (event.type === "exam") return who ? `Examen · ${who}` : "Examen";
+    return who ? `Cita · ${who}` : "Cita";
+}
+
+/** Hora del evento en formato es-CO («1:00 p. m.») para el metadato de la lista del día. */
+export function eventTimeLabel(event: AgendaEvent): string {
+    if (event.type === "medication") return formatClock(event.intakeTime);
+    if (event.type === "checkin") return formatClock(new Date(event.data.recordedAt));
+    if (event.type === "task") return formatClock(new Date(event.data.startAt));
+    return event.data.time ? formatClock(event.data.time.slice(0, 5)) : "Todo el día";
 }
 
 export function eventLabel(event: AgendaEvent): string {

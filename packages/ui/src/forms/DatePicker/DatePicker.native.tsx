@@ -4,6 +4,8 @@ import RNDateTimePicker from '@react-native-community/datetimepicker';
 import { CalendarDays } from 'lucide-react-native';
 import { colors, palette, spacing, fontSize, fontWeight, radii } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
+import { fieldBox, FieldLabel, FieldErrorText, fieldTextStyle } from '../fieldKit.native';
+import { formatClock, formatShortDay } from '../../utils/formatters';
 import type { DatePickerProps } from './DatePicker.types';
 
 function toDate(value: string): Date {
@@ -15,11 +17,6 @@ function toDateString(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-function formatDisplay(value: string): string {
-  if (!value) return '';
-  const d = new Date(`${value}T00:00:00`);
-  return d.toLocaleDateString('es-ES', { dateStyle: 'medium' });
-}
 
 export function DatePicker({
   label,
@@ -36,7 +33,6 @@ export function DatePicker({
   const [show, setShow] = useState(false);
   const [tempDate, setTempDate] = useState<Date>(toDate(value));
 
-  const borderColor = error ? palette.status.error[500] : t.border.medium;
 
   function open() {
     if (disabled) return;
@@ -63,34 +59,26 @@ export function DatePicker({
   }
 
   return (
-    <View style={styles.container}>
-      {label && (
-        <Text style={[styles.label, { color: t.text.primary }]}>
-          {label}
-          {required ? <Text style={{ color: palette.status.error[700] }}> *</Text> : null}
-        </Text>
-      )}
+    <View style={{ gap: 6 }}>
+      {label ? <FieldLabel t={t} label={label} /> : null}
 
       <Pressable
         onPress={open}
         accessibilityRole="button"
         accessibilityLabel={label}
+        accessibilityHint={error}
         style={[
-          styles.field,
-          {
-            borderColor,
-            backgroundColor: disabled ? t.border.light : t.surface.bg,
-          },
-          disabled && styles.disabled,
+          fieldBox(t, { error: !!error, disabled }),
+          { flexDirection: 'row', alignItems: 'center', gap: 10 },
         ]}
       >
-        <Text style={[styles.fieldText, { color: value ? t.text.primary : t.text.muted }]}>
-          {value ? formatDisplay(value) : (placeholder ?? 'Seleccionar fecha')}
-        </Text>
         <CalendarDays size={18} color={t.text.muted} />
+        <Text style={[fieldTextStyle(t, !!value), { flex: 1 }]} numberOfLines={1}>
+          {value ? formatShortDay(value) : (placeholder ?? 'Elige la fecha')}
+        </Text>
       </Pressable>
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      <FieldErrorText t={t} message={error} />
 
       {/* iOS — bottom sheet con spinner */}
       {show && Platform.OS === 'ios' && (

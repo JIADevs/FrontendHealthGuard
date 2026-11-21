@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 export interface TextFieldProps {
   label?: string;
   value: string;
@@ -16,4 +18,10 @@ export interface TextFieldProps {
   autoFocus?: boolean;
   returnKeyType?: 'done' | 'go' | 'next' | 'search' | 'send';
   accessibilityLabel?: string;
+  /** v2 (formularios.md §2): ícono de 18 px dentro del campo, a la izquierda. Solo native por ahora. */
+  leadingIcon?: ReactNode;
+  /** v2: ayuda persistente bajo el campo; el error la reemplaza. Solo native por ahora. */
+  helper?: string;
+  /** v2: unidad al final del campo («min», «mg»). Solo native por ahora. */
+  unit?: string;
 }

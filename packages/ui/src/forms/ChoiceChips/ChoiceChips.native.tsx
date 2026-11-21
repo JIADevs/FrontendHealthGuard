@@ -21,6 +21,7 @@ export function ChoiceChips(props: ChoiceChipsProps) {
             label={option.label}
             icon={option.icon}
             variant="option"
+            selectionMode={props.multiple ? 'multiple' : 'single'}
             selected={selected}
             onPress={() => {
               if (props.multiple) {

@@ -1,6 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   Animated,
+  Dimensions,
   KeyboardAvoidingView,
   Modal as RNModal,
   PanResponder,
@@ -14,7 +16,8 @@ import {
 import { X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DiscardChangesDialog } from '../../composed/DiscardChangesDialog/DiscardChangesDialog.native';
-import { overlay, radii, spacing, fontSize, nativeFont } from '../../tokens/tokens';
+import { radii, spacing, fontSize, nativeFont } from '../../tokens/tokens';
+import { semanticLight } from '../../tokens/semantic';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { ThemeContextValue } from '../../tokens/ThemeProvider';
 import type { BottomSheetProps } from './BottomSheet.types';
@@ -33,7 +36,25 @@ export function BottomSheet({
   const styles = makeStyles(t);
   const insets = useSafeAreaInsets();
   const [confirming, setConfirming] = useState(false);
-  const translateY = useRef(new Animated.Value(0)).current;
+  // Entra desde abajo con resorte (movimiento-interacciones.md: damping 18 · stiffness 220 · mass 1).
+  const translateY = useRef(new Animated.Value(Dimensions.get('window').height)).current;
+
+  useEffect(() => {
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .catch(() => false)
+      .then((reduce) => {
+        if (cancelled) return;
+        if (reduce) {
+          translateY.setValue(0);
+          return;
+        }
+        Animated.spring(translateY, { toValue: 0, damping: 18, stiffness: 220, mass: 1, useNativeDriver: true }).start();
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [translateY]);
   const requestCloseRef = useRef<() => void>(() => {});
 
   requestCloseRef.current = () => {
@@ -57,13 +78,13 @@ export function BottomSheet({
           requestCloseRef.current();
           return;
         }
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
+        Animated.spring(translateY, { toValue: 0, damping: 18, stiffness: 220, mass: 1, useNativeDriver: true }).start();
       },
     }),
   ).current;
 
   return (
-    <RNModal transparent visible animationType="slide" onRequestClose={() => requestCloseRef.current()}>
+    <RNModal transparent visible animationType="fade" onRequestClose={() => requestCloseRef.current()}>
       <KeyboardAvoidingView
         style={styles.fill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -127,13 +148,15 @@ function makeStyles(t: ThemeContextValue) {
     },
     backdrop: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: overlay.darker,
+      // MASTER §7: fondo rgba(15,23,42,.5)
+      backgroundColor: semanticLight.overlay,
     },
     sheet: {
       maxHeight: '88%',
       backgroundColor: t.surface.bgCard,
-      borderTopLeftRadius: radii.xl,
-      borderTopRightRadius: radii.xl,
+      // MASTER §6: hoja radio 28
+      borderTopLeftRadius: radii.sheet,
+      borderTopRightRadius: radii.sheet,
     },
     grabber: {
       alignSelf: 'center',
@@ -146,7 +169,7 @@ function makeStyles(t: ThemeContextValue) {
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing[3],
+      gap: spacing[4],
       paddingHorizontal: spacing[5],
       paddingTop: spacing[3],
       paddingBottom: spacing[4],
@@ -158,20 +181,26 @@ function makeStyles(t: ThemeContextValue) {
     titles: {
       flex: 1,
     },
+    // MASTER §5: eyebrow Nunito 900 11, mayúsculas, .08em
     eyebrow: {
       fontSize: fontSize.xs,
-      fontFamily: nativeFont('body', 600),
-      color: t.text.secondary,
+      fontFamily: nativeFont('heading', 900),
+      textTransform: 'uppercase',
+      letterSpacing: 0.9,
+      color: t.text.primary,
       marginBottom: spacing[1],
     },
+    // Kit `sheetHead`: H2 de 19 px
     title: {
-      fontSize: fontSize.lg,
-      fontFamily: nativeFont('heading', 800),
+      fontSize: 19,
+      fontFamily: nativeFont('heading', 900),
       color: t.text.primary,
     },
     close: {
       width: 44,
       height: 44,
+      borderRadius: 22,
+      backgroundColor: t.surface.muted,
       alignItems: 'center',
       justifyContent: 'center',
     },

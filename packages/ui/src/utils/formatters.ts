@@ -117,3 +117,42 @@ export function formatFileKind(format: string | null | undefined): string {
   if (f.includes("png") || f.includes("jpg") || f.includes("jpeg") || f.includes("webp")) return "Imagen";
   return format.toUpperCase();
 }
+
+// ─── Formato v2 (formularios.md §8): «Jue 5 nov», «1:00 p. m.» ──────────────
+
+const WEEKDAYS_SHORT = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const MONTHS_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+/**
+ * Hora en formato es-CO de 12 horas: «1:00 p. m.», «10:30 a. m.».
+ * Acepta «HH:mm», «HH:mm:ss» o un `Date`.
+ */
+export function formatClock(value: string | Date | null | undefined): string {
+  if (!value) return "";
+  let h: number;
+  let m: number;
+  if (value instanceof Date) {
+    h = value.getHours();
+    m = value.getMinutes();
+  } else {
+    const [hh, mm] = value.split(":").map(Number);
+    if (!Number.isFinite(hh)) return value;
+    h = hh;
+    m = Number.isFinite(mm) ? mm : 0;
+  }
+  const suffix = h < 12 ? "a. m." : "p. m.";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${suffix}`;
+}
+
+/**
+ * Fecha corta con día de la semana: «Jue 5 nov». Agrega el año si no es el actual
+ * («Jue 17 sep 2025»). Acepta «YYYY-MM-DD» (sin desplazamiento de zona) o un `Date`.
+ */
+export function formatShortDay(value: string | Date | null | undefined): string {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(`${value.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  const base = `${WEEKDAYS_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+  return d.getFullYear() === new Date().getFullYear() ? base : `${base} ${d.getFullYear()}`;
+}

@@ -13,6 +13,8 @@ interface DaySelectorProps {
     onPrevious: () => void;
     onNext: () => void;
     onGoToday: () => void;
+    /** Mobile agenda keeps a week strip, so the Día / 3 días / Semana / Mes switch stays hidden. */
+    showViewModes?: boolean;
 }
 
 const VIEW_OPTIONS: { mode: CalendarViewMode; label: string }[] = [
@@ -41,6 +43,7 @@ export function DaySelector({
     onPrevious,
     onNext,
     onGoToday,
+    showViewModes = true,
 }: DaySelectorProps) {
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
@@ -66,6 +69,7 @@ export function DaySelector({
             </View>
 
             <View style={styles.controlsRow}>
+                {showViewModes ? (
                 <View style={styles.modeRow}>
                     {VIEW_OPTIONS.map(({ mode, label }) => (
                         <TouchableOpacity
@@ -85,6 +89,7 @@ export function DaySelector({
                         </TouchableOpacity>
                     ))}
                 </View>
+                ) : null}
 
                 <TouchableOpacity onPress={onGoToday}>
                     <Text style={styles.todayBtn}>Hoy</Text>

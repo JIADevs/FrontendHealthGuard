@@ -7,6 +7,7 @@ export function DiscardChangesDialog({ onKeep, onDiscard }: DiscardChangesDialog
       title="¿Descartar los cambios?"
       message="Si cierras ahora, se pierden los cambios que no guardaste."
       keepLabel="Seguir editando"
+      keepVariant="primary"
       confirmLabel="Descartar"
       confirmVariant="danger"
       onCancel={onKeep}

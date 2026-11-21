@@ -156,23 +156,62 @@ Screens: `components/agenda/*`, `AgendaTaskFormScreen`, `AgendaTaskDetailScreen`
 Mockups: «Agregar a agenda», «Registrar toma», «Nueva cita · más detalles», «Detalle de cita · después de la hora», «Nuevo profesional», «Nuevo medicamento», «Detalle de medicamento», «Detalle de ciclo», «Nueva tarea», «Detalle de tarea», «Completar tarea».
 States: Citas / Medicamentos / Bienestar vacío, «Calendario · día sin eventos», «Medicamentos · todo tomado hoy», «¿Cancelar la cita?», «¿Finalizar ciclo?», «Cita no encontrada», «Formulario con errores», «Borrador recuperado», «No se pudo guardar».
 
-- [ ] 7.1 Identify: write the gap list here.
-  - Seen during the phase 5 review: «Nueva cita» with missing date and time puts the focus on «Duración» instead of the first field with an error (formularios §6).
-- [ ] 7.2 Build: the detail and form screens (carried over from 4.8):
-  - **Nuevo / Editar medicamento:** sections «Medicamento», «Prescripción», «Periodo del ciclo», «Recordatorios» and «Tratamiento».
-    - Fields: «Forma farmacéutica» as `ChoiceChips`; «Dosis por toma», whose unit comes from the form; and «Frecuencia (cada cuánto)» with Horas / Días / Semanas chips.
-    - A summary is calculated under the frequency: «1 tableta cada 12 horas · 2 tomas al día».
-    - Optional fields say «(opcional)». «Guardar medicamento» sits in `BottomActionBar`.
-  - **Detalle de medicamento:** «Editar» goes in the header. The header card shows the name and «Próxima toma», then `PendingDoseButton`. Cycles are grouped into ACTIVOS / ANTERIORES with the green bar and «X de N días». «Nuevo ciclo» is secondary.
-  - **Detalle de ciclo:** a green ring «día/total», the «En curso» / «Finalizado» chip, and the dates.
-    - Rows: Dosis, Frecuencia, Concentración and Razón.
-    - Then «Historial de tomas».
-    - «Editar» goes in the header. «Finalizar ciclo» is a `DangerLink` at the end, and its confirm puts the safe option first. The blue hero and `DetailFooter` are removed.
-  - **Detalle de tarea:** a tile with the title, date and status chip, then notes and the «Aviso» row. «Completar tarea» is the success button and «Reprogramar» is secondary.
-  - **Nuevo profesional:** one column, with «(opcional)» on Teléfono and Notas. A dirty close uses `DiscardChangesDialog`.
+- [x] 7.1 Identify. Gaps against `m2-agenda.js`, seen in the simulator with a test account:
+  - **Already v2 (Phases 3–4):** the four tabs, the week strip with event icons, the legend, the calendar rows, «Agregar a agenda», «Registrar toma», `AppointmentForm`, `AppointmentDetail`, the complete and reschedule task sheets.
+  - **Nuevo medicamento** (`MedicationForm`, 1063 lines, pre-v2): own header, hand-made chip rows, an old picker modal, a single error box for the whole form, «Cancelar» + «Registrar» side by side, «Nuevo Ciclo» / «Editar Ciclo» titles.
+    - Mockup: «Nuevo medicamento», a back header and cards «Medicamento» (Nombre, «Forma farmacéutica» chips, Concentración), «Prescripción» («Dosis por toma» with the unit from the form, «Frecuencia (cada cuánto)» + Horas / Días / Semanas chips, the calculated summary), «Periodo del ciclo» (Inicio + Fin side by side), «Recordatorios» chips, «Tratamiento».
+    - Then `BottomActionBar` «Guardar medicamento», errors under each field with scroll to the first one, and `DiscardChangesDialog` on a dirty back.
+    - Kept: the name suggestions, «¿Quisiste decir…?», and price, reason and notes, which the mockup leaves out but the API stores. They move into a folded «Más detalles», like the appointment form.
+  - **Detalle de medicamento:** the header has no title; «Editar» sits in the card.
+    - Mockup: «Medicamento» header with the edit icon, a card with the name, «Próxima toma: …» and the «Tomar» button inside.
+    - Cycles grouped ACTIVOS / ANTERIORES as compact cards: «Ciclo · 14 nov – 14 dic», «1 tableta cada 12 horas», «En curso» / «Finalizado» chip, a green bar and «X de N días». The cards have no edit, finish or delete icons; those live in the cycle detail.
+    - «Nuevo ciclo» is a secondary button at the end.
+  - **Detalle de ciclo:** blue hero, a 2×2 grid, «Detalles» tiles and a three-button footer (Editar, Finalizar, Eliminar ciclo).
+    - Mockup: «Ciclo» header with the medication as subtitle and the edit icon, then a card with a green ring «día/total», the «En curso» chip, the dates and «Próxima toma».
+    - Next, a list card (Dosis, Frecuencia, Concentración, Razón), «Historial de tomas» and «Finalizar ciclo» as a `DangerLink` with a confirm whose safe option comes first.
+    - Deleting a cycle stays possible from the confirm flow, not as a third button.
+  - **«Próxima toma»** shows a past date (15 nov when today is 21 nov) because it reads the cycle's stored `nextIntakeTime`. Backend finding, not fixed on mobile: `next_intake_time` only advances when a dose is registered (`advance_next_intake`), and «Tomar» from the list or detail registers against that slot. Patching only the label would show one dose and record another.
+  - ~~Date-only fields~~: the «14 nov» offset came from test data created with a UTC-midnight start date; the app sends local dates. Not a bug.
+  - **Detalle de tarea:** the title row, status badge and three loose rows.
+    - Mockup: one card with a large tile, the title, «Hoy · 5:00 p. m.», the «Pendiente» chip (amber), the description, the «Aviso» row and «Para llevar» rows.
+    - The screen holds its UI; it moves to `components/agenda/` (4.7 rule).
+  - **Nueva tarea** (`AgendaTaskFormScreen`, pre-v2): own header and an old picker modal.
+    - Mockup: «Nueva tarea» back header, cards «Tarea» (Título, Descripción (opcional), Fecha + Hora), «Avisarme antes» chips (Sin avisos / 15 min / 1 hora / 1 día), «Para llevar (opcional)» add rows, and `BottomActionBar` «Guardar tarea».
+    - Then errors under the fields and `DiscardChangesDialog`. It moves to `components/agenda/`.
+  - **Nuevo profesional:** a full screen with `FormHeader`. The mockup uses a sheet (five fields or fewer) with «Nombre», «Especialidad», «Clínica / Hospital / IPS (opcional)», «Teléfono (opcional)», «Notas (opcional)» and «Guardar profesional». Saving goes back to the appointment with the professional selected.
+  - **Nueva cita:** with date and time missing, the focus lands on «Duración» instead of the first field with an error (formularios §6). Seen during the Phase 5 review.
+  - **Cleanup:** nine iCloud duplicates (`* 2.tsx`) in `components/agenda/` plus `AppointmentFormScreen 2`, `AppointmentDetailScreen 2` and `DoctorFormScreen 2` are tracked and imported by nothing.
+  - Out of scope: the weekly goal ring («META SEMANAL»), mission chips.
+- [x] 7.2 Build: the detail and form screens (carried over from 4.8):
+  - **Nuevo / Editar medicamento** (`MedicationForm`): cards «Medicamento», «Prescripción», «Periodo del ciclo», «Recordatorios», «Tratamiento», and a folded «Más detalles (opcional)» with razón, notas and precio (the API stores them; the mockup leaves them out).
+    - «Forma farmacéutica» as `ChoiceChips`, the dose unit from the form, «Frecuencia (cada cuánto)» with Horas / Días / Semanas, and the calculated summary («1 tableta cada 24 horas · 1 toma al día»).
+    - «Hora de la primera toma» is added under Inicio + Fin: the API needs it and the mockup has no field for it.
+    - Errors under each field, with scroll to the first one and focus when it is a text field. `BottomActionBar` «Guardar medicamento» / «Guardar ciclo» / «Guardar cambios», and `DiscardChangesDialog`. Editing shows the start read-only.
+    - The name suggestions and «¿Quisiste decir…?» stay.
+  - **Detalle de medicamento:** «Medicamento» header with «Editar» (rename sheet), a card with the name, «Próxima toma» or «Toma pendiente», and `PendingDoseButton` inside. ACTIVOS / ANTERIORES compact cycle cards with the green bar and «X de N días», and «Nuevo ciclo» as secondary.
+  - **Detalle de ciclo:** «Ciclo» header with the medication and «Editar», the green ring, the status chip («En curso», «Termina hoy», «Finalizado»), a data list, «Historial de tomas», and one red link at the end: «Finalizar ciclo» while it runs, «Eliminar ciclo» once it ends. Both confirm with the safe option first. The blue hero and `DetailFooter` are gone.
+  - **Detalle de tarea / Nueva tarea:** both are moved into `components/agenda/`. The detail is one card (tile, title, when, «Pendiente» chip, notes, «Aviso», «Para llevar») with «Completar tarea» and «Reprogramar». The form has the «Tarea», «Avisarme antes» and «Para llevar (opcional)» cards and «Guardar tarea». The API needs at least one reminder, so there is no «Sin avisos».
+  - **Nuevo profesional:** a sheet over «Nueva cita» (`DoctorSheet`). Saving selects the new professional, and the `DoctorForm` route is gone.
+  - **Empty states (m9):** «Citas · vacío» and «Medicamentos · vacío» with the mascot, one action and an «Así se verá» example. «Calendario · día sin eventos» is an inline dashed card that opens «¿Qué quieres agregar?» (new `renderEmptyDay` slot in `HeluAgendaCalendar`).
   - Not in this task: the weekly goal ring (out of scope in the proposal).
-  - «Nueva tarea» follows its mockup, and the states listed above are in place.
-- [ ] 7.3 Review in the simulator against the mockups, fix, and commit.
+- [x] 7.3 Review in the simulator against the mockups, fix, and commit. Checked on iPhone 17e with a test account. Every new form was saved and read back from the API.
+  - Fixed during review:
+    - Saving a medication left it hidden: Citas and Medicamentos bound pull to refresh to `isRefetching`, so the background refetch opened the refresh gap above the list. `usePullToRefresh` now shows the spinner only for the pull, in both tabs.
+    - The core form used the UTC day as the default start date.
+    - The chip error looked different from the field errors; `FieldError` is now exported from `@helu/ui`.
+    - `ConfirmModal` left an empty gap on the right; after equal widths it truncated «Seguir editando». Now both actions fill the row and never shrink below their label.
+    - An open-ended cycle's ring drew a green dot at zero progress.
+    - An overdue dose read «Próxima toma»; it now reads «Toma pendiente».
+    - Right after «Finalizar ciclo» the screen looked unchanged (a cycle ending today still counts today); it now reads «Termina hoy» and offers «Eliminar ciclo».
+    - The empty-state blocks touched the screen edges.
+  - Not reproduced: «Nueva cita» with no date and time no longer moves the focus to «Duración».
+  - Motion: these screens add no new animations of their own. They use `contentEntering`, `BottomSheet`, `Button`, `ChoiceChips`, `FadeThrough` and `CycleProgressBar`, measured in Phases 4–5 (including reduced motion). This phase did not re-record them frame by frame.
+  - Open:
+    - In the simulator, a tap right after typing sometimes only blurred the field (cycle edit, «Nuevo profesional»); the second tap worked. Login did not show it. Check on a device in Phase 14.
+    - «Medicamentos · todo tomado hoy» and «Borrador recuperado» (drafts are not persisted yet) move to Phase 14.
+    - The empty-day action does not prefill the chosen date in the forms yet.
+    - Every agenda query takes 3–5 s against the local Docker backend.
+  - `tsc`: 30 errors, all pre-existing (53 before this phase; the removed duplicates and dead modals carried 23 of them). `check:tokens` OK.
 
 ## Phase 8: Tratamientos — module 4, without missions (`m3-misiones.js`)
 

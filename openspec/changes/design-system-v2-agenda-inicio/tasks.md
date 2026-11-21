@@ -34,7 +34,10 @@ Each commit is checked on mobile and web before the next one starts. Mobile: Exp
 - [x] 1.2 `onError` restores that snapshot. `onSettled` invalidates `medications` and `calendar`.
 - [x] 1.3 `useCreateDailyCheckInMutation`: insert today's check-in into `daily-checkins` and `calendar` in `onMutate`. Do not write `currentStreak` there. Restore on error. On success, invalidate `me`, `treatments`, `daily-checkins`, and `calendar`.
 - [x] 1.4 Remove `onMutate` from `useRevokeDelegationMutation`. Keep the `onSettled` invalidation of `delegationKeys.all()`. Leave `useUpdateDelegationColorsMutation` as it is.
-- [ ] 1.5 Boot mobile and web. Mobile: in Dependientes, revoking keeps the row until the server answers. A check-in still saves, and the streak toast still waits for success. Web: Agenda still loads and «Tomado» still saves. Web has no Dependientes or check-in screen yet, so those two paths are not visible there.
+- [x] 1.5 Boot mobile and web. Mobile: in Dependientes, revoking keeps the row until the server answers. A check-in still saves, and the streak toast still waits for success. Web: Agenda still loads and «Tomado» still saves. Web has no Dependientes or check-in screen yet, so those two paths are not visible there.
+  - Checked 2026-11-21 on the iOS simulator with the API paused and then resumed. Revoke kept the row while the request was pending and after it failed. A check-in saved (201), and its success toast only showed after the server answered. Mobile has no streak toast yet, only «Check-in registrado».
+  - This check found that `newOptimisticId` used `crypto.randomUUID`, which Hermes lacks. `onMutate` threw, so check-in (and «Tomar» on a cached cycle) never reached the server. Fixed in `optimisticCache.ts`.
+  - Web: Agenda loads. «Tomado» returns 404 because `agenda/page.tsx` sends the medication id as the cycle id. That bug is already on `dev`, since this branch does not touch `apps/web`. Task 8.2 replaces that screen.
 
 ## Phase 2: Primitives — RF-UI-AI1, RF-UI-AI2, RF-UI-AI3
 
@@ -42,7 +45,7 @@ Each commit is checked on mobile and web before the next one starts. Mobile: Exp
 - [x] 2.2 `forms/ChoiceChips`, native and web: `options`, `value`, `multiple`, `onChange`. Each option is `Chip` `variant="option"`, at least 44 px, with a check when selected.
 - [x] 2.3 `composed/DiscardChangesDialog`, native and web: renders `ConfirmModal`, safe option first.
 - [x] 2.4 Export the three from `src/index.ts`. Export only `ChoiceChips` and `DiscardChangesDialog` from `src/web.ts`.
-- [ ] 2.5 `pnpm --filter @helu/ui check:tokens` passes. No hex literals in the new files.
+- [x] 2.5 `pnpm --filter @helu/ui check:tokens` passes. No hex literals in the new files.
 
 ## Phase 3: Mobile doses — RF-MOB-AI1, RF-MOB-AI6
 
@@ -55,7 +58,11 @@ Each commit is checked on mobile and web before the next one starts. Mobile: Exp
 - [x] 4.1 Calendar legend stays visible: Tomas, Citas, Check-in, Tareas. Each day-list event states its type in text. Only the urgent action uses primary or success. Do not render mission events.
 - [x] 4.2 Appointments: «Próximas» and «Anteriores», chronological. Detail hides «¿Pudiste asistir?» before the start time. From that time it offers `ASISTI` and `NO_ASISTI`, plus «Cómo llegar» and «+ Agregar documento». «Cancelar cita» is a `DangerLink` whose confirm offers «Mantener cita» first.
 - [x] 4.3 New appointment form order: «Fecha y hora», «Profesional», «Modalidad y lugar». `DoctorForm` stays the screen that creates a professional. Dirty close uses `DiscardChangesDialog`.
-- [ ] 4.4 Medications: «Activos» and «Finalizados». Cycle detail offers «Tomar» when a dose is pending.
+- [x] 4.4 Medications: «Activos» and «Finalizados». Cycle detail offers «Tomar» when a dose is pending.
+  - One list grouped into ACTIVOS / FINALIZADOS (the «Medicamentos / Ciclos» sub-tabs are gone; cycles stay in the medication detail). Active cards show the green cycle bar, «Próxima toma» or «Toma pendiente» for an overdue slot, and «Ciclo: X de N días». Finished cards show a grey tile, «Terminó el …» and «Finalizado».
+  - `PendingDoseButton` is the detail's primary action in both the cycle and the medication detail, and fades through to «✓ Tomado».
+  - Fix found here: dose mutations now also patch and invalidate `["medication", id]`, so the detail updates optimistically. Before, it kept the old dose until a reload.
+  - Checked 2026-11-21 on the iOS simulator with temporary test medications on `juan@helu.dev`, deleted afterwards.
 - [ ] 4.5 Wellbeing keeps `DailyCheckInForm` and `MoodPicker`. Face order: Muy mal, Mal, Regular, Bien, Excelente, labels from `moodConfig.ts`. The streak toast fires only after the mutation succeeds.
 - [ ] 4.6 Agenda tasks keep the brand accent and the «Completar» and «Reprogramar» actions.
 - [ ] 4.7 Screens (`AgendaScreen`, `AppointmentDetail`, `AppointmentForm`, `MedicationDetail`, `CycleDetail`, `DoctorForm`, `MedicationForm`) only pass props and callbacks.

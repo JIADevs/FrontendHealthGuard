@@ -87,3 +87,38 @@ export function formatCycleEnd(cycle: MedicationCycle | undefined): string {
   if (!cycle?.endDate) return "Sin ciclo activo";
   return `Terminó el ${formatShortDay(cycle.endDate)}`;
 }
+
+const MONTHS_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+/** «21 nov», plus the year when it is not the current one. Reads the calendar day the API stores. */
+export function formatDayMonth(value: string): string {
+  const d = new Date(`${value.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return "";
+  const base = `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+  return d.getFullYear() === new Date().getFullYear() ? base : `${base} ${d.getFullYear()}`;
+}
+
+/** «21 nov – 21 dic», or «Desde 21 nov» for a cycle with no end date (mockup «Detalle de medicamento»). */
+export function formatCycleRange(cycle: MedicationCycle): string {
+  const start = formatDayMonth(cycle.startDate);
+  return cycle.endDate ? `${start} – ${formatDayMonth(cycle.endDate)}` : `Desde ${start}`;
+}
+
+export type CycleStatus = "active" | "ends-today" | "finished";
+
+/**
+ * «En curso», «Termina hoy» or «Finalizado». A cycle finished today keeps counting today's doses until
+ * midnight, but it must not look untouched right after «Finalizar ciclo».
+ */
+export function cycleStatus(cycle: MedicationCycle, now = Date.now()): CycleStatus {
+  if (!isCycleActive(cycle, now)) return "finished";
+  const d = new Date(now);
+  const todayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return cycle.endDate?.slice(0, 10) === todayKey ? "ends-today" : "active";
+}
+
+export const CYCLE_STATUS_CHIP: Record<CycleStatus, { label: string; tone: "brand" | "warning" | "neutral" }> = {
+  active: { label: "En curso", tone: "brand" },
+  "ends-today": { label: "Termina hoy", tone: "warning" },
+  finished: { label: "Finalizado", tone: "neutral" },
+};

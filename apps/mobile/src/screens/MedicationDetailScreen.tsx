@@ -15,9 +15,6 @@ export function MedicationDetailScreen() {
       onOpenCycle={(cycleId, medicationName) =>
         navigation.navigate("CycleDetail", { cycleId, medicationId: id, medicationName })
       }
-      onEditCycle={(cycleId, medicationName) =>
-        navigation.navigate("MedicationForm", { cycleId, medicationId: id, medicationName })
-      }
     />
   );
 }

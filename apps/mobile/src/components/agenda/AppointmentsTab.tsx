@@ -26,6 +26,7 @@ import { CalendarDays, Filter } from "lucide-react-native";
 
 import { useAppointmentsList } from "../../hooks/useAppointmentsList";
 import { AgendaFAB } from "./AgendaFAB";
+import { usePullToRefresh } from "../../lib/usePullToRefresh";
 import { useAgendaNavigation } from "./AgendaNavigation";
 import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentsFilterSheet } from "./AppointmentsFilterSheet";
@@ -59,6 +60,7 @@ export function AppointmentsTab() {
   const deleteMut = useDeleteAppointmentMutation();
 
   const totalPages = appts.data?.totalPages ?? 1;
+  const pull = usePullToRefresh(appts.refetch);
 
   const handleDelete = useCallback(() => {
     if (!deleteTarget) return;
@@ -119,11 +121,7 @@ export function AppointmentsTab() {
           contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
           stickySectionHeadersEnabled={false}
           refreshControl={
-            <RefreshControl
-              refreshing={appts.isRefetching}
-              onRefresh={() => { void appts.refetch(); }}
-              tintColor={t.brand.fg}
-            />
+            <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={t.brand.fg} />
           }
           renderSectionHeader={({ section }) => (
             <Text style={[styles.sectionTitle, { color: t.text.secondary }]}>{section.title}</Text>

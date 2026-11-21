@@ -22,6 +22,7 @@ import type { ThemeContextValue } from "@helu/ui";
 import { Pill, Filter } from "lucide-react-native";
 
 import { useMedicationsList } from "../../hooks/useMedicationsList";
+import { usePullToRefresh } from "../../lib/usePullToRefresh";
 import { AgendaFAB } from "./AgendaFAB";
 import { useAgendaNavigation } from "./AgendaNavigation";
 import { MedicationCard } from "./MedicationCard";
@@ -51,7 +52,6 @@ export function MedicationsTab() {
     items,
     totalPages,
     isLoading,
-    isRefetching,
     refetch,
     treatments,
     draftFilters,
@@ -63,6 +63,7 @@ export function MedicationsTab() {
     applyFilters,
     hasActiveFilter,
   } = useMedicationsList();
+  const pull = usePullToRefresh(refetch);
   const showSkeleton = useSkeletonVisible(isLoading);
   const sections = useMemo(() => splitMedications(items), [items]);
 
@@ -124,11 +125,7 @@ export function MedicationsTab() {
           contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
           stickySectionHeadersEnabled={false}
           refreshControl={
-            <RefreshControl
-              refreshing={isRefetching}
-              onRefresh={() => { void refetch(); }}
-              tintColor={t.brand.fg}
-            />
+            <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={t.brand.fg} />
           }
           renderSectionHeader={({ section }) => (
             <Text style={[styles.sectionTitle, { color: t.text.secondary }]} accessibilityRole="header">

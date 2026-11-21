@@ -20,7 +20,8 @@ export function ProgressRing({ size, progress, children }: ProgressRingProps) {
     <View style={{ width: size, height: size }} accessibilityElementsHidden={!children}>
       <Svg width={size} height={size}>
         <Circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={t.motivation.track} strokeWidth={8} />
-        <Circle
+        {/* With no progress the rounded cap would still draw a green dot: draw only the track. */}
+        {p > 0 ? <Circle
           cx={size / 2}
           cy={size / 2}
           r={r}
@@ -30,7 +31,7 @@ export function ProgressRing({ size, progress, children }: ProgressRingProps) {
           strokeLinecap="round"
           strokeDasharray={`${(c * p).toFixed(1)} ${c.toFixed(1)}`}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
+        /> : null}
       </Svg>
       <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" }}>
         {children}

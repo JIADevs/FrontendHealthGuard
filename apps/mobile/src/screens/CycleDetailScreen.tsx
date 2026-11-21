@@ -13,7 +13,7 @@ export function CycleDetailScreen() {
       medicationId={medicationId}
       medicationName={medicationName}
       onEdit={() => navigation.navigate("MedicationForm", { cycleId, medicationId, medicationName })}
-      onDeleted={() => navigation.goBack()}
+      onBack={() => navigation.goBack()}
     />
   );
 }

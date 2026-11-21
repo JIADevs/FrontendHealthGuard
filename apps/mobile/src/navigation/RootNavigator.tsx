@@ -4,6 +4,8 @@ import { useAuthStore } from "@helu/stores";
 import { TabNavigator } from "./TabNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
 import { SignupScreen } from "../screens/SignupScreen";
+import { WelcomeScreen } from "../screens/WelcomeScreen";
+import { useWelcomeStore } from "../lib/welcomeStore";
 import { ScannerScreen } from "../screens/ScannerScreen";
 import { DocumentUploadScreen } from "../screens/DocumentUploadScreen";
 import { DocumentDetailScreen } from "../screens/DocumentDetailScreen";
@@ -61,6 +63,8 @@ export interface AgendaRouteParams {
 export type RootStackParamList = {
   Auth: undefined;
   Signup: undefined;
+  /** Una sola vez, justo después de crear la cuenta (m1 · «Bienvenida»). */
+  Welcome: undefined;
   MainTabs: { screen: "Agenda"; params: AgendaRouteParams } | undefined;
 
   AppointmentDetail: { id: string };
@@ -140,6 +144,7 @@ const SharedDetailScreenLight = withDocumentsTheme(SharedDetailScreen);
 
 export function RootNavigator() {
   const token = useAuthStore((s) => s.token);
+  const welcomePending = useWelcomeStore((s) => s.pending);
   const t = useAppTheme();
 
   return (
@@ -157,6 +162,8 @@ export function RootNavigator() {
     >
       {token ? (
         <>
+          {/* Primera en la lista para que sea la pantalla inicial al entrar después del registro. */}
+          {welcomePending ? <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ animation: "fade" }} /> : null}
           <Stack.Screen name="MainTabs" component={TabNavigator} />
           <Stack.Screen
             name="Scanner"

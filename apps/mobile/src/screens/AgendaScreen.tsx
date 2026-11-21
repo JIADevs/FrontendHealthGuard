@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   SectionList,
-  ActivityIndicator,
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -30,7 +29,10 @@ import {
   useAppTheme,
   Typography,
   Button,
-  Spinner,
+  SkeletonGroup,
+  Skeleton,
+  SkeletonCard,
+  useSkeletonVisible,
   EmptyState,
   HeluAgendaCalendar,
   SegmentedControl,
@@ -168,9 +170,12 @@ export function AgendaScreen() {
       {/* Pestañas internas: fade through, sale en 100 ms y entra en 250 ms subiendo 4 px (§3). */}
       <Animated.View style={[styles.tabContent, tabFade.style]}>
       {intentLoading ? (
-        <View style={[styles.tabContent, styles.center]}>
-          <Spinner size="lg" />
-        </View>
+        // Abriendo desde una notificación: esqueleto de la lista del día mientras se prepara la hoja.
+        <SkeletonGroup label="Abriendo la toma" style={styles.skeletonList}>
+          <SkeletonCard tile={false} edge action />
+          <SkeletonCard tile={false} edge />
+          <SkeletonCard tile={false} edge />
+        </SkeletonGroup>
       ) : tabFade.shown === "calendar" ? (
         <CalendarTab
           intentIntakeEvent={intentIntakeEvent}
@@ -313,18 +318,25 @@ function WellbeingTab() {
     [styles.wellbeingSectionHeader, styles.wellbeingSectionTitle],
   );
 
+  const showSkeleton = useSkeletonVisible(screen.isLoading);
+
   return (
     <View style={styles.tabContent}>
       <WellbeingHeader total={screen.total} isLoading={screen.isLoading} />
 
-      {screen.isLoading ? (
-        <View style={styles.center}>
-          <Spinner size="lg" />
-        </View>
+      {showSkeleton ? (
+        // §6c: cabecera real; grupo con su etiqueta y filas de check-in (cara + texto).
+        <SkeletonGroup label="Cargando check-ins" style={styles.skeletonList}>
+          <Skeleton width={110} height={11} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+        </SkeletonGroup>
       ) : screen.isError ? (
         <View style={styles.center}>
           <Text style={styles.errorText}>
-            Error al cargar check-ins. Verificá tu conexión.
+            No se pudieron cargar tus check-ins. Revisa tu conexión e intenta de nuevo.
           </Text>
           <TouchableOpacity onPress={() => screen.refetch()}>
             <Text style={styles.retryText}>Reintentar</Text>
@@ -361,7 +373,11 @@ function WellbeingTab() {
           SectionSeparatorComponent={() => <View style={styles.wellbeingSectionSeparator} />}
           ListFooterComponent={
             screen.isFetchingNextPage ? (
-              <ActivityIndicator style={styles.wellbeingListFooter} color={t.brand.fg} />
+              // §6c «Página siguiente»: 2 filas de esqueleto al final.
+              <SkeletonGroup label="Cargando más check-ins" style={[styles.wellbeingListFooter, { gap: spacing[3] }]}>
+                <SkeletonCard lines={2} />
+                <SkeletonCard lines={2} />
+              </SkeletonGroup>
             ) : undefined
           }
         />
@@ -394,6 +410,7 @@ function makeStyles(t: ThemeContextValue) {
     },
     title:              { fontSize: 26, lineHeight: 30, fontFamily: nativeFont("heading", 900), color: t.text.primary },
     tabContent:         { flex: 1 },
+    skeletonList:       { gap: spacing[3], paddingHorizontal: spacing[4], paddingTop: spacing[3] },
     wellbeingListContent: { paddingBottom: spacing[12] + 56 },
     wellbeingSectionHeader: {
       paddingHorizontal: spacing[4],

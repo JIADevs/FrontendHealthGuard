@@ -17,7 +17,9 @@ import {
   useAppTheme,
   Pagination,
   cardContentStyle,
-  Spinner,
+  SkeletonGroup,
+  SkeletonCard,
+  useSkeletonVisible,
   ConfirmModal,
   EmptyState,
   SearchField,
@@ -95,6 +97,7 @@ function MedicationsList() {
     applyFilters,
     hasActiveFilter,
   } = useMedicationsList();
+  const showSkeleton = useSkeletonVisible(isLoading);
 
   const deleteMut = useDeleteMedicationMutation();
 
@@ -141,10 +144,13 @@ function MedicationsList() {
         </TouchableOpacity>
       </View>
 
-      {isLoading ? (
-        <View style={styles.center}>
-          <Spinner size="lg" />
-        </View>
+      {showSkeleton ? (
+        // §6c: buscador y filtros reales; tarjetas de medicamento con el bloque de su botón.
+        <SkeletonGroup label="Cargando medicamentos" style={[cardContentStyle, { gap: spacing[3] }]}>
+          <SkeletonCard lines={2} action />
+          <SkeletonCard lines={2} action />
+          <SkeletonCard lines={2} action />
+        </SkeletonGroup>
       ) : (
         <FlatList
           data={items}
@@ -230,6 +236,7 @@ function CyclesList() {
   const [deletingItem, setDeletingItem]     = useState<CycleItem | null>(null);
 
   const meds     = useMedicationsQuery("", 1, 100);
+  const showCyclesSkeleton = useSkeletonVisible(meds.isLoading);
   const updateMut = useUpdateMedicationCycleMutation();
   const deleteMut = useDeleteMedicationCycleMutation();
 
@@ -282,10 +289,12 @@ function CyclesList() {
 
   return (
     <View style={{ flex: 1 }}>
-      {meds.isLoading ? (
-        <View style={styles.center}>
-          <Spinner size="lg" />
-        </View>
+      {showCyclesSkeleton ? (
+        <SkeletonGroup label="Cargando ciclos" style={[cardContentStyle, { gap: spacing[3] }]}>
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+        </SkeletonGroup>
       ) : (
         <FlatList
           data={cycleItems}

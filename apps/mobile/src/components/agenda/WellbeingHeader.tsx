@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Heart } from "lucide-react-native";
-import { spacing, fontSize, fontWeight, radii, useAppTheme } from "@helu/ui";
+import { spacing, fontSize, fontWeight, radii, useAppTheme, Skeleton, SkeletonGroup } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 
 interface WellbeingHeaderProps {
@@ -13,9 +13,7 @@ export function WellbeingHeader({ total = 0, isLoading }: WellbeingHeaderProps) 
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
 
-    const countLabel = isLoading
-        ? "Cargando…"
-        : total === 0
+    const countLabel = total === 0
           ? "Sin registros todavía"
           : total === 1
             ? "1 registro"
@@ -29,7 +27,14 @@ export function WellbeingHeader({ total = 0, isLoading }: WellbeingHeaderProps) 
             <View style={styles.textBlock}>
                 <Text style={styles.title}>Tu bienestar</Text>
                 <Text style={styles.subtitle}>Cómo te sentiste últimamente</Text>
-                <Text style={styles.count}>{countLabel}</Text>
+                {isLoading ? (
+                    // El conteo viene del servidor: bloque de esqueleto, no texto «Cargando…» (§6c).
+                    <SkeletonGroup label="Cargando el conteo de check-ins">
+                        <Skeleton width={90} height={12} style={{ marginTop: 4 }} />
+                    </SkeletonGroup>
+                ) : (
+                    <Text style={styles.count}>{countLabel}</Text>
+                )}
             </View>
         </View>
     );

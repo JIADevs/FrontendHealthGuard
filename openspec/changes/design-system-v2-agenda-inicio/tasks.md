@@ -18,7 +18,14 @@ Each phase has the same three steps, in order:
    - `system/pages/movimiento-interacciones.md`: transitions (§3), sheets and modals (§4), buttons (§5), feedback and toasts (§6), skeletons (§6c), reduced motion (§8).
    Write the gap list under the phase before touching code.
 2. **Build.** Close the gaps. UI lives in `components/<module>/` and screens only read the route and pass callbacks (the 4.7 rule).
-3. **Review.** Walk every screen in the simulator next to its mockup and run the §9 checklist from `movimiento-interacciones.md`. `pnpm exec tsc --noEmit -p apps/mobile` adds no errors, and `pnpm --filter @helu/ui check:tokens` passes. Fix what is off, then commit the phase in work units.
+3. **Review.** A phase is not done until every item below is confirmed in the simulator; the static look matching the mockup is not enough. Fix what is off, then commit the phase in work units.
+   - **Layout:** every screen and state next to its mockup (spacing, type, colors, icons, copy).
+   - **Motion, element by element** (`movimiento-interacciones.md`): screen transitions (§3), sheets and modals (§4), buttons and controls with their timings (§5: press 100/150 ms with `translateY`, loading label fade 150 ms, field focus 150 ms, error fade 150 ms, chips, segmented), feedback and toasts (§6), skeletons (§6c). Only `transform` and `opacity` animate (§8). Check timings with frame captures, not one screenshot.
+   - **Shared primitives** the screens use (`Button`, `TextField`, `Card`, `BottomSheet`…): a gap there is a gap on every screen.
+   - **Forms** (`formularios.md`): validation timing, messages, submit and response, keyboard and autofill.
+   - **States:** loading, empty, error, confirmation, offline for these screens (m7, m8, m9).
+   - **Reduced motion** on, and the §9 checklist.
+   - `pnpm exec tsc --noEmit -p apps/mobile` adds no errors, and `pnpm --filter @helu/ui check:tokens` passes.
 
 ## Phase 1: API — RF-API-AI1, RF-API-AI2, RF-API-AI3
 
@@ -91,11 +98,20 @@ Mockups: «Inicio de sesión», «Registro», «Error de inicio de sesión», «
   - Login and signup cards, fields and validation as in the mockup (email, password of at least 8 characters, show/hide password), with the mascot greeting.
   - The login error state, and the welcome screen after signup.
   - Done: `Mascot` and `HeluWordmark` (`components/brand`), `PasswordField` in `@helu/ui`, `TextField` gains `trailing`, `onBlur`, `onSubmitEditing`, `inputRef` and passes `autoComplete` / `textContentType`. `Login`, `Signup` and `Welcome` live in `components/auth`; the screens only wire navigation. `AnimatedLoginBackground` and the old `Auth*` field, button and style files are gone.
-- [x] 5.3 Review in the simulator against the mockups, fix, and commit. Fixed during review:
+- [x] 5.3 Review in the simulator against the mockups, fix, and commit. Reopened once: the first pass checked layout and forms but not motion. Fixed during the first pass:
   - The login placeholders («alejandra@helu.dev», «••••••••») read as filled values next to «Escribe tu correo.». Now «Ej: nombre@ejemplo.com» and no password placeholder.
   - Validating on blur or submitting with the return key could read a stale render and flag a valid email. Validation and submit now read the latest values from a ref.
   - The «Ú» of «Únete» was clipped by the title line height.
   - Checked: empty submit, bad format, wrong credentials (banner + «Pensativa»), existing email on signup, short password, the loading label, signup → Bienvenida → «Nuevo medicamento» → back to Inicio, and login with the return key. The app ignores the system dark mode (it uses its own preference), so dark was not checked here.
+
+  - Second pass, motion (measured on simulator recordings, frame by frame):
+    - `Button` (all screens): press now moves the fill 3 px with an animated `translateY` over a fixed edge layer (100 ms down `ease-out`, 150 ms up) instead of swapping padding; loading fades the label (out ~100 ms, in ~150 ms) and keeps the width; loading no longer looks disabled (it kept `opacity: 0.5` and lost the edge because screens pass `disabled` together with `loading`). Acceso buttons use the 48 px size, not 52 px.
+    - `TextField` focus: the blue border, halo and surface now fade in 150 ms on a ring layer (opacity only) instead of switching at once.
+    - The submit no longer clears the error banner first; it stays until the new response, so the form does not jump twice.
+    - Login ↔ Registro cross-fade (150 ms) instead of «entra desde la derecha», which means «bajé un nivel» (§1b). Bienvenida enters with a 250 ms fade.
+    - The eye button gets the `surface-muted` press background (§5 «Botón de ícono»); the footer link dims while pressed.
+    - Checked: press/release timing, loading label fade, focus ring fade, banner stays put, transitions, and that other screens using `Button` (appointment detail) look the same.
+    - Not checked on the simulator: reduced motion. The code paths use `useReducedMotion` (button press, focus ring, fade through, Reanimated entering), but the setting was not toggled on a device.
 
 ## Phase 6: Inicio — module 2 (`m1-acceso-inicio.js`)
 

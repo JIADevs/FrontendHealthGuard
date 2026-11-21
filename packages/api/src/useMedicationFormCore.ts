@@ -67,6 +67,7 @@ export interface MedicationFormActions {
   setPrice: (v: string) => void;
   setReminderMode: (v: ReminderMode) => void;
   toggleReminderOffset: (minutes: number) => void;
+  setReminderOffsets: (minutes: number[]) => void;
   setTreatmentIds: (v: string[]) => void;
   /** Selecciona un medicamento existente; rellena nombre e impide crear uno nuevo. */
   selectExistingMedication: (id: string, name: string) => void;
@@ -126,9 +127,12 @@ export function useMedicationFormCore({
   const [frequencyUnit, setFrequencyUnit] = useState<FrequencyUnit>(
     (activeCycle as any)?.frequencyUnit ?? "HOUR"
   );
-  const [startDate, setStartDate] = useState(
-    activeCycle?.startDate ?? new Date().toISOString().split("T")[0]!,
-  );
+  // Fecha local del dispositivo: `toISOString()` da el día UTC, que en Colombia ya es «mañana» desde las 7 p. m.
+  const [startDate, setStartDate] = useState(() => {
+    if (activeCycle?.startDate) return activeCycle.startDate.slice(0, 10);
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  });
   const [firstIntakeTime, setFirstIntakeTime] = useState(() => {
     const raw = activeCycle?.firstIntakeTime;
     if (!raw) return "08:00";
@@ -279,7 +283,7 @@ export function useMedicationFormCore({
     error, saving, isEdit,
     setName, setPharmaceuticalForm, setConcentration, setDoseAmount, setDoseUnit,
     setFrequency, setFrequencyUnit, setStartDate, setFirstIntakeTime, setEndDate,
-    setReason, setNotes, setPrice, setReminderMode, toggleReminderOffset, setTreatmentIds,
+    setReason, setNotes, setPrice, setReminderMode, toggleReminderOffset, setReminderOffsets, setTreatmentIds,
     selectExistingMedication, clearSelectedMedication,
     clearError: () => setError(null),
     handleSave,

@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, useCallback, type ComponentRef } from "react
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Pill, Clock, Check, MoreVertical, Trash2 } from "lucide-react-native";
 import type { Medication } from "@helu/api";
-import { Button, Card, Chip, spacing, fontSize, nativeFont, useAppTheme } from "@helu/ui";
+import { Button, Card, Chip, FadeThrough, spacing, fontSize, nativeFont, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { AgendaRowActionsMenu, measureAgendaRowActionsMenuLeft } from "./AgendaRowActionsMenu";
 import { formatDose, formatFrequency } from "./medicationFormat";
@@ -57,24 +57,30 @@ export function MedicationCard({
           iconBackground={t.accent.medBg}
           actions={
             <View style={styles.headerActions}>
-              {cycle && doseState?.kind === "pending" ? (
-                <Button
-                  variant="success"
-                  onPress={() => onIntake(cycle.id)}
-                  disabled={intakePending}
-                  loading={intakePending}
-                  loadingLabel="Guardando…"
-                >
-                  Tomar
-                </Button>
-              ) : null}
-              {doseState?.kind === "taken" ? (
-                <Chip label="Tomado" tone="success" icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />} />
-              ) : null}
-              {doseState?.kind === "not-taken" ? (
-                <Chip label={doseState.reasonLabel ?? "No tomado"} tone="danger" />
-              ) : null}
-              {doseState?.kind === "later" && cycle?.nextIntakeTime ? <Chip label="Más tarde" tone="neutral" /> : null}
+              <FadeThrough value={doseState?.kind ?? "none"}>
+                {(kind) => (
+                  <>
+                      {cycle && kind === "pending" ? (
+                        <Button
+                          variant="success"
+                          onPress={() => onIntake(cycle.id)}
+                          disabled={intakePending}
+                          loading={intakePending}
+                          loadingLabel="Guardando…"
+                        >
+                          Tomar
+                        </Button>
+                      ) : null}
+                      {kind === "taken" ? (
+                        <Chip label="Tomado" tone="success" icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />} />
+                      ) : null}
+                      {kind === "not-taken" ? (
+                        <Chip label={doseState?.reasonLabel ?? "No tomado"} tone="danger" />
+                      ) : null}
+                      {kind === "later" && cycle?.nextIntakeTime ? <Chip label="Más tarde" tone="neutral" /> : null}
+                  </>
+                )}
+              </FadeThrough>
               <View ref={menuTriggerRef} collapsable={false}>
                 <TouchableOpacity
                   onPress={openMenu}

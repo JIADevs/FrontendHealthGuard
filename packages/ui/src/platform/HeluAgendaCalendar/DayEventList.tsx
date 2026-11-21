@@ -1,4 +1,5 @@
-import { Pressable, View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { FadeThrough, PressableScale } from "../../motion/motion.native";
 import { Check } from "lucide-react-native";
 import { Button } from "../../primitives/Button/Button.native";
 import { Chip } from "../../primitives/Chip/Chip.native";
@@ -34,81 +35,75 @@ export function DayEventList({
 
     const urgentIndex = mostUrgentTakeIndex(events);
 
+    const renderTrailing = (kind: TrailingKind, event: AgendaEvent) => {
+        if (kind === "taken" || kind === "done") {
+            return (
+                <Chip
+                    label={kind === "taken" ? "Tomado" : "Hecha"}
+                    tone="success"
+                    icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />}
+                />
+            );
+        }
+        if (kind === "missed" && event.type === "medication") {
+            const reason = event.intake?.notTakenReason;
+            return <Chip label={reason ? NOT_TAKEN_REASON_LABELS_ES[reason] : "No tomado"} tone="danger" />;
+        }
+        if ((kind === "take-urgent" || kind === "take") && event.type === "medication" && onMedicationTake) {
+            const taking = takingCycleId === event.cycleId;
+            const urgent = kind === "take-urgent";
+            return (
+                <Button
+                    size="sm"
+                    variant={urgent ? "success" : "secondary"}
+                    icon={urgent ? <Check size={14} strokeWidth={3} color={t.text.onSolid} /> : undefined}
+                    onPress={() => onMedicationTake(event)}
+                    disabled={taking}
+                    loading={taking}
+                    loadingLabel="Guardando…"
+                >
+                    Tomar
+                </Button>
+            );
+        }
+        if (kind === "complete" && event.type === "task" && onTaskComplete) {
+            return (
+                <Button size="sm" variant="secondary" onPress={() => onTaskComplete(event)}>
+                    Completar
+                </Button>
+            );
+        }
+        return null;
+    };
+
     return (
         <View style={styles.list}>
             {events.map((event, index) => {
-                const action = actionFor(event);
-                const taking = event.type === "medication" && takingCycleId === event.cycleId;
                 return (
-                    <View
+                    <PressableScale
                         key={`${event.type}-${index}`}
+                        onPress={() => onEventPress?.(event)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${eventLabel(event)}, ${eventTimeLabel(event)}, ${eventDetailLine(event)}`}
                         style={[
                             styles.card,
                             { backgroundColor: t.surface.bgCard, borderColor: t.border.default, borderLeftColor: accentFor(t, event) },
                         ]}
                     >
-                        <Pressable
-                            style={styles.copy}
-                            onPress={() => onEventPress?.(event)}
-                            accessibilityRole="button"
-                            accessibilityLabel={`${eventLabel(event)}, ${eventTimeLabel(event)}, ${eventDetailLine(event)}`}
-                        >
+                        <View style={styles.copy}>
                             <Text style={[styles.title, { color: t.text.primary }]} numberOfLines={2}>
                                 {eventLabel(event)}
                             </Text>
                             <Text style={[styles.detail, { color: t.text.secondary }]} numberOfLines={2}>
                                 {eventTimeLabel(event)} · {eventDetailLine(event)}
                             </Text>
-                        </Pressable>
+                        </View>
 
-                        {event.type === "medication" && event.intake?.status === "TAKEN" ? (
-                            <Chip
-                                label="Tomado"
-                                tone="success"
-                                icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />}
-                            />
-                        ) : null}
-                        {event.type === "medication" && event.intake?.status === "NOT_TAKEN" ? (
-                            <Chip
-                                label={
-                                    event.intake.notTakenReason
-                                        ? NOT_TAKEN_REASON_LABELS_ES[event.intake.notTakenReason]
-                                        : "No tomado"
-                                }
-                                tone="danger"
-                            />
-                        ) : null}
-                        {event.type === "task" && event.data.status === "completed" ? (
-                            <Chip
-                                label="Hecha"
-                                tone="success"
-                                icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />}
-                            />
-                        ) : null}
-
-                        {action === "take" && event.type === "medication" && onMedicationTake ? (
-                            <Button
-                                size="sm"
-                                variant={index === urgentIndex ? "success" : "secondary"}
-                                icon={
-                                    index === urgentIndex ? (
-                                        <Check size={14} strokeWidth={3} color={t.text.onSolid} />
-                                    ) : undefined
-                                }
-                                onPress={() => onMedicationTake(event)}
-                                disabled={taking}
-                                loading={taking}
-                                loadingLabel="Guardando…"
-                            >
-                                Tomar
-                            </Button>
-                        ) : null}
-                        {action === "complete" && event.type === "task" && onTaskComplete ? (
-                            <Button size="sm" variant="secondary" onPress={() => onTaskComplete(event)}>
-                                Completar
-                            </Button>
-                        ) : null}
-                    </View>
+                        {/* El estado de la fila cambia con fade through (§2): «Tomar» → «✓ Tomado». */}
+                        <FadeThrough value={trailingKind(event, index === urgentIndex)}>
+                            {(kind) => renderTrailing(kind, event)}
+                        </FadeThrough>
+                    </PressableScale>
                 );
             })}
         </View>
@@ -122,6 +117,18 @@ function accentFor(t: ThemeContextValue, event: AgendaEvent): string {
     if (event.type === "checkin") return s["feature-wellbeing-solid"];
     if (event.type === "task") return t.brand.solid;
     return s["feature-appointment-solid"];
+}
+
+type TrailingKind = "taken" | "missed" | "take-urgent" | "take" | "complete" | "done" | "none";
+
+function trailingKind(event: AgendaEvent, urgent: boolean): TrailingKind {
+    if (event.type === "medication") {
+        if (event.intake?.status === "TAKEN") return "taken";
+        if (event.intake?.status === "NOT_TAKEN") return "missed";
+        return actionFor(event) === "take" ? (urgent ? "take-urgent" : "take") : "none";
+    }
+    if (event.type === "task") return event.data.status === "completed" ? "done" : "complete";
+    return "none";
 }
 
 function slotMs(event: Extract<AgendaEvent, { type: "medication" }>): number {

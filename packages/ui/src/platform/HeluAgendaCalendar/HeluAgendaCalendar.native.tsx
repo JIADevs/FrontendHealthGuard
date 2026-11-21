@@ -1,7 +1,8 @@
 import { ScrollView, Text, View, StyleSheet, Pressable } from "react-native";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { IconButton } from "../../primitives/IconButton/IconButton.native";
-import { Spinner } from "../../primitives/Spinner/Spinner.native";
+import Animated from "react-native-reanimated";
+import { SkeletonCard, SkeletonGroup, contentEntering, useSkeletonVisible } from "../../motion/motion.native";
 import { fontSize, nativeFont, spacing } from "../../tokens/tokens";
 import { useAppTheme } from "../../tokens/ThemeProvider";
 import { DayEventList } from "./DayEventList";
@@ -35,6 +36,7 @@ export function HeluAgendaCalendar({
     const t = useAppTheme();
     const weekDates = buildWeekDates(calendar.selectedDate);
     const dayEvents = filterEventsForDates(calendar.events, [calendar.selectedDate]);
+    const showSkeleton = useSkeletonVisible(calendar.isLoading);
 
     function openEvent(event: AgendaEvent) {
         if (event.type === "medication") onMedicationPress?.(event);
@@ -65,30 +67,35 @@ export function HeluAgendaCalendar({
                 {dayTitle(calendar.selectedDate)}
             </Text>
 
-            {calendar.isLoading ? (
-                <View style={styles.center}>
-                    <Spinner size="lg" />
-                </View>
+            {showSkeleton ? (
+                // §6c «Agenda · Calendario»: 3 filas con el borde de color en gris y el bloque del botón.
+                <SkeletonGroup label="Cargando la agenda del día" style={styles.skeleton}>
+                    <SkeletonCard tile={false} edge action />
+                    <SkeletonCard tile={false} edge />
+                    <SkeletonCard tile={false} edge />
+                </SkeletonGroup>
             ) : calendar.isError ? (
                 <View style={styles.center}>
                     <Text style={[styles.errorText, { color: t.status.errorFg }]}>
-                        No se pudieron cargar los eventos del calendario.
+                        No se pudieron cargar los eventos del calendario. Revisa tu conexión e intenta de nuevo.
                     </Text>
                 </View>
             ) : (
-                <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-                    {dayEvents.length === 0 ? (
-                        <Text style={[styles.empty, { color: t.text.secondary }]}>Nada para este día</Text>
-                    ) : (
-                        <DayEventList
-                            events={dayEvents}
-                            onEventPress={openEvent}
-                            onMedicationTake={onMedicationTake}
-                            onTaskComplete={onTaskComplete}
-                            takingCycleId={takingCycleId}
-                        />
-                    )}
-                </ScrollView>
+                <Animated.View entering={contentEntering} style={styles.list}>
+                    <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+                        {dayEvents.length === 0 ? (
+                            <Text style={[styles.empty, { color: t.text.secondary }]}>Nada para este día</Text>
+                        ) : (
+                            <DayEventList
+                                events={dayEvents}
+                                onEventPress={openEvent}
+                                onMedicationTake={onMedicationTake}
+                                onTaskComplete={onTaskComplete}
+                                takingCycleId={takingCycleId}
+                            />
+                        )}
+                    </ScrollView>
+                </Animated.View>
             )}
         </View>
     );
@@ -184,6 +191,10 @@ const styles = StyleSheet.create({
     },
     list: {
         flex: 1,
+    },
+    skeleton: {
+        gap: spacing[3],
+        paddingHorizontal: spacing[4],
     },
     listContent: {
         paddingBottom: spacing[6],

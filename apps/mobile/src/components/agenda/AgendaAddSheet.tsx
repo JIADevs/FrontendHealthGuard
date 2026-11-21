@@ -1,6 +1,7 @@
-import { Pressable, View, Text, StyleSheet } from "react-native";
+import { useRef } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import { CalendarDays, CheckSquare, ChevronRight, Heart, Pill, Plus } from "lucide-react-native";
-import { BottomSheet, IconTile, nativeFont, spacing, useAppTheme, type Tone } from "@helu/ui";
+import { BottomSheet, IconTile, PressableScale, nativeFont, spacing, useAppTheme, type BottomSheetHandle, type Tone } from "@helu/ui";
 
 export interface AgendaAddSheetProps {
   visible: boolean;
@@ -24,6 +25,7 @@ export function AgendaAddSheet({
   onAddCheckIn,
 }: AgendaAddSheetProps) {
   const t = useAppTheme();
+  const sheetRef = useRef<BottomSheetHandle>(null);
   if (!visible) return null;
 
   const options: { tone: Tone; icon: typeof Heart; title: string; subtitle: string; onPress: () => void }[] = [
@@ -35,6 +37,7 @@ export function AgendaAddSheet({
 
   return (
     <BottomSheet
+      ref={sheetRef}
       eyebrow="AGENDA"
       title="¿Qué quieres agregar?"
       icon={<IconTile tone="brand" size="lg" round icon={<Plus size={24} strokeWidth={2.4} color={t.brand.text} />} />}
@@ -42,18 +45,13 @@ export function AgendaAddSheet({
     >
       <View style={styles.list}>
         {options.map(({ tone, icon: Icon, title, subtitle, onPress }) => (
-          <Pressable
+          <PressableScale
             key={title}
-            onPress={() => {
-              onClose();
-              onPress();
-            }}
+            // Primero baja la hoja; la pantalla o la hoja siguiente entran después (§3).
+            onPress={() => (sheetRef.current ? sheetRef.current.close(onPress) : (onClose(), onPress()))}
             accessibilityRole="button"
             accessibilityLabel={`${title}, ${subtitle}`}
-            style={({ pressed }) => [
-              styles.card,
-              { backgroundColor: t.surface.bgCard, borderColor: t.border.default, opacity: pressed ? 0.85 : 1 },
-            ]}
+            style={[styles.card, { backgroundColor: t.surface.bgCard, borderColor: t.border.default }]}
           >
             <IconTile tone={tone} icon={<Icon size={19} strokeWidth={2.2} color={toneColor(t, tone)} />} />
             <View style={styles.copy}>
@@ -61,7 +59,7 @@ export function AgendaAddSheet({
               <Text style={[styles.subtitle, { color: t.text.secondary }]}>{subtitle}</Text>
             </View>
             <ChevronRight size={18} color={t.text.muted} />
-          </Pressable>
+          </PressableScale>
         ))}
       </View>
     </BottomSheet>

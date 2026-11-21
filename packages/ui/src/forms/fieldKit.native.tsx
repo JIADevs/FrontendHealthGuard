@@ -1,6 +1,7 @@
-import { View, Text } from 'react-native';
+import { Text } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AlertCircle } from 'lucide-react-native';
-import { colors, fontSize, nativeFont, radii, spacing } from '../tokens/tokens';
+import { colors, fontSize, motion, nativeFont, radii, spacing } from '../tokens/tokens';
 import type { ThemeContextValue } from '../tokens/ThemeProvider';
 
 /**
@@ -23,6 +24,8 @@ export function fieldBox(
     backgroundColor: disabled ? t.surface.muted : focused ? t.surface.bgCard : inputBg,
     paddingHorizontal: 14,
     opacity: disabled ? 0.5 : 1,
+    // Foco: borde azul + halo de 3 px (formularios.md §3, movimiento-interacciones.md §5)
+    boxShadow: focused && !error ? `0 0 0 3px ${t.brand.tintBorder}` : undefined,
   } as const;
 }
 
@@ -38,7 +41,9 @@ export function FieldLabel({ t, label }: { t: ThemeContextValue; label: string }
 export function FieldErrorText({ t, message }: { t: ThemeContextValue; message?: string }) {
   if (!message) return null;
   return (
-    <View
+    // Entra con fundido bajando 4 px en 150 ms; sin sacudida (movimiento-interacciones.md §5).
+    <Animated.View
+      entering={FadeInDown.duration(motion.fast).withInitialValues({ opacity: 0, transform: [{ translateY: -4 }] })}
       style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[1] }}
       accessibilityLiveRegion="polite"
       accessibilityRole="alert"
@@ -47,7 +52,7 @@ export function FieldErrorText({ t, message }: { t: ThemeContextValue; message?:
       <Text style={{ flex: 1, fontSize: fontSize.sm, fontFamily: nativeFont('body', 400), color: t.status.errorFg }}>
         {message}
       </Text>
-    </View>
+    </Animated.View>
   );
 }
 

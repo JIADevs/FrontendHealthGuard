@@ -1,4 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { useConfirmBounce } from '../../motion/motion.native';
 import { Check } from 'lucide-react-native';
 import { radii, nativeFont } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
@@ -18,6 +20,8 @@ export function Chip({
   onPress,
 }: ChipProps) {
   const t = useAppTheme();
+  // Chip de opción: al marcarse, rebote corto 0,95 → 1,04 → 1 (movimiento-interacciones.md §5).
+  const bounce = useConfirmBounce(variant === 'option' && selected);
   const c = toneColors(tone ?? toneFromColor[color], t.mode);
   const isOption = variant === 'option';
   const compact = size === 'compact' && !isOption;
@@ -55,14 +59,16 @@ export function Chip({
 
   if (onPress) {
     return (
-      <Pressable
-        style={({ pressed }) => [base, { opacity: pressed ? 0.8 : 1 }]}
-        onPress={onPress}
-        accessibilityRole={isOption ? (selectionMode === 'single' ? 'radio' : 'checkbox') : 'button'}
-        accessibilityState={isOption ? { checked: selected } : { selected }}
-      >
-        {content}
-      </Pressable>
+      <Animated.View style={[{ alignSelf: 'flex-start' }, bounce]}>
+        <Pressable
+          style={({ pressed }) => [base, { opacity: pressed ? 0.8 : 1 }]}
+          onPress={onPress}
+          accessibilityRole={isOption ? (selectionMode === 'single' ? 'radio' : 'checkbox') : 'button'}
+          accessibilityState={isOption ? { checked: selected } : { selected }}
+        >
+          {content}
+        </Pressable>
+      </Animated.View>
     );
   }
   return <View style={base}>{content}</View>;

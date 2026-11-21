@@ -13,7 +13,10 @@ import {
   formatApptDate,
   Pagination,
   cardContentStyle,
-  Spinner,
+  SkeletonGroup,
+  Skeleton,
+  SkeletonCard,
+  useSkeletonVisible,
   ConfirmModal,
   EmptyState,
   SearchField,
@@ -74,6 +77,7 @@ export function AppointmentsTab() {
   }, [deleteTarget, deleteMut]);
 
   const items = appts.data?.items ?? [];
+  const showSkeleton = useSkeletonVisible(appts.isLoading);
   const sections = useMemo(() => splitAppointments(items), [items]);
 
   return (
@@ -99,10 +103,14 @@ export function AppointmentsTab() {
         </TouchableOpacity>
       </View>
 
-      {appts.isLoading ? (
-        <View style={styles.center}>
-          <Spinner size="lg" />
-        </View>
+      {showSkeleton ? (
+        // §6c: el buscador y los filtros se ven reales; las tarjetas son esqueleto.
+        <SkeletonGroup label="Cargando citas" style={[cardContentStyle, { gap: spacing[3] }]}>
+          <Skeleton width={90} height={11} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+        </SkeletonGroup>
       ) : (
         <SectionList
           sections={sections}

@@ -10,10 +10,14 @@
         "@tanstack/react-query": ">=5.0.0",
         "react": "*",
         "react-native": "*",
-        "react-native-safe-area-context": "*"
+        "react-native-safe-area-context": "*",
+        "react-native-reanimated": "*"
     },
     "peerDependenciesMeta": {
         "react-native-safe-area-context": {
+            "optional": true
+        },
+        "react-native-reanimated": {
             "optional": true
         }
     },

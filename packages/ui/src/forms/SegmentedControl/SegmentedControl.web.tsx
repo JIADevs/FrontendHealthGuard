@@ -33,6 +33,7 @@ export function SegmentedControl({ options, value, onChange, accessibilityLabel 
               color: on ? 'var(--color-brand-text)' : 'var(--color-text-on-muted)',
               font: `800 13px ${fontFamily.heading}`,
               whiteSpace: 'nowrap',
+              transition: 'background 250ms cubic-bezier(0.2, 0, 0, 1), color 250ms, box-shadow 250ms',
               cursor: 'pointer',
             }}
           >

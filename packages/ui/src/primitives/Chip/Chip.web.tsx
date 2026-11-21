@@ -34,6 +34,7 @@ export function Chip({
         background: selected ? 'var(--color-brand-tint)' : 'var(--color-surface)',
         color: selected ? 'var(--color-brand-text)' : 'var(--color-text-secondary)',
         font: `800 13px ${fontFamily.heading}`,
+        transition: 'background 150ms, border-color 150ms, box-shadow 150ms, color 150ms',
         cursor: onPress ? 'pointer' : 'default',
         boxSizing: 'border-box',
       }

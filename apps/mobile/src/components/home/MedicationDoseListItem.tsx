@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Pill, Check } from "lucide-react-native";
-import { Button, Chip, IconTile, spacing, fontSize, nativeFont, useAppTheme, formatMedDose, formatClock } from "@helu/ui";
+import { Button, Chip, FadeThrough, IconTile, spacing, fontSize, nativeFont, useAppTheme, formatMedDose, formatClock } from "@helu/ui";
 import type { ThemeContextValue, AgendaEvent } from "@helu/ui";
 import { doseStateForEvent } from "../agenda/doseRowState";
 
@@ -34,23 +34,30 @@ export function MedicationDoseListItem({ event, onPress, onTake, taking = false,
           </Text>
         </View>
       </TouchableOpacity>
-      {doseState.kind === "pending" && onTake ? (
-        <Button
-          variant="success"
-          icon={<Check size={16} strokeWidth={3} color={t.text.onSolid} />}
-          onPress={onTake}
-          disabled={taking}
-          loading={taking}
-          loadingLabel="Guardando…"
-        >
-          Tomar
-        </Button>
-      ) : null}
-      {doseState.kind === "taken" ? (
-        <Chip label="Tomado" tone="success" icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />} />
-      ) : null}
-      {doseState.kind === "not-taken" ? <Chip label={doseState.reasonLabel ?? "No tomado"} tone="danger" /> : null}
-      {doseState.kind === "later" ? <Chip label="Más tarde" tone="neutral" /> : null}
+      {/* «Tomar» → «✓ Tomado» con fade through (movimiento-interacciones.md §2 y §6). */}
+      <FadeThrough value={doseState.kind}>
+        {(kind) => (
+          <>
+            {kind === "pending" && onTake ? (
+              <Button
+                variant="success"
+                icon={<Check size={16} strokeWidth={3} color={t.text.onSolid} />}
+                onPress={onTake}
+                disabled={taking}
+                loading={taking}
+                loadingLabel="Guardando…"
+              >
+                Tomar
+              </Button>
+            ) : null}
+            {kind === "taken" ? (
+              <Chip label="Tomado" tone="success" icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />} />
+            ) : null}
+            {kind === "not-taken" ? <Chip label={doseState.reasonLabel ?? "No tomado"} tone="danger" /> : null}
+            {kind === "later" ? <Chip label="Más tarde" tone="neutral" /> : null}
+          </>
+        )}
+      </FadeThrough>
     </View>
   );
 }

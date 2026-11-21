@@ -9,15 +9,17 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated from "react-native-reanimated";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { isApiError, type DailyCheckIn } from "@helu/api";
-import { useConfirmIntakeMutation } from "@helu/api/hooks";
 import Toast from "react-native-toast-message";
 
 import { useWellbeingScreen } from "../hooks/useWellbeingScreen";
 import { useMedicationIntakeIntent } from "../hooks/useMedicationIntakeIntent";
 import { useDailyCheckInIntent } from "../hooks/useDailyCheckInIntent";
 import type { AgendaRouteParams } from "../navigation/RootNavigator";
+import { notify } from "../lib/notify";
+import { useTakeDose } from "../components/agenda/useTakeDose";
 
 import {
   colors, palette,
@@ -32,6 +34,7 @@ import {
   EmptyState,
   HeluAgendaCalendar,
   SegmentedControl,
+  useFadeThrough,
   nativeFont,
   resolveCycleForDay,
 } from "@helu/ui";
@@ -142,6 +145,7 @@ export function AgendaScreen() {
     }
   }, [checkInIntentEnabled, checkInIntent, intentAt]);
 
+  const tabFade = useFadeThrough(view, { fullView: true });
   const intentLoading =
     (medicationIntentEnabled && medicationIntent.status === "loading") ||
     (checkInIntentEnabled && checkInIntent.status === "loading");
@@ -161,22 +165,25 @@ export function AgendaScreen() {
         />
       </View>
 
+      {/* Pestañas internas: fade through, sale en 100 ms y entra en 250 ms subiendo 4 px (§3). */}
+      <Animated.View style={[styles.tabContent, tabFade.style]}>
       {intentLoading ? (
         <View style={[styles.tabContent, styles.center]}>
           <Spinner size="lg" />
         </View>
-      ) : view === "calendar" ? (
+      ) : tabFade.shown === "calendar" ? (
         <CalendarTab
           intentIntakeEvent={intentIntakeEvent}
           onIntentIntakeConsumed={() => setIntentIntakeEvent(null)}
         />
-      ) : view === "appointments" ? (
+      ) : tabFade.shown === "appointments" ? (
         <AppointmentsTab />
-      ) : view === "medications" ? (
+      ) : tabFade.shown === "medications" ? (
         <MedicationsTab />
       ) : (
         <WellbeingTab />
       )}
+      </Animated.View>
 
       {view === "calendar" && !intentLoading ? (
         <>
@@ -215,7 +222,7 @@ function CalendarTab({
   const navigation = useNavigation();
   const [intakeEvent, setIntakeEvent] = useState<Extract<AgendaEvent, { type: "medication" }> | null>(null);
   const [checkInEvent, setCheckInEvent] = useState<Extract<AgendaEvent, { type: "checkin" }> | null>(null);
-  const confirmIntake = useConfirmIntakeMutation();
+  const takeDose = useTakeDose();
 
   useEffect(() => {
     if (intentIntakeEvent) {
@@ -244,18 +251,10 @@ function CalendarTab({
         onMedicationTake={(event) => {
           const cycle = resolveCycleForDay(event.data, event.dayKey);
           if (!cycle) {
-            Toast.show({ type: "error", text1: "No se pudo confirmar la toma" });
+            notify({ tone: "error", message: "No encontramos el ciclo de esta toma" });
             return;
           }
-          confirmIntake.mutate(cycle.id, {
-            onSuccess: () => Toast.show({ type: "success", text1: "Toma confirmada" }),
-            onError: (err) =>
-              Toast.show({
-                type: "error",
-                text1: "No se pudo confirmar la toma",
-                text2: isApiError(err) ? err.message : "Intenta de nuevo",
-              }),
-          });
+          takeDose.take(cycle.id);
         }}
         onTaskComplete={(event) =>
           (navigation as { navigate: (name: string, params: { id: string; intent: "complete" }) => void }).navigate(
@@ -263,9 +262,7 @@ function CalendarTab({
             { id: event.data.id, intent: "complete" },
           )
         }
-        takingCycleId={
-          confirmIntake.isPending ? confirmIntake.variables : undefined
-        }
+        takingCycleId={takeDose.takingCycleId}
       />
 
       {intakeEvent ? (

@@ -1,12 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from "react-native";
 import Toast from "react-native-toast-message";
+import { useTakeDose } from "./useTakeDose";
 import {
   useMedicationsQuery,
   useDeleteMedicationMutation,
   useUpdateMedicationCycleMutation,
   useDeleteMedicationCycleMutation,
-  useConfirmIntakeMutation,
 } from "@helu/api/hooks";
 import { isApiError, type Medication, type MedicationCycle } from "@helu/api";
 import {
@@ -96,7 +96,6 @@ function MedicationsList() {
     hasActiveFilter,
   } = useMedicationsList();
 
-  const intakeMut = useConfirmIntakeMutation();
   const deleteMut = useDeleteMedicationMutation();
 
   const handleDelete = useCallback(() => {
@@ -116,17 +115,8 @@ function MedicationsList() {
     });
   }, [deleteTarget, deleteMut]);
 
-  const handleIntake = useCallback(
-    (cycleId: string) => {
-      intakeMut.mutate(cycleId, {
-        onSuccess: () =>
-          Toast.show({ type: "success", text1: "Toma confirmada" }),
-        onError: () =>
-          Toast.show({ type: "error", text1: "Error al confirmar toma" }),
-      });
-    },
-    [intakeMut]
-  );
+  const takeDose = useTakeDose();
+  const handleIntake = takeDose.take;
 
   return (
     <View style={{ flex: 1 }}>
@@ -173,7 +163,7 @@ function MedicationsList() {
               onPress={() => navigation.navigate("MedicationDetail" as never, { id: m.id } as never)}
               onDelete={() => setDeleteTarget(m)}
               onIntake={handleIntake}
-              intakePending={intakeMut.isPending}
+              intakePending={takeDose.takingCycleId === m.cycles?.[0]?.id}
             />
           )}
           ListEmptyComponent={

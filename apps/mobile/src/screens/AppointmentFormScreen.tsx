@@ -12,7 +12,9 @@ import {
   TextField,
   DatePicker,
   TimePicker,
-  Spinner,
+  SkeletonGroup,
+  Skeleton,
+  useSkeletonVisible,
   DiscardChangesDialog,
   BottomActionBar,
   BOTTOM_ACTION_BAR_HEIGHT,
@@ -46,6 +48,7 @@ import type { RootStackParamList } from "../navigation/RootNavigator";
 import { MODALITIES } from "../constants/appointments";
 import { SelectField } from "../components/SelectField";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { haptics } from "../lib/haptics";
 
 type AppointmentFormRouteProp = RouteProp<RootStackParamList, "AppointmentForm">;
 
@@ -176,13 +179,30 @@ export function AppointmentFormScreen() {
 function AppointmentFormEditor({ id }: { id: string }) {
   const t = useAppTheme();
   const { data: appointment, isLoading } = useAppointmentByIdQuery(id);
+  const showSkeleton = useSkeletonVisible(isLoading);
 
-  if (isLoading) {
+  if (showSkeleton) {
+    // §6c: la cabecera se ve real; las secciones del formulario son esqueleto.
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["top", "bottom"]}>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <Spinner size="lg" />
-        </View>
+        <ScreenHeader title="Editar cita" />
+        <SkeletonGroup label="Cargando la cita" style={{ padding: spacing[4], gap: spacing[4] }}>
+          {[0, 1].map((i) => (
+            <View
+              key={i}
+              style={{
+                padding: spacing[4], gap: spacing[3], borderRadius: 18, borderWidth: 1, borderBottomWidth: 4,
+                borderColor: t.border.default, backgroundColor: t.surface.bgCard,
+              }}
+            >
+              <Skeleton width="40%" height={16} />
+              <Skeleton width="25%" height={12} />
+              <Skeleton height={48} radius={14} />
+              <Skeleton width="25%" height={12} />
+              <Skeleton height={48} radius={14} />
+            </View>
+          ))}
+        </SkeletonGroup>
       </SafeAreaView>
     );
   }
@@ -285,6 +305,7 @@ function AppointmentFormBody({ appointment }: { appointment: any }) {
   useEffect(() => {
     if (saveAttempt === 0 || fieldErrorCount === 0) return;
     const firstY = form.fieldErrors.date || form.fieldErrors.time ? sectionY.current.dateTime : sectionY.current.place;
+    haptics.warning();
     scrollViewRef.current?.scrollTo({ y: Math.max(0, firstY - spacing[4]), animated: true });
     AccessibilityInfo.announceForAccessibility(fieldErrorCount === 1 ? "Revisa 1 campo" : `Revisa ${fieldErrorCount} campos`);
     // Solo al intentar guardar; la corrección en vivo no vuelve a mover la pantalla.

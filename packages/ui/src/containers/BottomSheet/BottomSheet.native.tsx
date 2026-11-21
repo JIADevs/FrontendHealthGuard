@@ -1,8 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
 import {
-  AccessibilityInfo,
-  Animated,
-  Dimensions,
   KeyboardAvoidingView,
   Modal as RNModal,
   PanResponder,
@@ -12,18 +9,35 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DiscardChangesDialog } from '../../composed/DiscardChangesDialog/DiscardChangesDialog.native';
-import { radii, spacing, fontSize, nativeFont } from '../../tokens/tokens';
+import { motion, radii, spacing, fontSize, nativeFont } from '../../tokens/tokens';
 import { semanticLight } from '../../tokens/semantic';
+import { motionEasing } from '../../motion/motion.native';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { ThemeContextValue } from '../../tokens/ThemeProvider';
-import type { BottomSheetProps } from './BottomSheet.types';
+import type { BottomSheetHandle, BottomSheetProps } from './BottomSheet.types';
 
-const DISMISS_DRAG = 96;
-
+/**
+ * Hoja inferior v2 (movimiento-interacciones.md §4):
+ * - abre: fondo 0 → 50 % en 250 ms y la hoja sube con resorte (damping 18 · stiffness 220);
+ * - arrastre: sigue el dedo desde 8 px; si bajó más del 30 % o va a más de 800 px/s, se cierra;
+ * - cierra: baja con `ease-in` en 220 ms y el fondo se desvanece;
+ * - con cambios sin guardar: vuelve con resorte y pregunta «¿Descartar los cambios?»;
+ * - movimiento reducido: solo fundido de 150 ms.
+ * `ref.close(after?)` anima la salida desde la pantalla (por ejemplo, al guardar).
+ */
 export function BottomSheet({
   title,
   eyebrow,
@@ -31,74 +45,113 @@ export function BottomSheet({
   dirty = false,
   onClose,
   children,
-}: BottomSheetProps) {
+  ref,
+}: BottomSheetProps & { ref?: Ref<BottomSheetHandle> }) {
   const t = useAppTheme();
   const styles = makeStyles(t);
   const insets = useSafeAreaInsets();
+  const reduced = useReducedMotion();
+  const { height: windowHeight } = useWindowDimensions();
   const [confirming, setConfirming] = useState(false);
-  // Entra desde abajo con resorte (movimiento-interacciones.md: damping 18 · stiffness 220 · mass 1).
-  const translateY = useRef(new Animated.Value(Dimensions.get('window').height)).current;
+  const sheetHeight = useRef(windowHeight * 0.6);
+
+  const translateY = useSharedValue(reduced ? 0 : windowHeight);
+  const backdrop = useSharedValue(0);
+  const sheetOpacity = useSharedValue(reduced ? 0 : 1);
+  const closing = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
-    AccessibilityInfo.isReduceMotionEnabled()
-      .catch(() => false)
-      .then((reduce) => {
-        if (cancelled) return;
-        if (reduce) {
-          translateY.setValue(0);
-          return;
-        }
-        Animated.spring(translateY, { toValue: 0, damping: 18, stiffness: 220, mass: 1, useNativeDriver: true }).start();
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [translateY]);
-  const requestCloseRef = useRef<() => void>(() => {});
+    backdrop.value = withTiming(1, { duration: reduced ? motion.fast : motion.base });
+    if (reduced) {
+      sheetOpacity.value = withTiming(1, { duration: motion.fast });
+    } else {
+      translateY.value = withSpring(0, motion.sheetSpring);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  const animateOut = (after?: () => void) => {
+    if (closing.current) return;
+    closing.current = true;
+    const done = () => {
+      onClose();
+      after?.();
+    };
+    backdrop.value = withTiming(0, { duration: reduced ? motion.fast : motion.exit });
+    if (reduced) {
+      sheetOpacity.value = withTiming(0, { duration: motion.fast }, (finished) => {
+        if (finished) runOnJS(done)();
+      });
+    } else {
+      translateY.value = withTiming(
+        sheetHeight.current + insets.bottom,
+        { duration: motion.exit, easing: motionEasing.in },
+        (finished) => {
+          if (finished) runOnJS(done)();
+        },
+      );
+    }
+  };
+
+  const springBack = () => {
+    translateY.value = reduced ? 0 : withSpring(0, motion.sheetSpring);
+  };
+
+  // Los manejadores del gesto leen siempre la versión actual (dirty cambia mientras la hoja está abierta).
+  const requestCloseRef = useRef<() => void>(() => {});
   requestCloseRef.current = () => {
     if (dirty) {
+      springBack();
       setConfirming(true);
       return;
     }
-    onClose();
+    animateOut();
   };
+
+  useImperativeHandle(ref, () => ({ close: (after?: () => void) => animateOut(after) }));
 
   const pan = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_event, gesture) =>
         gesture.dy > 8 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
       onPanResponderMove: (_event, gesture) => {
-        translateY.setValue(Math.max(0, gesture.dy));
+        translateY.value = Math.max(0, gesture.dy);
       },
       onPanResponderRelease: (_event, gesture) => {
-        if (gesture.dy > DISMISS_DRAG) {
-          translateY.setValue(0);
+        // vy en px/ms: 0,8 = 800 px/s
+        if (gesture.dy > sheetHeight.current * 0.3 || gesture.vy > 0.8) {
           requestCloseRef.current();
           return;
         }
-        Animated.spring(translateY, { toValue: 0, damping: 18, stiffness: 220, mass: 1, useNativeDriver: true }).start();
+        springBack();
       },
     }),
   ).current;
 
+  const backdropStyle = useAnimatedStyle(() => ({ opacity: backdrop.value }));
+  const sheetStyle = useAnimatedStyle(() => ({
+    opacity: sheetOpacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
   return (
-    <RNModal transparent visible animationType="fade" onRequestClose={() => requestCloseRef.current()}>
+    <RNModal transparent visible animationType="none" onRequestClose={() => requestCloseRef.current()}>
       <KeyboardAvoidingView
         style={styles.fill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Pressable
-          style={styles.backdrop}
-          onPress={() => requestCloseRef.current()}
-          accessibilityLabel="Cerrar"
-        />
+        <Animated.View style={[styles.backdrop, backdropStyle]}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => requestCloseRef.current()}
+            accessibilityLabel="Cerrar"
+          />
+        </Animated.View>
         <Animated.View
-          style={[
-            styles.sheet,
-            { paddingBottom: Math.max(insets.bottom, spacing[4]), transform: [{ translateY }] },
-          ]}
+          onLayout={(event) => {
+            sheetHeight.current = event.nativeEvent.layout.height;
+          }}
+          style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing[4]) }, sheetStyle]}
         >
           <View {...pan.panHandlers}>
             <View style={styles.grabber} />
@@ -132,7 +185,7 @@ export function BottomSheet({
           onKeep={() => setConfirming(false)}
           onDiscard={() => {
             setConfirming(false);
-            onClose();
+            animateOut();
           }}
         />
       ) : null}

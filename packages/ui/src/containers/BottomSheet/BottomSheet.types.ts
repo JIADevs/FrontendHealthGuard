@@ -9,3 +9,8 @@ export interface BottomSheetProps {
   onClose: () => void;
   children: ReactNode;
 }
+
+/** Cierra la hoja con su animación de salida y después llama a `onClose` y a `after`. */
+export interface BottomSheetHandle {
+  close: (after?: () => void) => void;
+}

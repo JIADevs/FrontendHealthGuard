@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Check, Pill } from "lucide-react-native";
 import { notify } from "../../lib/notify";
+import { haptics } from "../../lib/haptics";
 import {
     BottomSheet,
     Button,
@@ -21,7 +22,7 @@ import {
     IconTile,
     formatClock,
 } from "@helu/ui";
-import type { ThemeContextValue, AgendaEvent } from "@helu/ui";
+import type { ThemeContextValue, AgendaEvent, BottomSheetHandle } from "@helu/ui";
 import { useConfirmIntakeMutation, useRecordIntakeMutation } from "@helu/api/hooks";
 import { isApiError, type NotTakenReason } from "@helu/api";
 
@@ -65,6 +66,9 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
     const [reason, setReason] = useState<NotTakenReason | null>(existingIntake?.notTakenReason ?? null);
     const [notes, setNotes] = useState(existingIntake?.notes ?? "");
 
+    // La hoja se cierra con su animación de salida (movimiento-interacciones.md §4).
+    const sheetRef = useRef<BottomSheetHandle>(null);
+    const closeSheet = () => (sheetRef.current ? sheetRef.current.close() : onClose());
     const confirmMutation = useConfirmIntakeMutation();
     const recordMutation = useRecordIntakeMutation();
     const saving = confirmMutation.isPending || recordMutation.isPending;
@@ -77,6 +81,7 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
         (changeTime && takenAtValue !== initialTakenAt);
 
     const showError = (err: unknown) => {
+        haptics.error();
         notify({
             tone: "error",
             message: "No se pudo registrar la toma",
@@ -87,9 +92,10 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
 
     const saveTakenNow = () => {
         if (!cycle) return;
+        haptics.success();
         confirmMutation.mutate(cycle.id, {
             onSuccess: () => {
-                onClose();
+                closeSheet();
                 notify({ message: `Toma registrada a las ${formatClock(new Date())}` });
             },
             onError: showError,
@@ -109,7 +115,7 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
             },
             {
                 onSuccess: () => {
-                    onClose();
+                    closeSheet();
                     notify({ message: `Toma registrada a las ${formatClock(new Date(toUtcIsoFromPickerValue(takenAtValue)))}` });
                 },
                 onError: showError,
@@ -131,7 +137,7 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
             },
             {
                 onSuccess: () => {
-                    onClose();
+                    closeSheet();
                     notify({ message: "Registrada como no tomada" });
                 },
                 onError: showError,
@@ -146,6 +152,7 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
     // Mockup «Registrar toma»: ícono redondo del módulo, eyebrow «NOMBRE · HORA» y la pregunta como título.
     return (
         <BottomSheet
+            ref={sheetRef}
             title={sheetTitle}
             eyebrow={`${event.data.name} · ${formatClock(event.intakeTime)}`.toUpperCase()}
             icon={<IconTile tone="medication" size="lg" round icon={<Pill size={24} strokeWidth={2.4} color={t.accent.medFg} />} />}

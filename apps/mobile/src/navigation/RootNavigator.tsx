@@ -116,6 +116,17 @@ export type RootStackParamList = {
   };
 };
 
+/**
+ * Formularios (crear o editar): tarea temporal que se cierra hacia abajo, 350 ms
+ * (movimiento-interacciones.md §3). Los detalles siguen entrando desde la derecha.
+ */
+const FORM_SCREEN_OPTIONS = {
+  headerShown: false,
+  animation: "slide_from_bottom",
+  gestureDirection: "vertical",
+  animationDuration: 350,
+} as const;
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const ScannerScreenLight = withDocumentsTheme(ScannerScreen);
@@ -303,22 +314,22 @@ export function RootNavigator() {
           <Stack.Screen
             name="AgendaTaskForm"
             component={AgendaTaskFormScreen}
-            options={{ headerShown: false, animation: "slide_from_right" }}
+            options={FORM_SCREEN_OPTIONS}
           />
           <Stack.Screen
             name="AppointmentForm"
             component={AppointmentFormScreen}
-            options={{ headerShown: false, animation: "slide_from_right" }}
+            options={FORM_SCREEN_OPTIONS}
           />
           <Stack.Screen
             name="DoctorForm"
             component={DoctorFormScreen}
-            options={{ headerShown: false, animation: "slide_from_right" }}
+            options={FORM_SCREEN_OPTIONS}
           />
           <Stack.Screen
             name="MedicationForm"
             component={MedicationFormScreen}
-            options={{ headerShown: false, animation: "slide_from_right" }}
+            options={FORM_SCREEN_OPTIONS}
           />
           <Stack.Screen
             name="MedicationDetail"
@@ -343,7 +354,7 @@ export function RootNavigator() {
           <Stack.Screen
             name="TreatmentForm"
             component={TreatmentFormScreen}
-            options={{ headerShown: false, animation: "slide_from_right" }}
+            options={FORM_SCREEN_OPTIONS}
           />
           <Stack.Screen
             name="Dependientes"

@@ -1,10 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { View, Text, StyleSheet, ScrollView, Linking, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated from "react-native-reanimated";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import {
   useAppTheme,
-  Spinner,
+  SkeletonGroup,
+  Skeleton,
+  useSkeletonVisible,
+  contentEntering,
   spacing,
   fontSize,
   nativeFont,
@@ -131,6 +135,7 @@ export function AppointmentDetailScreen() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const { data: appointment, isLoading } = useAppointmentByIdQuery(id);
+  const showSkeleton = useSkeletonVisible(isLoading);
 
   const treatmentResults = useTreatmentsByIdsQuery(appointment?.treatmentIds ?? []);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -166,10 +171,38 @@ export function AppointmentDetailScreen() {
   const nav = navigation as unknown as { navigate: (name: string, params?: object) => void };
   const handleEdit = () => nav.navigate("AppointmentForm", { id });
 
-  if (isLoading) {
+  if (showSkeleton) {
+    // §6c «Detalle de cita»: la barra con volver se ve real; encabezado, datos y acciones son esqueleto.
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: t.surface.bg }]}>
-        <View style={styles.centered}><Spinner size="lg" /></View>
+        <ScreenHeader title="Cita" />
+        <SkeletonGroup label="Cargando la cita" style={styles.content}>
+          <View style={[styles.card, cardColors(t)]}>
+            <View style={styles.summaryRow}>
+              <Skeleton width={52} height={52} radius={16} />
+              <View style={{ flex: 1, gap: 8 }}>
+                <Skeleton width="70%" height={18} />
+                <Skeleton width="45%" height={13} />
+              </View>
+            </View>
+            <View style={styles.chips}>
+              <Skeleton width={96} height={26} radius={13} />
+              <Skeleton width={84} height={26} radius={13} />
+            </View>
+          </View>
+          <View style={[styles.card, cardColors(t)]}>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={styles.row}>
+                <Skeleton width={40} height={40} radius={13} />
+                <View style={{ flex: 1, gap: 8 }}>
+                  <Skeleton width="70%" height={14} />
+                  <Skeleton width="45%" height={12} />
+                </View>
+              </View>
+            ))}
+          </View>
+          <Skeleton height={48} radius={14} />
+        </SkeletonGroup>
       </SafeAreaView>
     );
   }
@@ -230,7 +263,7 @@ export function AppointmentDetailScreen() {
         }
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <Animated.ScrollView entering={contentEntering} contentContainerStyle={styles.content}>
         {/* Resumen: cuadro grande del módulo, título H2 y chips de estado y atributos (mockup «Detalle de cita»). */}
         <View style={[styles.card, cardColors(t)]}>
           <View style={styles.summaryRow}>
@@ -396,7 +429,7 @@ export function AppointmentDetailScreen() {
             disabled={statusMut.isPending}
           />
         ) : null}
-      </ScrollView>
+      </Animated.ScrollView>
 
       {showCancelDialog ? (
         <ConfirmModal

@@ -1,10 +1,14 @@
-import { useMemo, useRef, useState, useCallback, type ComponentRef } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, type ComponentRef } from "react";
+import Animated from "react-native-reanimated";
+import { useRecentlySaved } from "../../lib/recentlySaved";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { CalendarDays, Check, Clock, MoreVertical, Pencil, Trash2 } from "lucide-react-native";
 import type { Appointment } from "@helu/api";
 import {
   Chip,
   IconTile,
+  PressableScale,
+  useHighlight,
   spacing,
   fontSize,
   nativeFont,
@@ -47,6 +51,15 @@ export function AppointmentCard({
 
   const closeMenu = useCallback(() => setMenuVisible(false), []);
 
+  // Recién guardada: borde azul que se desvanece en 1,2 s (movimiento-interacciones.md §6).
+  const justSaved = useRecentlySaved((state) => state.appointmentId === a.id);
+  const highlight = useHighlight(justSaved);
+  useEffect(() => {
+    if (!justSaved) return;
+    const timer = setTimeout(() => useRecentlySaved.getState().clearAppointment(), 1300);
+    return () => clearTimeout(timer);
+  }, [justSaved]);
+
   const time = a.time ? formatClock(a.time.slice(0, 5)) : "";
   const dateLabel = [formatShortDay(a.date), time].filter(Boolean).join(" · ");
   const who = [a.doctor, a.specialty].filter(Boolean).join(" · ");
@@ -55,11 +68,11 @@ export function AppointmentCard({
     <>
       {/* Mockup «Citas» (helper `apptCard`): cuadro rosa, título y «profesional · especialidad»,
           «⋯» de 44 px y debajo los chips grises de fecha y modalidad, más el estado si ya pasó. */}
-      <Pressable
+      <PressableScale
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={`${a.name || a.specialty || "Cita médica"}, ${dateLabel}`}
-        style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+        style={styles.card}
       >
         <View style={styles.row}>
           <IconTile tone="appointment" icon={<CalendarDays size={19} strokeWidth={2.2} color={t.accent.calFg} />} />
@@ -89,7 +102,8 @@ export function AppointmentCard({
             <Chip label="Cancelada" tone="neutral" />
           ) : null}
         </View>
-      </Pressable>
+        <Animated.View pointerEvents="none" style={highlight} />
+      </PressableScale>
 
       <AgendaRowActionsMenu
         visible={menuVisible}

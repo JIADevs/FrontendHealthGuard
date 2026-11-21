@@ -10,7 +10,9 @@ import {
   RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDashboardCore, useCalendarEventsQuery, useConfirmIntakeMutation } from "@helu/api/hooks";
+import { useDashboardCore, useCalendarEventsQuery } from "@helu/api/hooks";
+import { notify } from "../lib/notify";
+import { useTakeDose } from "../components/agenda/useTakeDose";
 import { isApiError } from "@helu/api";
 import { useAuthStore } from "@helu/stores";
 import {
@@ -77,23 +79,15 @@ export function HomeScreen() {
 
   // Modal state
   const [selectedDoseEvent, setSelectedDoseEvent] = useState<MedicationEvent | null>(null);
-  const confirmIntake = useConfirmIntakeMutation();
+  const takeDose = useTakeDose();
 
   const handleTake = (event: MedicationEvent) => {
     const cycle = resolveCycleForDay(event.data, event.dayKey);
     if (!cycle) {
-      Toast.show({ type: "error", text1: "No se pudo confirmar la toma" });
+      notify({ tone: "error", message: "No encontramos el ciclo de esta toma" });
       return;
     }
-    confirmIntake.mutate(cycle.id, {
-      onSuccess: () => Toast.show({ type: "success", text1: "Toma confirmada" }),
-      onError: (err) =>
-        Toast.show({
-          type: "error",
-          text1: "No se pudo confirmar la toma",
-          text2: isApiError(err) ? err.message : "Intenta de nuevo",
-        }),
-    });
+    takeDose.take(cycle.id);
   };
 
   return (
@@ -279,8 +273,7 @@ export function HomeScreen() {
                     onPress={() => setSelectedDoseEvent(event)}
                     onTake={() => handleTake(event)}
                     taking={
-                      confirmIntake.isPending &&
-                      confirmIntake.variables === resolveCycleForDay(event.data, event.dayKey)?.id
+                      takeDose.takingCycleId === resolveCycleForDay(event.data, event.dayKey)?.id
                     }
                   />
                 </View>

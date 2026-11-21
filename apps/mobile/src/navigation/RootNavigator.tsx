@@ -163,7 +163,7 @@ export function RootNavigator() {
       {token ? (
         <>
           {/* Primera en la lista para que sea la pantalla inicial al entrar después del registro. */}
-          {welcomePending ? <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ animation: "fade" }} /> : null}
+          {welcomePending ? <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ animation: "fade", animationDuration: 250 }} /> : null}
           <Stack.Screen name="MainTabs" component={TabNavigator} />
           <Stack.Screen
             name="Scanner"
@@ -387,10 +387,11 @@ export function RootNavigator() {
       ) : (
         <>
           <Stack.Screen name="Auth" component={LoginScreen} />
+          {/* Inicio de sesión y registro son hermanas: fundido, no «entra desde la derecha» (§1b). */}
           <Stack.Screen
             name="Signup"
             component={SignupScreen}
-            options={{ headerShown: false }}
+            options={{ headerShown: false, animation: "fade", animationDuration: 150 }}
           />
         </>
       )}

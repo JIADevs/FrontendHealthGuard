@@ -13,7 +13,11 @@ export function AuthFooterLink({ text, linkText, onPress }: AuthFooterLinkProps)
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, flexWrap: "wrap" }}>
       <Text style={{ fontSize: 14, fontFamily: nativeFont("body", 400), color: t.text.secondary }}>{text}</Text>
-      <Pressable onPress={onPress} accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="link"
+        style={({ pressed }) => ({ minHeight: 44, justifyContent: "center", opacity: pressed ? 0.6 : 1 })}
+      >
         <Text style={{ fontSize: 14, fontFamily: nativeFont("heading", 800), color: t.brand.text }}>{linkText}</Text>
       </Pressable>
     </View>

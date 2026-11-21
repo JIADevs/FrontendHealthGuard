@@ -29,11 +29,16 @@ export function Login({ onSignup }: { onSignup: () => void }) {
 
   const submit = useCallback(async () => {
     if (submitting) return;
-    setBanner(null);
-    if (!form.validateAll()) return;
+    // El banner anterior se queda hasta que llegue la respuesta nueva: sacarlo al enviar
+    // hacía saltar el formulario dos veces (§6c, nada empuja lo que se está leyendo).
+    if (!form.validateAll()) {
+      setBanner(null);
+      return;
+    }
     setSubmitting(true);
     try {
       const data = await login(form.getValues());
+      setBanner(null);
       setAuth(data.access_token, data.refresh_token);
       void registerDevicePushToken();
     } catch (err) {
@@ -89,7 +94,7 @@ export function Login({ onSignup }: { onSignup: () => void }) {
           onSubmitEditing={() => void submit()}
           inputRef={form.passwordRef}
         />
-        <Button size="lg" fullWidth loading={submitting} loadingLabel="Iniciando sesión…" disabled={submitting} onPress={() => void submit()}>
+        <Button fullWidth loading={submitting} loadingLabel="Iniciando sesión…" disabled={submitting} onPress={() => void submit()}>
           Iniciar sesión
         </Button>
       </AuthFormCard>

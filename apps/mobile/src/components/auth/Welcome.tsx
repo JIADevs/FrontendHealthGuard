@@ -33,7 +33,7 @@ export function Welcome({ onAddMedication, onAddAppointment, onUploadDocument, o
         borderTopColor: t.border.default,
       }}
     >
-      <Button variant="secondary" size="lg" fullWidth onPress={onExplore}>
+      <Button variant="secondary" fullWidth onPress={onExplore}>
         Explorar por mi cuenta
       </Button>
     </View>

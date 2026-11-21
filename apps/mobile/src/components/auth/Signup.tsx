@@ -31,13 +31,18 @@ export function Signup({ onLogin, onSignedUp }: SignupProps) {
 
   const submit = useCallback(async () => {
     if (submitting) return;
-    setBanner(null);
-    if (!form.validateAll()) return;
+    // El banner anterior se queda hasta que llegue la respuesta nueva: sacarlo al enviar
+    // hacía saltar el formulario dos veces (§6c, nada empuja lo que se está leyendo).
+    if (!form.validateAll()) {
+      setBanner(null);
+      return;
+    }
     setSubmitting(true);
     const credentials = form.getValues();
     try {
       await signup(credentials);
       const tokens = await login(credentials);
+      setBanner(null);
       onSignedUp();
       setAuth(tokens.access_token, tokens.refresh_token);
       void registerDevicePushToken();
@@ -107,7 +112,7 @@ export function Signup({ onLogin, onSignedUp }: SignupProps) {
             </View>
           )}
         </View>
-        <Button size="lg" fullWidth loading={submitting} loadingLabel="Creando cuenta…" disabled={submitting} onPress={() => void submit()}>
+        <Button fullWidth loading={submitting} loadingLabel="Creando cuenta…" disabled={submitting} onPress={() => void submit()}>
           Crear cuenta
         </Button>
       </AuthFormCard>

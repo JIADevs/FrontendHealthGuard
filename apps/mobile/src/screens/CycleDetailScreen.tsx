@@ -34,13 +34,10 @@ import { isApiError, type MedicationCycle } from "@helu/api";
 import { DetailHeader } from "../components/DetailHeader";
 import { DetailFooter } from "../components/DetailFooter";
 import type { FooterAction } from "../components/DetailFooter";
+import { PendingDoseButton } from "../components/agenda/PendingDoseButton";
+import { isCycleActive } from "../components/agenda/medicationCycles";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function isCycleActive(cycle: MedicationCycle): boolean {
-  if (!cycle.endDate) return true;
-  return new Date(cycle.endDate) >= new Date();
-}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-CO", {
@@ -355,6 +352,9 @@ export function CycleDetailScreen() {
             </View>
           </View>
         </View>
+
+        {/* inicio-agenda.md · Medicamentos v2: «Tomar» when a dose is pending */}
+        {active ? <PendingDoseButton cycle={cycle} /> : null}
 
         {/* Info grid 2×2: dose | frequency / start | end */}
         <InfoGrid cycle={cycle} t={t} styles={styles} />

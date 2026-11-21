@@ -11,6 +11,6 @@ export { AppointmentCard } from "./AppointmentCard";
 export { AppointmentsTab } from "./AppointmentsTab";
 export { AppointmentsFilterSheet } from "./AppointmentsFilterSheet";
 export { MedicationCard } from "./MedicationCard";
-export { CycleCard } from "./CycleCard";
 export { MedicationsTab } from "./MedicationsTab";
 export { MedicationsFilterSheet } from "./MedicationsFilterSheet";
+export { PendingDoseButton } from "./PendingDoseButton";

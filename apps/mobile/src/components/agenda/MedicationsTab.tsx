@@ -1,22 +1,17 @@
 import { useCallback, useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, SectionList, RefreshControl } from "react-native";
 import Toast from "react-native-toast-message";
-import { useTakeDose } from "./useTakeDose";
-import {
-  useMedicationsQuery,
-  useDeleteMedicationMutation,
-  useUpdateMedicationCycleMutation,
-  useDeleteMedicationCycleMutation,
-} from "@helu/api/hooks";
-import { isApiError, type Medication, type MedicationCycle } from "@helu/api";
+import { useNavigation } from "@react-navigation/native";
+import { useDeleteMedicationMutation } from "@helu/api/hooks";
+import { isApiError, type Medication } from "@helu/api";
 import {
   spacing,
   radii,
-  fontSize,
-  fontWeight,
+  nativeFont,
   useAppTheme,
   Pagination,
   cardContentStyle,
+  Skeleton,
   SkeletonGroup,
   SkeletonCard,
   useSkeletonVisible,
@@ -30,50 +25,21 @@ import { Pill, Filter } from "lucide-react-native";
 import { useMedicationsList } from "../../hooks/useMedicationsList";
 import { AgendaFAB } from "./AgendaFAB";
 import { MedicationCard } from "./MedicationCard";
-import { CycleCard } from "./CycleCard";
 import { MedicationsFilterSheet } from "./MedicationsFilterSheet";
+import { useTakeDose } from "./useTakeDose";
+import { currentCycleOf, isMedicationActive } from "./medicationCycles";
 
-// ─── medications tab (sub-tabs: Medicamentos / Ciclos) ───────────────────────
+type MedicationSection = { title: string; data: Medication[] };
 
+/**
+ * Medicamentos (inicio-agenda.md · Medicamentos v2, mockup `m2-agenda.js` · Medicamentos):
+ * one list grouped into «Activos» and «Finalizados». Cycles live in the medication detail
+ * (ACTIVOS / ANTERIORES), so the old «Medicamentos / Ciclos» sub-tabs are gone.
+ */
 export function MedicationsTab() {
-  const [subTab, setSubTab] = useState<"meds" | "cycles">("meds");
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const navigation = require("@react-navigation/native").useNavigation();
-
-  return (
-    <View style={styles.tabContent}>
-      <View style={styles.subTabBar}>
-        <TouchableOpacity
-          style={[styles.subTab, subTab === "meds" && styles.subTabActive]}
-          onPress={() => setSubTab("meds")}
-        >
-          <Text style={[styles.subTabText, subTab === "meds" && styles.subTabTextActive]}>
-            Medicamentos
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.subTab, subTab === "cycles" && styles.subTabActive]}
-          onPress={() => setSubTab("cycles")}
-        >
-          <Text style={[styles.subTabText, subTab === "cycles" && styles.subTabTextActive]}>
-            Ciclos
-          </Text>
-        </TouchableOpacity>
-      </View>
-      {subTab === "meds" ? <MedicationsList /> : <CyclesList />}
-
-      <AgendaFAB onPress={() => navigation.navigate("MedicationForm")} />
-    </View>
-  );
-}
-
-// ─── medications list ─────────────────────────────────────────────────────────
-
-function MedicationsList() {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-  const navigation = require("@react-navigation/native").useNavigation();
+  const navigation = useNavigation<any>();
 
   const [deleteTarget, setDeleteTarget] = useState<Medication | null>(null);
 
@@ -98,8 +64,10 @@ function MedicationsList() {
     hasActiveFilter,
   } = useMedicationsList();
   const showSkeleton = useSkeletonVisible(isLoading);
+  const sections = useMemo(() => splitMedications(items), [items]);
 
   const deleteMut = useDeleteMedicationMutation();
+  const takeDose = useTakeDose();
 
   const handleDelete = useCallback(() => {
     if (!deleteTarget) return;
@@ -118,11 +86,8 @@ function MedicationsList() {
     });
   }, [deleteTarget, deleteMut]);
 
-  const takeDose = useTakeDose();
-  const handleIntake = takeDose.take;
-
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.tabContent}>
       <View style={styles.toolbar}>
         <View style={styles.searchWrap}>
           <SearchField
@@ -145,17 +110,19 @@ function MedicationsList() {
       </View>
 
       {showSkeleton ? (
-        // §6c: buscador y filtros reales; tarjetas de medicamento con el bloque de su botón.
+        // §6c: buscador y filtros reales; el grupo y las tarjetas, con el bloque de su botón.
         <SkeletonGroup label="Cargando medicamentos" style={[cardContentStyle, { gap: spacing[3] }]}>
+          <Skeleton width={70} height={11} />
           <SkeletonCard lines={2} action />
           <SkeletonCard lines={2} action />
           <SkeletonCard lines={2} action />
         </SkeletonGroup>
       ) : (
-        <FlatList
-          data={items}
+        <SectionList
+          sections={sections}
           keyExtractor={(m) => m.id}
           contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
+          stickySectionHeadersEnabled={false}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
@@ -163,13 +130,18 @@ function MedicationsList() {
               tintColor={t.brand.fg}
             />
           }
+          renderSectionHeader={({ section }) => (
+            <Text style={[styles.sectionTitle, { color: t.text.secondary }]} accessibilityRole="header">
+              {section.title}
+            </Text>
+          )}
           renderItem={({ item: m }) => (
             <MedicationCard
               medication={m}
-              onPress={() => navigation.navigate("MedicationDetail" as never, { id: m.id } as never)}
+              onPress={() => navigation.navigate("MedicationDetail", { id: m.id })}
               onDelete={() => setDeleteTarget(m)}
-              onIntake={handleIntake}
-              intakePending={takeDose.takingCycleId === m.cycles?.[0]?.id}
+              onIntake={takeDose.take}
+              intakePending={!!takeDose.takingCycleId && takeDose.takingCycleId === currentCycleOf(m)?.id}
             />
           )}
           ListEmptyComponent={
@@ -210,178 +182,36 @@ function MedicationsList() {
         onClose={closeFilterSheet}
         treatments={treatments}
       />
+
+      <AgendaFAB onPress={() => navigation.navigate("MedicationForm")} />
     </View>
   );
 }
 
-// ─── cycles list ─────────────────────────────────────────────────────────────
-
-type CycleItem = {
-  cycle: MedicationCycle;
-  medicationId: string;
-  medicationName: string;
-};
-
-function isCycleActive(cycle: MedicationCycle): boolean {
-  if (!cycle.endDate) return true;
-  return new Date(cycle.endDate) >= new Date();
+/** «Activos» first (server order), then «Finalizados»; empty groups are left out. */
+function splitMedications(items: Medication[]): MedicationSection[] {
+  const now = Date.now();
+  const active = items.filter((m) => isMedicationActive(m, now));
+  const finished = items.filter((m) => !isMedicationActive(m, now));
+  return [
+    active.length > 0 ? { title: "Activos", data: active } : null,
+    finished.length > 0 ? { title: "Finalizados", data: finished } : null,
+  ].filter((section): section is MedicationSection => section !== null);
 }
-
-function CyclesList() {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-  const navigation = require("@react-navigation/native").useNavigation();
-
-  const [finalizingItem, setFinalizingItem] = useState<CycleItem | null>(null);
-  const [deletingItem, setDeletingItem]     = useState<CycleItem | null>(null);
-
-  const meds     = useMedicationsQuery("", 1, 100);
-  const showCyclesSkeleton = useSkeletonVisible(meds.isLoading);
-  const updateMut = useUpdateMedicationCycleMutation();
-  const deleteMut = useDeleteMedicationCycleMutation();
-
-  const cycleItems: CycleItem[] = useMemo(() => {
-    const all = meds.data?.items ?? [];
-    const flat: CycleItem[] = [];
-    for (const med of all) {
-      for (const cycle of med.cycles ?? []) {
-        flat.push({ cycle, medicationId: med.id, medicationName: med.name });
-      }
-    }
-    return flat.sort(
-      (a, b) => new Date(b.cycle.startDate).getTime() - new Date(a.cycle.startDate).getTime(),
-    );
-  }, [meds.data]);
-
-  function handleFinalize() {
-    if (!finalizingItem) return;
-    const today = new Date().toISOString().slice(0, 10);
-    updateMut.mutate(
-      { id: finalizingItem.cycle.id, cycle: { endDate: today } },
-      {
-        onSuccess: () => {
-          setFinalizingItem(null);
-          Toast.show({ type: "success", text1: "Ciclo finalizado" });
-        },
-        onError: (err) => Toast.show({
-          type: "error",
-          text1: "Error al finalizar",
-          text2: isApiError(err) ? err.message : "Intenta de nuevo",
-        }),
-      },
-    );
-  }
-
-  function handleDelete() {
-    if (!deletingItem) return;
-    deleteMut.mutate(deletingItem.cycle.id, {
-      onSuccess: () => {
-        setDeletingItem(null);
-        Toast.show({ type: "success", text1: "Ciclo eliminado" });
-      },
-      onError: (err) => Toast.show({
-        type: "error",
-        text1: "Error al eliminar",
-        text2: isApiError(err) ? err.message : "Intenta de nuevo",
-      }),
-    });
-  }
-
-  return (
-    <View style={{ flex: 1 }}>
-      {showCyclesSkeleton ? (
-        <SkeletonGroup label="Cargando ciclos" style={[cardContentStyle, { gap: spacing[3] }]}>
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
-        </SkeletonGroup>
-      ) : (
-        <FlatList
-          data={cycleItems}
-          keyExtractor={(item) => item.cycle.id}
-          contentContainerStyle={
-            cycleItems.length === 0 ? styles.emptyListContent : [cardContentStyle, { paddingBottom: 24 }]
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={meds.isRefetching}
-              onRefresh={() => { void meds.refetch(); }}
-              tintColor={t.brand.fg}
-            />
-          }
-          ListEmptyComponent={
-            <EmptyState
-              icon={<Pill size={48} color={t.border.medium} />}
-              message="No hay ciclos registrados."
-            />
-          }
-          renderItem={({ item }: { item: CycleItem }) => {
-            const { cycle, medicationId, medicationName } = item;
-            const active = isCycleActive(cycle);
-            return (
-              <CycleCard
-                cycle={cycle}
-                medicationName={medicationName}
-                active={active}
-                onPress={() =>
-                  navigation.navigate("CycleDetail" as never, {
-                    cycleId: cycle.id,
-                    medicationId,
-                    medicationName,
-                  } as never)
-                }
-                onEdit={() =>
-                  navigation.navigate("MedicationForm", {
-                    cycleId: cycle.id,
-                    medicationId,
-                    medicationName,
-                  })
-                }
-                onFinalize={() => setFinalizingItem(item)}
-                onDelete={() => setDeletingItem(item)}
-              />
-            );
-          }}
-        />
-      )}
-
-      {finalizingItem && (
-        <ConfirmModal
-          title="Finalizar ciclo"
-          message={`¿Finalizar el ciclo de "${finalizingItem.medicationName}"? Se establecerá hoy como fecha de fin.`}
-          confirmLabel="Finalizar"
-          loading={updateMut.isPending}
-          onConfirm={handleFinalize}
-          onCancel={() => setFinalizingItem(null)}
-        />
-      )}
-
-      {deletingItem && (
-        <ConfirmModal
-          title="Eliminar ciclo"
-          message={`¿Eliminar este ciclo de "${deletingItem.medicationName}"? Esta acción no se puede deshacer.`}
-          confirmLabel="Eliminar"
-          loading={deleteMut.isPending}
-          onConfirm={handleDelete}
-          onCancel={() => setDeletingItem(null)}
-        />
-      )}
-    </View>
-  );
-}
-
-// ─── styles ───────────────────────────────────────────────────────────────────
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     tabContent: { flex: 1 },
     emptyListContent: { flexGrow: 1 },
-    center: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
-    subTabBar: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: t.border.medium, backgroundColor: t.surface.bgCard },
-    subTab: { flex: 1, alignItems: "center", paddingVertical: spacing[3], borderBottomWidth: 2, borderBottomColor: "transparent" },
-    subTabActive: { borderBottomColor: t.brand.fg },
-    subTabText: { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: t.text.secondary },
-    subTabTextActive: { fontWeight: fontWeight.semibold, color: t.brand.fg },
+    // Mockup: eyebrow «ACTIVOS» / «FINALIZADOS» (Nunito 900 11, mayúsculas, .08em), como en Citas
+    sectionTitle: {
+      fontSize: 11,
+      fontFamily: nativeFont("heading", 900),
+      letterSpacing: 0.9,
+      textTransform: "uppercase",
+      marginTop: spacing[3],
+      marginBottom: spacing[2],
+    },
     toolbar: {
       flexDirection: "row",
       alignItems: "center",
@@ -392,9 +222,10 @@ function makeStyles(t: ThemeContextValue) {
     searchWrap: {
       flex: 1,
     },
+    // Mockup: 46 × 46, radio 14 (MASTER §6: mínimo 44)
     filterBtn: {
-      width: 40,
-      height: 40,
+      width: 46,
+      height: 46,
       borderRadius: radii.lg,
       alignItems: "center",
       justifyContent: "center",

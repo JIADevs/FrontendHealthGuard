@@ -40,13 +40,10 @@ import {
   useDeleteMedicationCycleMutation,
 } from "@helu/api/hooks";
 import { isApiError, type MedicationCycle } from "@helu/api";
+import { PendingDoseButton } from "../components/agenda/PendingDoseButton";
+import { currentCycleOf, isCycleActive } from "../components/agenda/medicationCycles";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function isCycleActive(cycle: MedicationCycle): boolean {
-  if (!cycle.endDate) return true;
-  return new Date(cycle.endDate) >= new Date();
-}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-CO", {
@@ -177,8 +174,12 @@ export function MedicationDetailScreen() {
   }
 
   const sorted = useMemo(() => cyclesByNewest(med?.cycles ?? []), [med?.cycles]);
-  const activeCycles   = useMemo(() => sorted.filter(isCycleActive), [sorted]);
+  const activeCycles   = useMemo(() => sorted.filter((c: MedicationCycle) => isCycleActive(c)), [sorted]);
   const finishedCycles = useMemo(() => sorted.filter((c: MedicationCycle) => !isCycleActive(c)), [sorted]);
+  const doseCycle = useMemo(() => {
+    if (!med || activeCycles.length === 0) return undefined;
+    return currentCycleOf(med);
+  }, [med, activeCycles.length]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -245,6 +246,9 @@ export function MedicationDetailScreen() {
               </Text>
             </View>
           </View>
+
+          {/* inicio-agenda.md · Medicamentos v2: «Tomar» is the detail's main action while a dose is pending */}
+          {doseCycle ? <PendingDoseButton cycle={doseCycle} /> : null}
 
           {/* Cycle list */}
           {sorted.length === 0 ? (

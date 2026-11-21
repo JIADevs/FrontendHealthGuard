@@ -49,6 +49,7 @@ export * from './primitives/EmptyState/EmptyState.types';
 export * from './primitives/EmptyState/EmptyState.native';
 
 // ─── Forms ───────────────────────────────────────────────────────────────────
+export { FieldError } from './forms/fieldKit.native';
 export * from './forms/TextField/TextField.types';
 export * from './forms/TextField/TextField.native';
 export * from './forms/PasswordField/PasswordField.types';

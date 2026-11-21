@@ -3,7 +3,7 @@ import { Text } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { AlertCircle } from 'lucide-react-native';
 import { colors, fontSize, motion, nativeFont, radii, spacing } from '../tokens/tokens';
-import type { ThemeContextValue } from '../tokens/ThemeProvider';
+import { useAppTheme, type ThemeContextValue } from '../tokens/ThemeProvider';
 
 /**
  * Anatomía común de los campos v2 (formularios.md §2–3, kit `.lbl` / `.inp`):
@@ -55,6 +55,15 @@ export function FieldErrorText({ t, message }: { t: ThemeContextValue; message?:
       </Text>
     </Animated.View>
   );
+}
+
+/**
+ * The same error, for fields built outside the kit (chips, pickers grouped by hand), so every
+ * error on a form reads alike (formularios.md §6).
+ */
+export function FieldError({ message }: { message?: string }) {
+  const t = useAppTheme();
+  return <FieldErrorText t={t} message={message} />;
 }
 
 export const fieldTextStyle = (t: ThemeContextValue, filled: boolean) => ({

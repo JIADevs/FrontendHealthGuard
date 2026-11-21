@@ -55,10 +55,15 @@ export function ConfirmModal({
       onClose={onCancel}
       footer={
         <>
-          <Button variant={keepVariant} onPress={onCancel} disabled={loading}>{keepLabel}</Button>
-          <Button variant={confirmVariant} onPress={onConfirm} disabled={loading} loading={loading}>
-            {confirmLabel}
-          </Button>
+          {/* Both options fill the row (no empty gap on the right) and never shrink below their label. */}
+          <View style={{ flexGrow: 1 }}>
+            <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>{keepLabel}</Button>
+          </View>
+          <View style={{ flexGrow: 1 }}>
+            <Button variant={confirmVariant} fullWidth onPress={onConfirm} disabled={loading} loading={loading}>
+              {confirmLabel}
+            </Button>
+          </View>
         </>
       }
     >

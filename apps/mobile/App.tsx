@@ -24,7 +24,10 @@ setApiAuthProviders({
   getToken: () => useAuthStore.getState().token,
   getRefreshToken: () => useAuthStore.getState().refreshToken,
   getPatientContext: () => useAuthStore.getState().activePatientId,
-  setAuth: (token, refreshToken) => useAuthStore.getState().setAuth(token, refreshToken),
+  // A token refresh only swaps the tokens. `setAuth` is for login/signup: it clears the whole query
+  // cache and the patient context, so calling it here wiped every cached screen (and left
+  // management mode) each time the access token expired.
+  setAuth: (token, refreshToken) => useAuthStore.setState({ token, refreshToken }),
   clearAuth: () => useAuthStore.getState().logout(),
 });
 

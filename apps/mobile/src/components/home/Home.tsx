@@ -18,7 +18,7 @@ import { DailyCheckInForm, MedicationIntakeModal } from "../agenda";
 import { useTakeDose } from "../agenda/useTakeDose";
 import { eventSlotIso } from "../agenda/doseRowState";
 import { HomeHeader } from "./HomeHeader";
-import { HomeGreeting } from "./HomeGreeting";
+import { HomeGreeting, homeBlockLayout } from "./HomeGreeting";
 import { HomeCard } from "./HomeCard";
 import { TodayMedsCard } from "./TodayMedsCard";
 import { StreakCard } from "./StreakCard";
@@ -99,7 +99,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
         <HomeGreeting {...data.greeting} />
 
         {data.showSetup ? (
-          <Animated.View entering={contentEntering}>
+          <Animated.View entering={contentEntering} layout={homeBlockLayout}>
             <SetupChecklist state={data.setupState} onStep={onSetupStep} onHide={data.hideSetup} />
           </Animated.View>
         ) : null}
@@ -107,7 +107,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
         {medsSkeleton && !data.showSetup ? (
           <MedsSkeleton />
         ) : medsSkeleton || (data.showSetup && data.todayMeds.length === 0) ? null : (
-          <Animated.View entering={contentEntering}>
+          <Animated.View entering={contentEntering} layout={homeBlockLayout}>
             <TodayMedsCard
               events={data.todayMeds}
               takenCount={data.takenCount}
@@ -122,7 +122,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
         {streakSkeleton ? (
           <StreakSkeleton />
         ) : (
-          <Animated.View entering={contentEntering}>
+          <Animated.View entering={contentEntering} layout={homeBlockLayout}>
             <StreakCard
               current={data.streak.current}
               longest={data.streak.longest}
@@ -135,12 +135,14 @@ export function Home({ nav }: { nav: HomeNavigation }) {
           </Animated.View>
         )}
 
-        <QuickActions onUpload={nav.upload} onScan={nav.scan} onShare={nav.share} />
+        <Animated.View layout={homeBlockLayout}>
+          <QuickActions onUpload={nav.upload} onScan={nav.scan} onShare={nav.share} />
+        </Animated.View>
 
         {apptsSkeleton ? (
           <ListSkeleton label="Cargando próximas citas" />
         ) : hideEmptyLists && data.upcomingAppointments.length === 0 ? null : (
-          <Animated.View entering={contentEntering}>
+          <Animated.View entering={contentEntering} layout={homeBlockLayout}>
             <UpcomingAppointmentsCard appointments={data.upcomingAppointments} onOpen={nav.openAppointment} onSeeAll={nav.appointments} />
           </Animated.View>
         )}
@@ -148,7 +150,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
         {docsSkeleton ? (
           <ListSkeleton label="Cargando documentos recientes" />
         ) : hideEmptyLists && data.recentDocuments.length === 0 ? null : (
-          <Animated.View entering={contentEntering}>
+          <Animated.View entering={contentEntering} layout={homeBlockLayout}>
             <RecentDocumentsCard documents={data.recentDocuments} onOpen={nav.openDocument} onSeeAll={nav.documents} />
           </Animated.View>
         )}

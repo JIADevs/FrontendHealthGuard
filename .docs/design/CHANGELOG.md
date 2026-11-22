@@ -342,3 +342,11 @@ El MASTER decía que todo chip es píldora (radio 999), pero todas las pantallas
 |---|---|
 | Chip de opción (seleccionable): radio 12, borde 1,5 px y canto de 3 px; seleccionado en `brand.focus` con ✓. Los chips de etiqueta siguen siendo píldora | `MASTER.md` §6–7; `packages/ui` `Chip` variante `option` |
 
+
+## 17. v2.10 · Ir a una fecha en el calendario móvil
+
+En móvil la agenda solo tenía la tira semanal: para ver un día de dentro de varias semanas había que avanzar semana por semana. Se compararon dos opciones en el lienzo: una hoja con el mes desde el título y un selector «Semana / Mes» en la pantalla. Se eligió la hoja, porque la grilla del mes en pantalla dejaba poco lugar a la lista del día y el sistema ya decía que la tira es la vista principal en móvil.
+
+| Cambio | Dónde |
+|---|---|
+| El título del mes («Noviembre 2026 ⌄») abre la hoja «Ir a una fecha»: mes completo con flechas, hasta 3 íconos por tipo por día, leyenda y «Volver a hoy». Tocar un día cierra la hoja y salta a esa semana | `system/pages/inicio-agenda.md` · Calendario; `mockups/m2-agenda.js` «Calendario · ir a una fecha» |

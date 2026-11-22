@@ -3,7 +3,6 @@ import { Platform, StyleSheet, View } from "react-native";
 import { WebView } from "react-native-webview";
 import { Spinner, Typography, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { DOCUMENT_VIEWER_INITIAL_ZOOM } from "./DocumentZoomableImage";
 
 export interface DocumentPdfViewerProps {
   uri: string;
@@ -14,19 +13,8 @@ export interface DocumentPdfViewerProps {
 
 const EMBEDDED_HEIGHT = 320;
 
-/** Porcentaje de zoom para visor PDF nativo en iOS (#zoom=NN). */
-const PDF_ZOOM_PERCENT = Math.round(DOCUMENT_VIEWER_INITIAL_ZOOM * 100);
-
 function googlePdfEmbedUrl(remoteUri: string): string {
   return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(remoteUri)}`;
-}
-
-function pdfUriWithDefaultZoom(uri: string): string {
-  const hash = `zoom=${PDF_ZOOM_PERCENT}`;
-  if (uri.includes("#")) {
-    return `${uri}&${hash}`;
-  }
-  return `${uri}#${hash}`;
 }
 
 export function DocumentPdfViewer({
@@ -49,8 +37,9 @@ export function DocumentPdfViewer({
     if (Platform.OS === "android") {
       return googlePdfEmbedUrl(uri);
     }
-    return isFullscreen ? pdfUriWithDefaultZoom(uri) : uri;
-  }, [uri, isFullscreen]);
+    // iOS fits the page to the width by itself; pinch to zoom from there.
+    return uri;
+  }, [uri]);
 
   if (error) {
     return (
@@ -120,7 +109,7 @@ function makeStyles(t: ThemeContextValue, height: number, isFullscreen: boolean)
       padding: spacing[4],
     },
     loaderOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: t.surface.bg,

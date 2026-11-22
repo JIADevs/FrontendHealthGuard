@@ -1,174 +1,86 @@
-import { useMemo } from "react";
+import { useRef } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Camera, ChevronRight, FilePlus2, Globe, Upload, type LucideIcon } from "lucide-react-native";
 import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Pressable,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Camera, Link2, Upload, X } from "lucide-react-native";
-import { colors, fontSize, fontWeight, overlay, radii, spacing, useAppTheme } from "@helu/ui";
-import type { ThemeContextValue } from "@helu/ui";
+  BottomSheet,
+  IconTile,
+  PressableScale,
+  nativeFont,
+  spacing,
+  toneColors,
+  useAppTheme,
+  type BottomSheetHandle,
+  type Tone,
+} from "@helu/ui";
 
 export interface DocumentsAddSheetProps {
   visible: boolean;
   onClose: () => void;
-  onUpload: () => void;
-  /** Create a LINK document (portal URL + optional credentials) — never opens the file picker. */
-  onPortalLink: () => void;
   onScan: () => void;
+  onUpload: () => void;
+  /** «Resultado de examen virtual»: a portal link, never the file picker. */
+  onPortalLink: () => void;
 }
 
-export function DocumentsAddSheet({
-  visible,
-  onClose,
-  onUpload,
-  onPortalLink,
-  onScan,
-}: DocumentsAddSheetProps) {
+/**
+ * Mockup «Agregar documento»: «DOCUMENTOS · Agregar documento» and one card per way in, in this
+ * order: scan papers, upload a file, save a lab portal link.
+ */
+export function DocumentsAddSheet({ visible, onClose, onScan, onUpload, onPortalLink }: DocumentsAddSheetProps) {
   const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-  const insets = useSafeAreaInsets();
+  const sheetRef = useRef<BottomSheetHandle>(null);
+  if (!visible) return null;
 
-  const handleUpload = () => {
-    onClose();
-    onUpload();
-  };
-
-  const handlePortalLink = () => {
-    onClose();
-    onPortalLink();
-  };
-
-  const handleScan = () => {
-    onClose();
-    onScan();
-  };
+  const options: { tone: Tone; icon: LucideIcon; title: string; subtitle: string; onPress: () => void }[] = [
+    { tone: "ai", icon: Camera, title: "Escanear", subtitle: "Toma fotos de papeles, una o varias páginas", onPress: onScan },
+    { tone: "brand", icon: Upload, title: "Subir archivo", subtitle: "PDF o imagen, hasta 25 MB", onPress: onUpload },
+    { tone: "wellbeing", icon: Globe, title: "Resultado de examen virtual", subtitle: "Guarda el enlace del portal del laboratorio", onPress: onPortalLink },
+  ];
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      statusBarTranslucent
-      presentationStyle="overFullScreen"
-      onRequestClose={onClose}
+    <BottomSheet
+      ref={sheetRef}
+      eyebrow="DOCUMENTOS"
+      title="Agregar documento"
+      icon={<IconTile tone="document" size="lg" round icon={<FilePlus2 size={24} strokeWidth={2.4} color={t.accent.docFg} />} />}
+      onClose={onClose}
     >
-      <View style={styles.modalRoot}>
-        <Pressable style={styles.modalBackdropTouch} onPress={onClose} accessibilityLabel="Cerrar" />
-        <View style={[styles.modalSheet, { paddingBottom: spacing[5] + insets.bottom }]}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Agregar documento</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Cerrar"
-            >
-              <X size={22} color={t.text.secondary} />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={handleUpload}
-            activeOpacity={0.7}
+      <View style={styles.list}>
+        {options.map(({ tone, icon: Icon, title, subtitle, onPress }) => (
+          <PressableScale
+            key={title}
+            // The sheet goes down first; the next screen or sheet comes in after (§3).
+            onPress={() => (sheetRef.current ? sheetRef.current.close(onPress) : (onClose(), onPress()))}
             accessibilityRole="button"
-            accessibilityLabel="Subir archivo"
+            accessibilityLabel={`${title}, ${subtitle}`}
+            style={[styles.card, { backgroundColor: t.surface.bgCard, borderColor: t.border.default }]}
           >
-            <View style={styles.optionIcon}>
-              <Upload size={22} color={t.brand.fg} strokeWidth={2.25} />
+            <IconTile tone={tone} icon={<Icon size={19} strokeWidth={2.2} color={toneColors(tone, t.mode).fg} />} />
+            <View style={styles.copy}>
+              <Text style={[styles.title, { color: t.text.primary }]}>{title}</Text>
+              <Text style={[styles.subtitle, { color: t.text.secondary }]}>{subtitle}</Text>
             </View>
-            <Text style={styles.optionLabel}>Subir archivo</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={handlePortalLink}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Resultado de examen virtual"
-          >
-            <View style={styles.optionIcon}>
-              <Link2 size={22} color={t.brand.fg} strokeWidth={2.25} />
-            </View>
-            <Text style={styles.optionLabel}>Resultado de examen virtual</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={handleScan}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Escanear"
-          >
-            <View style={styles.optionIcon}>
-              <Camera size={22} color={t.brand.fg} strokeWidth={2.25} />
-            </View>
-            <Text style={styles.optionLabel}>Escanear</Text>
-          </TouchableOpacity>
-        </View>
+            <ChevronRight size={18} color={t.text.muted} />
+          </PressableScale>
+        ))}
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 
-function makeStyles(t: ThemeContextValue) {
-  return StyleSheet.create({
-    modalRoot: {
-      flex: 1,
-      justifyContent: "flex-end",
-    },
-    modalBackdropTouch: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: overlay.darker,
-    },
-    modalSheet: {
-      backgroundColor: t.surface.bgCard,
-      borderTopLeftRadius: radii.xl,
-      borderTopRightRadius: radii.xl,
-      padding: spacing[5],
-      gap: spacing[2],
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 12,
-      elevation: 16,
-    },
-    modalHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: spacing[2],
-    },
-    modalTitle: {
-      fontSize: fontSize.lg,
-      fontWeight: fontWeight.bold,
-      color: t.text.primary,
-    },
-    optionRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],
-      paddingVertical: spacing[3],
-      paddingHorizontal: spacing[2],
-      borderRadius: radii.md,
-    },
-    optionIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: radii.full,
-      backgroundColor: t.surface.bg,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    optionLabel: {
-      flex: 1,
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.medium,
-      color: t.text.primary,
-    },
-  });
-}
+const styles = StyleSheet.create({
+  list: { gap: spacing[3] },
+  // Kit `.card.tight`
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing[3],
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderBottomWidth: 4,
+  },
+  copy: { flex: 1, gap: 2 },
+  title: { fontSize: 14, fontFamily: nativeFont("body", 600) },
+  subtitle: { fontSize: 13, fontFamily: nativeFont("body", 400) },
+});

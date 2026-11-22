@@ -1,114 +1,86 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
 import Toast from "react-native-toast-message";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, type QueryClient, type QueryKey } from "@tanstack/react-query";
 import { deleteDocument, isApiError, type Document } from "@helu/api";
+import { notify } from "../lib/notify";
 
 const UNDO_DELAY_MS = 5000;
 
-type DocumentListPage = {
-  items: Document[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-};
+type DocumentListPage = { items: Document[]; total: number; page: number; limit: number; totalPages: number };
+type Snapshot = [QueryKey, DocumentListPage | undefined][];
+
+/**
+ * Deletes waiting for their «Deshacer» window, one timer per document. Module-level so a delete
+ * started in the detail keeps running after that screen closes, and a second delete within 5 s
+ * no longer cancels the first one (#43).
+ */
+const pending = new Map<string, { timer: ReturnType<typeof setTimeout>; snapshot: Snapshot }>();
 
 function removeDocFromPage(page: DocumentListPage, id: string): DocumentListPage {
   const items = page.items.filter((d) => d.id !== id);
-  return {
-    ...page,
-    items,
-    total: Math.max(0, page.total - (page.items.length - items.length)),
-  };
+  return { ...page, items, total: Math.max(0, page.total - (page.items.length - items.length)) };
 }
 
-interface UseDocumentDeleteWithUndoOptions {
-  /** Called right after the user confirms (e.g. navigate back from detail). */
-  onDeleted?: () => void;
+function restore(queryClient: QueryClient, id: string, snapshot: Snapshot) {
+  // Put the document back into every list it was in, keeping deletes of other documents applied.
+  snapshot.forEach(([key, before]) => {
+    const doc = before?.items.find((d) => d.id === id);
+    if (!before || !doc) return;
+    queryClient.setQueryData<DocumentListPage>(key, (now) => {
+      if (!now || now.items.some((d) => d.id === id)) return now;
+      const index = before.items.findIndex((d) => d.id === id);
+      const items = [...now.items];
+      items.splice(Math.min(index, items.length), 0, doc);
+      return { ...now, items, total: now.total + 1 };
+    });
+  });
 }
 
-export function useDocumentDeleteWithUndo(options?: UseDocumentDeleteWithUndoOptions) {
+/**
+ * «Eliminar» without a modal (mockup «Documento eliminado · deshacer»): the document leaves the lists
+ * at once, the toast offers «Deshacer» for 5 s, and only then the `DELETE` goes to the API.
+ */
+export function useDocumentDeleteWithUndo() {
   const queryClient = useQueryClient();
-  const [deleteTarget, setDeleteTarget] = useState<Document | null>(null);
-  const pendingUndoRef = useRef<{ timer: ReturnType<typeof setTimeout>; docId: string } | null>(null);
-  const onDeletedRef = useRef(options?.onDeleted);
-  onDeletedRef.current = options?.onDeleted;
 
-  const requestDelete = useCallback((doc: Document) => {
-    setDeleteTarget(doc);
-  }, []);
-
-  const cancelDelete = useCallback(() => {
-    setDeleteTarget(null);
-  }, []);
-
-  const confirmDelete = useCallback(() => {
-    if (!deleteTarget) return;
-    const doc = deleteTarget;
-
-    const snapshot = queryClient.getQueriesData<DocumentListPage>({ queryKey: ["documents"] });
-    snapshot.forEach(([key, data]) => {
-      if (!data) return;
-      queryClient.setQueryData(key, removeDocFromPage(data, doc.id));
-    });
-
-    queryClient.removeQueries({ queryKey: ["document", doc.id] });
-
-    setDeleteTarget(null);
-    onDeletedRef.current?.();
-
-    const finalize = () => {
-      pendingUndoRef.current = null;
-      deleteDocument(doc.id)
-        .then(() => {
-          queryClient.invalidateQueries({ queryKey: ["backpack-docs"], exact: false });
-          queryClient.invalidateQueries({ queryKey: ["backpack-doc-ids"], exact: false });
-        })
-        .catch((err) => {
-          snapshot.forEach(([key, data]) => {
-            if (data) queryClient.setQueryData(key, data);
-          });
-          Toast.show({
-            type: "error",
-            text1: "Error al eliminar",
-            text2: isApiError(err) ? err.message : "No se pudo eliminar el documento.",
-          });
-        });
-    };
-
-    const onUndo = () => {
-      if (pendingUndoRef.current?.docId !== doc.id) return;
-      clearTimeout(pendingUndoRef.current.timer);
-      pendingUndoRef.current = null;
+  return useCallback(
+    (doc: Document, options?: { onDeleted?: () => void }) => {
+      const snapshot = queryClient.getQueriesData<DocumentListPage>({ queryKey: ["documents"] });
       snapshot.forEach(([key, data]) => {
-        if (data) queryClient.setQueryData(key, data);
+        if (data) queryClient.setQueryData(key, removeDocFromPage(data, doc.id));
       });
-      void queryClient.invalidateQueries({ queryKey: ["document", doc.id] });
-      Toast.hide();
-    };
+      options?.onDeleted?.();
 
-    if (pendingUndoRef.current) {
-      clearTimeout(pendingUndoRef.current.timer);
-    }
-    const timer = setTimeout(finalize, UNDO_DELAY_MS);
-    pendingUndoRef.current = { timer, docId: doc.id };
+      const finalize = () => {
+        pending.delete(doc.id);
+        queryClient.removeQueries({ queryKey: ["document", doc.id] });
+        deleteDocument(doc.id)
+          .then(() => {
+            void queryClient.invalidateQueries({ queryKey: ["backpack-docs"], exact: false });
+            void queryClient.invalidateQueries({ queryKey: ["backpack-doc-ids"], exact: false });
+          })
+          .catch((err) => {
+            restore(queryClient, doc.id, snapshot);
+            notify({
+              tone: "error",
+              message: "No se pudo eliminar",
+              description: isApiError(err) ? "Intenta de nuevo en un momento." : "Revisa tu conexión e intenta de nuevo.",
+            });
+          });
+      };
 
-    Toast.show({
-      type: "success",
-      text1: "Documento eliminado",
-      visibilityTime: UNDO_DELAY_MS,
-      props: {
-        actionLabel: "Deshacer",
-        onAction: onUndo,
-      },
-    });
-  }, [deleteTarget, queryClient]);
+      const undo = () => {
+        const entry = pending.get(doc.id);
+        if (!entry) return;
+        clearTimeout(entry.timer);
+        pending.delete(doc.id);
+        restore(queryClient, doc.id, entry.snapshot);
+        Toast.hide();
+      };
 
-  return {
-    deleteTarget,
-    requestDelete,
-    cancelDelete,
-    confirmDelete,
-    deletePending: false,
-  };
+      pending.set(doc.id, { timer: setTimeout(finalize, UNDO_DELAY_MS), snapshot });
+      notify({ tone: "info", message: "Documento eliminado", action: { label: "Deshacer", onPress: undo } });
+    },
+    [queryClient],
+  );
 }

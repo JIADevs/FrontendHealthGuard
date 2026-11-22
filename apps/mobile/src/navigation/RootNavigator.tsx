@@ -83,6 +83,8 @@ export type RootStackParamList = {
         backpackName?: string;
         /** FILE opens upload UI; LINK opens portal form and never the file picker. */
         initialKind?: "FILE" | "LINK";
+        /** Pages from the scanner, already joined into one image or PDF. */
+        scannedFile?: { uri: string; name: string; mimeType: string; size?: number };
       })
     | undefined;
   DocumentDetail: WithBackTitle & { id: string; title?: string } | undefined;
@@ -168,38 +170,23 @@ export function RootNavigator() {
             component={ScannerScreenLight}
             options={{
               ...getDocumentsStackScreenOptions(t),
-              presentation: "fullScreenModal",
-              animation: "slide_from_bottom",
+              ...FORM_SCREEN_OPTIONS,
             }}
           />
           <Stack.Screen
             name="DocumentUpload"
             component={DocumentUploadScreenLight}
-            options={{
-              ...getDocumentsStackScreenOptions(t),
-              presentation: "fullScreenModal",
-              animation: "slide_from_bottom",
-            }}
+            options={{ ...getDocumentsStackScreenOptions(t), ...FORM_SCREEN_OPTIONS }}
           />
           <Stack.Screen
             name="DocumentDetail"
             component={DocumentDetailScreenLight}
-            options={({ route }) => ({
-              ...getDocumentsStackScreenOptions(t),
-              headerShown: true,
-              title: "Documento",
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
-            })}
+            options={{ ...getDocumentsStackScreenOptions(t), headerShown: false, animation: "slide_from_right" }}
           />
           <Stack.Screen
             name="DocumentEdit"
             component={DocumentEditScreenLight}
-            options={({ route }) => ({
-              ...getDocumentsStackScreenOptions(t),
-              headerShown: true,
-              title: "Editar documento",
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Documento",
-            })}
+            options={{ ...getDocumentsStackScreenOptions(t), headerShown: false, animation: "slide_from_right" }}
           />
           <Stack.Screen
             name="Notifications"

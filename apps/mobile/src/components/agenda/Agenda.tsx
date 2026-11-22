@@ -12,6 +12,7 @@ import { useDailyCheckInIntent } from "../../hooks/useDailyCheckInIntent";
 import type { AgendaRouteParams } from "../../navigation/RootNavigator";
 import { notify } from "../../lib/notify";
 import { useTakeDose } from "./useTakeDose";
+import { eventSlotIso } from "./doseRowState";
 import { EmptyDayCard } from "./AgendaEmpty";
 import { useAgendaNavigation } from "./AgendaNavigation";
 
@@ -246,7 +247,7 @@ function CalendarTab({
             notify({ tone: "error", message: "No encontramos el ciclo de esta toma" });
             return;
           }
-          takeDose.take(cycle.id);
+          takeDose.take(cycle.id, eventSlotIso(event));
         }}
         onTaskComplete={(event) => nav.openTask(event.data.id, "complete")}
         takingCycleId={takeDose.takingCycleId}

@@ -1,272 +1,126 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Filter } from "lucide-react-native";
 import {
-  Modal as RNModal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronLeft } from "lucide-react-native";
-import {
-  radii,
-  spacing,
-  fontSize,
-  fontWeight,
-  useAppTheme,
-  getDocumentFilterLabel,
-  DOCUMENT_FILTER_KEYS,
-  DatePicker,
+  BottomSheet,
   Button,
-  todayISODate,
+  ChoiceChips,
+  DatePicker,
+  IconTile,
+  nativeFont,
+  spacing,
+  useAppTheme,
+  type BottomSheetHandle,
 } from "@helu/ui";
-import type { ThemeContextValue } from "@helu/ui";
-import { DocumentsFilterChip } from "./DocumentsFilterChip";
-import { DocumentsTagFilterBuilder } from "./DocumentsTagFilterBuilder";
+import { CATEGORY_META, DOCUMENT_CATEGORIES, type DocumentCategory } from "./documentCategories";
 import {
-  DOCUMENT_DATE_PRESETS,
   EMPTY_DOCUMENT_FILTERS,
-  resolveDateRangeFromPreset,
-  hasActiveDocumentFilters,
+  sameDateRange,
   type DocumentListFilters,
-  type DocumentDatePreset,
   type TagCategoryOption,
 } from "./utils/documentListFilters";
 
-interface DocumentsFilterSheetProps {
-  visible: boolean;
-  draft: DocumentListFilters;
-  onChangeDraft: (filters: DocumentListFilters) => void;
-  onApply: () => void;
-  onClose: () => void;
+export interface DocumentsFilterSheetProps {
+  initial: DocumentListFilters;
   tagCategories: TagCategoryOption[];
-  tagsLoading?: boolean;
+  /** Documents a draft would show among the loaded ones (category and tags only). */
+  countFor: (draft: DocumentListFilters) => number;
+  onApply: (filters: DocumentListFilters) => void;
+  onClose: () => void;
 }
 
-export function DocumentsFilterSheet({
-  visible,
-  draft,
-  onChangeDraft,
-  onApply,
-  onClose,
-  tagCategories,
-  tagsLoading = false,
-}: DocumentsFilterSheetProps) {
+/**
+ * Mockup «Filtros»: «DOCUMENTOS · Filtros» with Categoría and Etiquetas as option chips, Fecha as
+ * «Desde» / «Hasta», «Ver N documentos» and «Limpiar filtros». Nothing applies until «Ver».
+ */
+export function DocumentsFilterSheet({ initial, tagCategories, countFor, onApply, onClose }: DocumentsFilterSheetProps) {
   const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
+  const sheetRef = useRef<BottomSheetHandle>(null);
+  const [draft, setDraft] = useState<DocumentListFilters>(initial);
 
-  const patch = (partial: Partial<DocumentListFilters>) => {
-    onChangeDraft({ ...draft, ...partial });
-  };
+  const tagOptions = useMemo(
+    () => tagCategories.flatMap((cat) => cat.values.map((v) => ({ value: v.id, label: v.value }))),
+    [tagCategories],
+  );
+  // The count is exact only while the date range is the one already loaded from the API.
+  const count = sameDateRange(draft, initial) ? countFor(draft) : null;
+  const seeLabel = count === null ? "Ver documentos" : count === 1 ? "Ver 1 documento" : `Ver ${count} documentos`;
 
-  const handleDatePreset = (preset: DocumentDatePreset) => {
-    if (preset === "custom") {
-      const today = todayISODate();
-      onChangeDraft({
-        ...draft,
-        datePreset: "custom",
-        startDate: draft.startDate ?? today,
-        endDate: draft.endDate ?? today,
-      });
-      return;
-    }
-    const range = resolveDateRangeFromPreset(preset);
-    onChangeDraft({
-      ...draft,
-      datePreset: preset,
-      startDate: range.startDate,
-      endDate: range.endDate,
-    });
-  };
-
-  const canClear = hasActiveDocumentFilters(draft);
+  const apply = () => sheetRef.current?.close(() => onApply(draft));
 
   return (
-    <RNModal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="fullScreen"
-      onRequestClose={onClose}
+    <BottomSheet
+      ref={sheetRef}
+      eyebrow="DOCUMENTOS"
+      title="Filtros"
+      icon={<IconTile tone="neutral" size="lg" round icon={<Filter size={22} strokeWidth={2.4} color={t.text.onMuted} />} />}
+      onClose={onClose}
     >
-      <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.headerSide}
-            onPress={onClose}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Volver al listado"
-          >
-            <ChevronLeft size={24} color={t.text.primary} />
-          </TouchableOpacity>
-
-          <Text style={styles.title} numberOfLines={1}>
-            Filtrar documentos
-          </Text>
-
-          <TouchableOpacity
-            style={styles.headerSide}
-            onPress={() => onChangeDraft(EMPTY_DOCUMENT_FILTERS)}
-            disabled={!canClear}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Limpiar filtros"
-          >
-            <Text style={[styles.clearText, !canClear && styles.clearTextDisabled]}>
-              Limpiar filtros
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Text style={styles.subtitle}>Categoría</Text>
-          <View style={styles.chipGrid}>
-            {DOCUMENT_FILTER_KEYS.map((key) => (
-              <DocumentsFilterChip
-                key={key ?? "all"}
-                label={getDocumentFilterLabel(key)}
-                selected={draft.category === key}
-                onPress={() => patch({ category: key })}
-              />
-            ))}
-          </View>
-
-          <Text style={[styles.subtitle, styles.sectionGap]}>Fecha del documento</Text>
-          <View style={styles.chipGrid}>
-            {DOCUMENT_DATE_PRESETS.map((preset) => (
-              <DocumentsFilterChip
-                key={preset.id ?? "any-date"}
-                label={preset.label}
-                selected={draft.datePreset === preset.id}
-                onPress={() => handleDatePreset(preset.id)}
-              />
-            ))}
-          </View>
-
-          {draft.datePreset === "custom" && (
-            <View style={styles.dateRow}>
-              <View style={styles.dateField}>
-                <DatePicker
-                  label="Desde"
-                  value={draft.startDate ?? ""}
-                  onChange={(startDate) => patch({ startDate, datePreset: "custom" })}
-                  maxDate={draft.endDate ?? todayISODate()}
-                />
-              </View>
-              <View style={styles.dateField}>
-                <DatePicker
-                  label="Hasta"
-                  value={draft.endDate ?? ""}
-                  onChange={(endDate) => patch({ endDate, datePreset: "custom" })}
-                  minDate={draft.startDate ?? undefined}
-                  maxDate={todayISODate()}
-                />
-              </View>
-            </View>
-          )}
-
-          <Text style={[styles.subtitle, styles.sectionGap]}>Etiquetas</Text>
-          <DocumentsTagFilterBuilder
-            key={visible ? "open" : "closed"}
-            categories={tagCategories}
-            tagFilters={draft.tagFilters}
-            onChange={(tagFilters) => patch({ tagFilters })}
-            loading={tagsLoading}
+      <View style={styles.body}>
+        <View style={styles.group}>
+          <Text style={[styles.lbl, { color: t.text.primary }]}>Categoría</Text>
+          <ChoiceChips
+            multiple
+            options={DOCUMENT_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_META[c].plural }))}
+            value={draft.categories}
+            onChange={(next) => setDraft((d) => ({ ...d, categories: next as DocumentCategory[] }))}
           />
-        </ScrollView>
-
-        <View style={styles.footer}>
-          <Button onPress={onApply}>Aplicar filtros</Button>
         </View>
-      </SafeAreaView>
-    </RNModal>
+
+        {tagOptions.length > 0 ? (
+          <View style={styles.group}>
+            <Text style={[styles.lbl, { color: t.text.primary }]}>Etiquetas</Text>
+            <ChoiceChips
+              multiple
+              options={tagOptions}
+              value={draft.tagValueIds}
+              onChange={(next) => setDraft((d) => ({ ...d, tagValueIds: next }))}
+            />
+          </View>
+        ) : null}
+
+        <View style={styles.group}>
+          <Text style={[styles.lbl, { color: t.text.primary }]}>Fecha</Text>
+          <View style={styles.dates}>
+            <View style={styles.date}>
+              <DatePicker
+                label="Desde"
+                value={draft.startDate ?? ""}
+                placeholder="Sin límite"
+                maxDate={draft.endDate ?? undefined}
+                onChange={(v) => setDraft((d) => ({ ...d, startDate: v || null }))}
+              />
+            </View>
+            <View style={styles.date}>
+              <DatePicker
+                label="Hasta"
+                value={draft.endDate ?? ""}
+                placeholder="Hoy"
+                minDate={draft.startDate ?? undefined}
+                onChange={(v) => setDraft((d) => ({ ...d, endDate: v || null }))}
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.actions}>
+          <Button size="lg" fullWidth onPress={apply}>
+            {seeLabel}
+          </Button>
+          <Button variant="ghost" fullWidth onPress={() => setDraft(EMPTY_DOCUMENT_FILTERS)}>
+            Limpiar filtros
+          </Button>
+        </View>
+      </View>
+    </BottomSheet>
   );
 }
 
-function makeStyles(t: ThemeContextValue) {
-  return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: t.surface.bg,
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: spacing[4],
-      paddingVertical: spacing[3],
-      borderBottomWidth: 1,
-      borderBottomColor: t.border.light,
-      backgroundColor: t.surface.bgCard,
-    },
-    headerSide: {
-      width: 108,
-      justifyContent: "center",
-    },
-    title: {
-      flex: 1,
-      fontSize: fontSize.lg,
-      fontWeight: fontWeight.bold,
-      color: t.text.primary,
-      textAlign: "center",
-    },
-    clearText: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: t.brand.fg,
-      textAlign: "right",
-    },
-    clearTextDisabled: {
-      color: t.text.muted,
-    },
-    scroll: {
-      flex: 1,
-    },
-    scrollContent: {
-      paddingHorizontal: spacing[5],
-      paddingTop: spacing[5],
-      paddingBottom: spacing[6],
-    },
-    subtitle: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: t.text.secondary,
-      marginBottom: spacing[3],
-    },
-    sectionGap: {
-      marginTop: spacing[5],
-    },
-    chipGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: spacing[2],
-    },
-    dateRow: {
-      flexDirection: "row",
-      gap: spacing[3],
-      marginTop: spacing[3],
-    },
-    dateField: {
-      flex: 1,
-    },
-    hint: {
-      fontSize: fontSize.sm,
-      color: t.text.muted,
-      lineHeight: 20,
-    },
-    footer: {
-      alignItems: "center",
-      paddingHorizontal: spacing[5],
-      paddingTop: spacing[4],
-      paddingBottom: spacing[4],
-      borderTopWidth: 1,
-      borderTopColor: t.border.light,
-      backgroundColor: t.surface.bgCard,
-    },
-  });
-}
+const styles = StyleSheet.create({
+  body: { gap: spacing[5] },
+  group: { gap: spacing[2] },
+  lbl: { fontSize: 13, fontFamily: nativeFont("heading", 800) },
+  dates: { flexDirection: "row", gap: spacing[3] },
+  date: { flex: 1 },
+  actions: { gap: spacing[2] },
+});

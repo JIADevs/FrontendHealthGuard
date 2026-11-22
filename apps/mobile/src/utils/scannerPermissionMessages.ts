@@ -2,19 +2,6 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import type { PermissionResponse } from "expo-camera";
 
-/** Textos fijos de la pantalla de permiso de camara (escaner). */
-export const SCANNER_PERMISSION_COPY = {
-  title: "Acceso a la cámara",
-  subtitle: "Necesaria para escanear documentos.",
-  trust: "Solo se usa al escanear.",
-  hint: "Se mostrará un aviso del sistema. Elija Permitir.",
-  primaryButton: "Conceder permiso",
-  secondaryButton: "Abrir ajustes",
-  backA11y: "Volver",
-  primaryA11y: "Conceder permiso",
-  secondaryA11y: "Abrir ajustes del dispositivo",
-} as const;
-
 /** Nombre visible de la app en Ajustes del sistema. */
 export function getScannerSettingsAppName(): string {
   if (Constants.appOwnership === "expo") {
@@ -36,27 +23,23 @@ export function messageOpeningDialog(): string {
 }
 
 export function messageDeniedRetry(): string {
-  return "Permiso denegado. Toque otra vez o active la cámara en Ajustes.";
+  return "No diste el permiso. Toca «Permitir la cámara» otra vez o actívala en Ajustes.";
 }
 
 export function messageDialogNoResponse(): string {
-  return "Sin respuesta del sistema. Intente de nuevo.";
+  return "El teléfono no respondió. Intenta de nuevo.";
 }
 
 export function messageRetryPermission(): string {
-  return "Toque Conceder permiso.";
+  return "Toca «Permitir la cámara».";
 }
 
 export function messageBlockedInSettings(): string {
-  return `Permiso bloqueado. Active la cámara en ${getScannerSettingsPath()}.`;
-}
-
-export function messageDismissedDialogHint(): string {
-  return "Si cancela el aviso, puede intentar de nuevo o usar Ajustes.";
+  return `Actívala en ${getScannerSettingsPath()}.`;
 }
 
 export function messageWebUnsupported(): string {
-  return "Use la app en el teléfono (Expo Go) para escanear.";
+  return "Para escanear, usa la app en el teléfono.";
 }
 
 /**

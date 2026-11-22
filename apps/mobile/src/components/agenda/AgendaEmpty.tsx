@@ -25,6 +25,8 @@ export function AgendaEmpty({
   description,
   actionLabel,
   onAction,
+  secondaryAction,
+  exampleLabel = "Así se verá",
   example,
 }: {
   pose: MascotPose;
@@ -32,7 +34,11 @@ export function AgendaEmpty({
   description: string;
   actionLabel: string;
   onAction: () => void;
-  example: { tone: Tone; icon: ReactNode; title: string; meta: string; trailing?: ReactNode };
+  /** A second, secondary action under the primary one (m9 «Documentos · vacío»: «Escanear con la cámara»). */
+  secondaryAction?: { label: string; icon?: ReactNode; onPress: () => void };
+  exampleLabel?: string;
+  /** `footer`: a row under the example card (the example's tags). */
+  example: { tone: Tone; icon: ReactNode; title: string; meta: string; trailing?: ReactNode; footer?: ReactNode };
 }) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -48,21 +54,29 @@ export function AgendaEmpty({
           <Button fullWidth icon={<Plus size={17} strokeWidth={2.6} color={t.text.onSolid} />} onPress={onAction}>
             {actionLabel}
           </Button>
+          {secondaryAction ? (
+            <Button variant="secondary" fullWidth icon={secondaryAction.icon} onPress={secondaryAction.onPress}>
+              {secondaryAction.label}
+            </Button>
+          ) : null}
         </View>
       </View>
 
       <View style={styles.example} accessible accessibilityLabel={`Ejemplo: ${example.title}, ${example.meta}`}>
         <View style={styles.exampleHead}>
-          <Text style={styles.eyebrow}>Así se verá</Text>
+          <Text style={styles.eyebrow}>{exampleLabel}</Text>
           <Chip label="Ejemplo" tone="neutral" />
         </View>
         <View style={styles.exampleCard}>
-          <IconTile tone={example.tone} icon={example.icon} />
-          <View style={styles.copy}>
-            <Text style={styles.rowTitle}>{example.title}</Text>
-            <Text style={styles.meta}>{example.meta}</Text>
+          <View style={styles.exampleRow}>
+            <IconTile tone={example.tone} icon={example.icon} />
+            <View style={styles.copy}>
+              <Text style={styles.rowTitle}>{example.title}</Text>
+              <Text style={styles.meta}>{example.meta}</Text>
+            </View>
+            {example.trailing}
           </View>
-          {example.trailing}
+          {example.footer}
         </View>
       </View>
     </View>
@@ -103,7 +117,7 @@ function makeStyles(t: ThemeContextValue) {
       color: t.text.secondary,
       textAlign: "center",
     },
-    action: { width: 270, marginTop: 6 },
+    action: { width: 270, marginTop: 6, gap: spacing[3] },
     example: { gap: spacing[2] },
     exampleHead: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
     eyebrow: {
@@ -116,8 +130,6 @@ function makeStyles(t: ThemeContextValue) {
     },
     // Kit `example()`: dashed border, no edge, muted surface
     exampleCard: {
-      flexDirection: "row",
-      alignItems: "center",
       gap: spacing[3],
       padding: spacing[3],
       borderRadius: radii.card,
@@ -126,6 +138,7 @@ function makeStyles(t: ThemeContextValue) {
       borderColor: t.border.default,
       backgroundColor: t.surface.muted,
     },
+    exampleRow: { flexDirection: "row", alignItems: "center", gap: spacing[3] },
     copy: { flex: 1, minWidth: 0, gap: 2 },
     rowTitle: { fontSize: 15, lineHeight: 20, fontFamily: nativeFont("heading", 800), color: t.text.primary },
     meta: { fontSize: fontSize.sm, lineHeight: 18, fontFamily: nativeFont("body", 400), color: t.text.secondary },

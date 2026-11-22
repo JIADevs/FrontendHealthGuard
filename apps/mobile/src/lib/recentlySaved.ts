@@ -9,10 +9,16 @@ interface RecentlySavedState {
   appointmentId: string | null;
   markAppointment: (id: string | undefined) => void;
   clearAppointment: () => void;
+  documentId: string | null;
+  markDocument: (id: string | undefined) => void;
+  clearDocument: () => void;
 }
 
 export const useRecentlySaved = create<RecentlySavedState>((set) => ({
   appointmentId: null,
   markAppointment: (id) => set({ appointmentId: id ?? null }),
   clearAppointment: () => set({ appointmentId: null }),
+  documentId: null,
+  markDocument: (id) => set({ documentId: id ?? null }),
+  clearDocument: () => set({ documentId: null }),
 }));

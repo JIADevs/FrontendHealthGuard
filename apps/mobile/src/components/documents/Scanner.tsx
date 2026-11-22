@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { CameraView } from "expo-camera";
@@ -431,6 +431,7 @@ function ScannerReview({
   const cardWidth = (width - spacing[4] * 2 - 10) / 2;
   // Press and hold a page to pick it up, then tap the place where it goes.
   const [moving, setMoving] = useState<string | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const movingIndex = moving ? pages.findIndex((p) => p.id === moving) : -1;
 
   const drop = (to: number) => {
@@ -469,7 +470,7 @@ function ScannerReview({
                   setMoving(page.id);
                   void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }}
-                onPress={() => (moving === page.id ? setMoving(null) : moving ? drop(index) : undefined)}
+                onPress={() => (moving === page.id ? setMoving(null) : moving ? drop(index) : setPreviewIndex(index))}
                 onRetake={() => onRetake(page.id)}
                 onRemove={() => onRemove(page.id)}
                 onMove={(to) => onMove(page.id, to)}
@@ -498,9 +499,151 @@ function ScannerReview({
           disabled: preparing,
         }}
       />
+      <PagePreview
+        pages={pages}
+        index={previewIndex}
+        shownUri={shownUri}
+        onIndex={setPreviewIndex}
+        onClose={() => setPreviewIndex(null)}
+        onRetake={(id) => {
+          setPreviewIndex(null);
+          onRetake(id);
+        }}
+        onRemove={(id) => {
+          if (pages.length <= 1) setPreviewIndex(null);
+          else setPreviewIndex((i) => (i == null ? null : Math.min(i, pages.length - 2)));
+          onRemove(id);
+        }}
+      />
     </SafeAreaView>
   );
 }
+
+// ─────────────────────────────────────────── Page preview ──
+
+/**
+ * Full screen, dark: the page as it will be saved (with the chosen style), pinch to zoom, swipe to
+ * the next page, and retake or remove it right there.
+ */
+function PagePreview({
+  pages,
+  index,
+  shownUri,
+  onIndex,
+  onClose,
+  onRetake,
+  onRemove,
+}: {
+  pages: Page[];
+  index: number | null;
+  shownUri: (page: Page) => string | null;
+  onIndex: (index: number) => void;
+  onClose: () => void;
+  onRetake: (id: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const visible = index !== null && pages.length > 0;
+  const current = index !== null ? pages[Math.min(index, pages.length - 1)] : undefined;
+  const pageHeight = height - insets.top - insets.bottom - 150;
+
+  return (
+    <Modal visible={visible} animationType="fade" presentationStyle="overFullScreen" transparent onRequestClose={onClose}>
+      <View style={[pv.screen, { paddingTop: insets.top + spacing[2], paddingBottom: insets.bottom + spacing[2] }]}>
+        <StatusBar style="light" />
+        <View style={pv.header}>
+          <DarkIconButton label="Cerrar la vista previa" onPress={onClose}>
+            <X size={20} color={colors.white} />
+          </DarkIconButton>
+          <Text style={pv.title} accessibilityRole="header" accessibilityLiveRegion="polite">
+            {index !== null ? `Página ${Math.min(index, pages.length - 1) + 1} de ${pages.length}` : ""}
+          </Text>
+          <View style={{ width: 44 }} />
+        </View>
+
+        {visible ? (
+          <FlatList
+            data={pages}
+            keyExtractor={(p) => p.id}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            initialScrollIndex={Math.min(index!, pages.length - 1)}
+            getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
+            onMomentumScrollEnd={(e) => onIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
+            style={{ flex: 1 }}
+            renderItem={({ item }) => {
+              const uri = shownUri(item);
+              return (
+                <ScrollView
+                  style={{ width }}
+                  contentContainerStyle={pv.zoomContent}
+                  maximumZoomScale={4}
+                  minimumZoomScale={1}
+                  bouncesZoom
+                  centerContent
+                  showsHorizontalScrollIndicator={false}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <Image
+                    source={{ uri: uri ?? item.uri }}
+                    style={{ width: width - spacing[4] * 2, height: pageHeight, opacity: uri ? 1 : 0.6 }}
+                    resizeMode="contain"
+                    accessibilityLabel="Página escaneada"
+                  />
+                  {!uri ? <ActivityIndicator style={StyleSheet.absoluteFill} color={colors.white} /> : null}
+                </ScrollView>
+              );
+            }}
+          />
+        ) : null}
+
+        {current ? (
+          <View style={pv.actions}>
+            <DarkPillButton label="Volver a tomar" onPress={() => onRetake(current.id)}>
+              <RotateCcw size={18} color={colors.white} />
+            </DarkPillButton>
+            <DarkPillButton label="Quitar" onPress={() => onRemove(current.id)}>
+              <Trash2 size={18} color={colors.white} />
+            </DarkPillButton>
+          </View>
+        ) : null}
+      </View>
+    </Modal>
+  );
+}
+
+function DarkPillButton({ label, onPress, children }: { label: string; onPress: () => void; children: React.ReactNode }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+      {({ pressed }) => (
+        <View style={[pv.pill, pressed && { backgroundColor: overlay.dark }]}>
+          {children}
+          <Text style={pv.pillText}>{label}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+const pv = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.slate[900] },
+  header: { flexDirection: "row", alignItems: "center", gap: spacing[3], paddingHorizontal: spacing[4], paddingBottom: spacing[2] },
+  title: { flex: 1, textAlign: "center", fontSize: 15, fontFamily: nativeFont("heading", 800), color: colors.white },
+  zoomContent: { flexGrow: 1, alignItems: "center", justifyContent: "center" },
+  actions: { flexDirection: "row", justifyContent: "center", gap: spacing[3], paddingTop: spacing[3] },
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing[2],
+    minHeight: 44,
+    paddingHorizontal: spacing[4],
+    borderRadius: 22,
+    backgroundColor: overlay.light,
+  },
+  pillText: { fontSize: 15, fontFamily: nativeFont("heading", 700), color: colors.white },
+});
 
 function ReviewPage({
   page,
@@ -542,7 +685,7 @@ function ReviewPage({
         delayLongPress={350}
         accessibilityRole="button"
         accessibilityLabel={`Página ${index + 1}`}
-        accessibilityHint={dropTarget ? "Pone aquí la página elegida" : "Mantén presionada para cambiar el orden"}
+        accessibilityHint={dropTarget ? "Pone aquí la página elegida" : "Toca para verla en grande; mantén presionada para cambiar el orden"}
         style={[styles.card, picked && { borderColor: t.brand.solid }, dropTarget && { borderStyle: "dashed" }]}
       >
         <View>

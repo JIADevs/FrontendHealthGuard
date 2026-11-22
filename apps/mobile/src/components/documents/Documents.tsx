@@ -1,11 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
-import { Keyboard, Pressable, RefreshControl, ScrollView, SectionList, StyleSheet, Text, View } from "react-native";
+import { Keyboard, Pressable, ScrollView, SectionList, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Filter } from "lucide-react-native";
 import type { Document } from "@helu/api";
 import {
   Chip,
+  PullRefreshIndicator,
   SearchField,
   Skeleton,
   SkeletonCard,
@@ -15,12 +16,12 @@ import {
   radii,
   spacing,
   useAppTheme,
+  usePullRefresh,
   useSkeletonVisible,
   type ThemeContextValue,
 } from "@helu/ui";
 import { Fab } from "../Fab";
 import { useDocumentsList } from "../../hooks/useDocumentsList";
-import { usePullToRefresh } from "../../lib/usePullToRefresh";
 import { CATEGORY_FILTER_OPTIONS, type DocumentCategory } from "./documentCategories";
 import { DocumentRow } from "./DocumentRow";
 import { DocumentsAddSheet } from "./DocumentsAddSheet";
@@ -66,7 +67,7 @@ export function Documents(props: DocumentsProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const list = useDocumentsList();
-  const pull = usePullToRefresh(list.refetch);
+  const pull = usePullRefresh(list.refetch, list.updatedAt);
   const showSkeleton = useSkeletonVisible(list.isLoading);
   const [portalOpen, setPortalOpen] = useState(false);
   // Staggered entry only for the first paint of the list (§2, §6c), not on every refetch.
@@ -141,65 +142,70 @@ export function Documents(props: DocumentsProps) {
           <SkeletonCard lines={2} />
         </SkeletonGroup>
       ) : (
-        <SectionList
-          sections={list.sections}
-          keyExtractor={(d) => d.id}
-          stickySectionHeadersEnabled={false}
-          contentContainerStyle={list.items.length === 0 ? styles.emptyContent : styles.content}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          onLayout={() => setEntered(true)}
-          refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={t.brand.fg} />}
-          renderSectionHeader={({ section }) => (
-            <Text style={styles.eyebrow} accessibilityRole="header">
-              {section.title}
-            </Text>
-          )}
-          renderItem={({ item }) => {
-            const group = groupById.get(item.id) ?? 0;
-            return (
-              <Animated.View
-                entering={entered ? undefined : FadeIn.duration(motion.base).delay(Math.min(group, STAGGER_MAX) * STAGGER_MS)}
-                exiting={FadeOut.duration(motion.base)}
-                layout={LinearTransition.duration(motion.base)}
-                style={styles.rowWrap}
-              >
-                <DocumentRow
-                  document={item}
-                  onPress={() => onOpen(item)}
-                  actions={{
-                    onView: () => onOpen(item),
-                    onEdit: () => onEdit(item),
-                    onShare: () => onShare(item),
-                    onDelete: () => onDelete(item),
-                  }}
+        <View style={{ flex: 1 }}>
+          <SectionList
+            sections={list.sections}
+            keyExtractor={(d) => d.id}
+            stickySectionHeadersEnabled={false}
+            contentContainerStyle={list.items.length === 0 ? styles.emptyContent : styles.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            onLayout={() => setEntered(true)}
+            refreshControl={pull.refreshControl}
+            onScroll={pull.onScroll}
+            scrollEventThrottle={16}
+            renderSectionHeader={({ section }) => (
+              <Text style={styles.eyebrow} accessibilityRole="header">
+                {section.title}
+              </Text>
+            )}
+            renderItem={({ item }) => {
+              const group = groupById.get(item.id) ?? 0;
+              return (
+                <Animated.View
+                  entering={entered ? undefined : FadeIn.duration(motion.base).delay(Math.min(group, STAGGER_MAX) * STAGGER_MS)}
+                  exiting={FadeOut.duration(motion.base)}
+                  layout={LinearTransition.duration(motion.base)}
+                  style={styles.rowWrap}
+                >
+                  <DocumentRow
+                    document={item}
+                    onPress={() => onOpen(item)}
+                    actions={{
+                      onView: () => onOpen(item),
+                      onEdit: () => onEdit(item),
+                      onShare: () => onShare(item),
+                      onDelete: () => onDelete(item),
+                    }}
+                  />
+                </Animated.View>
+              );
+            }}
+            ListEmptyComponent={
+              !list.settled ? undefined : searching ? (
+                <DocumentsSearchEmpty
+                  query={list.debouncedSearch}
+                  allDocuments={list.allDocuments}
+                  tagCategories={list.tagCategories}
+                  onSearch={list.setSearch}
+                  onPickTag={pickTag}
+                  onPickCategory={pickCategory}
+                  onUpload={() => setAddOpen(true)}
                 />
-              </Animated.View>
-            );
-          }}
-          ListEmptyComponent={
-            !list.settled ? undefined : searching ? (
-              <DocumentsSearchEmpty
-                query={list.debouncedSearch}
-                allDocuments={list.allDocuments}
-                tagCategories={list.tagCategories}
-                onSearch={list.setSearch}
-                onPickTag={pickTag}
-                onPickCategory={pickCategory}
-                onUpload={() => setAddOpen(true)}
-              />
-            ) : list.hasActiveFilter ? (
-              <DocumentsFilterEmpty
-                filters={list.filters}
-                allDocuments={list.allDocuments}
-                tagCategories={list.tagCategories}
-                onChange={list.setFilters}
-              />
-            ) : (
-              <DocumentsEmpty onUpload={onUpload} onScan={onScan} />
-            )
-          }
-        />
+              ) : list.hasActiveFilter ? (
+                <DocumentsFilterEmpty
+                  filters={list.filters}
+                  allDocuments={list.allDocuments}
+                  tagCategories={list.tagCategories}
+                  onChange={list.setFilters}
+                />
+              ) : (
+                <DocumentsEmpty onUpload={onUpload} onScan={onScan} />
+              )
+            }
+          />
+          <PullRefreshIndicator state={pull} />
+        </View>
       )}
 
       <Fab

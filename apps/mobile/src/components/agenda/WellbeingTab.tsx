@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { View, Text, StyleSheet, SectionList, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, SectionList } from "react-native";
 import { Heart } from "lucide-react-native";
 import type { DailyCheckIn } from "@helu/api";
 import {
@@ -12,6 +12,8 @@ import {
   spacing,
   useAppTheme,
   useSkeletonVisible,
+  PullRefreshIndicator,
+  usePullRefresh,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { useWellbeingScreen } from "../../hooks/useWellbeingScreen";
@@ -31,12 +33,8 @@ export function WellbeingTab() {
   const [formTarget, setFormTarget] = useState<DailyCheckIn | "new" | null>(null);
   const screen = useWellbeingScreen();
   const showSkeleton = useSkeletonVisible(screen.isLoading);
-  // Only the pull gesture shows the spinner; background refreshes (after saving) stay silent (§6c).
-  const [pulling, setPulling] = useState(false);
-  const handlePull = useCallback(() => {
-    setPulling(true);
-    void screen.refetch().finally(() => setPulling(false));
-  }, [screen.refetch]);
+  // Only the pull gesture shows the pill; background refreshes (after saving) stay silent (§6c).
+  const pull = usePullRefresh(screen.refetch, screen.updatedAt);
 
   const handleEndReached = useCallback(() => {
     if (screen.hasNextPage && !screen.isFetchingNextPage) {
@@ -82,41 +80,44 @@ export function WellbeingTab() {
       );
     }
     return (
-      <SectionList
-        sections={screen.sections}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <DailyCheckInListItem checkIn={item} onEdit={(checkIn) => setFormTarget(checkIn)} />
-        )}
-        renderSectionHeader={({ section }) => (
-          <Text style={styles.sectionTitle} accessibilityRole="header">{section.title}</Text>
-        )}
-        stickySectionHeadersEnabled={false}
-        ListHeaderComponent={listHeader}
-        ListEmptyComponent={
-          <EmptyState
-            icon={<Heart size={48} color={t.border.medium} />}
-            message="Todavía no tienes check-ins."
-            action={<Button onPress={() => setFormTarget("new")}>Registrar check-in</Button>}
-          />
-        }
-        refreshControl={
-          <RefreshControl refreshing={pulling} onRefresh={handlePull} tintColor={t.brand.fg} />
-        }
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.3}
-        contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={styles.itemGap} />}
-        ListFooterComponent={
-          screen.isFetchingNextPage ? (
-            // §6c «Página siguiente»: 2 filas de esqueleto al final.
-            <SkeletonGroup label="Cargando más check-ins" style={styles.skeletonList}>
-              <SkeletonCard lines={2} />
-              <SkeletonCard lines={2} />
-            </SkeletonGroup>
-          ) : undefined
-        }
-      />
+      <View style={{ flex: 1 }}>
+        <SectionList
+          sections={screen.sections}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <DailyCheckInListItem checkIn={item} onEdit={(checkIn) => setFormTarget(checkIn)} />
+          )}
+          renderSectionHeader={({ section }) => (
+            <Text style={styles.sectionTitle} accessibilityRole="header">{section.title}</Text>
+          )}
+          stickySectionHeadersEnabled={false}
+          ListHeaderComponent={listHeader}
+          ListEmptyComponent={
+            <EmptyState
+              icon={<Heart size={48} color={t.border.medium} />}
+              message="Todavía no tienes check-ins."
+              action={<Button onPress={() => setFormTarget("new")}>Registrar check-in</Button>}
+            />
+          }
+          refreshControl={pull.refreshControl}
+          onScroll={pull.onScroll}
+          scrollEventThrottle={16}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.3}
+          contentContainerStyle={styles.listContent}
+          ItemSeparatorComponent={() => <View style={styles.itemGap} />}
+          ListFooterComponent={
+            screen.isFetchingNextPage ? (
+              // §6c «Página siguiente»: 2 filas de esqueleto al final.
+              <SkeletonGroup label="Cargando más check-ins" style={styles.skeletonList}>
+                <SkeletonCard lines={2} />
+                <SkeletonCard lines={2} />
+              </SkeletonGroup>
+            ) : undefined
+          }
+        />
+        <PullRefreshIndicator state={pull} />
+      </View>
     );
   };
 

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, SectionList, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, SectionList } from "react-native";
 import Toast from "react-native-toast-message";
 import { useDeleteMedicationMutation } from "@helu/api/hooks";
 import { isApiError, type Medication } from "@helu/api";
@@ -18,12 +18,13 @@ import {
   Chip,
   EmptyState,
   SearchField,
+  PullRefreshIndicator,
+  usePullRefresh,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { Pill, Filter } from "lucide-react-native";
 
 import { useMedicationsList } from "../../hooks/useMedicationsList";
-import { usePullToRefresh } from "../../lib/usePullToRefresh";
 import { AgendaEmpty } from "./AgendaEmpty";
 import { AgendaFAB } from "./AgendaFAB";
 import { useAgendaNavigation } from "./AgendaNavigation";
@@ -55,6 +56,7 @@ export function MedicationsTab() {
     totalPages,
     isLoading,
     refetch,
+    updatedAt,
     treatments,
     draftFilters,
     setDraftFilters,
@@ -65,7 +67,7 @@ export function MedicationsTab() {
     applyFilters,
     hasActiveFilter,
   } = useMedicationsList();
-  const pull = usePullToRefresh(refetch);
+  const pull = usePullRefresh(refetch, updatedAt);
   const showSkeleton = useSkeletonVisible(isLoading);
   const sections = useMemo(() => splitMedications(items), [items]);
 
@@ -121,57 +123,60 @@ export function MedicationsTab() {
           <SkeletonCard lines={2} action />
         </SkeletonGroup>
       ) : (
-        <SectionList
-          sections={sections}
-          keyExtractor={(m) => m.id}
-          contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
-          stickySectionHeadersEnabled={false}
-          refreshControl={
-            <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={t.brand.fg} />
-          }
-          renderSectionHeader={({ section }) => (
-            <Text style={[styles.sectionTitle, { color: t.text.secondary }]} accessibilityRole="header">
-              {section.title}
-            </Text>
-          )}
-          renderItem={({ item: m }) => (
-            <MedicationCard
-              medication={m}
-              onPress={() => nav.openMedication(m.id)}
-              onDelete={() => setDeleteTarget(m)}
-              onIntake={takeDose.take}
-              intakePending={!!takeDose.takingCycleId && takeDose.takingCycleId === currentCycleOf(m)?.id}
-            />
-          )}
-          ListEmptyComponent={
-            hasActiveFilter || search ? (
-              <EmptyState
-                icon={<Pill size={48} color={t.border.medium} />}
-                message="No hay medicamentos que coincidan con los filtros."
+        <View style={{ flex: 1 }}>
+          <SectionList
+            sections={sections}
+            keyExtractor={(m) => m.id}
+            contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
+            stickySectionHeadersEnabled={false}
+            refreshControl={pull.refreshControl}
+            onScroll={pull.onScroll}
+            scrollEventThrottle={16}
+            renderSectionHeader={({ section }) => (
+              <Text style={[styles.sectionTitle, { color: t.text.secondary }]} accessibilityRole="header">
+                {section.title}
+              </Text>
+            )}
+            renderItem={({ item: m }) => (
+              <MedicationCard
+                medication={m}
+                onPress={() => nav.openMedication(m.id)}
+                onDelete={() => setDeleteTarget(m)}
+                onIntake={takeDose.take}
+                intakePending={!!takeDose.takingCycleId && takeDose.takingCycleId === currentCycleOf(m)?.id}
               />
-            ) : (
-              <AgendaEmpty
-                pose="point"
-                title="Aún no tienes medicamentos"
-                description="Registra uno y te avisamos en cada toma. Tú solo tocas «Tomar»."
-                actionLabel="Agregar medicamento"
-                onAction={nav.newMedication}
-                example={{
-                  tone: "medication",
-                  icon: <Pill size={19} strokeWidth={2.2} color={t.accent.medFg} />,
-                  title: "Losartán 50 mg",
-                  meta: "Cada 12 horas · 7:00 a. m. y 7:00 p. m.",
-                  trailing: <Chip label="Tomar" tone="success" />,
-                }}
-              />
-            )
-          }
-          ListFooterComponent={
-            items.length > 0 ? (
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-            ) : undefined
-          }
-        />
+            )}
+            ListEmptyComponent={
+              hasActiveFilter || search ? (
+                <EmptyState
+                  icon={<Pill size={48} color={t.border.medium} />}
+                  message="No hay medicamentos que coincidan con los filtros."
+                />
+              ) : (
+                <AgendaEmpty
+                  pose="point"
+                  title="Aún no tienes medicamentos"
+                  description="Registra uno y te avisamos en cada toma. Tú solo tocas «Tomar»."
+                  actionLabel="Agregar medicamento"
+                  onAction={nav.newMedication}
+                  example={{
+                    tone: "medication",
+                    icon: <Pill size={19} strokeWidth={2.2} color={t.accent.medFg} />,
+                    title: "Losartán 50 mg",
+                    meta: "Cada 12 horas · 7:00 a. m. y 7:00 p. m.",
+                    trailing: <Chip label="Tomar" tone="success" />,
+                  }}
+                />
+              )
+            }
+            ListFooterComponent={
+              items.length > 0 ? (
+                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+              ) : undefined
+            }
+          />
+          <PullRefreshIndicator state={pull} />
+        </View>
       )}
 
       {deleteTarget && (

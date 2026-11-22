@@ -80,5 +80,6 @@ export function useDocumentsList() {
     /** False while typing or while the next search is on its way: no «sin resultados» flash. */
     settled: !docs.isPlaceholderData && search === debouncedSearch,
     refetch: docs.refetch,
+    updatedAt: docs.dataUpdatedAt || undefined,
   };
 }

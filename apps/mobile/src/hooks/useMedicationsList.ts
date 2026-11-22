@@ -64,6 +64,7 @@ export function useMedicationsList() {
     isLoading: meds.isLoading,
     isRefetching: meds.isRefetching,
     refetch: meds.refetch,
+    updatedAt: meds.dataUpdatedAt || undefined,
     treatments: treatmentsQuery.data?.items ?? [],
     draftFilters,
     setDraftFilters,

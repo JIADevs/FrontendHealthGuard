@@ -190,5 +190,7 @@ export function useHomeData() {
       documents: dash.isDocsLoading,
     },
     refetch: () => Promise.all([dash.refetch(), calendar.refetch(), checkIns.refetch(), profile.refetch()]),
+    /** Newest arrival among Inicio's queries, shown while pulling (the dashboard hook does not expose its own). */
+    updatedAt: Math.max(calendar.dataUpdatedAt, checkIns.dataUpdatedAt, profile.dataUpdatedAt) || undefined,
   };
 }

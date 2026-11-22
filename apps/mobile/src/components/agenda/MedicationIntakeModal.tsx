@@ -164,7 +164,8 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
             {!cycle ? (
                 <Text style={styles.errorText}>No se encontró el ciclo de tratamiento para esta fecha.</Text>
             ) : step === "ask" ? (
-                <View style={styles.actions}>
+                // v2.11: the two answers sit together and the time line goes right under them (8 px).
+                <View style={styles.askActions}>
                     <Button
                         variant="success"
                         fullWidth
@@ -176,20 +177,20 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
                     >
                         Sí, la tomé
                     </Button>
+                    <Button variant="secondary" fullWidth onPress={() => setStep("missed")} disabled={saving}>
+                        No la tomé
+                    </Button>
                     <View style={styles.timeRow}>
                         <Text style={styles.meta}>Se registra a las {formatClock(new Date())}</Text>
                         <Pressable
                             onPress={() => setStep("time")}
                             disabled={saving}
                             accessibilityRole="button"
-                            style={styles.inlineLink}
+                            hitSlop={INLINE_LINK_HIT_SLOP}
                         >
                             <Text style={styles.link}>Cambiar hora</Text>
                         </Pressable>
                     </View>
-                    <Button variant="secondary" fullWidth onPress={() => setStep("missed")} disabled={saving}>
-                        No la tomé
-                    </Button>
                 </View>
             ) : step === "time" ? (
                 <View style={styles.actions}>
@@ -241,6 +242,9 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
     );
 }
 
+/** «Cambiar hora» keeps a 44 px touch target without pushing the line away from the buttons. */
+const INLINE_LINK_HIT_SLOP = { top: 13, bottom: 13, left: 8, right: 8 };
+
 function makeStyles(t: ThemeContextValue) {
     return StyleSheet.create({
         subtitle: {
@@ -257,6 +261,9 @@ function makeStyles(t: ThemeContextValue) {
         actions: {
             gap: spacing[3],
         },
+        askActions: {
+            gap: spacing[2],
+        },
         timeRow: {
             flexDirection: "row",
             alignItems: "center",
@@ -270,7 +277,6 @@ function makeStyles(t: ThemeContextValue) {
             color: t.text.secondary,
         },
         center: { textAlign: "center" },
-        inlineLink: { minHeight: 44, justifyContent: "center" },
         link: {
             fontSize: fontSize.sm,
             fontFamily: nativeFont("heading", 800),

@@ -350,3 +350,4 @@ En móvil la agenda solo tenía la tira semanal: para ver un día de dentro de v
 | Cambio | Dónde |
 |---|---|
 | El título del mes («Noviembre 2026 ⌄») abre la hoja «Ir a una fecha»: mes completo con flechas, hasta 3 íconos por tipo por día, leyenda y «Volver a hoy». Tocar un día cierra la hoja y salta a esa semana | `system/pages/inicio-agenda.md` · Calendario; `mockups/m2-agenda.js` «Calendario · ir a una fecha» |
+| La semana empieza el domingo en la tira y en la grilla; la grilla siempre tiene 6 filas y muestra atenuados los días del mes anterior y del siguiente | `system/pages/inicio-agenda.md` · Calendario |

@@ -201,15 +201,14 @@ function MonthSheet({ selectedDate, onPick, onClose }: { selectedDate: string; o
     const t = useAppTheme();
     const sheetRef = useRef<BottomSheetHandle>(null);
     const [month, setMonth] = useState(startOfMonth(selectedDate));
-    const query = useCalendarEventsQuery(month, endOfMonth(month));
+    // Always 6 rows (the sheet keeps its height between months), with the neighbouring months' days dimmed.
+    // Explicit rows of 7 flex cells: percentage widths round up on some screens and push a day to its own line.
+    const grid = useMemo(() => buildMonthGrid(month, { fillOutside: true, rows: 6 }), [month]);
+    const weeks = useMemo(() => Array.from({ length: 6 }, (_, r) => grid.slice(r * 7, r * 7 + 7)), [grid]);
+    const first = grid[0];
+    const last = grid[grid.length - 1];
+    const query = useCalendarEventsQuery(first?.kind === "day" ? first.date : month, last?.kind === "day" ? last.date : endOfMonth(month));
     const activity = useMemo(() => buildDayActivityMap(query.data ?? []), [query.data]);
-    // Always 6 rows, so the sheet keeps its height when a month needs 5 (no jump between months).
-    // Explicit rows of 7 flex cells: percentage widths round up on some screens and push Sunday to its own line.
-    const weeks = useMemo(() => {
-        const grid = buildMonthGrid(month);
-        while (grid.length < 42) grid.push({ kind: "empty" });
-        return Array.from({ length: 6 }, (_, r) => grid.slice(r * 7, r * 7 + 7));
-    }, [month]);
     const d = new Date(`${month}T12:00:00`);
     const label = capitalize(`${MONTHS[d.getMonth()]} ${d.getFullYear()}`);
     const pick = (date: string) => sheetRef.current?.close(() => onPick(date)) ?? onPick(date);
@@ -240,7 +239,7 @@ function MonthSheet({ selectedDate, onPick, onClose }: { selectedDate: string; o
                 </View>
                 <View style={styles.monthGrid}>
                     <View style={styles.monthRow}>
-                        {["L", "M", "M", "J", "V", "S", "D"].map((w, i) => (
+                        {["D", "L", "M", "M", "J", "V", "S"].map((w, i) => (
                             <Text key={i} style={[styles.monthWeekday, { color: t.text.secondary }]}>
                                 {w}
                             </Text>
@@ -261,7 +260,7 @@ function MonthSheet({ selectedDate, onPick, onClose }: { selectedDate: string; o
                                     : [];
                                 const selected = cell.date === selectedDate;
                                 return (
-                                    <View key={cell.date} style={styles.monthCellSlot}>
+                                    <View key={cell.date} style={[styles.monthCellSlot, !cell.inMonth && !selected && styles.monthCellOutside]}>
                                         <Pressable
                                             onPress={() => pick(cell.date)}
                                             accessibilityRole="button"
@@ -418,6 +417,9 @@ const styles = StyleSheet.create({
     monthCellSlot: {
         flex: 1,
         paddingHorizontal: 3,
+    },
+    monthCellOutside: {
+        opacity: 0.4,
     },
     monthCellEmpty: {
         height: 44,

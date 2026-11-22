@@ -46,7 +46,8 @@ export function HomeGreeting({ pose, title, message, loading = false }: HomeGree
         {loading ? (
           <>
             <Text style={titleStyle(t)}>{title}</Text>
-            <SkeletonGroup label="Cargando tu día" style={{ gap: 6, paddingTop: 4 }}>
+            {/* Two 21 px lines of message, like the text that arrives (2 px under the title). */}
+            <SkeletonGroup label="Cargando tu día" style={{ gap: 9, paddingTop: 6, paddingBottom: 5 }}>
               <Skeleton width="90%" height={12} />
               <Skeleton width="60%" height={12} />
             </SkeletonGroup>

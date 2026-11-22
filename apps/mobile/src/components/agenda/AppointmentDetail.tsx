@@ -46,6 +46,7 @@ import {
 } from "lucide-react-native";
 import Toast from "react-native-toast-message";
 import { ScreenHeader } from "../ScreenHeader";
+import { SkeletonHeaderAction } from "../SkeletonPieces";
 
 
 const MODALITY_LABELS: Record<string, string> = {
@@ -175,7 +176,8 @@ export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDeta
     // §6c «Detalle de cita»: la barra con volver se ve real; encabezado, datos y acciones son esqueleto.
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: t.surface.bg }]}>
-        <ScreenHeader title="Cita" />
+        <ScreenHeader title="Cita" right={<SkeletonHeaderAction />} />
+        {/* §6c: the cards of an upcoming appointment, with their fixed titles real. */}
         <SkeletonGroup label="Cargando la cita" style={styles.content}>
           <View style={[styles.card, cardColors(t)]}>
             <View style={styles.summaryRow}>
@@ -186,8 +188,9 @@ export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDeta
               </View>
             </View>
             <View style={styles.chips}>
-              <Skeleton width={96} height={26} radius={13} />
               <Skeleton width={84} height={26} radius={13} />
+              <Skeleton width={84} height={26} radius={13} />
+              <Skeleton width={96} height={26} radius={13} />
             </View>
           </View>
           <View style={[styles.card, cardColors(t)]}>
@@ -195,13 +198,24 @@ export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDeta
               <View key={i} style={styles.row}>
                 <Skeleton width={40} height={40} radius={13} />
                 <View style={{ flex: 1, gap: 8 }}>
-                  <Skeleton width="70%" height={14} />
-                  <Skeleton width="45%" height={12} />
+                  <Skeleton width="60%" height={14} />
+                  <Skeleton width="40%" height={12} />
                 </View>
               </View>
             ))}
           </View>
+          <View style={[styles.card, cardColors(t)]}>
+            <Text style={[styles.h3, { color: t.text.primary }]}>Documentos y mochilas</Text>
+            <Text style={[styles.lbl, { color: t.text.primary }]}>Para llevar</Text>
+            <Skeleton width="55%" height={13} />
+            <Text style={[styles.lbl, { color: t.text.primary }]}>Obtenidos después</Text>
+            <Skeleton width="45%" height={13} />
+            <Skeleton width={150} height={16} />
+          </View>
           <Skeleton height={48} radius={14} />
+          <View style={{ alignItems: "center" }}>
+            <Skeleton width={130} height={16} />
+          </View>
         </SkeletonGroup>
       </SafeAreaView>
     );

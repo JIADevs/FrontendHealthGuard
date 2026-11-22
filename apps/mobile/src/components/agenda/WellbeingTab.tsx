@@ -6,7 +6,6 @@ import {
   Button,
   EmptyState,
   Skeleton,
-  SkeletonCard,
   SkeletonGroup,
   nativeFont,
   spacing,
@@ -18,7 +17,7 @@ import {
 import type { ThemeContextValue } from "@helu/ui";
 import { useWellbeingScreen } from "../../hooks/useWellbeingScreen";
 import { DailyCheckInForm } from "./DailyCheckInForm";
-import { DailyCheckInListItem } from "./DailyCheckInListItem";
+import { DailyCheckInListItem, DailyCheckInListItemSkeleton } from "./DailyCheckInListItem";
 import { WellbeingFAB } from "./WellbeingFAB";
 import { WellbeingSummary } from "./WellbeingSummary";
 
@@ -57,9 +56,9 @@ export function WellbeingTab() {
           {listHeader}
           <SkeletonGroup label="Cargando check-ins" style={styles.skeletonList}>
             <Skeleton width={70} height={11} />
-            <SkeletonCard lines={2} />
-            <SkeletonCard lines={2} />
-            <SkeletonCard lines={2} />
+            <DailyCheckInListItemSkeleton />
+            <DailyCheckInListItemSkeleton />
+            <DailyCheckInListItemSkeleton />
           </SkeletonGroup>
         </View>
       );
@@ -110,8 +109,8 @@ export function WellbeingTab() {
             screen.isFetchingNextPage ? (
               // §6c «Página siguiente»: 2 filas de esqueleto al final.
               <SkeletonGroup label="Cargando más check-ins" style={styles.skeletonList}>
-                <SkeletonCard lines={2} />
-                <SkeletonCard lines={2} />
+                <DailyCheckInListItemSkeleton />
+                <DailyCheckInListItemSkeleton />
               </SkeletonGroup>
             ) : undefined
           }

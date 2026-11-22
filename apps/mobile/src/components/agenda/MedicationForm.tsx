@@ -42,6 +42,7 @@ import {
 } from "@helu/api/hooks";
 import type { DoseUnit, FrequencyUnit, Medication, MedicationCycle, PharmaceuticalForm } from "@helu/api";
 import { ScreenHeader } from "../ScreenHeader";
+import { SkeletonChips, SkeletonField } from "../SkeletonPieces";
 import { SelectField } from "../SelectField";
 import { notify } from "../../lib/notify";
 import { haptics } from "../../lib/haptics";
@@ -160,15 +161,29 @@ function EditGate(props: MedicationFormProps & { cycleId: string; medicationId: 
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["top"]}>
         <ScreenHeader title="Editar ciclo" subtitle={props.medicationName} />
-        <SkeletonGroup label="Cargando el ciclo" style={{ padding: spacing[4], gap: spacing[4] }}>
-          {[0, 1, 2].map((i) => (
-            <View key={i} style={{ gap: spacing[3] }}>
-              <Skeleton width="40%" height={16} />
-              <Skeleton width="100%" height={48} radius={radii.input} />
-              <Skeleton width="100%" height={48} radius={radii.input} />
+        {/* §6c: the same cards and labels as «Editar ciclo»; only the values are blocks. */}
+        <SkeletonGroup label="Cargando el ciclo" style={{ flex: 1, overflow: "hidden", padding: spacing[4], gap: spacing[4] }}>
+          <FormCard title="Medicamento">
+            <SkeletonField label="Nombre" />
+            <View style={{ gap: spacing[2] }}>
+              <FormLabel>Forma farmacéutica</FormLabel>
+              <SkeletonChips widths={[88, 84, 76, 92]} />
             </View>
-          ))}
+            <SkeletonField label="Concentración (opcional)" />
+          </FormCard>
+          <FormCard title="Prescripción">
+            <SkeletonField label="Dosis por toma" />
+            <View style={{ gap: spacing[2] }}>
+              <SkeletonField label="Frecuencia (cada cuánto)" />
+              <SkeletonChips widths={[72, 64, 72]} />
+            </View>
+          </FormCard>
+          <FormCard title="Periodo del ciclo">
+            <Skeleton height={76} radius={radii.input} />
+            <SkeletonField label="Fin (opcional)" />
+          </FormCard>
         </SkeletonGroup>
+        <BottomActionBar primary={{ label: "Guardar cambios", onPress: () => undefined, disabled: true }} />
       </SafeAreaView>
     );
   }

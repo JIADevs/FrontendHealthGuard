@@ -9,7 +9,6 @@ import {
   PullRefreshIndicator,
   SearchField,
   Skeleton,
-  SkeletonCard,
   SkeletonGroup,
   motion,
   nativeFont,
@@ -135,11 +134,12 @@ export function Documents(props: DocumentsProps) {
         // §6c: header, search and filters are real; the list is a skeleton by groups (date + 2 rows).
         <SkeletonGroup label="Cargando documentos" style={styles.skeleton}>
           <Skeleton width={90} height={11} />
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
+          <DocumentRowSkeleton />
+          <DocumentRowSkeleton />
+          <DocumentRowSkeleton />
           <Skeleton width={70} height={11} style={{ marginTop: spacing[2] }} />
-          <SkeletonCard lines={2} />
-          <SkeletonCard lines={2} />
+          <DocumentRowSkeleton />
+          <DocumentRowSkeleton />
         </SkeletonGroup>
       ) : (
         <View style={{ flex: 1 }}>
@@ -273,4 +273,33 @@ function makeStyles(t: ThemeContextValue) {
     },
     skeleton: { gap: spacing[3], paddingHorizontal: spacing[4], paddingTop: spacing[4] },
   });
+}
+
+/** A `DocumentRow` while it loads: same card, 40 px tile, two lines and the 44 px «⋯». */
+function DocumentRowSkeleton() {
+  const t = useAppTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing[3],
+        padding: 14,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderBottomWidth: 4,
+        borderColor: t.border.default,
+        backgroundColor: t.surface.bgCard,
+      }}
+    >
+      <Skeleton width={40} height={40} radius={13} />
+      <View style={{ flex: 1, gap: 6 }}>
+        <Skeleton width="65%" height={14} />
+        <Skeleton width="40%" height={12} />
+      </View>
+      <View style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
+        <Skeleton width={4} height={16} radius={2} />
+      </View>
+    </View>
+  );
 }

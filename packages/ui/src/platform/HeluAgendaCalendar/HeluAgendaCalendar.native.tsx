@@ -40,7 +40,8 @@ export function HeluAgendaCalendar({
     const t = useAppTheme();
     const weekDates = buildWeekDates(calendar.selectedDate);
     const dayEvents = filterEventsForDates(calendar.events, [calendar.selectedDate]);
-    const showSkeleton = useSkeletonVisible(calendar.isLoading);
+    // Never say «nada agendado» before knowing: skeleton until the selected day is loaded (§6c).
+    const showSkeleton = useSkeletonVisible(calendar.isLoading || calendar.isDayLoading);
 
     function openEvent(event: AgendaEvent) {
         if (event.type === "medication") onMedicationPress?.(event);

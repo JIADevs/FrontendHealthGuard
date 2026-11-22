@@ -16,6 +16,7 @@ import type { AgendaEvent } from "@helu/ui";
 import { notify } from "../../lib/notify";
 import { DailyCheckInForm, MedicationIntakeModal } from "../agenda";
 import { useTakeDose } from "../agenda/useTakeDose";
+import { eventSlotIso } from "../agenda/doseRowState";
 import { HomeHeader } from "./HomeHeader";
 import { HomeGreeting } from "./HomeGreeting";
 import { HomeCard } from "./HomeCard";
@@ -77,7 +78,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
       notify({ tone: "error", message: "No encontramos el ciclo de esta toma" });
       return;
     }
-    takeDose.take(cycle.id);
+    takeDose.take(cycle.id, eventSlotIso(event));
   };
 
   const onSetupStep = (step: SetupStepKey) => {
@@ -111,6 +112,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
               events={data.todayMeds}
               takenCount={data.takenCount}
               takingCycleId={takeDose.takingCycleId ?? null}
+              takingScheduledTime={takeDose.takingScheduledTime ?? null}
               onOpenDose={setDoseSheet}
               onTake={take}
             />

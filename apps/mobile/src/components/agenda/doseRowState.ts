@@ -37,6 +37,12 @@ export function doseStateForCycle(cycle: MedicationCycle, now = Date.now()): Dos
   return fromIntake(intakeNear(cycle, slot), slot > now);
 }
 
+/** The dose's own time as ISO (the row's day and hour), so «Tomar» records that dose and not «now». */
+export function eventSlotIso(event: MedicationEvent): string | undefined {
+  const slot = new Date(`${event.dayKey}T${event.intakeTime}`);
+  return Number.isNaN(slot.getTime()) ? undefined : slot.toISOString();
+}
+
 export function doseStateForEvent(event: MedicationEvent, now = Date.now()): DoseRowState {
   const slot = new Date(`${event.dayKey}T${event.intakeTime}`).getTime();
   const future = Number.isFinite(slot) && slot > now;

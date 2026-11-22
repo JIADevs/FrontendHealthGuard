@@ -51,6 +51,8 @@ export function useDocumentForm(
     /** The AI could not read the file (the fields stay as they are). */
     aiFailed: boolean;
     classify: (file: FileSource) => Promise<void>;
+    /** The upload already in flight for this file, or a new one (edit: «Reemplazar»). */
+    uploadFile: (file: FileSource) => Promise<Upload>;
   } {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const inFlight = useRef(new Map<string, Promise<Upload>>());
@@ -118,5 +120,5 @@ export function useDocumentForm(
     [handleAIClassify],
   );
 
-  return { ...core, preUpload, startPreUpload, aiFailed, classify };
+  return { ...core, preUpload, startPreUpload, aiFailed, classify, uploadFile: upload };
 }

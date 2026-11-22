@@ -185,12 +185,7 @@ export function RootNavigator() {
           <Stack.Screen
             name="DocumentEdit"
             component={DocumentEditScreenLight}
-            options={({ route }) => ({
-              ...getDocumentsStackScreenOptions(t),
-              headerShown: true,
-              title: "Editar documento",
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Documento",
-            })}
+            options={{ ...getDocumentsStackScreenOptions(t), headerShown: false, animation: "slide_from_right" }}
           />
           <Stack.Screen
             name="Notifications"

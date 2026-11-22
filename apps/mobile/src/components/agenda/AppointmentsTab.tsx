@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, SectionList, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, SectionList } from "react-native";
 import Toast from "react-native-toast-message";
 import {
   useDeleteAppointmentMutation,
@@ -20,6 +20,8 @@ import {
   ConfirmModal,
   EmptyState,
   SearchField,
+  PullRefreshIndicator,
+  usePullRefresh,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { CalendarDays, Filter } from "lucide-react-native";
@@ -27,7 +29,6 @@ import { CalendarDays, Filter } from "lucide-react-native";
 import { useAppointmentsList } from "../../hooks/useAppointmentsList";
 import { AgendaFAB } from "./AgendaFAB";
 import { AgendaEmpty } from "./AgendaEmpty";
-import { usePullToRefresh } from "../../lib/usePullToRefresh";
 import { useAgendaNavigation } from "./AgendaNavigation";
 import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentsFilterSheet } from "./AppointmentsFilterSheet";
@@ -61,7 +62,7 @@ export function AppointmentsTab() {
   const deleteMut = useDeleteAppointmentMutation();
 
   const totalPages = appts.data?.totalPages ?? 1;
-  const pull = usePullToRefresh(appts.refetch);
+  const pull = usePullRefresh(appts.refetch, appts.dataUpdatedAt || undefined);
 
   const handleDelete = useCallback(() => {
     if (!deleteTarget) return;
@@ -116,53 +117,56 @@ export function AppointmentsTab() {
           <SkeletonCard lines={2} />
         </SkeletonGroup>
       ) : (
-        <SectionList
-          sections={sections}
-          keyExtractor={(a) => a.id}
-          contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
-          stickySectionHeadersEnabled={false}
-          refreshControl={
-            <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={t.brand.fg} />
-          }
-          renderSectionHeader={({ section }) => (
-            <Text style={[styles.sectionTitle, { color: t.text.secondary }]}>{section.title}</Text>
-          )}
-          renderItem={({ item: a }) => (
-            <AppointmentCard
-              appointment={a}
-              onPress={() => nav.openAppointment(a.id)}
-              onEdit={() => nav.editAppointment(a.id)}
-              onDelete={() => setDeleteTarget(a)}
-            />
-          )}
-          ListEmptyComponent={
-            hasActiveFilter || search ? (
-              <EmptyState
-                icon={<CalendarDays size={48} color={t.border.medium} />}
-                message="No hay citas que coincidan con los filtros."
+        <View style={{ flex: 1 }}>
+          <SectionList
+            sections={sections}
+            keyExtractor={(a) => a.id}
+            contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
+            stickySectionHeadersEnabled={false}
+            refreshControl={pull.refreshControl}
+            onScroll={pull.onScroll}
+            scrollEventThrottle={16}
+            renderSectionHeader={({ section }) => (
+              <Text style={[styles.sectionTitle, { color: t.text.secondary }]}>{section.title}</Text>
+            )}
+            renderItem={({ item: a }) => (
+              <AppointmentCard
+                appointment={a}
+                onPress={() => nav.openAppointment(a.id)}
+                onEdit={() => nav.editAppointment(a.id)}
+                onDelete={() => setDeleteTarget(a)}
               />
-            ) : (
-              <AgendaEmpty
-                pose="happy"
-                title="Aún no tienes citas"
-                description="Agrega tu próxima cita y te la recordamos antes de que llegue."
-                actionLabel="Agregar cita"
-                onAction={nav.newAppointment}
-                example={{
-                  tone: "appointment",
-                  icon: <CalendarDays size={19} strokeWidth={2.2} color={t.accent.calFg} />,
-                  title: "Control de odontología",
-                  meta: "Jue 5 nov · 10:00 a. m. · Consultorio 204",
-                }}
-              />
-            )
-          }
-          ListFooterComponent={
-            items.length > 0 ? (
-              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-            ) : undefined
-          }
-        />
+            )}
+            ListEmptyComponent={
+              hasActiveFilter || search ? (
+                <EmptyState
+                  icon={<CalendarDays size={48} color={t.border.medium} />}
+                  message="No hay citas que coincidan con los filtros."
+                />
+              ) : (
+                <AgendaEmpty
+                  pose="happy"
+                  title="Aún no tienes citas"
+                  description="Agrega tu próxima cita y te la recordamos antes de que llegue."
+                  actionLabel="Agregar cita"
+                  onAction={nav.newAppointment}
+                  example={{
+                    tone: "appointment",
+                    icon: <CalendarDays size={19} strokeWidth={2.2} color={t.accent.calFg} />,
+                    title: "Control de odontología",
+                    meta: "Jue 5 nov · 10:00 a. m. · Consultorio 204",
+                  }}
+                />
+              )
+            }
+            ListFooterComponent={
+              items.length > 0 ? (
+                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+              ) : undefined
+            }
+          />
+          <PullRefreshIndicator state={pull} />
+        </View>
       )}
 
       {deleteTarget && (

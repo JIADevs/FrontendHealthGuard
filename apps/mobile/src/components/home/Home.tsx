@@ -1,15 +1,17 @@
-import { useCallback, useState } from "react";
-import { ScrollView, RefreshControl, View, StatusBar } from "react-native";
+import { useState } from "react";
+import { ScrollView, View, StatusBar } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Document } from "@helu/api";
 import {
+  PullRefreshIndicator,
   Skeleton,
   SkeletonGroup,
   contentEntering,
   resolveCycleForDay,
   spacing,
   useAppTheme,
+  usePullRefresh,
   useSkeletonVisible,
 } from "@helu/ui";
 import type { AgendaEvent } from "@helu/ui";
@@ -65,12 +67,8 @@ export function Home({ nav }: { nav: HomeNavigation }) {
   const apptsSkeleton = useSkeletonVisible(data.loading.appointments && data.setupKnown);
   const docsSkeleton = useSkeletonVisible(data.loading.documents && data.setupKnown);
 
-  // Solo el gesto de tirar muestra el indicador; las recargas en segundo plano no (§6c).
-  const [pulling, setPulling] = useState(false);
-  const onPull = useCallback(() => {
-    setPulling(true);
-    void data.refetch().finally(() => setPulling(false));
-  }, [data]);
+  // Solo el gesto de tirar muestra la píldora; las recargas en segundo plano no (§6c).
+  const pull = usePullRefresh(data.refetch, data.updatedAt);
 
   const take = (event: MedicationEvent) => {
     const cycle = resolveCycleForDay(event.data, event.dayKey);
@@ -93,7 +91,9 @@ export function Home({ nav }: { nav: HomeNavigation }) {
       <ScrollView
         contentContainerStyle={{ paddingTop: insets.top + spacing[2], paddingHorizontal: spacing[4], paddingBottom: spacing[6], gap: 14 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={pulling} onRefresh={onPull} tintColor={t.brand.fg} />}
+        refreshControl={pull.refreshControl}
+        onScroll={pull.onScroll}
+        scrollEventThrottle={16}
       >
         <HomeHeader unread={data.unread} onNotifications={nav.notifications} />
         <HomeGreeting {...data.greeting} />
@@ -155,6 +155,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
           </Animated.View>
         )}
       </ScrollView>
+      <PullRefreshIndicator state={pull} top={insets.top} />
 
       {doseSheet ? <MedicationIntakeModal event={doseSheet} onClose={() => setDoseSheet(null)} /> : null}
       {checkInOpen ? <DailyCheckInForm onClose={() => setCheckInOpen(false)} /> : null}

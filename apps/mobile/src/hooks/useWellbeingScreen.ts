@@ -84,5 +84,6 @@ export function useWellbeingScreen() {
         hasNextPage: query.hasNextPage,
         fetchNextPage: query.fetchNextPage,
         refetch: query.refetch,
+        updatedAt: query.dataUpdatedAt || undefined,
     };
 }

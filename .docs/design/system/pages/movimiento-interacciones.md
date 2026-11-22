@@ -224,6 +224,21 @@ Demo interactiva: sección «Estados de carga» de [`../movimiento.html`](../mov
 | Datos nuevos al refrescar | Lo que ya estaba no se mueve; lo nuevo entra arriba con un resaltado de borde de 1,2 s |
 | Nunca | Texto letra por letra, rebotes al cargar, spinner a pantalla completa, contenido que empuja lo que la persona está leyendo |
 
+**Tirar para actualizar (v2.12, móvil)**
+
+Toda lista o pantalla que se puede actualizar tirando hacia abajo usa `usePullRefresh` + `PullRefreshIndicator` de `@helu/ui`. El spinner nativo de `RefreshControl` se oculta y en su lugar aparece una píldora del kit centrada en el hueco que abre el gesto.
+
+| Estado | Qué dice la píldora |
+|---|---|
+| Tirando | Flecha hacia abajo + la última actualización («Actualizado hace 3 min», «hace un momento», «hace 2 h», «ayer»). Aparece con fundido solo cuando el hueco ya le alcanza, para no tapar el contenido. Todavía no carga, así que no hay spinner |
+| Actualizando | El `Spinner` del sistema (sm, color de marca) + «Actualizando…», el mismo patrón que el botón en carga |
+| Listo | Check de éxito + «Actualizado ahora», aunque no haya cambiado nada. Queda 1 s, se desvanece en 150 ms y el contenido vuelve arriba |
+| Error | Ícono de alerta + «No pudimos actualizar» en rojo; queda 2,5 s. Los datos de antes siguen en pantalla |
+
+- Solo el gesto muestra la píldora; las recargas en segundo plano (al volver a la pantalla, después de guardar) no.
+- La hora sale del `dataUpdatedAt` de las consultas de la pantalla (la más reciente, si son varias).
+- Accesibilidad: el lector de pantalla anuncia «Actualizando», «Actualizado» o «No pudimos actualizar». Con movimiento reducido solo cambia el texto.
+
 ## 7. Motivación: cuánto y cuándo
 
 | Nivel | Cuándo | Qué se mueve |

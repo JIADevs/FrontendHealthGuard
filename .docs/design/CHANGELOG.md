@@ -359,3 +359,11 @@ En la hoja «¿Tomaste esta dosis?» la hora quedaba entre «Sí, la tomé» y �
 | Cambio | Dónde |
 |---|---|
 | «Sí, la tomé» y «No la tomé» juntos; «Se registra a las … · Cambiar hora» justo debajo (8 px), antes de la pista | `system/pages/inicio-agenda.md` · Hoja de toma; `mockups/m2-agenda.js` «Registrar toma» |
+
+## 19. v2.12 · Tirar para actualizar con la última actualización
+
+En Inicio, al tirar hacia abajo la pantalla bajaba pero no se veía nada: el spinner nativo quedaba detrás de la barra de estado y la recarga no dejaba rastro si nada cambiaba. Se compararon dos opciones en el lienzo: el spinner nativo con el texto de iOS debajo, y una píldora del kit. Se eligió la píldora, que se ve igual en iOS y Android y confirma la recarga aunque los datos no cambien. Usa el `Spinner` del sistema, sin un spinner nuevo.
+
+| Cambio | Dónde |
+|---|---|
+| Píldora de tirar para actualizar: tirando (última actualización), actualizando, listo y error. Se aplica a Inicio, Calendario, Citas, Medicamentos, Bienestar y Documentos | `system/pages/movimiento-interacciones.md` §6c; `system/MASTER.md`; `mockups/m1-acceso-inicio.js` «Inicio · actualizar» |

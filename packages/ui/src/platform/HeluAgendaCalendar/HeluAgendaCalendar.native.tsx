@@ -10,6 +10,7 @@ import { buildDayActivityMap } from "./dayActivityIndicators";
 import { IconButton } from "../../primitives/IconButton/IconButton.native";
 import Animated from "react-native-reanimated";
 import { SkeletonCard, SkeletonGroup, contentEntering, useSkeletonVisible } from "../../motion/motion.native";
+import { PullRefreshIndicator, usePullRefresh } from "../../motion/PullRefresh.native";
 import { fontSize, nativeFont, spacing } from "../../tokens/tokens";
 import { useAppTheme } from "../../tokens/ThemeProvider";
 import { DayEventList } from "./DayEventList";
@@ -49,6 +50,7 @@ export function HeluAgendaCalendar({
     // Never say «nada agendado» before knowing: skeleton until the selected day is loaded (§6c).
     const showSkeleton = useSkeletonVisible(calendar.isLoading || calendar.isDayLoading);
     const [monthSheetOpen, setMonthSheetOpen] = useState(false);
+    const pull = usePullRefresh(calendar.refetch, calendar.updatedAt);
 
     function openEvent(event: AgendaEvent) {
         if (event.type === "medication") onMedicationPress?.(event);
@@ -95,7 +97,13 @@ export function HeluAgendaCalendar({
                 </View>
             ) : (
                 <Animated.View entering={contentEntering} style={styles.list}>
-                    <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+                    <ScrollView
+                        style={styles.list}
+                        contentContainerStyle={styles.listContent}
+                        onScroll={pull.onScroll}
+                        scrollEventThrottle={16}
+                        refreshControl={pull.refreshControl}
+                    >
                         {dayEvents.length === 0 ? (
                             renderEmptyDay ? (
                                 renderEmptyDay(calendar.selectedDate)
@@ -112,6 +120,7 @@ export function HeluAgendaCalendar({
                             />
                         )}
                     </ScrollView>
+                    <PullRefreshIndicator state={pull} />
                 </Animated.View>
             )}
 

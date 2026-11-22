@@ -250,6 +250,8 @@ export function useHeluAgendaCalendar(initialDate?: string) {
         isDayLoading,
         isError: calendarQuery.isError,
         refetch: calendarQuery.refetch,
+        /** When the calendar data last arrived (pull to refresh shows it). */
+        updatedAt: calendarQuery.dataUpdatedAt || undefined,
         setViewMode,
         selectDate,
         goToToday,

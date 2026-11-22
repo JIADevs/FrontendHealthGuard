@@ -25,6 +25,7 @@ import {
 import type { ThemeContextValue, AgendaEvent, BottomSheetHandle } from "@helu/ui";
 import { useConfirmIntakeMutation, useRecordIntakeMutation } from "@helu/api/hooks";
 import { isApiError, type NotTakenReason } from "@helu/api";
+import { Mascot } from "../brand";
 
 type MedicationEvent = Extract<AgendaEvent, { type: "medication" }>;
 
@@ -191,6 +192,10 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
                             <Text style={styles.link}>Cambiar hora</Text>
                         </Pressable>
                     </View>
+                    <View style={styles.hint}>
+                        <Mascot pose="point" size={32} />
+                        <Text style={styles.hintText}>Cada toma a tiempo suma a tu meta semanal.</Text>
+                    </View>
                 </View>
             ) : step === "time" ? (
                 <View style={styles.actions}>
@@ -277,6 +282,24 @@ function makeStyles(t: ThemeContextValue) {
             color: t.text.secondary,
         },
         center: { textAlign: "center" },
+        // Kit `hint`: brand tint, radius 16, mascot at 32 px; 16 px from the time line like the mockup's sheet gap.
+        hint: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            marginTop: spacing[2],
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            borderRadius: 16,
+            backgroundColor: t.brand.tint,
+        },
+        hintText: {
+            flex: 1,
+            fontSize: 13,
+            lineHeight: 18,
+            fontFamily: nativeFont("body", 500),
+            color: t.brand.text,
+        },
         link: {
             fontSize: fontSize.sm,
             fontFamily: nativeFont("heading", 800),

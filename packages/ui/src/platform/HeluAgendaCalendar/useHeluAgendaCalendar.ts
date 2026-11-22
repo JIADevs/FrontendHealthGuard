@@ -150,6 +150,18 @@ export function useHeluAgendaCalendar(initialDate?: string) {
         setRangeEnd(next.end);
     }, [viewMode, selectedDate, rangeStart, rangeEnd]);
 
+    // Which dates the data on screen really covers. While a wider range loads, `keepPreviousData`
+    // shows the previous range: a day outside it is not empty, it is not here yet.
+    const [loadedRange, setLoadedRange] = useState<{ start: string; end: string } | null>(null);
+    const freshData = Boolean(calendarQuery.data) && !calendarQuery.isPlaceholderData;
+    useEffect(() => {
+        if (freshData) setLoadedRange({ start: fetchRange.start, end: fetchRange.end });
+    }, [freshData, fetchRange.start, fetchRange.end]);
+    const covers = (range: { start: string; end: string } | null) =>
+        range !== null && selectedDate >= range.start && selectedDate <= range.end;
+    const dayCovered = (freshData && covers(fetchRange)) || covers(loadedRange);
+    const isDayLoading = !dayCovered && !calendarQuery.isError;
+
     const dayActivity = useMemo(
         () => buildDayActivityMap(calendarQuery.data ?? []),
         [calendarQuery.data],
@@ -234,6 +246,8 @@ export function useHeluAgendaCalendar(initialDate?: string) {
         dayActivity,
         headerLabel,
         isLoading: isInitialLoading,
+        /** The selected day's events have not arrived yet (the data on screen is another range). */
+        isDayLoading,
         isError: calendarQuery.isError,
         refetch: calendarQuery.refetch,
         setViewMode,

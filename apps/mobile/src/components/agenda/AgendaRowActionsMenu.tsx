@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { View, Modal, Pressable, TouchableOpacity, StyleSheet, Text } from "react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { spacing, radii, fontSize, fontWeight, shadows, useAppTheme } from "@helu/ui";
@@ -30,6 +30,10 @@ export function AgendaRowActionsMenu({
 }: AgendaRowActionsMenuProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
+  // Rows clear their anchor when the menu closes; keep the last one so the menu fades out where it
+  // was instead of jumping to the top-left corner during the fade.
+  const anchor = useRef({ top, left });
+  if (visible) anchor.current = { top, left };
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -41,7 +45,7 @@ export function AgendaRowActionsMenu({
           accessibilityLabel="Cerrar menú"
         />
         <View
-          style={[styles.menu, { top, left: Math.max(spacing[3], left) }]}
+          style={[styles.menu, { top: anchor.current.top, left: Math.max(spacing[3], anchor.current.left) }]}
           accessibilityViewIsModal
         >
           {actions.map((action) => (

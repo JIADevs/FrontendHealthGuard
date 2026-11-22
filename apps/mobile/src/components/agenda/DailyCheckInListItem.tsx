@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ChevronRight } from "lucide-react-native";
-import { PressableScale, formatClock, nativeFont, spacing, useAppTheme } from "@helu/ui";
+import { PressableScale, Skeleton, formatClock, nativeFont, spacing, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import type { DailyCheckIn } from "@helu/api";
 import { MOOD_CONFIG } from "./moodConfig";
@@ -77,4 +77,20 @@ function makeStyles(t: ThemeContextValue) {
         moodLabel: { fontSize: 15, fontFamily: nativeFont("heading", 800), color: t.text.primary },
         meta: { fontSize: 13, fontFamily: nativeFont("body", 400), color: t.text.secondary },
     });
+}
+
+/** A check-in row while it loads (§6c): same compact card, the round 40 px mood face, two lines and «›». */
+export function DailyCheckInListItemSkeleton() {
+    const t = useAppTheme();
+    const styles = useMemo(() => makeStyles(t), [t]);
+    return (
+        <View style={styles.card}>
+            <Skeleton width={40} height={40} radius={20} />
+            <View style={[styles.body, { gap: 6 }]}>
+                <Skeleton width="30%" height={15} />
+                <Skeleton width="22%" height={13} />
+            </View>
+            <Skeleton width={8} height={14} radius={2} />
+        </View>
+    );
 }

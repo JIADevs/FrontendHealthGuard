@@ -24,6 +24,7 @@ import {
 import { useAgendaTaskByIdQuery, useAgendaTaskFormCore, useBackpacksQuery, useDocumentsQuery } from "@helu/api/hooks";
 import type { AgendaTask } from "@helu/api";
 import { ScreenHeader } from "../ScreenHeader";
+import { SkeletonChips, SkeletonField } from "../SkeletonPieces";
 import { notify } from "../../lib/notify";
 import { haptics } from "../../lib/haptics";
 import { FormCard } from "./FormCard";
@@ -59,12 +60,25 @@ function EditGate({ id, ...rest }: AgendaTaskFormProps & { id: string }) {
       <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["top"]}>
         <ScreenHeader title="Editar tarea" />
         {showSkeleton ? (
-          <SkeletonGroup label="Cargando la tarea" style={{ padding: spacing[4], gap: spacing[3] }}>
-            <Skeleton width="40%" height={16} />
-            <Skeleton height={48} radius={radii.input} />
-            <Skeleton height={96} radius={radii.input} />
-            <Skeleton height={48} radius={radii.input} />
-          </SkeletonGroup>
+          <>
+            {/* §6c: the same cards and labels as «Editar tarea»; only the values are blocks. */}
+            <SkeletonGroup label="Cargando la tarea" style={{ flex: 1, overflow: "hidden", padding: spacing[4], gap: spacing[4] }}>
+              <FormCard title="Tarea">
+                <SkeletonField label="Título" />
+                <SkeletonField label="Descripción (opcional)" height={84} />
+                <Skeleton height={76} radius={radii.input} />
+              </FormCard>
+              <FormCard title="Avisarme antes">
+                <SkeletonChips widths={[84, 72, 92]} />
+              </FormCard>
+              <FormCard title="Para llevar" hint="(opcional)">
+                {/* Fixed rows, not server data: real from the start. */}
+                <AddRow tone="document" icon={FileText} label="Agregar documentos" onPress={() => undefined} />
+                <AddRow tone="backpack" icon={Backpack} label="Agregar mochilas" onPress={() => undefined} />
+              </FormCard>
+            </SkeletonGroup>
+            <BottomActionBar primary={{ label: "Guardar cambios", onPress: () => undefined, disabled: true }} />
+          </>
         ) : (
           <Text style={{ padding: spacing[6], textAlign: "center", color: t.text.secondary }}>
             No encontramos esta tarea. Puede que la hayan eliminado.

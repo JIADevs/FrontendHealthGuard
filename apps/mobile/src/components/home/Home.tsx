@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, View, StatusBar } from "react-native";
+import { ScrollView, StatusBar, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Document } from "@helu/api";
@@ -8,6 +8,7 @@ import {
   Skeleton,
   SkeletonGroup,
   contentEntering,
+  nativeFont,
   resolveCycleForDay,
   spacing,
   useAppTheme,
@@ -22,6 +23,7 @@ import { eventSlotIso } from "../agenda/doseRowState";
 import { HomeHeader } from "./HomeHeader";
 import { HomeGreeting, homeBlockLayout } from "./HomeGreeting";
 import { HomeCard } from "./HomeCard";
+import { SeeAllLink } from "./SeeAllLink";
 import { TodayMedsCard } from "./TodayMedsCard";
 import { StreakCard } from "./StreakCard";
 import { QuickActions } from "./QuickActions";
@@ -140,7 +142,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
         </Animated.View>
 
         {apptsSkeleton ? (
-          <ListSkeleton label="Cargando próximas citas" />
+          <ListSkeleton title="Próximas citas" seeAll="Ver todas" label="Cargando próximas citas" />
         ) : hideEmptyLists && data.upcomingAppointments.length === 0 ? null : (
           <Animated.View entering={contentEntering} layout={homeBlockLayout}>
             <UpcomingAppointmentsCard appointments={data.upcomingAppointments} onOpen={nav.openAppointment} onSeeAll={nav.appointments} />
@@ -148,7 +150,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
         )}
 
         {docsSkeleton ? (
-          <ListSkeleton label="Cargando documentos recientes" />
+          <ListSkeleton title="Documentos recientes" seeAll="Ver todos" label="Cargando documentos recientes" />
         ) : hideEmptyLists && data.recentDocuments.length === 0 ? null : (
           <Animated.View entering={contentEntering} layout={homeBlockLayout}>
             <RecentDocumentsCard documents={data.recentDocuments} onOpen={nav.openDocument} onSeeAll={nav.documents} />
@@ -165,19 +167,29 @@ export function Home({ nav }: { nav: HomeNavigation }) {
 
 // ─── Esqueletos (§6c, m8 · Inicio) ──────────────────────────────────────────
 
-/** Medicamentos de hoy: título real, filas de esqueleto con el bloque del botón «Tomar». */
+/**
+ * Medicamentos de hoy: título real y el bloque del chip «1 de 2»; filas con las medidas de
+ * `MedicationDoseListItem` (12 px arriba y abajo, divisor entre filas) y el bloque de su estado.
+ */
 function MedsSkeleton() {
+  const t = useAppTheme();
   return (
-    <HomeCard title="Medicamentos de hoy">
-      <SkeletonGroup label="Cargando medicamentos de hoy" style={{ gap: spacing[3] }}>
-        {[0, 1, 2].map((i) => (
-          <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
+    <HomeCard title="Medicamentos de hoy" right={<Skeleton width={52} height={26} radius={13} />}>
+      <SkeletonGroup label="Cargando medicamentos de hoy">
+        {[0, 1].map((i) => (
+          <View
+            key={i}
+            style={[
+              { flexDirection: "row", alignItems: "center", gap: spacing[3], paddingVertical: spacing[3] },
+              i === 0 && { borderBottomWidth: 1, borderBottomColor: t.border.light },
+            ]}
+          >
             <Skeleton width={40} height={40} radius={13} />
             <View style={{ flex: 1, gap: 6 }}>
-              <Skeleton width="60%" height={13} />
-              <Skeleton width="40%" height={11} />
+              <Skeleton width="45%" height={14} />
+              <Skeleton width="55%" height={12} />
             </View>
-            <Skeleton width={92} height={48} radius={14} />
+            <Skeleton width={84} height={i === 0 ? 44 : 30} radius={i === 0 ? 14 : 15} />
           </View>
         ))}
       </SkeletonGroup>
@@ -186,6 +198,7 @@ function MedsSkeleton() {
 }
 
 function StreakSkeleton() {
+  const t = useAppTheme();
   return (
     <HomeCard>
       <SkeletonGroup label="Cargando tu racha" style={{ gap: spacing[4] }}>
@@ -197,8 +210,12 @@ function StreakSkeleton() {
           </View>
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} width={34} height={34} radius={17} />
+          {/* The week letters are fixed (Monday to Sunday, like the card): real from the start. */}
+          {["L", "M", "M", "J", "V", "S", "D"].map((letter, i) => (
+            <View key={i} style={{ alignItems: "center", gap: 6 }}>
+              <Skeleton width={34} height={34} radius={17} />
+              <Text style={{ fontSize: 13, fontFamily: nativeFont("heading", 800), color: t.text.secondary }}>{letter}</Text>
+            </View>
           ))}
         </View>
         <Skeleton height={48} radius={14} />
@@ -207,13 +224,13 @@ function StreakSkeleton() {
   );
 }
 
-function ListSkeleton({ label }: { label: string }) {
+/** Próximas citas / Documentos recientes: título y «Ver todas» reales (no vienen del servidor), filas de `HomeRow`. */
+function ListSkeleton({ title, seeAll, label }: { title: string; seeAll: string; label: string }) {
   return (
-    <HomeCard>
+    <HomeCard title={title} right={<SeeAllLink label={seeAll} onPress={() => undefined} />}>
       <SkeletonGroup label={label} style={{ gap: spacing[3] }}>
-        <Skeleton width="40%" height={15} />
         {[0, 1].map((i) => (
-          <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
+          <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: spacing[3], minHeight: 44 }}>
             <Skeleton width={40} height={40} radius={13} />
             <View style={{ flex: 1, gap: 6 }}>
               <Skeleton width="65%" height={13} />

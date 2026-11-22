@@ -17,9 +17,11 @@ import {
   radii,
   spacing,
   useAppTheme,
+  useSkeletonVisible,
   type ThemeContextValue,
 } from "@helu/ui";
 import { ScreenHeader } from "../ScreenHeader";
+import { SkeletonField } from "../SkeletonPieces";
 import type { SubscribeBeforeLeave } from "../agenda/AppointmentForm";
 import { useDocumentForm, type FileSource } from "../../hooks/useDocumentForm";
 import { notify } from "../../lib/notify";
@@ -64,6 +66,16 @@ export function DocumentEdit({ id, onClose, subscribeBeforeLeave }: DocumentEdit
   const form = useDocumentForm({ skipNavigateBackOnUpload: true });
   const treatments = useTreatmentsQuery(1, 100).data?.items ?? [];
   const isLink = doc?.kind === "LINK";
+  const showSkeleton = useSkeletonVisible(docQuery.isLoading);
+  // The row the user tapped is usually in a cached list: it says portal or file, so the skeleton
+  // draws the card that arrives (§6c).
+  const cached = useMemo(() => {
+    for (const [, data] of queryClient.getQueriesData<{ items?: Document[] }>({ queryKey: ["documents"] })) {
+      const found = data?.items?.find((d) => d.id === id);
+      if (found) return found;
+    }
+    return undefined;
+  }, [queryClient, id]);
 
   const [date, setDate] = useState("");
   const [treatmentId, setTreatmentId] = useState<string | null>(null);
@@ -229,12 +241,36 @@ export function DocumentEdit({ id, onClose, subscribeBeforeLeave }: DocumentEdit
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <ScreenHeader title="Editar documento" onBack={() => (dirty ? setAskDiscard(true) : leave())} />
-      {!doc ? (
-        docQuery.isLoading ? (
-          <SkeletonGroup label="Cargando el documento" style={styles.content}>
-            <Skeleton height={76} radius={18} />
-            <Skeleton height={320} radius={18} />
-          </SkeletonGroup>
+      {showSkeleton || !doc ? (
+        showSkeleton || docQuery.isLoading ? (
+          <>
+            <SkeletonGroup label="Cargando el documento" style={[styles.content, { flex: 1 }]}>
+              {cached?.kind === "LINK" ? (
+                <View style={styles.card}>
+                  <Text style={styles.lbl}>Portal de resultados</Text>
+                  <SkeletonField label="URL del portal" />
+                  <SkeletonField label="Usuario o código de acceso (opcional)" />
+                </View>
+              ) : (
+                <View style={styles.group}>
+                  <Text style={styles.lbl}>Adjunto actual</Text>
+                  <Skeleton height={76} radius={radii.card} />
+                </View>
+              )}
+              <View style={[styles.card, { gap: spacing[4] }]}>
+                <Text style={[styles.h3, { fontSize: 16 }]}>Datos del documento</Text>
+                <SkeletonField label="Título" />
+                <SkeletonField label="Tipo (opcional)" />
+                <SkeletonField label="Fecha (opcional)" />
+                <View style={styles.group}>
+                  <Text style={styles.lbl}>Etiquetas (opcional)</Text>
+                  <Skeleton width={96} height={44} radius={12} />
+                </View>
+                <SkeletonField label="Descripción (opcional)" height={84} />
+              </View>
+            </SkeletonGroup>
+            <BottomActionBar primary={{ label: "Guardar cambios", onPress: () => undefined, disabled: true }} />
+          </>
         ) : (
           <View style={styles.centered}>
             <Text style={styles.h3}>No encontramos este documento</Text>

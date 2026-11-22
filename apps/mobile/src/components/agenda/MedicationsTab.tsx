@@ -12,7 +12,6 @@ import {
   cardContentStyle,
   Skeleton,
   SkeletonGroup,
-  SkeletonCard,
   useSkeletonVisible,
   ConfirmModal,
   Chip,
@@ -28,7 +27,7 @@ import { useMedicationsList } from "../../hooks/useMedicationsList";
 import { AgendaEmpty } from "./AgendaEmpty";
 import { AgendaFAB } from "./AgendaFAB";
 import { useAgendaNavigation } from "./AgendaNavigation";
-import { MedicationCard } from "./MedicationCard";
+import { MedicationCard, MedicationCardSkeleton } from "./MedicationCard";
 import { MedicationsFilterSheet } from "./MedicationsFilterSheet";
 import { useTakeDose } from "./useTakeDose";
 import { currentCycleOf, isMedicationActive } from "./medicationCycles";
@@ -40,6 +39,10 @@ type MedicationSection = { title: string; data: Medication[] };
  * one list grouped into «Activos» and «Finalizados». Cycles live in the medication detail
  * (ACTIVOS / ANTERIORES), so the old «Medicamentos / Ciclos» sub-tabs are gone.
  */
+/** Measured on the real list: title 12 px from the toolbar and 29 px (center) to its first card; 46 px after a card. */
+const SECTION_TITLE_SKELETON = { marginTop: spacing[3] + 1, marginBottom: spacing[3] };
+const NEXT_SECTION_TITLE_SKELETON = { marginTop: 29, marginBottom: spacing[3] };
+
 export function MedicationsTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -117,10 +120,12 @@ export function MedicationsTab() {
       {showSkeleton ? (
         // §6c: buscador y filtros reales; el grupo y las tarjetas, con el bloque de su botón.
         <SkeletonGroup label="Cargando medicamentos" style={[cardContentStyle, { gap: spacing[3] }]}>
-          <Skeleton width={70} height={11} />
-          <SkeletonCard lines={2} action />
-          <SkeletonCard lines={2} action />
-          <SkeletonCard lines={2} action />
+          {/* Group titles sit like `styles.sectionTitle`: 12 px above, 8 px to the first card. */}
+          <Skeleton width={70} height={11} style={SECTION_TITLE_SKELETON} />
+          <MedicationCardSkeleton />
+          <MedicationCardSkeleton />
+          <Skeleton width={90} height={11} style={NEXT_SECTION_TITLE_SKELETON} />
+          <MedicationCardSkeleton active={false} />
         </SkeletonGroup>
       ) : (
         <View style={{ flex: 1 }}>

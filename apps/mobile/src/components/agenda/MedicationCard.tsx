@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, useCallback, type ComponentRef } from "react
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Pill, Check, MoreVertical, Trash2 } from "lucide-react-native";
 import type { Medication } from "@helu/api";
-import { Button, Card, Chip, FadeThrough, spacing, fontSize, nativeFont, useAppTheme } from "@helu/ui";
+import { Button, Card, Chip, FadeThrough, Skeleton, radii, spacing, fontSize, nativeFont, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { AgendaRowActionsMenu, measureAgendaRowActionsMenuLeft } from "./AgendaRowActionsMenu";
 import { formatDose, formatFrequency } from "./medicationFormat";
@@ -169,4 +169,47 @@ function makeStyles(t: ThemeContextValue) {
     // MASTER §6: 44 × 44 visibles
     menuButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   });
+}
+
+/**
+ * A `MedicationCard` while it loads (§6c): same card, 40 px tile, name and two lines of dose, the
+ * status chip and «⋯», and — for an active one — the cycle bar with «Próxima toma · Ciclo».
+ */
+export function MedicationCardSkeleton({ active = true }: { active?: boolean }) {
+  const t = useAppTheme();
+  return (
+    <View
+      style={{
+        backgroundColor: t.surface.bgCard,
+        borderRadius: radii.card,
+        borderWidth: 1,
+        borderBottomWidth: 4,
+        borderColor: t.border.default,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: spacing[3], padding: spacing[4] }}>
+        <Skeleton width={40} height={40} radius={13} />
+        <View style={{ flex: 1, gap: 6, paddingTop: 2 }}>
+          <Skeleton width="60%" height={16} />
+          <Skeleton width="80%" height={13} />
+          <Skeleton width="30%" height={13} />
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+          <Skeleton width={88} height={32} radius={16} />
+          <View style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
+            <Skeleton width={4} height={16} radius={2} />
+          </View>
+        </View>
+      </View>
+      {active ? (
+        <View style={{ gap: spacing[2], paddingHorizontal: spacing[4], paddingBottom: spacing[3] }}>
+          <Skeleton height={8} radius={4} />
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <Skeleton width="45%" height={13} />
+            <Skeleton width="28%" height={13} />
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
 }

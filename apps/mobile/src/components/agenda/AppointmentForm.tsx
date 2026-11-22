@@ -47,6 +47,8 @@ import { SelectField } from "../SelectField";
 import { AddRow, ChipTag, PickerModal } from "./LinkPicker";
 import { DoctorSheet } from "./DoctorSheet";
 import { ScreenHeader } from "../ScreenHeader";
+import { SkeletonField, SkeletonFieldRow } from "../SkeletonPieces";
+import { FormCard, FormLabel } from "./FormCard";
 import { haptics } from "../../lib/haptics";
 
 
@@ -85,6 +87,9 @@ export function AppointmentForm({ id, ...nav }: AppointmentFormProps) {
   return <AppointmentFormBody appointment={null} nav={nav} />;
 }
 
+/** Height of the kit segmented control (44 px options + 4 px padding), for Tipo de consulta and Modalidad. */
+const SEGMENTED_HEIGHT = 52;
+
 function AppointmentFormEditor({ id, nav }: { id: string; nav: AppointmentFormNav }) {
   const t = useAppTheme();
   const { data: appointment, isLoading } = useAppointmentByIdQuery(id);
@@ -95,23 +100,33 @@ function AppointmentFormEditor({ id, nav }: { id: string; nav: AppointmentFormNa
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: t.surface.bg }} edges={["top", "bottom"]}>
         <ScreenHeader title="Editar cita" />
-        <SkeletonGroup label="Cargando la cita" style={{ padding: spacing[4], gap: spacing[4] }}>
-          {[0, 1].map((i) => (
-            <View
-              key={i}
-              style={{
-                padding: spacing[4], gap: spacing[3], borderRadius: 18, borderWidth: 1, borderBottomWidth: 4,
-                borderColor: t.border.default, backgroundColor: t.surface.bgCard,
-              }}
-            >
-              <Skeleton width="40%" height={16} />
-              <Skeleton width="25%" height={12} />
-              <Skeleton height={48} radius={14} />
-              <Skeleton width="25%" height={12} />
-              <Skeleton height={48} radius={14} />
+        <SkeletonGroup label="Cargando la cita" style={{ flex: 1, overflow: "hidden", padding: spacing[4], gap: spacing[4] }}>
+          <FormCard title="Fecha y hora">
+            <SkeletonFieldRow>
+              <View style={{ flex: 1 }}>
+                <SkeletonField label="Fecha" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <SkeletonField label="Hora" />
+              </View>
+            </SkeletonFieldRow>
+            <SkeletonField label="Duración" />
+          </FormCard>
+          <FormCard title="Profesional">
+            <View style={{ gap: 6 }}>
+              <FormLabel>Tipo de consulta</FormLabel>
+              <Skeleton height={SEGMENTED_HEIGHT} radius={14} />
             </View>
-          ))}
+            <SkeletonField label="Especialidad" />
+            <SkeletonField label="Profesional de salud" />
+            <SkeletonField label="Nombre de la cita (opcional)" />
+          </FormCard>
+          <FormCard title="Modalidad y lugar">
+            <Skeleton height={SEGMENTED_HEIGHT} radius={14} />
+            <SkeletonField label="Lugar" />
+          </FormCard>
         </SkeletonGroup>
+        <BottomActionBar primary={{ label: "Guardar cambios", onPress: () => undefined, disabled: true }} />
       </SafeAreaView>
     );
   }

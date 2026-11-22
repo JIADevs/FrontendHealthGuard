@@ -29,8 +29,10 @@ import {
   useTreatmentsQuery,
   useUpdateMedicationCycleMutation,
 } from "@helu/api/hooks";
-import type { MedicationCycle, MedicationIntake } from "@helu/api";
+import type { Medication, MedicationCycle, MedicationIntake } from "@helu/api";
+import { useQueryClient } from "@tanstack/react-query";
 import { ScreenHeader } from "../ScreenHeader";
+import { SkeletonHeaderAction } from "../SkeletonPieces";
 import { ProgressRing } from "../home/ProgressRing";
 import { notify } from "../../lib/notify";
 import { haptics } from "../../lib/haptics";
@@ -91,24 +93,55 @@ export function CycleDetail({ cycleId, medicationId, medicationName, onEdit, onB
   const [confirm, setConfirm] = useState<"finish" | "delete" | null>(null);
 
   const cycle = med?.cycles.find((c: MedicationCycle) => c.id === cycleId);
+  // The medication list in cache already has this cycle: its rows and intakes give the skeleton
+  // the shape of what arrives (§6c).
+  const queryClient = useQueryClient();
+  const hint = useMemo(() => {
+    for (const [, data] of queryClient.getQueriesData<{ items?: Medication[] }>({ queryKey: ["medications"] })) {
+      const found = data?.items?.find((m) => m.id === medicationId)?.cycles.find((c) => c.id === cycleId);
+      if (found) return found;
+    }
+    return undefined;
+  }, [queryClient, medicationId, cycleId]);
 
   if (showSkeleton) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <ScreenHeader title="Ciclo" subtitle={medicationName} />
+        <ScreenHeader title="Ciclo" subtitle={medicationName} right={<SkeletonHeaderAction />} />
         <SkeletonGroup label="Cargando el ciclo" style={styles.content}>
           <View style={[styles.card, styles.summaryRow]}>
             <Skeleton width={76} height={76} radius={38} />
-            <View style={{ flex: 1, gap: 8 }}>
-              <Skeleton width={72} height={24} radius={12} />
-              <Skeleton width="60%" height={16} />
-              <Skeleton width="50%" height={13} />
+            <View style={[styles.summaryCopy, { gap: 8 }]}>
+              <Skeleton width={72} height={26} radius={13} />
+              <Skeleton width="60%" height={18} />
+              <Skeleton width="70%" height={14} />
             </View>
           </View>
           <View style={styles.card}>
-            {[0, 1, 2, 3].map((i) => (
-              <Skeleton key={i} height={14} />
+            {skeletonRowLabels(hint).map((label, i) => (
+              <Fragment key={label}>
+                {i > 0 ? <View style={styles.divider} /> : null}
+                <View style={styles.dataRow}>
+                  <Text style={styles.dataLabel}>{label}</Text>
+                  <Skeleton width={96} height={15} />
+                </View>
+              </Fragment>
             ))}
+          </View>
+          <Text style={styles.h3}>Historial de tomas</Text>
+          <View style={styles.card}>
+            {Array.from({ length: Math.min(Math.max(hint?.intakes?.length ?? 3, 1), 3) }, (_, i) => (
+              <View key={i} style={styles.intakeRow}>
+                <Skeleton width={40} height={40} radius={20} />
+                <View style={[styles.summaryCopy, { gap: 6 }]}>
+                  <Skeleton width="45%" height={15} />
+                  <Skeleton width="25%" height={13} />
+                </View>
+              </View>
+            ))}
+          </View>
+          <View style={styles.dangerZone}>
+            <Skeleton width={120} height={16} />
           </View>
         </SkeletonGroup>
       </SafeAreaView>
@@ -300,6 +333,20 @@ function IntakeRow({ intake }: { intake: MedicationIntake }) {
       </View>
     </View>
   );
+}
+
+/** The data rows the cycle will show, from the cached cycle (or the ones every cycle has). */
+function skeletonRowLabels(cycle?: MedicationCycle): string[] {
+  if (!cycle) return ["Dosis", "Frecuencia", "Recordatorio"];
+  return [
+    "Dosis",
+    "Frecuencia",
+    ...(cycle.concentration ? ["Concentración"] : []),
+    ...(cycle.reason ? ["Razón / indicación"] : []),
+    ...(cycle.treatmentIds?.length ? ["Tratamiento"] : []),
+    "Recordatorio",
+    ...(cycle.price != null ? ["Precio"] : []),
+  ];
 }
 
 function makeStyles(t: ThemeContextValue) {

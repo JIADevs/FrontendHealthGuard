@@ -23,6 +23,7 @@ import {
 } from "@helu/ui";
 import { useAgendaTaskByIdQuery, useBackpacksByIdsQuery, useDocumentsByIdsQuery } from "@helu/api/hooks";
 import { ScreenHeader } from "../ScreenHeader";
+import { SkeletonHeaderAction } from "../SkeletonPieces";
 import { CompleteTaskSheet } from "./CompleteTaskSheet";
 import { RescheduleTaskSheet } from "./RescheduleTaskSheet";
 
@@ -78,21 +79,31 @@ export function AgendaTaskDetail({ id, intent, onEdit, onBack }: AgendaTaskDetai
   if (showSkeleton) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <ScreenHeader title="Tarea" />
+        <ScreenHeader title="Tarea" right={<SkeletonHeaderAction />} />
+        {/* §6c: summary with its status chip, the description, the «Aviso» row and the two actions. */}
         <SkeletonGroup label="Cargando la tarea" style={styles.content}>
           <View style={styles.card}>
             <View style={styles.summaryRow}>
               <Skeleton width={52} height={52} radius={16} />
               <View style={{ flex: 1, gap: 8 }}>
                 <Skeleton width="70%" height={18} />
-                <Skeleton width="40%" height={13} />
+                <Skeleton width="45%" height={13} />
               </View>
+              <Skeleton width={84} height={26} radius={13} />
             </View>
             <Skeleton width="80%" height={13} />
-            <Skeleton width="55%" height={13} />
+            <View style={styles.row}>
+              <Skeleton width={40} height={40} radius={13} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton width="30%" height={14} />
+                <Skeleton width="50%" height={12} />
+              </View>
+            </View>
           </View>
-          <Skeleton height={52} radius={14} />
-          <Skeleton height={52} radius={14} />
+          <View style={styles.actions}>
+            <Skeleton height={52} radius={14} />
+            <Skeleton height={52} radius={14} />
+          </View>
         </SkeletonGroup>
       </SafeAreaView>
     );

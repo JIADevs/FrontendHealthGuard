@@ -23,8 +23,10 @@ import {
   type ThemeContextValue,
 } from "@helu/ui";
 import { useMedicationByIdQuery, useUpdateMedicationMutation } from "@helu/api/hooks";
-import type { MedicationCycle } from "@helu/api";
+import type { Medication, MedicationCycle } from "@helu/api";
+import { useQueryClient } from "@tanstack/react-query";
 import { ScreenHeader } from "../ScreenHeader";
+import { SkeletonHeaderAction } from "../SkeletonPieces";
 import { notify } from "../../lib/notify";
 import { PendingDoseButton } from "./PendingDoseButton";
 import { CycleProgressBar } from "./CycleProgressBar";
@@ -65,6 +67,16 @@ export function MedicationDetail({ id, onBack, onAddCycle, onOpenCycle }: Medica
   const { data: med, isLoading } = useMedicationByIdQuery(id);
   const showSkeleton = useSkeletonVisible(isLoading);
   const [renaming, setRenaming] = useState(false);
+  // The card the user tapped is in a cached list: it says how many cycles and whether «Tomar» shows,
+  // so the skeleton has the shape of what arrives (§6c).
+  const queryClient = useQueryClient();
+  const hint = useMemo(() => {
+    for (const [, data] of queryClient.getQueriesData<{ items?: Medication[] }>({ queryKey: ["medications"] })) {
+      const found = data?.items?.find((m) => m.id === id);
+      if (found) return found;
+    }
+    return undefined;
+  }, [queryClient, id]);
 
   const sorted = useMemo(() => newestFirst(med?.cycles ?? []), [med?.cycles]);
   const active = sorted.filter((c) => isCycleActive(c));
@@ -74,25 +86,8 @@ export function MedicationDetail({ id, onBack, onAddCycle, onOpenCycle }: Medica
   if (showSkeleton) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <ScreenHeader title="Medicamento" />
-        <SkeletonGroup label="Cargando el medicamento" style={styles.content}>
-          <View style={styles.card}>
-            <View style={styles.summaryRow}>
-              <Skeleton width={52} height={52} radius={16} />
-              <View style={{ flex: 1, gap: 8 }}>
-                <Skeleton width="60%" height={18} />
-                <Skeleton width="45%" height={13} />
-              </View>
-            </View>
-            <Skeleton height={52} radius={14} />
-          </View>
-          <Skeleton width={80} height={11} />
-          <View style={styles.card}>
-            <Skeleton width="55%" height={15} />
-            <Skeleton width="40%" height={13} />
-            <Skeleton height={8} radius={4} />
-          </View>
-        </SkeletonGroup>
+        <ScreenHeader title="Medicamento" right={<SkeletonHeaderAction />} />
+        <MedicationDetailSkeleton hint={hint} />
       </SafeAreaView>
     );
   }
@@ -299,4 +294,70 @@ function makeStyles(t: ThemeContextValue) {
     rowTitle: { fontSize: 15, lineHeight: 20, fontFamily: nativeFont("heading", 800), color: t.text.primary },
     meta: { fontSize: fontSize.sm, lineHeight: 18, fontFamily: nativeFont("body", 400), color: t.text.secondary },
   });
+}
+
+/** The detail while it loads: same cards, as many cycles as the cached card says, «Nuevo ciclo». */
+function MedicationDetailSkeleton({ hint }: { hint?: Medication }) {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const cycles = hint?.cycles ?? [];
+  const activeCount = hint ? cycles.filter((c) => isCycleActive(c)).length : 1;
+  const finishedCount = hint ? cycles.length - activeCount : 0;
+  const doseCycle = hint && activeCount > 0 ? currentCycleOf(hint) : undefined;
+  const doseKind = doseCycle ? doseStateForCycle(doseCycle).kind : undefined;
+  const showTake = Boolean(doseCycle?.nextIntakeTime) && (doseKind === "pending" || doseKind === "taken");
+  return (
+    <SkeletonGroup label="Cargando el medicamento" style={styles.content}>
+      <View style={styles.card}>
+        <View style={styles.summaryRow}>
+          <Skeleton width={52} height={52} radius={16} />
+          <View style={{ flex: 1, gap: 8 }}>
+            <Skeleton width="60%" height={20} />
+            <Skeleton width="55%" height={13} />
+          </View>
+        </View>
+        {showTake ? <Skeleton height={52} radius={14} /> : null}
+      </View>
+      {activeCount > 0 ? (
+        <View style={styles.group}>
+          <Skeleton width={60} height={11} />
+          {Array.from({ length: activeCount }, (_, i) => (
+            <CycleCardSkeleton key={i} active />
+          ))}
+        </View>
+      ) : null}
+      {finishedCount > 0 ? (
+        <View style={styles.group}>
+          <Skeleton width={80} height={11} />
+          {Array.from({ length: Math.min(finishedCount, 3) }, (_, i) => (
+            <CycleCardSkeleton key={i} active={false} />
+          ))}
+        </View>
+      ) : null}
+      <Skeleton height={48} radius={14} />
+    </SkeletonGroup>
+  );
+}
+
+function CycleCardSkeleton({ active }: { active: boolean }) {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  return (
+    <View style={[styles.card, styles.cardTight]}>
+      <View style={styles.cycleRow}>
+        {/* Blocks as tall as the text lines (20 and 18 px) so the card keeps its real height. */}
+        <View style={[styles.copy, { gap: 6 }]}>
+          <Skeleton width="65%" height={18} />
+          <Skeleton width="45%" height={14} />
+        </View>
+        <Skeleton width={72} height={26} radius={13} />
+      </View>
+      {active ? (
+        <>
+          <Skeleton height={8} radius={4} />
+          <Skeleton width="25%" height={16} />
+        </>
+      ) : null}
+    </View>
+  );
 }

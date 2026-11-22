@@ -12,6 +12,7 @@ export { ThemeProvider, useAppTheme } from './tokens/ThemeProvider';
 export type { ThemeContextValue } from './tokens/ThemeProvider';
 // Movimiento v2 (solo native; en web el movimiento va por CSS con los mismos tokens)
 export * from './motion/motion.native';
+export * from './motion/PullRefresh.native';
 export * from './tokens/cssVariables';
 
 // ─── Utils ───────────────────────────────────────────────────────────────────

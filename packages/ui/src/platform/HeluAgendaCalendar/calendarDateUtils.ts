@@ -44,12 +44,10 @@ export function formatDayShort(isoDate: string): { weekday: string; day: string;
     return { weekday, day, isToday: isoDate === todayLocalDateKey() };
 }
 
-/** Monday-start week containing `isoDate`. */
+/** Sunday-start week containing `isoDate`. */
 export function startOfWeek(isoDate: string): string {
     const d = new Date(`${isoDate}T12:00:00`);
-    const weekday = d.getDay();
-    const mondayOffset = weekday === 0 ? -6 : 1 - weekday;
-    return addLocalDays(isoDate, mondayOffset);
+    return addLocalDays(isoDate, -d.getDay());
 }
 
 export function buildThreeDayDates(isoDate: string): string[] {
@@ -103,27 +101,35 @@ export type MonthGridCell =
           dayNumber: number;
           isToday: boolean;
           isSelected: boolean;
+          /** False for the previous/next month's days shown to fill the first and last weeks. */
+          inMonth: boolean;
       };
 
-const WEEKDAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+const WEEKDAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 export function monthWeekdayLabels(): readonly string[] {
     return WEEKDAY_LABELS;
 }
 
-/** Monday-start month grid cells (includes leading/trailing padding). */
-export function buildMonthGrid(monthAnchor: string): MonthGridCell[] {
+/**
+ * Sunday-start month grid. The first and last weeks are padded with empty cells, or with the
+ * neighbouring months' days (`inMonth: false`) when `fillOutside` is set. `rows` pads to a fixed height.
+ */
+export function buildMonthGrid(monthAnchor: string, options: { fillOutside?: boolean; rows?: number } = {}): MonthGridCell[] {
     const monthStart = startOfMonth(monthAnchor);
     const [y, m] = monthStart.split("-").map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
     const today = todayLocalDateKey();
+    const outside = (date: string): MonthGridCell =>
+        options.fillOutside
+            ? { kind: "day", date, dayNumber: Number(date.slice(8)), isToday: date === today, isSelected: false, inMonth: false }
+            : { kind: "empty" };
 
-    const firstDow = new Date(`${monthStart}T12:00:00`).getDay();
-    const leadingEmpty = firstDow === 0 ? 6 : firstDow - 1;
+    const leading = new Date(`${monthStart}T12:00:00`).getDay();
 
     const cells: MonthGridCell[] = [];
-    for (let i = 0; i < leadingEmpty; i++) {
-        cells.push({ kind: "empty" });
+    for (let i = leading; i > 0; i--) {
+        cells.push(outside(addLocalDays(monthStart, -i)));
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -134,11 +140,14 @@ export function buildMonthGrid(monthAnchor: string): MonthGridCell[] {
             dayNumber: day,
             isToday: date === today,
             isSelected: false,
+            inMonth: true,
         });
     }
 
-    while (cells.length % 7 !== 0) {
-        cells.push({ kind: "empty" });
+    const lastDay = endOfMonth(monthStart);
+    const target = Math.max(options.rows ?? 0, Math.ceil(cells.length / 7)) * 7;
+    for (let i = 1; cells.length < target; i++) {
+        cells.push(outside(addLocalDays(lastDay, i)));
     }
 
     return cells;

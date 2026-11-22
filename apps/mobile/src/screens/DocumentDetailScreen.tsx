@@ -44,10 +44,6 @@ export function DocumentDetailScreen() {
     signedUrlLoading,
     isImage,
     docFormat,
-    deletePending,
-    deleteTarget,
-    cancelDelete,
-    confirmDelete,
     handleDelete,
   } = useDocumentDetail(id);
 
@@ -139,22 +135,10 @@ export function DocumentDetailScreen() {
           onShare={() => shareFlow.openConfigureDocument(document, "Documento")}
           onEdit={() => navigation.navigate("DocumentEdit", { id: document.id })}
           onDelete={handleDelete}
-          deleteLoading={deletePending}
+          
         />
       </ScrollView>
 
-      {deleteTarget && (
-        <ConfirmModal
-          title="¿Eliminar documento?"
-          message="Esta acción no se puede deshacer."
-          confirmLabel="Eliminar"
-          loading={deletePending}
-          onConfirm={confirmDelete}
-          onCancel={cancelDelete}
-          icon={<Trash2 size={26} color={palette.status.error[700]} strokeWidth={2.25} />}
-          iconTone="danger"
-        />
-      )}
     </>
   );
 }

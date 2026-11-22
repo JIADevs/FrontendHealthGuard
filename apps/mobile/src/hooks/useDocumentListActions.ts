@@ -7,36 +7,13 @@ import { useDocumentDeleteWithUndo } from "./useDocumentDeleteWithUndo";
 
 export function useDocumentListActions() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-  const {
-    deleteTarget,
-    requestDelete,
-    cancelDelete,
-    confirmDelete,
-    deletePending,
-  } = useDocumentDeleteWithUndo();
+  const deleteDocument = useDocumentDeleteWithUndo();
 
   const handleView = useCallback(
-    (doc: Document) => {
-      navigation.navigate("DocumentDetail", { id: doc.id, title: doc.title });
-    },
+    (doc: Document) => navigation.navigate("DocumentDetail", { id: doc.id, title: doc.title }),
     [navigation],
   );
+  const handleEdit = useCallback((doc: Document) => navigation.navigate("DocumentEdit", { id: doc.id }), [navigation]);
 
-  const handleEdit = useCallback(
-    (doc: Document) => {
-      navigation.navigate("DocumentEdit", { id: doc.id });
-    },
-    [navigation],
-  );
-
-  return {
-    handleView,
-    handleEdit,
-    requestDelete,
-    cancelDelete,
-    confirmDelete,
-    deleteTarget,
-    deletePending,
-  };
+  return { handleView, handleEdit, handleDelete: deleteDocument };
 }

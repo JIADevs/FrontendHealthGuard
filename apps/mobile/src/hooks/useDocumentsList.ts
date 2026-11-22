@@ -1,54 +1,31 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useDocumentsQuery, useTagCategoriesQuery } from "@helu/api/hooks";
-import {
-  useDebounceSearch,
-  inferDocumentCategoryKey,
-  DOCUMENT_QUICK_FILTER_KEYS,
-} from "@helu/ui";
+import { useDebounceSearch } from "@helu/ui";
 import type { Document } from "@helu/api";
-import type { DocumentCategoryKey } from "@helu/ui";
 import { groupDocumentsByDate } from "../components/documents/utils/groupDocumentsByDate";
 import {
   EMPTY_DOCUMENT_FILTERS,
-  getEffectiveDateRange,
+  applyClientFilters,
   hasActiveDocumentFilters,
-  documentMatchesTagFilters,
   type DocumentListFilters,
-  type DocumentCategoryFilter,
   type TagCategoryOption,
 } from "../components/documents/utils/documentListFilters";
+import type { DocumentCategory } from "../components/documents/documentCategories";
 
-export type { Document, DocumentListFilters, DocumentCategoryFilter };
+export type { Document, DocumentListFilters };
 
-const LIST_FETCH_LIMIT = 50;
-
-function documentMatchesCategory(doc: Document, category: DocumentCategoryKey): boolean {
-  const key = inferDocumentCategoryKey({
-    documentTypeName: doc.documentType?.name,
-    specialtyNames: doc.specialties.map((s) => s.name),
-    subtypeNames: doc.subtypes.map((s) => s.name),
-    format: doc.format,
-  });
-  return key === category;
-}
+/** The API has no category filter, so the list loads one large page and filters on the client. */
+const LIST_FETCH_LIMIT = 100;
 
 export function useDocumentsList() {
   const [search, setSearch] = useState("");
-  const [appliedFilters, setAppliedFilters] = useState<DocumentListFilters>(EMPTY_DOCUMENT_FILTERS);
-  const [draftFilters, setDraftFilters] = useState<DocumentListFilters>(EMPTY_DOCUMENT_FILTERS);
-  const [filterSheetVisible, setFilterSheetVisible] = useState(false);
+  const [filters, setFilters] = useState<DocumentListFilters>(EMPTY_DOCUMENT_FILTERS);
   const debouncedSearch = useDebounceSearch(search);
 
-  const dateRange = useMemo(() => getEffectiveDateRange(appliedFilters), [appliedFilters]);
-
-  const docs = useDocumentsQuery(
-    debouncedSearch,
-    1,
-    LIST_FETCH_LIMIT,
-    dateRange.startDate ?? null,
-    dateRange.endDate ?? null,
-  );
-
+  const docs = useDocumentsQuery(debouncedSearch, 1, LIST_FETCH_LIMIT, filters.startDate, filters.endDate);
+  // Every document, for «Búsqueda sin resultados» (related tags and «¿Quisiste decir…?»). Same key
+  // as the unfiltered list, so it is usually already cached.
+  const allDocs = useDocumentsQuery("", 1, LIST_FETCH_LIMIT, null, null);
   const tagCatalog = useTagCategoriesQuery();
 
   const tagCategories = useMemo((): TagCategoryOption[] => {
@@ -56,86 +33,52 @@ export function useDocumentsList() {
     return raw.map((cat) => ({
       id: cat.id,
       name: cat.name,
-      values: (cat.values ?? []).map((v) => ({ id: v.id, value: v.value })),
+      values: (cat.values ?? []).map((v: { id: string; value: string }) => ({ id: v.id, value: v.value })),
     }));
   }, [tagCatalog.data]);
 
-  const filteredItems = useMemo(() => {
-    let items = docs.data?.items ?? [];
+  const valueToCategory = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const cat of tagCategories) for (const v of cat.values) map.set(v.id, cat.id);
+    return map;
+  }, [tagCategories]);
 
-    if (appliedFilters.category) {
-      items = items.filter((doc) => documentMatchesCategory(doc, appliedFilters.category!));
-    }
+  const loaded = useMemo(() => docs.data?.items ?? [], [docs.data?.items]);
+  const items = useMemo(() => applyClientFilters(loaded, filters, valueToCategory), [loaded, filters, valueToCategory]);
+  const sections = useMemo(() => groupDocumentsByDate(items), [items]);
 
-    if (appliedFilters.tagFilters.length > 0) {
-      items = items.filter((doc) =>
-        documentMatchesTagFilters(
-          doc.customTags.map((tag) => tag.id),
-          appliedFilters.tagFilters,
-        ),
-      );
-    }
+  /** Quick row: one category or «Todos». */
+  const quickCategory: DocumentCategory | "all" | null =
+    filters.categories.length === 0 ? "all" : filters.categories.length === 1 ? filters.categories[0]! : null;
 
-    return items;
-  }, [docs.data?.items, appliedFilters.category, appliedFilters.tagFilters]);
-
-  const sections = useMemo(() => groupDocumentsByDate(filteredItems), [filteredItems]);
-
-  const hasHiddenSelection =
-    appliedFilters.category !== null &&
-    !DOCUMENT_QUICK_FILTER_KEYS.includes(appliedFilters.category);
-
-  const hasActiveFilter = hasActiveDocumentFilters(appliedFilters);
-
-  const totalCount = hasActiveFilter
-    ? filteredItems.length
-    : (docs.data?.total ?? filteredItems.length);
-
-  const openFilterSheet = useCallback(() => {
-    setDraftFilters(appliedFilters);
-    setFilterSheetVisible(true);
-  }, [appliedFilters]);
-
-  const closeFilterSheet = useCallback(() => {
-    setFilterSheetVisible(false);
+  const setQuickCategory = useCallback((value: DocumentCategory | "all") => {
+    setFilters((prev) => ({ ...prev, categories: value === "all" ? [] : [value] }));
   }, []);
 
-  const applyFilters = useCallback(() => {
-    setAppliedFilters(draftFilters);
-    setFilterSheetVisible(false);
-  }, [draftFilters]);
-
-  const setCategoryFilter = useCallback((category: DocumentCategoryFilter) => {
-    setAppliedFilters((prev) => ({ ...prev, category }));
-  }, []);
-
-  useEffect(() => {
-    if (filterSheetVisible) {
-      setDraftFilters(appliedFilters);
-    }
-  }, [filterSheetVisible, appliedFilters]);
+  /** How many loaded documents a draft would show (dates are only known for the applied range). */
+  const countFor = useCallback(
+    (draft: DocumentListFilters) => applyClientFilters(loaded, draft, valueToCategory).length,
+    [loaded, valueToCategory],
+  );
 
   return {
     search,
     setSearch,
     debouncedSearch,
-    appliedFilters,
-    draftFilters,
-    setDraftFilters,
-    categoryFilter: appliedFilters.category,
-    setCategoryFilter,
-    filterSheetVisible,
-    openFilterSheet,
-    closeFilterSheet,
-    applyFilters,
-    hasHiddenSelection,
-    hasActiveFilter,
+    filters,
+    setFilters,
+    quickCategory,
+    setQuickCategory,
+    hasActiveFilter: hasActiveDocumentFilters(filters),
+    countFor,
     tagCategories,
     tagsLoading: tagCatalog.isLoading,
+    items,
     sections,
-    totalCount,
-    isLoading: docs.isLoading && !docs.isRefetching,
-    isRefetching: docs.isRefetching,
+    allDocuments: allDocs.data?.items ?? [],
+    isLoading: docs.isLoading,
+    /** False while typing or while the next search is on its way: no «sin resultados» flash. */
+    settled: !docs.isPlaceholderData && search === debouncedSearch,
     refetch: docs.refetch,
   };
 }

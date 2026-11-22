@@ -1,38 +1,24 @@
-import type { DocumentCategoryKey } from "@helu/ui";
-import { todayISODate } from "@helu/ui";
+import type { Document } from "@helu/api";
+import { categoryOf, type DocumentCategory } from "../documentCategories";
 
-export type DocumentCategoryFilter = DocumentCategoryKey | null;
-
-export type DocumentDatePreset =
-  | null
-  | "week"
-  | "month"
-  | "quarter"
-  | "year"
-  | "custom";
-
-/** Filtro de etiqueta aplicado: categoría + valor concreto. */
-export interface DocumentTagFilter {
-  categoryId: string;
-  categoryName: string;
-  valueId: string;
-  valueLabel: string;
-}
-
+/**
+ * Filters of the Documentos list (mockup «Filtros»): categories, tag values and a «Desde» /
+ * «Hasta» range. Category and tags filter on the client; dates go to the API.
+ */
 export interface DocumentListFilters {
-  category: DocumentCategoryFilter;
-  datePreset: DocumentDatePreset;
+  categories: DocumentCategory[];
+  /** Selected tag value ids. AND across tag categories, OR inside one (see `documentMatchesTags`). */
+  tagValueIds: string[];
+  /** YYYY-MM-DD, inclusive. */
   startDate: string | null;
   endDate: string | null;
-  tagFilters: DocumentTagFilter[];
 }
 
 export const EMPTY_DOCUMENT_FILTERS: DocumentListFilters = {
-  category: null,
-  datePreset: null,
+  categories: [],
+  tagValueIds: [],
   startDate: null,
   endDate: null,
-  tagFilters: [],
 };
 
 export interface TagCategoryOption {
@@ -41,110 +27,40 @@ export interface TagCategoryOption {
   values: { id: string; value: string }[];
 }
 
-export function addTagFilter(
-  filters: DocumentTagFilter[],
-  entry: DocumentTagFilter,
-): DocumentTagFilter[] {
-  if (filters.some((f) => f.valueId === entry.valueId)) return filters;
-  return [...filters, entry];
+export function hasActiveDocumentFilters(filters: DocumentListFilters): boolean {
+  return (
+    filters.categories.length > 0 || filters.tagValueIds.length > 0 || filters.startDate !== null || filters.endDate !== null
+  );
 }
 
-export function removeTagFilter(filters: DocumentTagFilter[], valueId: string): DocumentTagFilter[] {
-  return filters.filter((f) => f.valueId !== valueId);
+export function sameDateRange(a: DocumentListFilters, b: DocumentListFilters): boolean {
+  return a.startDate === b.startDate && a.endDate === b.endDate;
 }
 
-/** AND entre categorías; OR entre valores de la misma categoría. */
-export function documentMatchesTagFilters(
-  docTagIds: string[],
-  tagFilters: DocumentTagFilter[],
-): boolean {
-  if (tagFilters.length === 0) return true;
-
+/** AND across tag categories, OR between values of the same category. */
+export function documentMatchesTags(doc: Document, tagValueIds: string[], valueToCategory: Map<string, string>): boolean {
+  if (tagValueIds.length === 0) return true;
   const byCategory = new Map<string, string[]>();
-  for (const f of tagFilters) {
-    const ids = byCategory.get(f.categoryId) ?? [];
-    ids.push(f.valueId);
-    byCategory.set(f.categoryId, ids);
+  for (const id of tagValueIds) {
+    const cat = valueToCategory.get(id) ?? id;
+    byCategory.set(cat, [...(byCategory.get(cat) ?? []), id]);
   }
-
-  const docSet = new Set(docTagIds);
-  for (const valueIds of byCategory.values()) {
-    if (!valueIds.some((id) => docSet.has(id))) return false;
+  const docTags = new Set(doc.customTags.map((t) => t.id));
+  for (const ids of byCategory.values()) {
+    if (!ids.some((id) => docTags.has(id))) return false;
   }
   return true;
 }
 
-export const DOCUMENT_DATE_PRESETS: { id: DocumentDatePreset; label: string }[] = [
-  { id: null, label: "Cualquier fecha" },
-  { id: "week", label: "Últimos 7 días" },
-  { id: "month", label: "Últimos 30 días" },
-  { id: "quarter", label: "Últimos 3 meses" },
-  { id: "year", label: "Este año" },
-  { id: "custom", label: "Personalizado" },
-];
-
-function toISODate(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-/** Calcula rango ISO según preset (fin = hoy). */
-export function resolveDateRangeFromPreset(
-  preset: DocumentDatePreset,
-  customStart?: string | null,
-  customEnd?: string | null,
-): { startDate: string | null; endDate: string | null } {
-  if (!preset) return { startDate: null, endDate: null };
-
-  if (preset === "custom") {
-    return {
-      startDate: customStart ?? null,
-      endDate: customEnd ?? null,
-    };
-  }
-
-  const end = new Date();
-  const start = new Date();
-  switch (preset) {
-    case "week":
-      start.setDate(end.getDate() - 7);
-      break;
-    case "month":
-      start.setMonth(end.getMonth() - 1);
-      break;
-    case "quarter":
-      start.setMonth(end.getMonth() - 3);
-      break;
-    case "year":
-      start.setMonth(0, 1);
-      break;
-    default:
-      break;
-  }
-
-  return { startDate: toISODate(start), endDate: toISODate(end) };
-}
-
-export function hasActiveDocumentFilters(filters: DocumentListFilters): boolean {
-  return (
-    filters.category !== null ||
-    filters.datePreset !== null ||
-    filters.tagFilters.length > 0
+/** Category and tag filters (the date range is already applied by the API). */
+export function applyClientFilters(
+  docs: Document[],
+  filters: DocumentListFilters,
+  valueToCategory: Map<string, string>,
+): Document[] {
+  return docs.filter(
+    (doc) =>
+      (filters.categories.length === 0 || filters.categories.includes(categoryOf(doc))) &&
+      documentMatchesTags(doc, filters.tagValueIds, valueToCategory),
   );
-}
-
-/** Fechas efectivas enviadas al API. */
-export function getEffectiveDateRange(filters: DocumentListFilters): {
-  startDate?: string;
-  endDate?: string;
-} {
-  const { startDate, endDate } = resolveDateRangeFromPreset(
-    filters.datePreset,
-    filters.startDate,
-    filters.endDate,
-  );
-  return {
-    ...(startDate ? { startDate } : {}),
-    ...(endDate ? { endDate: endDate ?? todayISODate() } : {}),
-  };
 }

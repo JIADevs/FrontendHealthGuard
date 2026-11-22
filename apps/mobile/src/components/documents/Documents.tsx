@@ -1,0 +1,246 @@
+import { useCallback, useMemo, useState } from "react";
+import { Keyboard, Pressable, RefreshControl, ScrollView, SectionList, StyleSheet, Text, View } from "react-native";
+import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Filter } from "lucide-react-native";
+import type { Document } from "@helu/api";
+import {
+  Chip,
+  SearchField,
+  Skeleton,
+  SkeletonCard,
+  SkeletonGroup,
+  motion,
+  nativeFont,
+  radii,
+  spacing,
+  useAppTheme,
+  useSkeletonVisible,
+  type ThemeContextValue,
+} from "@helu/ui";
+import { Fab } from "../Fab";
+import { useDocumentsList } from "../../hooks/useDocumentsList";
+import { usePullToRefresh } from "../../lib/usePullToRefresh";
+import { CATEGORY_FILTER_OPTIONS, type DocumentCategory } from "./documentCategories";
+import { DocumentRow } from "./DocumentRow";
+import { DocumentsAddSheet } from "./DocumentsAddSheet";
+import { DocumentsEmpty, DocumentsFilterEmpty, DocumentsSearchEmpty } from "./DocumentsEmpty";
+import { DocumentsFilterSheet } from "./DocumentsFilterSheet";
+
+export interface DocumentsProps {
+  onOpen: (doc: Document) => void;
+  onEdit: (doc: Document) => void;
+  onShare: (doc: Document) => void;
+  onDelete: (doc: Document) => void;
+  onScan: () => void;
+  onUpload: () => void;
+  onPortalLink: () => void;
+}
+
+const STAGGER_MS = 40;
+const STAGGER_MAX = 6;
+
+/**
+ * Mockup «Documentos» (m4) with its states (m9): title, search with the filter button, quick
+ * category chips, the list grouped by date («ESTA SEMANA», months), and the «+» to add one.
+ */
+export function Documents({ onOpen, onEdit, onShare, onDelete, onScan, onUpload, onPortalLink }: DocumentsProps) {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const list = useDocumentsList();
+  const pull = usePullToRefresh(list.refetch);
+  const showSkeleton = useSkeletonVisible(list.isLoading);
+  const [addOpen, setAddOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  // Staggered entry only for the first paint of the list (§2, §6c), not on every refetch.
+  const [entered, setEntered] = useState(false);
+
+  const pickTag = useCallback(
+    (valueId: string) => {
+      list.setSearch("");
+      list.setFilters((f) => ({ ...f, tagValueIds: [valueId] }));
+    },
+    [list],
+  );
+  const pickCategory = useCallback(
+    (c: DocumentCategory) => {
+      list.setSearch("");
+      list.setFilters((f) => ({ ...f, categories: [c] }));
+    },
+    [list],
+  );
+
+  const searching = list.debouncedSearch.trim().length > 0;
+  const indexById = useMemo(() => new Map(list.items.map((d, i) => [d.id, i])), [list.items]);
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.header}>
+        <Text style={styles.title} accessibilityRole="header">
+          Documentos
+        </Text>
+        <View style={styles.toolbar}>
+          <View style={styles.searchWrap}>
+            <SearchField value={list.search} onChange={list.setSearch} placeholder="Buscar documentos" accessibilityLabel="Buscar documentos" />
+          </View>
+          <Pressable
+            style={[styles.filterBtn, list.hasActiveFilter && styles.filterBtnActive]}
+            onPress={() => {
+              Keyboard.dismiss();
+              setFiltersOpen(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={list.hasActiveFilter ? "Filtros, hay filtros activos" : "Filtros"}
+          >
+            <Filter size={18} color={list.hasActiveFilter ? t.brand.text : t.text.onMuted} />
+          </Pressable>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quick}>
+          {CATEGORY_FILTER_OPTIONS.map((o) => (
+            <Chip
+              key={o.value}
+              label={o.label}
+              variant="option"
+              selectionMode="single"
+              selected={list.quickCategory === o.value}
+              onPress={() => list.setQuickCategory(o.value)}
+            />
+          ))}
+        </ScrollView>
+      </View>
+
+      {showSkeleton ? (
+        // §6c: header, search and filters are real; the list is a skeleton by groups (date + 2 rows).
+        <SkeletonGroup label="Cargando documentos" style={styles.skeleton}>
+          <Skeleton width={90} height={11} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+          <Skeleton width={70} height={11} style={{ marginTop: spacing[2] }} />
+          <SkeletonCard lines={2} />
+          <SkeletonCard lines={2} />
+        </SkeletonGroup>
+      ) : (
+        <SectionList
+          sections={list.sections}
+          keyExtractor={(d) => d.id}
+          stickySectionHeadersEnabled={false}
+          contentContainerStyle={list.items.length === 0 ? styles.emptyContent : styles.content}
+          keyboardShouldPersistTaps="handled"
+          onLayout={() => setEntered(true)}
+          refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={t.brand.fg} />}
+          renderSectionHeader={({ section }) => (
+            <Text style={styles.eyebrow} accessibilityRole="header">
+              {section.title}
+            </Text>
+          )}
+          renderItem={({ item }) => {
+            const i = indexById.get(item.id) ?? 0;
+            return (
+              <Animated.View
+                entering={entered ? undefined : FadeIn.duration(motion.base).delay(Math.min(i, STAGGER_MAX) * STAGGER_MS)}
+                exiting={FadeOut.duration(motion.base)}
+                layout={LinearTransition.duration(motion.base)}
+                style={styles.rowWrap}
+              >
+                <DocumentRow
+                  document={item}
+                  onPress={() => onOpen(item)}
+                  actions={{
+                    onView: () => onOpen(item),
+                    onEdit: () => onEdit(item),
+                    onShare: () => onShare(item),
+                    onDelete: () => onDelete(item),
+                  }}
+                />
+              </Animated.View>
+            );
+          }}
+          ListEmptyComponent={
+            !list.settled ? undefined : searching ? (
+              <DocumentsSearchEmpty
+                query={list.debouncedSearch}
+                allDocuments={list.allDocuments}
+                tagCategories={list.tagCategories}
+                onSearch={list.setSearch}
+                onPickTag={pickTag}
+                onPickCategory={pickCategory}
+                onUpload={() => setAddOpen(true)}
+              />
+            ) : list.hasActiveFilter ? (
+              <DocumentsFilterEmpty
+                filters={list.filters}
+                allDocuments={list.allDocuments}
+                tagCategories={list.tagCategories}
+                onChange={list.setFilters}
+              />
+            ) : (
+              <DocumentsEmpty onUpload={onUpload} onScan={onScan} />
+            )
+          }
+        />
+      )}
+
+      <Fab
+        onPress={() => {
+          Keyboard.dismiss();
+          setAddOpen(true);
+        }}
+        accessibilityLabel="Agregar documento"
+      />
+
+      <DocumentsAddSheet
+        visible={addOpen}
+        onClose={() => setAddOpen(false)}
+        onScan={onScan}
+        onUpload={onUpload}
+        onPortalLink={onPortalLink}
+      />
+
+      {filtersOpen ? (
+        <DocumentsFilterSheet
+          initial={list.filters}
+          tagCategories={list.tagCategories}
+          countFor={list.countFor}
+          onApply={list.setFilters}
+          onClose={() => setFiltersOpen(false)}
+        />
+      ) : null}
+    </SafeAreaView>
+  );
+}
+
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: t.surface.bg },
+    header: { paddingHorizontal: spacing[4], paddingTop: spacing[3], gap: spacing[3], backgroundColor: t.surface.bg },
+    title: { fontSize: 26, lineHeight: 30, fontFamily: nativeFont("heading", 900), color: t.text.primary },
+    toolbar: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
+    searchWrap: { flex: 1 },
+    // Mockup: 46 × 46, radio 14 (MASTER §6: mínimo 44)
+    filterBtn: {
+      width: 46,
+      height: 46,
+      borderRadius: radii.lg,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: t.surface.bgCard,
+      borderWidth: 1,
+      borderColor: t.border.default,
+    },
+    filterBtnActive: { backgroundColor: t.brand.tint, borderColor: t.brand.tintBorder },
+    quick: { gap: spacing[2], paddingBottom: spacing[1] },
+    content: { paddingHorizontal: spacing[4], paddingBottom: spacing[12] + 58 },
+    emptyContent: { flexGrow: 1, paddingBottom: spacing[12] + 58 },
+    rowWrap: { marginBottom: spacing[3] },
+    eyebrow: {
+      fontSize: 11,
+      fontFamily: nativeFont("heading", 900),
+      letterSpacing: 0.9,
+      textTransform: "uppercase",
+      color: t.text.secondary,
+      marginTop: spacing[4],
+      marginBottom: spacing[2],
+    },
+    skeleton: { gap: spacing[3], paddingHorizontal: spacing[4], paddingTop: spacing[4] },
+  });
+}

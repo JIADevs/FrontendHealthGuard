@@ -22,15 +22,7 @@ export function useDocumentDetail(id: string) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const docQuery = useDocumentQuery(id);
   const tagCatalog = useTagCategoriesQuery();
-  const {
-    deleteTarget,
-    requestDelete,
-    cancelDelete,
-    confirmDelete,
-    deletePending,
-  } = useDocumentDeleteWithUndo({
-    onDeleted: () => navigation.goBack(),
-  });
+  const deleteDocument = useDocumentDeleteWithUndo();
 
   const document = docQuery.data as Document | undefined;
   const theme = useMemo(
@@ -67,8 +59,8 @@ export function useDocumentDetail(id: string) {
 
   const handleDelete = useCallback(() => {
     if (!document) return;
-    requestDelete(document);
-  }, [document, requestDelete]);
+    deleteDocument(document, { onDeleted: () => navigation.goBack() });
+  }, [document, deleteDocument, navigation]);
 
   return {
     document,
@@ -81,10 +73,6 @@ export function useDocumentDetail(id: string) {
     signedUrlLoading: signedUrlQuery.isLoading,
     isImage,
     docFormat,
-    deletePending,
-    deleteTarget,
-    cancelDelete,
-    confirmDelete,
     handleDelete,
   };
 }

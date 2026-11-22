@@ -103,6 +103,8 @@ export interface DocumentUploadProps {
   subscribeBeforeLeave: SubscribeBeforeLeave;
   backpackId?: string;
   backpackName?: string;
+  /** Pages from the scanner: skip the system picker and start with this file. */
+  initialFile?: FileSource;
 }
 
 /**
@@ -110,7 +112,7 @@ export interface DocumentUploadProps {
  * and the AI reads it, the fields wait as a skeleton, then come back prefilled and marked. One column
  * and a fixed «Guardar documento» bar.
  */
-export function DocumentUpload({ onClose, subscribeBeforeLeave, backpackId, backpackName }: DocumentUploadProps) {
+export function DocumentUpload({ onClose, subscribeBeforeLeave, backpackId, backpackName, initialFile }: DocumentUploadProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const form = useDocumentForm({ backpackId, backpackName, skipNavigateBackOnUpload: true, onUploaded: () => leave() });
@@ -141,6 +143,16 @@ export function DocumentUpload({ onClose, subscribeBeforeLeave, backpackId, back
     [subscribeBeforeLeave, dirty],
   );
 
+  const accept = useCallback(
+    (picked: FileSource) => {
+      setFile(picked);
+      form.setTitle(picked.name.replace(/\.[^.]+$/, ""));
+      form.startPreUpload(picked);
+      void form.classify(picked);
+    },
+    [form],
+  );
+
   const pick = useCallback(async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({ type: ACCEPTED_TYPES, copyToCacheDirectory: true, multiple: false });
@@ -164,25 +176,26 @@ export function DocumentUpload({ onClose, subscribeBeforeLeave, backpackId, back
         mimeType: asset.mimeType || "application/octet-stream",
         size: asset.size ?? undefined,
       };
-      setFile(picked);
-      form.setTitle(picked.name.replace(/\.[^.]+$/, ""));
-      form.startPreUpload(picked);
-      void form.classify(picked);
+      accept(picked);
     } catch (err) {
       console.warn("[DocumentUpload] picker failed", err);
       notify({ tone: "error", message: "No se pudo abrir el archivo", description: "Intenta con otro archivo." });
       if (!file) leave();
     }
-  }, [file, form, leave]);
+  }, [file, accept, leave]);
 
   // The system picker can't present while this screen is still sliding in: open it after the transition.
   useEffect(() => {
     if (pickedOnce.current) return;
     pickedOnce.current = true;
+    if (initialFile) {
+      accept(initialFile);
+      return;
+    }
     // The modal slides in over 350 ms (§3); wait a little past it.
     const timer = setTimeout(() => void pick(), 450);
     return () => clearTimeout(timer);
-  }, [pick]);
+  }, [pick, accept, initialFile]);
 
   const uploading = form.preUpload != null && !form.preUpload.done && !form.preUpload.failed;
   const reading = form.classifying;

@@ -21,6 +21,7 @@ export function DocumentUploadScreen() {
       subscribeBeforeLeave={subscribeBeforeLeave}
       backpackId={params?.backpackId}
       backpackName={params?.backpackName}
+      initialFile={params?.scannedFile}
     />
   );
 }

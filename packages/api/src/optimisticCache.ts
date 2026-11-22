@@ -4,6 +4,7 @@ import type {
     DailyCheckIn,
     DailyCheckInCreate,
     DailyCheckInPage,
+    Document,
     Medication,
     MedicationCycle,
     MedicationIntake,
@@ -61,6 +62,27 @@ export function applyOptimisticIntake(
         return patchMedication(data, cycleId, payload);
     }
     return data;
+}
+
+/**
+ * A document the server just created goes on top of the first page of every unfiltered document
+ * list (the API sorts by upload date, newest first). The list shows it right away instead of after
+ * the refetch; callers still invalidate `["documents"]`, so the server has the last word.
+ */
+export function prependCreatedDocument(qc: QueryClient, doc: Document): void {
+    for (const [key, data] of qc.getQueriesData({ queryKey: ["documents"] })) {
+        if (!isDocumentPage(data) || !isFirstUnfilteredDocumentPage(key)) continue;
+        if (data.items.some((item) => item.id === doc.id)) continue;
+        const items = [doc, ...data.items].slice(0, data.limit > 0 ? data.limit : data.items.length + 1);
+        qc.setQueryData(key, { ...data, items, total: data.total + 1 });
+    }
+}
+
+/** `QK.documents` is `["documents", page, search, limit, startDate, endDate]`; web also uses `["documents", "all"]`. */
+function isFirstUnfilteredDocumentPage(key: QueryKey): boolean {
+    if (key[1] === "all") return true;
+    const [, page, search, , startDate, endDate] = key;
+    return page === 1 && !search && startDate == null && endDate == null;
 }
 
 export function buildOptimisticCheckIn(payload: DailyCheckInCreate): DailyCheckIn {
@@ -201,6 +223,10 @@ function isMedicationPage(data: unknown): data is MedicationPage {
 /** The medication detail (`["medication", id]`): one medication with its cycles. */
 function isMedication(data: unknown): data is Medication {
     return isRecord(data) && typeof data.id === "string" && Array.isArray(data.cycles);
+}
+
+function isDocumentPage(data: unknown): data is { items: Document[]; total: number; limit: number } {
+    return isRecord(data) && Array.isArray(data.items) && typeof data.total === "number";
 }
 
 function isCheckInPage(data: unknown): data is DailyCheckInPage {

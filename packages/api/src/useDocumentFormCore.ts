@@ -22,6 +22,7 @@ import {
     addDocToBackpack,
 } from "./endpoints";
 import { isApiError } from "./errors";
+import { prependCreatedDocument } from "./optimisticCache";
 import type { DocumentTypeOut, TagCategoryOut, ClassificationSuggestion } from "./schemas";
 import { DocumentCreateSchema } from "./schemas";
 import { retryAsync, RETRY_MAX_ATTEMPTS, RETRY_BASE_DELAY_MS, UPLOAD_MAX_FILE_SIZE_BYTES } from "./utils";
@@ -292,6 +293,8 @@ export function useDocumentFormCore<TFile>(
                     queryClient.invalidateQueries({ queryKey: ["backpack", backpackId], exact: false });
                 }
 
+                // Show it in the lists now; the invalidation below reconciles with the server.
+                prependCreatedDocument(queryClient, createdDoc);
                 queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
                 queryClient.invalidateQueries({ queryKey: ["treatments"], exact: false });
 
@@ -401,6 +404,8 @@ export function useDocumentFormCore<TFile>(
                     queryClient.invalidateQueries({ queryKey: ["backpack", backpackId], exact: false });
                 }
 
+                // Show it in the lists now; the invalidation below reconciles with the server.
+                prependCreatedDocument(queryClient, createdDoc);
                 queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
                 queryClient.invalidateQueries({ queryKey: ["treatments"], exact: false });
 

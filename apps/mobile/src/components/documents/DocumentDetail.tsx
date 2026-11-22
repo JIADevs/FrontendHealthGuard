@@ -4,7 +4,7 @@ import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
 import { Backpack, Copy, Download, ExternalLink, Eye, EyeOff, Pencil, Share2, Trash2 } from "lucide-react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDocumentQuery, useTagCategoriesQuery, useTreatmentByIdQuery } from "@helu/api/hooks";
 import { getSignedUrl, type Document } from "@helu/api";
 import {
@@ -58,6 +58,16 @@ export function DocumentDetail({ id, onBack, onShare, onEdit, onDelete }: Docume
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const docQuery = useDocumentQuery(id);
+  // The row the user tapped is usually in a cached list: it says whether this is a portal link and
+  // how many data rows and tags to expect, so the skeleton has the shape of what arrives.
+  const queryClient = useQueryClient();
+  const cached = useMemo(() => {
+    for (const [, data] of queryClient.getQueriesData<{ items?: Document[] }>({ queryKey: ["documents"] })) {
+      const found = data?.items?.find((d) => d.id === id);
+      if (found) return found;
+    }
+    return undefined;
+  }, [queryClient, id]);
   const doc = docQuery.data as Document | undefined;
   const showSkeleton = useSkeletonVisible(docQuery.isLoading);
   const tagCatalog = useTagCategoriesQuery();
@@ -89,25 +99,9 @@ export function DocumentDetail({ id, onBack, onShare, onEdit, onDelete }: Docume
   if (showSkeleton) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <ScreenHeader title="Documento" onBack={onBack} />
-        {/* §6c: back bar is real; preview at its height, title, date, chips and 3 label–value pairs. */}
-        <SkeletonGroup label="Cargando el documento" style={styles.content}>
-          <Skeleton height={PREVIEW_HEIGHT} radius={18} />
-          <Skeleton width="80%" height={20} />
-          <View style={styles.chips}>
-            <Skeleton width={90} height={28} radius={14} />
-            <Skeleton width={70} height={28} radius={14} />
-          </View>
-          <Skeleton height={48} radius={14} />
-          <View style={styles.card}>
-            {[0, 1, 2].map((i) => (
-              <View key={i} style={styles.pair}>
-                <Skeleton width={70} height={13} />
-                <Skeleton width={120} height={13} />
-              </View>
-            ))}
-          </View>
-        </SkeletonGroup>
+        {/* §6c: the back bar is real; its action waits as a circle, so the title does not move. */}
+        <ScreenHeader title="Documento" onBack={onBack} right={<Skeleton width={44} height={44} radius={22} />} />
+        <DetailSkeleton hint={cached} doctorCategoryIds={doctorCategoryIds} />
       </SafeAreaView>
     );
   }
@@ -256,6 +250,75 @@ function Preview({ doc, uri, loading, pages, onOpen }: { doc: Document; uri?: st
         </View>
       ) : null}
     </PressableScale>
+  );
+}
+
+/**
+ * The detail as it will arrive, block by block (§6c): preview at its height (or the portal card),
+ * title and one chip 8 px apart, «Compartir» at 52 px, the two small action cards, the data card
+ * with its dividers, and the tags card when the document has tags.
+ */
+function DetailSkeleton({ hint, doctorCategoryIds }: { hint?: Document; doctorCategoryIds: Set<string> }) {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const isLink = hint?.kind === "LINK";
+  // Same rules as the content: «Médico» from the doctor tags or a specialty, «Tratamiento» when set,
+  // and the other tags in their own card.
+  const doctorTags = hint?.customTags.filter((tag) => doctorCategoryIds.has(tag.categoryId)) ?? [];
+  const pairs = hint ? 2 + (doctorTags.length > 0 || hint.specialties.length > 0 ? 1 : 0) + (hint.treatmentId ? 1 : 0) : 3;
+  const hasTags = (hint?.customTags.length ?? 0) > doctorTags.length;
+  return (
+    <SkeletonGroup label="Cargando el documento" style={styles.content}>
+      {isLink ? (
+        <View style={styles.card}>
+          <View style={styles.portalRow}>
+            <View style={[styles.portalCopy, { gap: 6 }]}>
+              <Skeleton width={90} height={12} />
+              <Skeleton width="85%" height={14} />
+            </View>
+            {/* The copy button is a 44 px target: the row is that tall. */}
+            <View style={styles.iconHit}>
+              <Skeleton width={22} height={22} radius={6} />
+            </View>
+          </View>
+          <Skeleton height={48} radius={16} />
+        </View>
+      ) : (
+        <Skeleton height={PREVIEW_HEIGHT} radius={18} />
+      )}
+      <View style={styles.titleBlock}>
+        <Skeleton width="70%" height={24} />
+        <Skeleton width={96} height={28} radius={14} />
+      </View>
+      <View style={styles.actions}>
+        <Skeleton height={52} radius={16} />
+        <View style={styles.smallActions}>
+          {[0, 1].map((i) => (
+            <View key={i} style={[styles.smallWrap, styles.card, styles.smallAction]}>
+              <Skeleton width={40} height={40} radius={12} />
+              <Skeleton width={64} height={13} />
+            </View>
+          ))}
+        </View>
+      </View>
+      <View style={styles.card}>
+        {Array.from({ length: pairs }, (_, i) => (
+          <View key={i}>
+            {i > 0 ? <View style={styles.divider} /> : null}
+            <View style={styles.pair}>
+              <Skeleton width={60} height={13} />
+              <Skeleton width={130} height={14} />
+            </View>
+          </View>
+        ))}
+      </View>
+      {hasTags ? (
+        <View style={[styles.card, styles.cardTight]}>
+          <Skeleton width={70} height={13} />
+          <Skeleton width={120} height={28} radius={14} />
+        </View>
+      ) : null}
+    </SkeletonGroup>
   );
 }
 

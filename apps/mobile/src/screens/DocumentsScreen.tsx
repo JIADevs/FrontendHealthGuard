@@ -19,7 +19,6 @@ export function DocumentsScreen() {
       onDelete={(doc) => actions.handleDelete(doc)}
       onScan={() => navigation.navigate("Scanner")}
       onUpload={() => navigation.navigate("DocumentUpload", { initialKind: "FILE" })}
-      onPortalLink={() => navigation.navigate("DocumentUpload", { initialKind: "LINK" })}
     />
   );
 }

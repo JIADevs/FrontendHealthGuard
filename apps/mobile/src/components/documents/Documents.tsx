@@ -26,6 +26,7 @@ import { DocumentRow } from "./DocumentRow";
 import { DocumentsAddSheet } from "./DocumentsAddSheet";
 import { DocumentsEmpty, DocumentsFilterEmpty, DocumentsSearchEmpty } from "./DocumentsEmpty";
 import { DocumentsFilterSheet } from "./DocumentsFilterSheet";
+import { PortalLinkSheet } from "./PortalLinkSheet";
 
 export interface DocumentsProps {
   onOpen: (doc: Document) => void;
@@ -34,7 +35,6 @@ export interface DocumentsProps {
   onDelete: (doc: Document) => void;
   onScan: () => void;
   onUpload: () => void;
-  onPortalLink: () => void;
 }
 
 const STAGGER_MS = 40;
@@ -44,7 +44,19 @@ const STAGGER_MAX = 6;
  * Mockup «Documentos» (m4) with its states (m9): title, search with the filter button, quick
  * category chips, the list grouped by date («ESTA SEMANA», months), and the «+» to add one.
  */
-export function Documents({ onOpen, onEdit, onShare, onDelete, onScan, onUpload, onPortalLink }: DocumentsProps) {
+export function Documents(props: DocumentsProps) {
+  // Leaving the list with the search focused makes iOS give it the focus back on return, so the
+  // keyboard would pop up by itself: close it before any navigation.
+  const away = <A extends unknown[]>(fn: (...args: A) => void) => (...args: A) => {
+    Keyboard.dismiss();
+    fn(...args);
+  };
+  const onOpen = away(props.onOpen);
+  const onEdit = away(props.onEdit);
+  const onShare = away(props.onShare);
+  const onDelete = props.onDelete;
+  const onScan = away(props.onScan);
+  const onUpload = away(props.onUpload);
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const list = useDocumentsList();
@@ -52,6 +64,7 @@ export function Documents({ onOpen, onEdit, onShare, onDelete, onScan, onUpload,
   const showSkeleton = useSkeletonVisible(list.isLoading);
   const [addOpen, setAddOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [portalOpen, setPortalOpen] = useState(false);
   // Staggered entry only for the first paint of the list (§2, §6c), not on every refetch.
   const [entered, setEntered] = useState(false);
 
@@ -126,6 +139,7 @@ export function Documents({ onOpen, onEdit, onShare, onDelete, onScan, onUpload,
           stickySectionHeadersEnabled={false}
           contentContainerStyle={list.items.length === 0 ? styles.emptyContent : styles.content}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           onLayout={() => setEntered(true)}
           refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={t.brand.fg} />}
           renderSectionHeader={({ section }) => (
@@ -193,8 +207,10 @@ export function Documents({ onOpen, onEdit, onShare, onDelete, onScan, onUpload,
         onClose={() => setAddOpen(false)}
         onScan={onScan}
         onUpload={onUpload}
-        onPortalLink={onPortalLink}
+        onPortalLink={() => setPortalOpen(true)}
       />
+
+      {portalOpen ? <PortalLinkSheet onClose={() => setPortalOpen(false)} /> : null}
 
       {filtersOpen ? (
         <DocumentsFilterSheet

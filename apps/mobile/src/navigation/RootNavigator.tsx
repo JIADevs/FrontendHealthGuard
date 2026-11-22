@@ -175,11 +175,7 @@ export function RootNavigator() {
           <Stack.Screen
             name="DocumentUpload"
             component={DocumentUploadScreenLight}
-            options={{
-              ...getDocumentsStackScreenOptions(t),
-              presentation: "fullScreenModal",
-              animation: "slide_from_bottom",
-            }}
+            options={{ ...getDocumentsStackScreenOptions(t), ...FORM_SCREEN_OPTIONS }}
           />
           <Stack.Screen
             name="DocumentDetail"

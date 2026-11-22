@@ -231,6 +231,90 @@ function bestRemoval(
   return best;
 }
 
+/** «de otros tipos» / «con otras etiquetas» / «en otras fechas»: what the single active filter leaves out. */
+function otherThan(f: DocumentListFilters): string {
+  if (f.categories.length > 0) return "de otros tipos";
+  if (f.tagValueIds.length > 0) return "con otras etiquetas";
+  return "en otras fechas";
+}
+
+/** A document the user can open from an empty state: same tile and meta as the list, with «›». */
+function DocumentPreviewRow({ doc, onPress }: { doc: Document; onPress: () => void }) {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const meta = CATEGORY_META[categoryOf(doc)];
+  const Icon = meta.icon;
+  const line = `${documentDateLabel(doc)} · ${meta.label}`;
+  return (
+    <PressableScale onPress={onPress} accessibilityRole="button" accessibilityLabel={`${doc.title}, ${line}`} style={styles.relRow}>
+      <IconTile tone="document" icon={<Icon size={18} strokeWidth={2.2} color={t.accent.docFg} />} />
+      <View style={styles.copy}>
+        <Text style={styles.rowTitle} numberOfLines={1}>
+          {doc.title}
+        </Text>
+        <Text style={styles.meta}>{line}</Text>
+      </View>
+      <ChevronRight size={18} color={t.text.muted} />
+    </PressableScale>
+  );
+}
+
+/** Documents whose title or tags contain the query (accents and case ignored), to tell a filter apart from «no hay». */
+export function documentsMatching(query: string, docs: Document[]): Document[] {
+  const q = fold(query.trim());
+  if (q.length < 2) return [];
+  return docs.filter((d) => fold(d.title).includes(q) || d.customTags.some((tag) => fold(tag.value ?? "").includes(q)));
+}
+
+/**
+ * v2.13 «Búsqueda · sin resultados por el filtro»: the query has results, but the active filter hides
+ * them. Say so («en Fórmulas»), offer to search everything and show what would appear.
+ */
+export function DocumentsSearchFilteredEmpty({
+  query,
+  filters,
+  matches,
+  onSearchAll,
+  onOpen,
+}: {
+  query: string;
+  filters: DocumentListFilters;
+  matches: Document[];
+  onSearchAll: () => void;
+  onOpen: (doc: Document) => void;
+}) {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const onlyCategory = filters.categories.length === 1 && filters.tagValueIds.length === 0 && !filters.startDate && !filters.endDate;
+  const where = onlyCategory ? `en ${CATEGORY_META[filters.categories[0]!].plural}` : "con tus filtros";
+  const n = matches.length;
+  return (
+    <View style={styles.wrap}>
+      <View style={styles.hero}>
+        <Mascot pose="think" size={100} />
+        <Text style={styles.h2} accessibilityRole="header">{`No encontramos «${query.trim()}» ${where}`}</Text>
+        <Text style={styles.sub}>
+          {onlyCategory
+            ? `Hay ${n === 1 ? "1 documento" : `${n} documentos`} con «${query.trim()}» en otros tipos.`
+            : `Hay ${n === 1 ? "1 documento" : `${n} documentos`} con «${query.trim()}» si quitas los filtros.`}
+        </Text>
+        {/* Longer label than the other empty states: a wider button so it never truncates. */}
+        <View style={[styles.action, { width: "100%", maxWidth: 320 }]}>
+          <Button fullWidth onPress={onSearchAll}>
+            Buscar en todos los documentos
+          </Button>
+        </View>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.eyebrow}>{n === 1 ? "Aparece si buscas en todos" : "Aparecen si buscas en todos"}</Text>
+        {matches.slice(0, 2).map((d) => (
+          <DocumentPreviewRow key={d.id} doc={d} onPress={() => onOpen(d)} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 /** m9: say what is empty, «No hay imágenes con «Chequeo anual»», not just «sin resultados». */
 function filterTitle(f: DocumentListFilters, tagCategories: TagCategoryOption[]): string {
   const what = f.categories.length === 1 ? CATEGORY_META[f.categories[0]!].plural.toLowerCase() : "documentos";
@@ -254,11 +338,13 @@ export function DocumentsFilterEmpty({
   allDocuments,
   tagCategories,
   onChange,
+  onOpen,
 }: {
   filters: DocumentListFilters;
   allDocuments: Document[];
   tagCategories: TagCategoryOption[];
   onChange: (next: DocumentListFilters) => void;
+  onOpen: (doc: Document) => void;
 }) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -272,6 +358,16 @@ export function DocumentsFilterEmpty({
     [filters, allDocuments, tagCategories, valueToCategory],
   );
 
+  // v2.13: with one filter, removing it brings the whole list back; listing two random documents
+  // under it only confused. Show what comes back only when another filter stays on.
+  const stillFiltered = removal ? hasActiveDocumentFilters(removal.next) : false;
+  const n = removal?.docs.length ?? 0;
+  const sub = !removal
+    ? "Prueba con otros filtros."
+    : stillFiltered
+      ? `Si quitas «${removal.label}», ${n === 1 ? "aparece 1 documento" : `aparecen ${n} documentos`}.`
+      : `Tienes ${n === 1 ? "1 documento" : `${n} documentos`} ${otherThan(filters)}.`;
+
   return (
     <View style={styles.wrap}>
       <View style={styles.hero}>
@@ -279,11 +375,7 @@ export function DocumentsFilterEmpty({
         <Text style={styles.h2} accessibilityRole="header">
           {filterTitle(filters, tagCategories)}
         </Text>
-        <Text style={styles.sub}>
-          {removal
-            ? `Si quitas «${removal.label}», ${removal.docs.length === 1 ? "aparece 1 documento" : `aparecen ${removal.docs.length} documentos`}.`
-            : "Prueba con otros filtros."}
-        </Text>
+        <Text style={styles.sub}>{sub}</Text>
         <View style={styles.action}>
           <Button fullWidth onPress={() => onChange(removal ? removal.next : { categories: [], tagValueIds: [], startDate: null, endDate: null })}>
             {removal ? `Quitar el filtro «${removal.label}»` : "Limpiar filtros"}
@@ -291,24 +383,12 @@ export function DocumentsFilterEmpty({
         </View>
       </View>
 
-      {removal ? (
+      {removal && stillFiltered ? (
         <View style={styles.card}>
-          <Text style={styles.eyebrow}>También te puede servir</Text>
-          {removal.docs.slice(0, 2).map((d) => {
-            const meta = CATEGORY_META[categoryOf(d)];
-            const Icon = meta.icon;
-            return (
-              <View key={d.id} style={styles.relRow}>
-                <IconTile tone="document" icon={<Icon size={18} strokeWidth={2.2} color={t.accent.docFg} />} />
-                <View style={styles.copy}>
-                  <Text style={styles.rowTitle} numberOfLines={1}>
-                    {d.title}
-                  </Text>
-                  <Text style={styles.meta}>{`${documentDateLabel(d)} · ${meta.label}`}</Text>
-                </View>
-              </View>
-            );
-          })}
+          <Text style={styles.eyebrow}>{`${n === 1 ? "Aparece" : "Aparecen"} si quitas «${removal.label}»`}</Text>
+          {removal.docs.slice(0, 2).map((d) => (
+            <DocumentPreviewRow key={d.id} doc={d} onPress={() => onOpen(d)} />
+          ))}
         </View>
       ) : null}
     </View>

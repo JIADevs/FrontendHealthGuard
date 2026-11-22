@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Keyboard, Pressable, ScrollView, SectionList, StyleSheet, Text, View } from "react-native";
-import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Filter } from "lucide-react-native";
 import type { Document } from "@helu/api";
@@ -24,7 +24,13 @@ import { useDocumentsList } from "../../hooks/useDocumentsList";
 import { CATEGORY_FILTER_OPTIONS, type DocumentCategory } from "./documentCategories";
 import { DocumentRow } from "./DocumentRow";
 import { DocumentsAddSheet } from "./DocumentsAddSheet";
-import { DocumentsEmpty, DocumentsFilterEmpty, DocumentsSearchEmpty } from "./DocumentsEmpty";
+import {
+  DocumentsEmpty,
+  DocumentsFilterEmpty,
+  DocumentsSearchEmpty,
+  DocumentsSearchFilteredEmpty,
+  documentsMatching,
+} from "./DocumentsEmpty";
 import { DocumentsFilterSheet } from "./DocumentsFilterSheet";
 import { PortalLinkSheet } from "./PortalLinkSheet";
 
@@ -88,6 +94,16 @@ export function Documents(props: DocumentsProps) {
   );
 
   const searching = list.debouncedSearch.trim().length > 0;
+  // v2.13 «Buscar y filtrar»: while the next results are on their way the current ones dim to 50 %
+  // (150 ms) and the search field shows the spinner; then rows that stay keep still, rows that leave
+  // fade out in 100 ms and new ones fade in in 150 ms.
+  const busy = !list.settled && (list.search.trim().length > 0 || list.debouncedSearch.trim().length > 0);
+  const dim = useAnimatedStyle(() => ({ opacity: withTiming(busy ? 0.5 : 1, { duration: motion.fast }) }), [busy]);
+  // v2.13: when a search finds nothing because of the active filter, the empty state says so.
+  const hiddenByFilter = useMemo(
+    () => (searching && list.hasActiveFilter ? documentsMatching(list.debouncedSearch, list.allDocuments) : []),
+    [searching, list.hasActiveFilter, list.debouncedSearch, list.allDocuments],
+  );
   // Staggered entry by group (§2, §6c): rows of «Esta semana» together, then each month 40 ms later.
   const groupById = useMemo(
     () => new Map(list.sections.flatMap((section, g) => section.data.map((d) => [d.id, g] as const))),
@@ -102,7 +118,13 @@ export function Documents(props: DocumentsProps) {
         </Text>
         <View style={styles.toolbar}>
           <View style={styles.searchWrap}>
-            <SearchField value={list.search} onChange={list.setSearch} placeholder="Buscar documentos" accessibilityLabel="Buscar documentos" />
+            <SearchField
+              value={list.search}
+              onChange={list.setSearch}
+              placeholder="Buscar documentos"
+              accessibilityLabel="Buscar documentos"
+              loading={busy}
+            />
           </View>
           <Pressable
             style={[styles.filterBtn, list.hasActiveFilter && styles.filterBtnActive]}
@@ -142,7 +164,7 @@ export function Documents(props: DocumentsProps) {
           <DocumentRowSkeleton />
         </SkeletonGroup>
       ) : (
-        <View style={{ flex: 1 }}>
+        <Animated.View style={[{ flex: 1 }, dim]} aria-busy={busy}>
           <SectionList
             sections={list.sections}
             keyExtractor={(d) => d.id}
@@ -163,8 +185,12 @@ export function Documents(props: DocumentsProps) {
               const group = groupById.get(item.id) ?? 0;
               return (
                 <Animated.View
-                  entering={entered ? undefined : FadeIn.duration(motion.base).delay(Math.min(group, STAGGER_MAX) * STAGGER_MS)}
-                  exiting={FadeOut.duration(motion.base)}
+                  entering={
+                    entered
+                      ? FadeIn.duration(motion.fast)
+                      : FadeIn.duration(motion.base).delay(Math.min(group, STAGGER_MAX) * STAGGER_MS)
+                  }
+                  exiting={FadeOut.duration(motion.instant)}
                   layout={LinearTransition.duration(motion.base)}
                   style={styles.rowWrap}
                 >
@@ -182,30 +208,43 @@ export function Documents(props: DocumentsProps) {
               );
             }}
             ListEmptyComponent={
-              !list.settled ? undefined : searching ? (
-                <DocumentsSearchEmpty
-                  query={list.debouncedSearch}
-                  allDocuments={list.allDocuments}
-                  tagCategories={list.tagCategories}
-                  onSearch={list.setSearch}
-                  onPickTag={pickTag}
-                  onPickCategory={pickCategory}
-                  onUpload={() => setAddOpen(true)}
-                />
-              ) : list.hasActiveFilter ? (
-                <DocumentsFilterEmpty
-                  filters={list.filters}
-                  allDocuments={list.allDocuments}
-                  tagCategories={list.tagCategories}
-                  onChange={list.setFilters}
-                />
-              ) : (
-                <DocumentsEmpty onUpload={onUpload} onScan={onScan} />
+              !list.settled ? undefined : (
+                <Animated.View entering={FadeIn.duration(motion.fast)}>
+                  {searching && list.hasActiveFilter && hiddenByFilter.length > 0 ? (
+                    <DocumentsSearchFilteredEmpty
+                      query={list.debouncedSearch}
+                      filters={list.filters}
+                      matches={hiddenByFilter}
+                      onSearchAll={() => list.setFilters({ categories: [], tagValueIds: [], startDate: null, endDate: null })}
+                      onOpen={onOpen}
+                    />
+                  ) : searching ? (
+                    <DocumentsSearchEmpty
+                      query={list.debouncedSearch}
+                      allDocuments={list.allDocuments}
+                      tagCategories={list.tagCategories}
+                      onSearch={list.setSearch}
+                      onPickTag={pickTag}
+                      onPickCategory={pickCategory}
+                      onUpload={() => setAddOpen(true)}
+                    />
+                  ) : list.hasActiveFilter ? (
+                    <DocumentsFilterEmpty
+                      filters={list.filters}
+                      allDocuments={list.allDocuments}
+                      tagCategories={list.tagCategories}
+                      onChange={list.setFilters}
+                      onOpen={onOpen}
+                    />
+                  ) : (
+                    <DocumentsEmpty onUpload={onUpload} onScan={onScan} />
+                  )}
+                </Animated.View>
               )
             }
           />
           <PullRefreshIndicator state={pull} />
-        </View>
+        </Animated.View>
       )}
 
       <Fab

@@ -367,3 +367,14 @@ En Inicio, al tirar hacia abajo la pantalla bajaba pero no se veía nada: el spi
 | Cambio | Dónde |
 |---|---|
 | Píldora de tirar para actualizar: tirando (última actualización), actualizando, listo y error. Se aplica a Inicio, Calendario, Citas, Medicamentos, Bienestar y Documentos | `system/pages/movimiento-interacciones.md` §6c; `system/MASTER.md`; `mockups/m1-acceso-inicio.js` «Inicio · actualizar» |
+
+## 20. v2.13 · Buscar y filtrar en Documentos
+
+En Documentos, con un solo filtro sin resultados aparecían debajo dos documentos cualquiera bajo «También te puede servir», que no se podían tocar. Además, al buscar, la lista vieja quedaba quieta mientras el servidor respondía y después cambiaba de golpe, y una búsqueda sin resultados por culpa de un filtro decía «No encontramos» aunque el documento existiera.
+
+| Cambio | Dónde |
+|---|---|
+| Regla «Buscar y filtrar»: atenuar al 50 % y spinner en el buscador mientras llegan; filas que salen 100 ms, nuevas 150 ms; estado vacío con fundido | `system/pages/movimiento-interacciones.md` §6c |
+| Filtro sin resultados: con un solo filtro, sin documentos sueltos; con dos, «Aparecen si quitas «…»» y filas que se pueden tocar | `mockups/m9-vacios.js` «Documentos · filtro sin resultados» y «(un filtro)» |
+| Búsqueda sin resultados por el filtro: «No encontramos «…» en Fórmulas» + «Buscar en todos los documentos» | `mockups/m9-vacios.js` «Búsqueda · sin resultados por el filtro», «Búsqueda · buscando» |
+| `SearchField` acepta `loading` (spinner en lugar de la ✕) | `@helu/ui` |

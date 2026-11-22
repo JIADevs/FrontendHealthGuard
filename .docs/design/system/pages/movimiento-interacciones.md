@@ -224,6 +224,18 @@ Demo interactiva: sección «Estados de carga» de [`../movimiento.html`](../mov
 | Datos nuevos al refrescar | Lo que ya estaba no se mueve; lo nuevo entra arriba con un resaltado de borde de 1,2 s |
 | Nunca | Texto letra por letra, rebotes al cargar, spinner a pantalla completa, contenido que empuja lo que la persona está leyendo |
 
+**Buscar y filtrar (v2.13)**
+
+Cuando los resultados de una lista cambian porque la persona escribe en el buscador o toca un filtro:
+
+| Momento | Qué se ve |
+|---|---|
+| Mientras llegan los resultados | Los anteriores quedan en su lugar y se atenúan al 50 % (150 ms). El buscador muestra el `Spinner` del sistema (sm) en lugar de la ✕ y lo anuncia («Buscando») |
+| Cuando llegan | Las filas que siguen no se mueven; las que salen se desvanecen en 100 ms; las nuevas entran con fundido de 150 ms; la lista vuelve a opacidad 100 % |
+| Sin resultados | El estado vacío entra con fundido de 150 ms. Si un filtro activo es lo que deja la búsqueda vacía, lo dice («No encontramos «radio» en Fórmulas») y ofrece «Buscar en todos los documentos», con lo que aparecería |
+| Filtro sin resultados | Dice qué filtro deja la lista vacía y ofrece quitarlo. Solo si al quitarlo queda otro filtro activo muestra lo que aparecería («Aparecen si quitas «2025»»); esas filas se pueden tocar |
+| Movimiento reducido | El cambio es inmediato, sin atenuar ni fundidos |
+
 **Tirar para actualizar (v2.12, móvil)**
 
 Toda lista o pantalla que se puede actualizar tirando hacia abajo usa `usePullRefresh` + `PullRefreshIndicator` de `@helu/ui`. El spinner nativo de `RefreshControl` se oculta y en su lugar aparece una píldora del kit centrada en el hueco que abre el gesto.

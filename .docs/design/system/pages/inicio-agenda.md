@@ -21,6 +21,7 @@ Orden fijo de bloques (móvil). En web se reparten en 3 columnas.
 ## Tomas de medicamento
 - La toma es la acción de mayor frecuencia, así que se resuelve en **un toque**. «Tomar» (éxito sólido `#15803D`) en la fila, y la hoja «¿Tomaste esta dosis?» al abrir desde un push.
 - **v2 · Hoja de toma:** «Sí, la tomé» guarda al instante con la hora actual; «Cambiar hora» es opcional. Los motivos de no toma aparecen solo después de «No la tomé», en un segundo paso.
+- **v2.11 · Orden de la hoja de toma:** «Sí, la tomé» y «No la tomé» van juntos, uno debajo del otro, y la línea «Se registra a las … · Cambiar hora» queda justo debajo de los botones (8 px), antes de la pista.
 - Estados de fila: pendiente (botón «Tomar»), tomada («✓ Tomado» en verde), no tomada (chip rojo con el motivo), futura (chip gris «Más tarde»).
 - Motivos de no toma: «Se me olvidó», «No lo compré» y «Otro». Nunca se muestran como culpa.
 - Meta semanal: anillo verde «12/14» y la frase «Llevas 12 de 14».

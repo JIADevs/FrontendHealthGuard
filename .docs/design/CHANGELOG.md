@@ -351,3 +351,11 @@ En móvil la agenda solo tenía la tira semanal: para ver un día de dentro de v
 |---|---|
 | El título del mes («Noviembre 2026 ⌄») abre la hoja «Ir a una fecha»: mes completo con flechas, hasta 3 íconos por tipo por día, leyenda y «Volver a hoy». Tocar un día cierra la hoja y salta a esa semana | `system/pages/inicio-agenda.md` · Calendario; `mockups/m2-agenda.js` «Calendario · ir a una fecha» |
 | La semana empieza el domingo en la tira y en la grilla; la grilla siempre tiene 6 filas y muestra atenuados los días del mes anterior y del siguiente | `system/pages/inicio-agenda.md` · Calendario |
+
+## 18. v2.11 · Hoja de toma con los botones juntos
+
+En la hoja «¿Tomaste esta dosis?» la hora quedaba entre «Sí, la tomé» y «No la tomé», y separaba dos respuestas a la misma pregunta. Se compararon dos opciones en el lienzo: botones juntos con la hora debajo, y una fila de dos botones con la hora como dato en una tarjeta. Se eligió la primera, que cambia menos la hoja.
+
+| Cambio | Dónde |
+|---|---|
+| «Sí, la tomé» y «No la tomé» juntos; «Se registra a las … · Cambiar hora» justo debajo (8 px), antes de la pista | `system/pages/inicio-agenda.md` · Hoja de toma; `mockups/m2-agenda.js` «Registrar toma» |

@@ -88,7 +88,11 @@ export function Documents(props: DocumentsProps) {
   );
 
   const searching = list.debouncedSearch.trim().length > 0;
-  const indexById = useMemo(() => new Map(list.items.map((d, i) => [d.id, i])), [list.items]);
+  // Staggered entry by group (§2, §6c): rows of «Esta semana» together, then each month 40 ms later.
+  const groupById = useMemo(
+    () => new Map(list.sections.flatMap((section, g) => section.data.map((d) => [d.id, g] as const))),
+    [list.sections],
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -152,10 +156,10 @@ export function Documents(props: DocumentsProps) {
             </Text>
           )}
           renderItem={({ item }) => {
-            const i = indexById.get(item.id) ?? 0;
+            const group = groupById.get(item.id) ?? 0;
             return (
               <Animated.View
-                entering={entered ? undefined : FadeIn.duration(motion.base).delay(Math.min(i, STAGGER_MAX) * STAGGER_MS)}
+                entering={entered ? undefined : FadeIn.duration(motion.base).delay(Math.min(group, STAGGER_MAX) * STAGGER_MS)}
                 exiting={FadeOut.duration(motion.base)}
                 layout={LinearTransition.duration(motion.base)}
                 style={styles.rowWrap}

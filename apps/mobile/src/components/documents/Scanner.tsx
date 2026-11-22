@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ComponentRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -19,6 +19,7 @@ import { ArrowLeft, ArrowRight, Camera, Check, MoreVertical, RotateCcw, Sparkles
 import {
   BottomActionBar,
   Button,
+  ChoiceChips,
   colors,
   nativeFont,
   overlay,
@@ -34,6 +35,7 @@ import { useScannerCameraPermission } from "../../hooks/useScannerCameraPermissi
 import type { FileSource } from "../../hooks/useDocumentForm";
 import { scanImagesToPdfFile } from "../../utils/scanImagesToPdf";
 import { getUriFileSizeBytes } from "../../utils/fileUriSize";
+import { applyScanFilter, SCAN_FILTERS, type ScanFilter } from "../../utils/scanFilters";
 import { notify } from "../../lib/notify";
 import { MAX_UPLOAD_MB, friendlySize } from "./DocumentUpload";
 
@@ -78,6 +80,42 @@ export function Scanner({ onClose, onContinue, onUploadInstead }: ScannerProps) 
   const [pages, setPages] = useState<Page[]>([]);
   const [retakeId, setRetakeId] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
+  // «Mejorado» by default: the scanner is for papers, and this is what makes them readable.
+  const [filter, setFilter] = useState<ScanFilter>("enhanced");
+  // Processed copies per page and filter; the original photo is kept so switching never degrades.
+  const [processed, setProcessed] = useState<Record<string, Partial<Record<ScanFilter, string>>>>({});
+  const processedRef = useRef(processed);
+  processedRef.current = processed;
+
+  const ensureProcessed = useCallback(async (page: Page, look: ScanFilter): Promise<string> => {
+    const ready = processedRef.current[page.id]?.[look];
+    if (ready) return ready;
+    let uri = page.uri;
+    try {
+      uri = await applyScanFilter(page.uri, look);
+    } catch (err) {
+      // If the filter fails the page still goes, as it was taken.
+      console.warn("[Scanner] filter failed", err);
+    }
+    processedRef.current = { ...processedRef.current, [page.id]: { ...processedRef.current[page.id], [look]: uri } };
+    setProcessed(processedRef.current);
+    return uri;
+  }, []);
+
+  // Process in the review only, one page at a time, so the camera never stutters.
+  useEffect(() => {
+    if (phase !== "review") return;
+    let cancelled = false;
+    void (async () => {
+      for (const page of pages) {
+        if (cancelled) return;
+        await ensureProcessed(page, filter);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, pages, filter, ensureProcessed]);
 
   const addPage = useCallback(
     (uri: string) => {
@@ -116,10 +154,12 @@ export function Scanner({ onClose, onContinue, onUploadInstead }: ScannerProps) 
     setPreparing(true);
     try {
       const base = scanBaseName();
+      const uris: string[] = [];
+      for (const page of pages) uris.push(await ensureProcessed(page, filter));
       const file: FileSource =
-        pages.length === 1
-          ? { uri: pages[0]!.uri, name: `${base}.jpg`, mimeType: "image/jpeg", size: await getUriFileSizeBytes(pages[0]!.uri) }
-          : { ...(await scanImagesToPdfFile(pages.map((p) => p.uri))), name: `${base}.pdf` };
+        uris.length === 1
+          ? { uri: uris[0]!, name: `${base}.jpg`, mimeType: "image/jpeg", size: await getUriFileSizeBytes(uris[0]!) }
+          : { ...(await scanImagesToPdfFile(uris)), name: `${base}.pdf` };
       if (file.size != null && file.size > MAX_UPLOAD_MB * 1024 * 1024) {
         notify({
           tone: "error",
@@ -135,7 +175,7 @@ export function Scanner({ onClose, onContinue, onUploadInstead }: ScannerProps) 
     } finally {
       setPreparing(false);
     }
-  }, [pages, preparing, onContinue]);
+  }, [pages, preparing, onContinue, ensureProcessed, filter]);
 
   if (!permission.permissionReady) return <View style={{ flex: 1, backgroundColor: colors.slate[900] }} />;
 
@@ -156,6 +196,9 @@ export function Scanner({ onClose, onContinue, onUploadInstead }: ScannerProps) 
     return (
       <ScannerReview
         pages={pages}
+        filter={filter}
+        onFilter={setFilter}
+        shownUri={(page) => processed[page.id]?.[filter] ?? null}
         preparing={preparing}
         onBack={() => setPhase("camera")}
         onAddPage={() => setPhase("camera")}
@@ -358,6 +401,9 @@ const cam = StyleSheet.create({
 
 function ScannerReview({
   pages,
+  filter,
+  onFilter,
+  shownUri,
   preparing,
   onBack,
   onAddPage,
@@ -367,6 +413,10 @@ function ScannerReview({
   onContinue,
 }: {
   pages: Page[];
+  filter: ScanFilter;
+  onFilter: (filter: ScanFilter) => void;
+  /** The page with the filter applied, or null while it is being processed. */
+  shownUri: (page: Page) => string | null;
   preparing: boolean;
   onBack: () => void;
   onAddPage: () => void;
@@ -395,6 +445,10 @@ function ScannerReview({
       <StatusBar style="dark" />
       <ScreenHeader title="Revisar páginas" subtitle={pagesLabel(pages.length)} onBack={onBack} />
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.filters}>
+          <Text style={styles.filtersLabel}>Estilo del escaneo</Text>
+          <ChoiceChips options={SCAN_FILTERS} value={filter} onChange={(v) => onFilter(v as ScanFilter)} />
+        </View>
         <View style={styles.grid}>
           {pages.map((page, index) => (
             <Animated.View
@@ -406,6 +460,7 @@ function ScannerReview({
             >
               <ReviewPage
                 page={page}
+                shownUri={shownUri(page)}
                 index={index}
                 count={pages.length}
                 picked={moving === page.id}
@@ -449,6 +504,7 @@ function ScannerReview({
 
 function ReviewPage({
   page,
+  shownUri,
   index,
   count,
   picked,
@@ -460,6 +516,7 @@ function ReviewPage({
   onMove,
 }: {
   page: Page;
+  shownUri: string | null;
   index: number;
   count: number;
   picked: boolean;
@@ -488,7 +545,14 @@ function ReviewPage({
         accessibilityHint={dropTarget ? "Pone aquí la página elegida" : "Mantén presionada para cambiar el orden"}
         style={[styles.card, picked && { borderColor: t.brand.solid }, dropTarget && { borderStyle: "dashed" }]}
       >
-        <Image source={{ uri: page.uri }} style={[styles.image, picked && { opacity: 0.6 }]} resizeMode="cover" />
+        <View>
+          <Image source={{ uri: shownUri ?? page.uri }} style={[styles.image, (picked || !shownUri) && { opacity: 0.6 }]} resizeMode="cover" />
+          {!shownUri ? (
+            <View style={styles.processing} accessibilityLabel="Aplicando el estilo">
+              <ActivityIndicator color={t.brand.solid} />
+            </View>
+          ) : null}
+        </View>
         <View style={styles.cardRow}>
           <Text style={styles.cardTitle}>{`Página ${index + 1}`}</Text>
           <View ref={triggerRef} collapsable={false}>
@@ -534,6 +598,9 @@ function makeReviewStyles(t: ThemeContextValue) {
     cardTitle: { fontSize: 14, fontFamily: nativeFont("body", 600), color: t.text.primary, paddingLeft: 4 },
     menuButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", marginVertical: -8 },
     hint: { flexDirection: "row", alignItems: "center", gap: spacing[3] },
+    filters: { gap: spacing[2] },
+    filtersLabel: { fontSize: 14, fontFamily: nativeFont("body", 600), color: t.text.primary },
+    processing: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center" },
     hintText: { flex: 1, fontSize: 13, lineHeight: 18, fontFamily: nativeFont("body", 400), color: t.text.secondary },
   });
 }

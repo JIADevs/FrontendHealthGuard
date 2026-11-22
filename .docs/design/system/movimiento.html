@@ -35,6 +35,14 @@ h1{font:900 34px/1.1 var(--font-heading)}h2{font:900 24px/1.2 var(--font-heading
 .btn .lb{transition:opacity var(--motion-fast)}
 .spin{width:18px;height:18px;border-radius:50%;border:3px solid color-mix(in srgb,currentColor 35%,transparent);border-top-color:currentColor;animation:sp .8s linear infinite;flex:none}
 @keyframes sp{to{transform:rotate(360deg)}}
+.srF{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--color-surface-muted);color:var(--color-text-secondary)}
+.srF input{flex:1;border:0;background:transparent;font:400 14px Inter;color:var(--color-text-primary);outline:none;min-width:0}
+.srF:focus-within{box-shadow:0 0 0 2px var(--color-brand-focus)}
+.srEnd{width:28px;height:28px;display:grid;place-items:center;color:var(--color-brand-solid)}
+.srList{display:flex;flex-direction:column;gap:8px;min-height:236px;transition:opacity 150ms linear}
+.srList.busy{opacity:.5}
+body.rm .srList{transition:none}
+.srRow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--color-border);border-bottom-width:3px;border-radius:16px;background:var(--color-surface,#fff)}
 .tile{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;flex:none}
 .chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font:800 13px var(--font-heading);white-space:nowrap}
 .aichip{background:var(--color-feature-ai-bg);color:var(--color-feature-ai-fg);padding:2px 8px}
@@ -233,6 +241,20 @@ code{font-size:12px;background:var(--color-surface-muted);padding:1px 5px;border
 <div class="grid g2">
 <div class="card"><span class="tag">Lista que carga más</span><span class="law">Doherty · 33</span><div class="note">La página siguiente se pide antes de llegar al final (cuando faltan 3 filas). Si aún no llegó, al final aparecen 2 filas de esqueleto, no un spinner.</div><div id="moreBox" class="col" style="gap:8px;max-height:260px;overflow:auto;padding-right:4px"></div><button class="btn sec sm" id="moreGo" style="align-self:flex-start">▶ Bajar hasta el final</button></div>
 <div class="card"><span class="tag">Primera vez vs. actualizar</span><span class="law">Carga cognitiva</span><div class="note">El anillo crece desde 0 solo la primera vez. Al actualizar, cambia al valor nuevo sin repetir la animación ni mostrar esqueleto.</div><div class="row" style="gap:16px"><div id="ringBox"></div><div class="col" style="gap:4px"><div class="ey" style="color:var(--color-success-fg)">META SEMANAL</div><div class="t">Tomas a tiempo</div><div class="s" id="ringTxt">—</div></div></div><div class="row wr" style="gap:8px"><button class="btn sec sm" id="ringFirst">▶ Abrir por primera vez</button><button class="btn sec sm" id="ringRef">↻ Actualizar</button></div></div>
+</div>
+<div class="grid g2" id="srch">
+<div class="card"><span class="tag">Buscar y filtrar</span><span class="law">Doherty · Retroalimentación · v2.13</span><div class="note">Escribe o toca el filtro. Mientras llegan los resultados, los anteriores se atenúan y el buscador muestra el spinner; cuando llegan, las filas que siguen no se mueven, las que salen se van y las nuevas entran. Si un filtro deja la búsqueda vacía, lo dice.</div>
+<div class="row" style="gap:8px"><label class="srF grow" id="srF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="srQ" placeholder="Buscar documentos" autocomplete="off" aria-label="Buscar documentos"><span id="srEnd" class="srEnd"></span></label></div>
+<div class="row wr" style="gap:8px"><button class="btn sec sm" id="srChip" aria-pressed="false">Fórmulas</button><span class="s">Prueba: «radio» con y sin Fórmulas</span></div>
+<div id="srList" class="srList" aria-live="polite"></div></div>
+<div class="card"><span class="tag">Buscar y filtrar · reglas</span><div class="note">Aplica a toda lista que cambia porque la persona escribe en el buscador o toca un filtro (Documentos, Mochilas, Citas, Medicamentos).</div>
+<table class="legend"><tr><th>Momento</th><th>Qué se ve</th></tr>
+<tr><td>Mientras llegan</td><td>Los resultados anteriores quedan en su lugar al 50 % (150 ms). El buscador muestra el <code>Spinner</code> del sistema en lugar de la ✕ y lo anuncia («Buscando»)</td></tr>
+<tr><td>Cuando llegan</td><td>Las filas que siguen no se mueven; las que salen se desvanecen en 100 ms; las nuevas entran con fundido de 150 ms; la lista vuelve al 100 %</td></tr>
+<tr><td>Sin resultados</td><td>El estado vacío entra con fundido de 150 ms. Si un filtro es lo que la deja vacía: «No encontramos «radio» en Fórmulas» + «Buscar en todos los documentos» y lo que aparecería, que se puede tocar</td></tr>
+<tr><td>Filtro sin resultados</td><td>Dice qué filtro deja la lista vacía y ofrece quitarlo. Solo si al quitarlo queda otro filtro activo muestra lo que aparecería («Aparecen si quitas «2025»»)</td></tr>
+<tr><td>Movimiento reducido</td><td>Cambio inmediato: sin atenuar ni fundidos</td></tr>
+<tr><td>Nunca</td><td>Vaciar la lista mientras busca, un esqueleto por cada letra, mover filas que siguen siendo resultado</td></tr></table></div>
 </div>
 <div class="card"><span class="tag">Esqueletos por pantalla</span><div class="note">Los esqueletos de las pantallas principales (Inicio, Agenda, Detalle de cita, Documentos, Detalle de documento, Mochilas, Detalle de mochila y Detalle de misión) están en los mockups, módulo «11 · Estados de carga»: <code>.docs/design/mockups/index.html?m=carga</code>. En web (v2.8) hay además Inicio, Documentos, Detalle de documento y Mochilas. Se generan a partir de cada pantalla, así tienen exactamente su forma y su estilo.</div></div>
 
@@ -485,6 +507,46 @@ $('celT').onclick=e=>{CEL=!CEL;e.currentTarget.classList.toggle('on',CEL);e.curr
 $('tg').onclick=()=>{const d=document.documentElement,k=d.dataset.theme!=='dark';d.dataset.theme=k?'dark':'light';$('tg').textContent=k?'Modo claro':'Modo oscuro'};
 addEventListener('keydown',e=>{if(e.key==='Escape'){$('cel').classList.remove('on');sheetClose(false)}});
 addEventListener('load',placeInd);setTimeout(placeInd,300);addEventListener('resize',placeInd);
+
+/* v2.13 · Buscar y filtrar: atenuar mientras llega, filas que salen 100 ms, nuevas 150 ms, vacío con fundido. */
+(()=>{
+const DOCS=[['Radiografía de tórax','20 nov · Imagen','img'],['Fórmula · Losartán 50 mg','2 oct · Fórmula','rx'],['Hemograma completo','15 oct · Resultado','lab'],['Resultados · Labprueba','22 nov · Portal','lab'],['Orden de resonancia','21 nov · Orden','doc'],['Fórmula · Metformina 850 mg','1 nov · Fórmula','rx']];
+const fold=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+let q='',onlyRx=false,shown=[],timer=0,req=0;
+const list=$('srList'),end=$('srEnd'),chip=$('srChip');
+const row=d=>`<div class="srRow" data-k="${d[0]}"><div class="tile" style="width:36px;height:36px;border-radius:12px;background:var(--color-feature-document-bg);color:var(--color-feature-document-fg)">${I(d[2]==='rx'?'pill':'file',17)}</div><div class="grow"><div class="t">${d[0]}</div><div class="s">${d[1]}</div></div>${I('chevR',16,'var(--color-text-muted)')}</div>`;
+const clearBtn=()=>q?`<button class="ib" style="width:28px;height:28px" aria-label="Limpiar búsqueda" id="srX">${I('x',14)}</button>`:'';
+function setEnd(busy){end.innerHTML=busy?'<span class="spin" role="status" aria-label="Buscando" style="width:16px;height:16px;border-width:2.5px"></span>':clearBtn();const x=$('srX');if(x)x.onclick=()=>{$('srQ').value='';q='';run()}}
+function results(query,rx){return DOCS.filter(d=>(!rx||d[2]==='rx')&&(!query||fold(d[0]).includes(fold(query))))}
+function render(next){
+  const keys=next.map(d=>d[0]);
+  // Leaving rows: fade out 100 ms, then removed (the rest closes up).
+  const leaving=[...list.querySelectorAll('.srRow,.srEmpty')].filter(el=>!el.dataset.k||!keys.includes(el.dataset.k));
+  Promise.all(leaving.map(el=>anim(el,[{opacity:1},{opacity:0}],{duration:D(100),easing:'linear',fill:'forwards'}).finished)).then(()=>{
+    leaving.forEach(el=>el.remove());
+    if(next.length===0){
+      const all=results(q,false);
+      const html=onlyRx&&q&&all.length?`<div class="srEmpty col" style="gap:10px;align-items:center;text-align:center;padding:12px 4px"><div class="t" style="font:900 17px Nunito">No encontramos «${q}» en Fórmulas</div><div class="s">Hay ${all.length===1?'1 documento':all.length+' documentos'} con «${q}» en otros tipos.</div><button class="btn pri sm" id="srAll">Buscar en todos los documentos</button><div class="ey" style="align-self:flex-start;color:var(--color-text-secondary)">${all.length===1?'APARECE':'APARECEN'} SI BUSCAS EN TODOS</div>${all.slice(0,2).map(row).join('')}</div>`:`<div class="srEmpty col" style="gap:6px;align-items:center;text-align:center;padding:24px 4px"><div class="t" style="font:900 17px Nunito">No encontramos «${q}»</div><div class="s">Buscamos en los títulos, los médicos y las etiquetas.</div></div>`;
+      list.insertAdjacentHTML('beforeend',html);
+      anim(list.lastElementChild,[{opacity:0},{opacity:1}],{duration:D(150),easing:'linear'});
+      const b=$('srAll');if(b)b.onclick=()=>{onlyRx=false;chip.setAttribute('aria-pressed','false');chip.classList.remove('on');run()};
+    }else{
+      // Rows that stay keep their place; new ones fade in where they belong.
+      next.forEach((d,i)=>{let el=list.querySelector(`[data-k="${CSS.escape(d[0])}"]`);if(!el){list.insertAdjacentHTML('beforeend',row(d));el=list.lastElementChild;anim(el,[{opacity:0},{opacity:1}],{duration:D(150),easing:'linear'})}const at=list.children[i];if(at!==el)list.insertBefore(el,at)});
+    }
+    shown=next;list.classList.remove('busy');setEnd(false);
+  });
+}
+function run(){
+  clearTimeout(timer);const id=++req;
+  list.classList.add('busy');setEnd(true);
+  // Debounce 300 ms + a server that answers in ~900 ms.
+  timer=setTimeout(()=>{setTimeout(()=>{if(id===req)render(results(q,onlyRx))},900)},300);
+}
+$('srQ').oninput=e=>{q=e.target.value.trim();run()};
+chip.onclick=()=>{onlyRx=!onlyRx;chip.setAttribute('aria-pressed',String(onlyRx));chip.classList.toggle('on',onlyRx);chip.textContent=onlyRx?'✓ Fórmulas':'Fórmulas';run()};
+list.innerHTML=DOCS.map(row).join('');shown=DOCS.slice();setEnd(false);
+})();
 </script>
 </body>
 </html>

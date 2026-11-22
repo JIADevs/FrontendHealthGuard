@@ -235,6 +235,9 @@ Cuando los resultados de una lista cambian porque la persona escribe en el busca
 | Sin resultados | El estado vacío entra con fundido de 150 ms. Si un filtro activo es lo que deja la búsqueda vacía, lo dice («No encontramos «radio» en Fórmulas») y ofrece «Buscar en todos los documentos», con lo que aparecería |
 | Filtro sin resultados | Dice qué filtro deja la lista vacía y ofrece quitarlo. Solo si al quitarlo queda otro filtro activo muestra lo que aparecería («Aparecen si quitas «2025»»); esas filas se pueden tocar |
 | Movimiento reducido | El cambio es inmediato, sin atenuar ni fundidos |
+| Nunca | Vaciar la lista mientras busca, un esqueleto por cada letra, mover filas que siguen siendo resultado |
+
+Demo interactiva: «Buscar y filtrar» en [`../movimiento.html`](../movimiento.html#srch).
 
 **Tirar para actualizar (v2.12, móvil)**
 

@@ -47,8 +47,14 @@ const STAGGER_MAX = 6;
 export function Documents(props: DocumentsProps) {
   // Leaving the list with the search focused makes iOS give it the focus back on return, so the
   // keyboard would pop up by itself: close it before any navigation.
+  const [addOpen, setAddOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  // It also closes the sheets: a row tapped while «Agregar documento» was still opening used to
+  // leave the sheet on top of the detail screen.
   const away = <A extends unknown[]>(fn: (...args: A) => void) => (...args: A) => {
     Keyboard.dismiss();
+    setAddOpen(false);
+    setFiltersOpen(false);
     fn(...args);
   };
   const onOpen = away(props.onOpen);
@@ -62,8 +68,6 @@ export function Documents(props: DocumentsProps) {
   const list = useDocumentsList();
   const pull = usePullToRefresh(list.refetch);
   const showSkeleton = useSkeletonVisible(list.isLoading);
-  const [addOpen, setAddOpen] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
   // Staggered entry only for the first paint of the list (§2, §6c), not on every refetch.
   const [entered, setEntered] = useState(false);

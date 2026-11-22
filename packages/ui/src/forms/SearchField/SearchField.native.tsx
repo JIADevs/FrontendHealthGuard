@@ -4,6 +4,7 @@ import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing, radii, fontSize } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { SearchFieldProps } from './SearchField.types';
+import { Spinner } from '../../primitives/Spinner/Spinner.native';
 
 // ── Inline icons (no lucide dependency) ────────────────────────────────────
 
@@ -39,6 +40,7 @@ export function SearchField({
   onChange,
   placeholder = 'Buscar...',
   accessibilityLabel,
+  loading = false,
 }: SearchFieldProps) {
   const t = useAppTheme();
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
@@ -65,7 +67,11 @@ export function SearchField({
         accessibilityLabel={accessibilityLabel ?? placeholder}
       />
 
-      {value.trim().length > 0 && (
+      {loading ? (
+        <View style={styles.clearBtn} accessibilityLabel="Buscando" accessibilityLiveRegion="polite">
+          <Spinner size="sm" />
+        </View>
+      ) : value.trim().length > 0 && (
         <TouchableOpacity
           onPress={() => onChange('')}
           style={[styles.clearBtn, { backgroundColor: t.border.medium }]}

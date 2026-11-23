@@ -1,10 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useMemo } from "react";
 import { StatusBar, View } from "react-native";
-import { SafeAreaInsetsContext, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@helu/stores";
 import { ManagementBanner } from "../components/dependientes/ManagementBanner";
-import { navigationRef } from "./navigationRef";
 import { TabNavigator } from "./TabNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
 import { SignupScreen } from "../screens/SignupScreen";
@@ -149,27 +146,9 @@ export function RootNavigator() {
   const welcomePending = useWelcomeStore((s) => s.pending);
   const t = useAppTheme();
 
-  const isManaging = useAuthStore((s) => s.isManaging);
-  const activePatientId = useAuthStore((s) => s.activePatientId);
-  const switchPatientContext = useAuthStore((s) => s.switchPatientContext);
-  const insets = useSafeAreaInsets();
-  // The management banner takes the status bar area: screens below it start with no top inset.
-  const bannerShown = !!token && isManaging && !!activePatientId;
-  const screenInsets = useMemo(() => (bannerShown ? { ...insets, top: 0 } : insets), [bannerShown, insets]);
-
   return (
     <View style={{ flex: 1, backgroundColor: t.surface.bg }}>
-      {/* White text on the person's color while managing someone (module 8). */}
-      <StatusBar barStyle={token && isManaging ? 'light-content' : t.mode === 'dark' ? 'light-content' : 'dark-content'} />
-      {token ? (
-        <ManagementBanner
-          onExit={() => {
-            switchPatientContext(null);
-            if (navigationRef.isReady()) navigationRef.navigate("MainTabs");
-          }}
-        />
-      ) : null}
-      <SafeAreaInsetsContext.Provider value={screenInsets}>
+      <StatusBar barStyle={t.mode === 'dark' ? 'light-content' : 'dark-content'} />
       <Stack.Navigator
       screenOptions={{
         headerShown: false,
@@ -307,7 +286,8 @@ export function RootNavigator() {
         </>
       )}
     </Stack.Navigator>
-      </SafeAreaInsetsContext.Provider>
+      {/* «Gestionando a …» slides over everything for a second when you switch accounts. */}
+      {token ? <ManagementBanner /> : null}
     </View>
   );
 }

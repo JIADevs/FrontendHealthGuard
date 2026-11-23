@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import Animated, { FadeOut, SlideInUp } from "react-native-reanimated";
+import { useEffect, useState } from "react";
+import { Pressable, StatusBar, StyleSheet, Text, View } from "react-native";
+import Animated, { SlideInUp, SlideOutUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@helu/stores";
 import { useDelegationContextColorsQuery, useManagedUsersQuery } from "@helu/api/hooks";
@@ -7,50 +8,64 @@ import { colors, motion, nativeFont, spacing } from "@helu/ui";
 import { initialsOf } from "./PersonCard";
 import { resolveDelegationRingColor } from "./colorTokens";
 
+/** How long the notice stays on screen once it has slid in (user decision, 2026-11-23). */
+const VISIBLE_MS = 1000;
+
 /**
- * Mockup «Modo gestión» (module 8): while managing someone, a band in their color sits on top of the
- * whole app — «Gestionando a Juan Pérez · Todo lo que hagas queda en su cuenta» and «Volver a mi
- * cuenta». No mascot here (m9 rule). It takes the status bar area, so screens below get no top inset.
+ * Mockup «Modo gestión» (module 8), as a passing notice: when you start managing someone, a band
+ * in their color slides over the top — «Gestionando a Juan Pérez · Todo lo que hagas queda en su
+ * cuenta» — and leaves after one second. The lasting cue is the Inicio tab, which shows their
+ * initials and color ring. Tap to dismiss early. No mascot here (m9 rule).
  */
-export function ManagementBanner({ onExit }: { onExit: () => void }) {
+export function ManagementBanner() {
   const insets = useSafeAreaInsets();
   const isManaging = useAuthStore((s) => s.isManaging);
   const activePatientId = useAuthStore((s) => s.activePatientId);
   const managed = useManagedUsersQuery().data ?? [];
   const contextColors = useDelegationContextColorsQuery().data ?? {};
-  if (!isManaging || !activePatientId) return null;
+  const [shownFor, setShownFor] = useState<string | null>(null);
 
-  const index = managed.findIndex((d) => (d.dependentUserId ?? d.id) === activePatientId);
+  // Each switch into someone's account shows the notice once.
+  useEffect(() => {
+    if (!isManaging || !activePatientId) {
+      setShownFor(null);
+      return;
+    }
+    setShownFor(activePatientId);
+    const timer = setTimeout(() => setShownFor(null), motion.base + VISIBLE_MS);
+    return () => clearTimeout(timer);
+  }, [isManaging, activePatientId]);
+
+  if (!shownFor) return null;
+
+  const index = managed.findIndex((d) => (d.dependentUserId ?? d.id) === shownFor);
   const person = index >= 0 ? managed[index] : undefined;
   const name = person?.linkedUserName ?? person?.linkedUserEmail ?? "otra cuenta";
-  const color = resolveDelegationRingColor(contextColors, activePatientId, Math.max(index, 0));
+  const color = resolveDelegationRingColor(contextColors, shownFor, Math.max(index, 0));
 
   return (
     <Animated.View
       entering={SlideInUp.duration(motion.base)}
-      exiting={FadeOut.duration(motion.fast)}
+      exiting={SlideOutUp.duration(motion.base)}
       style={[styles.banner, { backgroundColor: color, paddingTop: insets.top + spacing[2] }]}
-      accessibilityRole="summary"
+      accessibilityLiveRegion="polite"
+      accessibilityRole="alert"
       accessibilityLabel={`Gestionando a ${name}. Todo lo que hagas queda en su cuenta.`}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.initials}>{initialsOf(name)}</Text>
-      </View>
-      <View style={styles.copy}>
-        <Text style={styles.title} numberOfLines={2}>
-          Gestionando a {name}
-        </Text>
-        <Text style={styles.sub} numberOfLines={2}>
-          Todo lo que hagas queda en su cuenta
-        </Text>
-      </View>
-      <Pressable
-        onPress={onExit}
-        style={({ pressed }) => [styles.exit, pressed && { opacity: 0.85 }]}
-        accessibilityRole="button"
-        accessibilityLabel="Volver a mi cuenta"
-      >
-        <Text style={[styles.exitText, { color }]}>Volver a mi cuenta</Text>
+      {/* White status bar text over the person's color while the notice is up. */}
+      <StatusBar barStyle="light-content" />
+      <Pressable onPress={() => setShownFor(null)} style={styles.row} accessibilityRole="button" accessibilityHint="Cierra el aviso">
+        <View style={styles.avatar}>
+          <Text style={styles.initials}>{initialsOf(name)}</Text>
+        </View>
+        <View style={styles.copy}>
+          <Text style={styles.title} numberOfLines={2}>
+            Gestionando a {name}
+          </Text>
+          <Text style={styles.sub} numberOfLines={2}>
+            Todo lo que hagas queda en su cuenta
+          </Text>
+        </View>
       </Pressable>
     </Animated.View>
   );
@@ -58,12 +73,18 @@ export function ManagementBanner({ onExit }: { onExit: () => void }) {
 
 const styles = StyleSheet.create({
   banner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    elevation: 10,
     paddingHorizontal: spacing[4],
-    paddingBottom: spacing[2] + 2,
+    paddingBottom: spacing[3],
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
   },
+  row: { flexDirection: "row", alignItems: "center", gap: 10 },
   avatar: {
     width: 34,
     height: 34,
@@ -77,13 +98,4 @@ const styles = StyleSheet.create({
   copy: { flex: 1, minWidth: 0 },
   title: { color: colors.white, fontSize: 14, fontFamily: nativeFont("heading", 900) },
   sub: { color: colors.white, opacity: 0.9, fontSize: 12, fontFamily: nativeFont("body", 500) },
-  exit: {
-    minHeight: 44,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: colors.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  exitText: { fontSize: 13, fontFamily: nativeFont("heading", 800) },
 });

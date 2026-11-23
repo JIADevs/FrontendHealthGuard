@@ -14,6 +14,10 @@ export function DependientesScreen() {
         switchPatientContext(patientId);
         navigation.navigate("MainTabs");
       }}
+      onExitManaging={() => {
+        switchPatientContext(null);
+        navigation.navigate("MainTabs");
+      }}
     />
   );
 }

@@ -48,6 +48,8 @@ type Revoke = { id: string; name: string; kind: "dependent" | "carer" | "invite"
 export interface DependientesProps {
   /** «Gestionar»: switch to that person's account and go to Inicio. */
   onManage: (patientId: string) => void;
+  /** «Volver a mi cuenta» on the person being managed: back to my own account. */
+  onExitManaging: () => void;
 }
 
 /**
@@ -55,8 +57,9 @@ export interface DependientesProps {
  * people I manage («Gestionar»), who manages my account («Quitar acceso»), pending requests
  * («Aceptar» / «Rechazar», or my own invitations with «Cancelar») and «Invitar» in the header.
  */
-export function Dependientes({ onManage }: DependientesProps) {
+export function Dependientes({ onManage, onExitManaging }: DependientesProps) {
   const t = useAppTheme();
+  const managingId = useAuthStore((st) => (st.isManaging ? st.activePatientId : null));
   const styles = useMemo(() => makeStyles(t), [t]);
   const managedQuery = useManagedUsersQuery();
   const managersQuery = useManagersQuery();
@@ -182,9 +185,15 @@ export function Dependientes({ onManage }: DependientesProps) {
                       color={color}
                       right={
                         <View style={styles.actions}>
-                          <Button variant="secondary" size="sm" onPress={() => onManage(patientId)} accessibilityLabel={`Gestionar la cuenta de ${name}`}>
-                            Gestionar
-                          </Button>
+                          {managingId === patientId ? (
+                            <Button variant="secondary" size="sm" onPress={onExitManaging} accessibilityLabel="Volver a mi cuenta">
+                              Volver a mi cuenta
+                            </Button>
+                          ) : (
+                            <Button variant="secondary" size="sm" onPress={() => onManage(patientId)} accessibilityLabel={`Gestionar la cuenta de ${name}`}>
+                              Gestionar
+                            </Button>
+                          )}
                           <PersonMenu
                             onColor={() => setColorFor({ patientId, color })}
                             onRevoke={() => setToRevoke({ id: d.id, name, kind: "dependent", patientId })}

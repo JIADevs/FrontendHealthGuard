@@ -2,7 +2,6 @@ import { useState } from "react";
 import { ScrollView, StatusBar, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuthStore } from "@helu/stores";
 import type { Document } from "@helu/api";
 import {
   PullRefreshIndicator,
@@ -57,7 +56,6 @@ export interface HomeNavigation {
 export function Home({ nav }: { nav: HomeNavigation }) {
   const t = useAppTheme();
   const insets = useSafeAreaInsets();
-  const managing = useAuthStore((st) => st.isManaging);
   const data = useHomeData();
   const takeDose = useTakeDose();
   const [doseSheet, setDoseSheet] = useState<MedicationEvent | null>(null);
@@ -91,8 +89,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.surface.bg }}>
-      {/* While managing someone the colored banner sits under the status bar: white text. */}
-      <StatusBar barStyle={t.mode === "dark" || managing ? "light-content" : "dark-content"} />
+      <StatusBar barStyle={t.mode === "dark" ? "light-content" : "dark-content"} />
       <ScrollView
         contentContainerStyle={{ paddingTop: insets.top + spacing[2], paddingHorizontal: spacing[4], paddingBottom: spacing[6], gap: 14 }}
         showsVerticalScrollIndicator={false}

@@ -32,7 +32,9 @@ function atClock(hhmm: string): string {
 
 /** Cierra la frase sin duplicar el punto de «p. m.». */
 function sentence(text: string): string {
-  const clean = text.replace(/\s+/g, " ").trim();
+  // Collapse runs of whitespace but keep no-break spaces: `formatClock` joins «7:00 a. m.» with them so
+  // the time never splits across lines, and `\s` would match (and undo) them.
+  const clean = text.replace(/[^\S\u00a0]+/g, " ").trim();
   return clean.endsWith(".") ? clean : `${clean}.`;
 }
 

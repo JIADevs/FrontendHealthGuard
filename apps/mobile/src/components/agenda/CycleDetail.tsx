@@ -45,6 +45,7 @@ import {
   formatCycleEnd,
   formatCycleRange,
   formatNextDose,
+  withScheduledNext,
   isCycleActive,
 } from "./medicationCycles";
 
@@ -92,7 +93,9 @@ export function CycleDetail({ cycleId, medicationId, medicationName, onEdit, onB
   const deleteMut = useDeleteMedicationCycleMutation();
   const [confirm, setConfirm] = useState<"finish" | "delete" | null>(null);
 
-  const cycle = med?.cycles.find((c: MedicationCycle) => c.id === cycleId);
+  const found = med?.cycles.find((c: MedicationCycle) => c.id === cycleId);
+  // Same schedule as Agenda, even if the server's next dose drifted (see `withScheduledNext`).
+  const cycle = found ? withScheduledNext(found) : undefined;
   // The medication list in cache already has this cycle: its rows and intakes give the skeleton
   // the shape of what arrives (§6c).
   const queryClient = useQueryClient();

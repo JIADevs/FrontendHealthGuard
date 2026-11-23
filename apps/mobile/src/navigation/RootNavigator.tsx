@@ -93,7 +93,7 @@ export type RootStackParamList = {
   Profile: WithBackTitle | undefined;
   Settings: WithBackTitle | undefined;
   BackpackDetail: WithBackTitle & { id: string };
-  BackpackEdit: WithBackTitle & { id?: string } | undefined;
+  BackpackEdit: WithBackTitle & { id?: string; preset?: { name: string; description: string } } | undefined;
   BackpackAddDocuments: WithBackTitle & { id: string };
   ShareConfigure: WithBackTitle & {
     resourceType: ShareResourceType;
@@ -201,34 +201,10 @@ export function RootNavigator() {
           <Stack.Screen
             name="BackpackDetail"
             component={BackpackDetailScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: "Mochila",
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Mochilas",
-            })}
+            options={{ headerShown: false, animation: "slide_from_right" }}
           />
-          <Stack.Screen
-            name="BackpackEdit"
-            component={BackpackEditScreen}
-            options={({ route }) => {
-              const params = route.params as { id?: string } | undefined;
-              const isCreate = !params?.id;
-              return {
-                headerShown: true,
-                title: isCreate ? "Nueva mochila" : "Editar mochila",
-                headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Mochilas",
-              };
-            }}
-          />
-          <Stack.Screen
-            name="BackpackAddDocuments"
-            component={BackpackAddDocumentsScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: "Agregar documentos",
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Mochila",
-            })}
-          />
+          <Stack.Screen name="BackpackEdit" component={BackpackEditScreen} options={FORM_SCREEN_OPTIONS} />
+          <Stack.Screen name="BackpackAddDocuments" component={BackpackAddDocumentsScreen} options={FORM_SCREEN_OPTIONS} />
           <Stack.Screen
             name="ShareConfigure"
             component={ShareConfigureScreenLight}

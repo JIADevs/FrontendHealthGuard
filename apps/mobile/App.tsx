@@ -1,6 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
+import NetInfo from "@react-native-community/netinfo";
 import { NavigationContainer } from "@react-navigation/native";
 import { HeluToast } from "./src/components/ToastConfig";
 import { RootNavigator } from "./src/navigation/RootNavigator";
@@ -31,17 +32,29 @@ setApiAuthProviders({
   clearAuth: () => useAuthStore.getState().logout(),
 });
 
+// TanStack Query learns about connectivity from NetInfo: queries refetch when the phone is back
+// online, and the «Sin conexión» banner reads the same state.
+onlineManager.setEventListener((setOnline) =>
+  NetInfo.addEventListener((state) => setOnline(state.isConnected !== false)),
+);
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000,
       gcTime: 30 * 60 * 1000,
+      // Try once even offline, so a screen without cached data shows «Error al cargar» instead of a
+      // skeleton that waits for the network; retries only while online.
+      networkMode: "offlineFirst",
       retry: (count, error) => {
+        if (!onlineManager.isOnline()) return false;
         if (isApiError(error) && error.status >= 400 && error.status < 500) return false;
         return count < 2;
       },
     },
     mutations: {
+      // Same as before NetInfo: a save offline fails and says so; nothing is queued.
+      networkMode: "always",
       onError: (error) => {
         if (isApiError(error)) {
           console.error(`[API Error] ${error.code}: ${error.message}`);

@@ -214,6 +214,9 @@ export function useHomeData() {
     setupKnown,
     setupState,
     hideSetup: setup.hide,
+    /** Today's plan could not load and nothing is cached: Inicio says so instead of «Todo al día». */
+    failed: calendar.isError && !calendar.data,
+    retrying: calendar.isFetching,
     loading: {
       meds: calendar.isLoading,
       streak: checkIns.isLoading || profile.isLoading,

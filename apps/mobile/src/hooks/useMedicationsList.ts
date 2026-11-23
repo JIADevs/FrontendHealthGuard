@@ -62,6 +62,7 @@ export function useMedicationsList() {
     items: meds.data?.items ?? [],
     totalPages: meds.data?.totalPages ?? 1,
     isLoading: meds.isLoading,
+    isError: meds.isError && !meds.data,
     isRefetching: meds.isRefetching,
     refetch: meds.refetch,
     updatedAt: meds.dataUpdatedAt || undefined,

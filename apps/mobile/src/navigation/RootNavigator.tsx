@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar, View } from "react-native";
 import { useAuthStore } from "@helu/stores";
 import { ManagementBanner } from "../components/dependientes/ManagementBanner";
+import { BelowOfflineBanner, OfflineBanner } from "../components/states/OfflineBanner";
 import { TabNavigator } from "./TabNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
 import { SignupScreen } from "../screens/SignupScreen";
@@ -149,6 +150,9 @@ export function RootNavigator() {
   return (
     <View style={{ flex: 1, backgroundColor: t.surface.bg }}>
       <StatusBar barStyle={t.mode === 'dark' ? 'light-content' : 'dark-content'} />
+      {/* «Sin conexión»: in the flow, above every screen (m7). */}
+      {token ? <OfflineBanner /> : null}
+      <BelowOfflineBanner>
       <Stack.Navigator
       screenOptions={{
         headerShown: false,
@@ -286,6 +290,7 @@ export function RootNavigator() {
         </>
       )}
     </Stack.Navigator>
+      </BelowOfflineBanner>
       {/* «Gestionando a …» slides over everything for a second when you switch accounts. */}
       {token ? <ManagementBanner /> : null}
     </View>

@@ -19,7 +19,8 @@ import {
   type ThemeContextValue,
 } from "@helu/ui";
 import { ScreenHeader } from "../ScreenHeader";
-import { EmptyHero } from "../backpacks/BackpacksEmpty";
+import { EmptyHero } from "../states/EmptyHero";
+import { LoadError } from "../states/LoadError";
 import { useNotificationsScreen } from "../../hooks/useNotificationsScreen";
 import { buildRoutePayloadFromNotification, navigateForNotification } from "../../navigation/notificationRouting";
 
@@ -157,6 +158,15 @@ export function Notifications({ onOpenSettings }: { onOpenSettings: () => void }
             ))}
           </SkeletonGroup>
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (screen.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        {header}
+        <LoadError title="No se pudieron cargar tus notificaciones" top={96} onRetry={() => void screen.refetch()} retrying={screen.isRefetching} />
       </SafeAreaView>
     );
   }

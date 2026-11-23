@@ -1,8 +1,9 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Activity, CalendarDays, ChevronRight, Globe, Plus, RefreshCw, Upload, Camera } from "lucide-react-native";
+import { Activity, CalendarDays, ChevronRight, Globe, Plus, Upload, Camera } from "lucide-react-native";
 import { Button, IconTile, PressableScale, fontSize, nativeFont, spacing, toneColors, useAppTheme, type ThemeContextValue, type Tone } from "@helu/ui";
-import { Mascot, type MascotPose } from "../brand";
+import { EmptyHero } from "../states/EmptyHero";
+import { LoadError } from "../states/LoadError";
 
 /** Templates of m9 «Mochilas · vacío» (#46, decision 1): they only prefill the form. */
 export interface BackpackTemplate {
@@ -34,33 +35,6 @@ const TEMPLATES: { title: string; sub: string; tone: Tone; icon: "calendar" | "a
   },
 ];
 
-/** Kit `empty` (m9): mascot of 100 px, H2, a 14 px line and up to two actions 270 px wide. */
-export function EmptyHero({
-  pose,
-  title,
-  description,
-  children,
-  top = 28,
-}: {
-  pose: MascotPose;
-  title: string;
-  description: string;
-  children?: ReactNode;
-  top?: number;
-}) {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-  return (
-    <View style={[styles.hero, { paddingTop: top }]}>
-      <Mascot pose={pose} size={100} />
-      <Text style={styles.h2} accessibilityRole="header">
-        {title}
-      </Text>
-      <Text style={styles.sub}>{description}</Text>
-      {children ? <View style={styles.actions}>{children}</View> : null}
-    </View>
-  );
-}
 
 /** m9 «Mochilas · vacío»: one primary action and three templates. */
 export function BackpacksEmpty({ onCreate }: { onCreate: (preset?: BackpackTemplate) => void }) {
@@ -121,14 +95,7 @@ export function BackpacksSearchEmpty({ query, onClear }: { query: string; onClea
 
 /** m7 «Error al cargar» (Mochilas). */
 export function BackpacksError({ onRetry }: { onRetry: () => void }) {
-  const t = useAppTheme();
-  return (
-    <EmptyHero pose="think" title="No se pudieron cargar las mochilas" description="Revisa tu conexión e intenta de nuevo.">
-      <Button fullWidth icon={<RefreshCw size={17} strokeWidth={2.4} color={t.text.onSolid} />} onPress={onRetry}>
-        Reintentar
-      </Button>
-    </EmptyHero>
-  );
+  return <LoadError title="No se pudieron cargar las mochilas" onRetry={onRetry} />;
 }
 
 /** m9 «Agregar documentos · sin documentos»: explains why and leads to uploading, then back here. */
@@ -154,17 +121,6 @@ export function PickerNoDocuments({ onUpload, onScan }: { onUpload: () => void; 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     wrap: { gap: spacing[6], paddingBottom: spacing[6] },
-    hero: { alignItems: "center", gap: 10, paddingHorizontal: spacing[3] },
-    h2: { fontSize: 21, lineHeight: 26, fontFamily: nativeFont("heading", 900), color: t.text.primary, textAlign: "center" },
-    sub: {
-      maxWidth: 290,
-      fontSize: 14,
-      lineHeight: 21,
-      fontFamily: nativeFont("body", 400),
-      color: t.text.secondary,
-      textAlign: "center",
-    },
-    actions: { width: 270, gap: spacing[3], marginTop: 6 },
     templates: { gap: spacing[2] },
     eyebrow: {
       fontSize: fontSize.xs,

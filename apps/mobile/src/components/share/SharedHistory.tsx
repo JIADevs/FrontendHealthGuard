@@ -23,7 +23,7 @@ import {
   type ThemeContextValue,
 } from "@helu/ui";
 import { ScreenHeader } from "../ScreenHeader";
-import { EmptyHero } from "../backpacks/BackpacksEmpty";
+import { EmptyHero } from "../states/EmptyHero";
 import { SharedLinkRow } from "./SharedLinkRow";
 
 type Filter = "all" | "active" | "inactive";

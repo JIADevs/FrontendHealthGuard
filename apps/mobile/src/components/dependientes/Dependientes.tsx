@@ -30,7 +30,7 @@ import {
 } from "@helu/ui";
 import { ScreenHeader } from "../ScreenHeader";
 import { AgendaRowActionsMenu, measureAgendaRowActionsMenuLeft } from "../agenda/AgendaRowActionsMenu";
-import { EmptyHero } from "../backpacks/BackpacksEmpty";
+import { EmptyHero } from "../states/EmptyHero";
 import { notify } from "../../lib/notify";
 import { ContextColorPicker } from "./ContextColorPicker";
 import { InviteSheet } from "./InviteSheet";

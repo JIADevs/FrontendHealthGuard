@@ -32,6 +32,7 @@ import { AgendaEmpty } from "./AgendaEmpty";
 import { useAgendaNavigation } from "./AgendaNavigation";
 import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentsFilterSheet } from "./AppointmentsFilterSheet";
+import { LoadError } from "../states/LoadError";
 
 export function AppointmentsTab() {
   const t = useAppTheme();
@@ -138,7 +139,9 @@ export function AppointmentsTab() {
               />
             )}
             ListEmptyComponent={
-              hasActiveFilter || search ? (
+              appts.isError && !appts.data ? (
+                <LoadError title="No se pudieron cargar tus citas" onRetry={() => void appts.refetch()} retrying={appts.isRefetching} />
+              ) : hasActiveFilter || search ? (
                 <EmptyState
                   icon={<CalendarDays size={48} color={t.border.medium} />}
                   message="No hay citas que coincidan con los filtros."

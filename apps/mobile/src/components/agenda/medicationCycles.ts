@@ -51,23 +51,25 @@ function doseIntervalMs(cycle: MedicationCycle): number | null {
  *
  * Until 2026-11-21 the API moved ``nextIntakeTime`` to *tap time + interval*, so some cycles
  * drifted (07:00 / 19:00 became 11:21 / 23:21) and the list contradicted the calendar. When
- * the stored value is off schedule, this returns the first slot after the latest answered
- * dose instead — the same value `scripts/realign_next_intake.py` writes on the server.
+ * the stored value is off schedule, the latest answered dose is matched to its nearest slot and
+ * this returns the slot after it — the same value `scripts/realign_next_intake.py` writes on the
+ * server (BackendHealthGuard#23). A cycle without a stored next dose keeps none.
  * Months and years have no fixed length, so they keep the stored value.
  */
 export function scheduledNextIntake(cycle: MedicationCycle): string | null | undefined {
   const interval = doseIntervalMs(cycle);
   const anchor = new Date(cycle.firstIntakeTime).getTime();
   if (!interval || !Number.isFinite(anchor)) return cycle.nextIntakeTime;
-  const stored = cycle.nextIntakeTime ? new Date(cycle.nextIntakeTime).getTime() : NaN;
-  if (Number.isFinite(stored) && stored >= anchor && (stored - anchor) % interval < 1000) {
-    return cycle.nextIntakeTime;
-  }
+  if (!cycle.nextIntakeTime) return cycle.nextIntakeTime;
+  const stored = new Date(cycle.nextIntakeTime).getTime();
+  if (!Number.isFinite(stored)) return cycle.nextIntakeTime;
+  if (stored >= anchor && (stored - anchor) % interval < 1000) return cycle.nextIntakeTime;
+  // The slot an answer belongs to is the nearest one: doses are often tapped early or late.
+  const nearest = (ms: number) => (ms <= anchor ? anchor : anchor + Math.round((ms - anchor) / interval) * interval);
   const answered = (cycle.intakes ?? [])
     .map((intake) => new Date(intake.scheduledTime).getTime())
     .filter(Number.isFinite);
-  const last = answered.length > 0 ? Math.max(...answered) : null;
-  const slot = last == null || last < anchor ? anchor : anchor + (Math.floor((last - anchor) / interval) + 1) * interval;
+  const slot = answered.length > 0 ? nearest(Math.max(...answered)) + interval : nearest(stored);
   return new Date(slot).toISOString();
 }
 

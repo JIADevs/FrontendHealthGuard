@@ -14,6 +14,7 @@ import { NotificationsScreen } from "../screens/NotificationsScreen";
 import { BackpackDetailScreen } from "../screens/BackpackDetailScreen";
 import { BackpackEditScreen } from "../screens/BackpackEditScreen";
 import { BackpackAddDocumentsScreen } from "../screens/BackpackAddDocumentsScreen";
+import { ShareChooseScreen } from "../screens/ShareChooseScreen";
 import { ShareConfigureScreen } from "../screens/ShareConfigureScreen";
 import { ShareQrScreen } from "../screens/ShareQrScreen";
 import { SharedHistoryScreen } from "../screens/SharedHistoryScreen";
@@ -38,6 +39,7 @@ import { LINKED_PEOPLE_SCREEN_TITLE } from "../constants/linkedPeople";
 import { useAppTheme } from "@helu/ui";
 import { withDocumentsTheme, getDocumentsStackScreenOptions } from "../components/documents";
 import type { ShareResourceType } from "@helu/api";
+import type { ShareTarget } from "../components/share/ShareSetup";
 
 /** Shared optional param so any screen can show a contextual back label. */
 type WithBackTitle = { backTitle?: string };
@@ -95,19 +97,19 @@ export type RootStackParamList = {
   BackpackDetail: WithBackTitle & { id: string };
   BackpackEdit: WithBackTitle & { id?: string; preset?: { name: string; description: string } } | undefined;
   BackpackAddDocuments: WithBackTitle & { id: string };
-  ShareConfigure: WithBackTitle & {
-    resourceType: ShareResourceType;
-    resourceId: string;
-    title: string;
-    subtitle?: string;
-    documentCount?: number;
-  };
+  /** Compartir, paso 1 de 3. */
+  ShareChoose: WithBackTitle | undefined;
+  /** Compartir, paso 2 (from step 1, or straight from a document or backpack). */
+  ShareConfigure: WithBackTitle & { target: ShareTarget; fromStepOne?: boolean };
+  /** Compartir, paso 3 (`created`) or «Mostrar QR» of a link (`view`). */
   ShareQr: WithBackTitle & {
     shareUrl: string;
     title: string;
     resourceType: ShareResourceType;
     expiresAt: string | null;
-    documentCount?: number;
+    documentCount: number;
+    mode: "created" | "view";
+    fromStepOne?: boolean;
   };
   SharedHistory: WithBackTitle | undefined;
   SharedDetail: WithBackTitle & {
@@ -137,6 +139,7 @@ const ScannerScreenLight = withDocumentsTheme(ScannerScreen);
 const DocumentUploadScreenLight = withDocumentsTheme(DocumentUploadScreen);
 const DocumentDetailScreenLight = withDocumentsTheme(DocumentDetailScreen);
 const DocumentEditScreenLight = withDocumentsTheme(DocumentEditScreen);
+const ShareChooseScreenLight = withDocumentsTheme(ShareChooseScreen);
 const ShareConfigureScreenLight = withDocumentsTheme(ShareConfigureScreen);
 const ShareQrScreenLight = withDocumentsTheme(ShareQrScreen);
 const SharedHistoryScreenLight = withDocumentsTheme(SharedHistoryScreen);
@@ -205,50 +208,19 @@ export function RootNavigator() {
           />
           <Stack.Screen name="BackpackEdit" component={BackpackEditScreen} options={FORM_SCREEN_OPTIONS} />
           <Stack.Screen name="BackpackAddDocuments" component={BackpackAddDocumentsScreen} options={FORM_SCREEN_OPTIONS} />
+          <Stack.Screen name="ShareChoose" component={ShareChooseScreenLight} options={FORM_SCREEN_OPTIONS} />
           <Stack.Screen
             name="ShareConfigure"
             component={ShareConfigureScreenLight}
-            options={({ route }) => ({
-              ...getDocumentsStackScreenOptions(t),
-              headerShown: true,
-              title: "Compartir",
-              animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
-            })}
+            options={({ route }) =>
+              (route.params as { fromStepOne?: boolean } | undefined)?.fromStepOne
+                ? { headerShown: false, animation: "slide_from_right" as const }
+                : FORM_SCREEN_OPTIONS
+            }
           />
-          <Stack.Screen
-            name="ShareQr"
-            component={ShareQrScreenLight}
-            options={({ route }) => ({
-              ...getDocumentsStackScreenOptions(t),
-              headerShown: true,
-              title: "Compartir QR",
-              animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Compartir",
-            })}
-          />
-          <Stack.Screen
-            name="SharedHistory"
-            component={SharedHistoryScreenLight}
-            options={({ route }) => ({
-              ...getDocumentsStackScreenOptions(t),
-              headerShown: true,
-              title: "Compartidos",
-              animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
-            })}
-          />
-          <Stack.Screen
-            name="SharedDetail"
-            component={SharedDetailScreenLight}
-            options={({ route }) => ({
-              ...getDocumentsStackScreenOptions(t),
-              headerShown: true,
-              title: "Compartido",
-              animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Compartidos",
-            })}
-          />
+          <Stack.Screen name="ShareQr" component={ShareQrScreenLight} options={{ headerShown: false, animation: "slide_from_right" }} />
+          <Stack.Screen name="SharedHistory" component={SharedHistoryScreenLight} options={{ headerShown: false, animation: "slide_from_right" }} />
+          <Stack.Screen name="SharedDetail" component={SharedDetailScreenLight} options={{ headerShown: false, animation: "slide_from_right" }} />
           <Stack.Screen
             name="Profile"
             component={ProfileScreen}

@@ -20,9 +20,3 @@ export function resolveExpoReachableUrl(url: string): string {
         return url;
     }
 }
-
-/** Misma fuente que el backend para el QR, pero con el enlace ya reescrito para el dispositivo. */
-export function qrCodeImageUriForShareUrl(shareUrl: string): string {
-    const data = encodeURIComponent(resolveExpoReachableUrl(shareUrl));
-    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data}`;
-}

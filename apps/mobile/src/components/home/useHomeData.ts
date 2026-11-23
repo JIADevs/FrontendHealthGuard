@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuthStore } from "@helu/stores";
 import {
   useAppointmentsQuery,
   useCalendarEventsQuery,
@@ -45,6 +46,7 @@ function plural(n: number, one: string, many: string) {
  */
 export function useHomeData() {
   const dash = useDashboardCore();
+  const managing = useAuthStore((st) => st.isManaging && !!st.activePatientId);
   const profile = useProfileQuery();
   const setup = useSetupHidden();
 
@@ -126,6 +128,28 @@ export function useHomeData() {
   const greeting = useMemo((): { pose: MascotPose; title: string; message: string } => {
     const name = dash.userFirstName;
     const hello = name ? `¡Hola, ${name}!` : "¡Hola!";
+
+    // Managing someone (mockup «Modo gestión · Inicio de Juan»): it's their agenda, told in the third
+    // person, never «¡Hola, Juan!» to the person who is actually holding the phone.
+    if (managing) {
+      const title = name ? `Agenda de ${name}` : "Agenda de esta cuenta";
+      if (showSetup) return { pose: "wave", title, message: "Todavía no tiene medicamentos, citas ni documentos." };
+      if (doses.open.length === 0 && doneToday && todayAppointments.length === 0) {
+        return { pose: "joy", title, message: "Todo al día por hoy." };
+      }
+      const nextDose = doses.open[0]?.event;
+      const next = nextDose
+        ? `${nextDose.data.name.trim()} ${atClock(nextDose.intakeTime)}`
+        : todayAppointments[0]
+          ? `la cita de ${todayAppointments[0].name || todayAppointments[0].specialty || "hoy"}`
+          : "el check-in de hoy";
+      return {
+        pose: "wave",
+        title,
+        message: sentence(`${pendingCount} ${plural(pendingCount, "cosa pendiente", "cosas pendientes")} hoy. Lo siguiente: ${next}`),
+      };
+    }
+
     if (showSetup) return { pose: "wave", title: hello, message: "Empecemos por lo que más te sirve." };
 
     const allDone = doses.open.length === 0 && doneToday && todayAppointments.length === 0;
@@ -154,7 +178,7 @@ export function useHomeData() {
         ? `tu cita de ${todayAppointments[0].name || todayAppointments[0].specialty || "hoy"}`
         : "tu check-in de hoy";
     return { pose: "wave", title: hello, message: sentence(`Tienes ${left} para hoy. Lo siguiente: ${next}`) };
-  }, [dash.userFirstName, dash.upcomingAppts, showSetup, doses.open, doneToday, todayAppointments, meds, pendingCount, celebrateKey]);
+  }, [managing, dash.userFirstName, dash.upcomingAppts, showSetup, doses.open, doneToday, todayAppointments, meds, pendingCount, celebrateKey]);
 
   const unread = (notifications.data?.items ?? []).filter((n) => !n.isRead).length;
 
@@ -164,7 +188,14 @@ export function useHomeData() {
     // Mientras carga, saludo neutro: el título y la pose no cambian a «¡Todo al día!» antes de saber
     // si es el primer uso.
     greeting: greetingLoading
-      ? { pose: "wave" as MascotPose, title: dash.userFirstName ? `¡Hola, ${dash.userFirstName}!` : "¡Hola!", message: "", loading: true }
+      ? {
+          pose: "wave" as MascotPose,
+          title: managing
+            ? dash.userFirstName ? `Agenda de ${dash.userFirstName}` : "Agenda de esta cuenta"
+            : dash.userFirstName ? `¡Hola, ${dash.userFirstName}!` : "¡Hola!",
+          message: "",
+          loading: true,
+        }
       : { ...greeting, loading: false },
     unread,
     todayMeds: meds.today,

@@ -54,17 +54,27 @@ export function ConfirmModal({
       title={title}
       onClose={onCancel}
       footer={
-        <>
-          {/* Both options fill the row (no empty gap on the right) and never shrink below their label. */}
-          <View style={{ flexGrow: 1 }}>
+        actionsLayout === 'stacked' ? (
+          // Long labels: full-width buttons, the safe option first (same as the centered variant).
+          <View style={{ flex: 1, gap: spacing[3] }}>
             <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>{keepLabel}</Button>
-          </View>
-          <View style={{ flexGrow: 1 }}>
             <Button variant={confirmVariant} fullWidth onPress={onConfirm} disabled={loading} loading={loading}>
               {confirmLabel}
             </Button>
           </View>
-        </>
+        ) : (
+          <>
+            {/* Both options fill the row (no empty gap on the right) and never shrink below their label. */}
+            <View style={{ flexGrow: 1 }}>
+              <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>{keepLabel}</Button>
+            </View>
+            <View style={{ flexGrow: 1 }}>
+              <Button variant={confirmVariant} fullWidth onPress={onConfirm} disabled={loading} loading={loading}>
+                {confirmLabel}
+              </Button>
+            </View>
+          </>
+        )
       }
     >
       <Typography variant="body" color="secondary">{message}</Typography>

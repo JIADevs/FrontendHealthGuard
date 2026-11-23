@@ -1,6 +1,10 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { StatusBar } from "react-native";
+import { useMemo } from "react";
+import { StatusBar, View } from "react-native";
+import { SafeAreaInsetsContext, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "@helu/stores";
+import { ManagementBanner } from "../components/dependientes/ManagementBanner";
+import { navigationRef } from "./navigationRef";
 import { TabNavigator } from "./TabNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
 import { SignupScreen } from "../screens/SignupScreen";
@@ -34,8 +38,6 @@ import { TreatmentFormScreen } from "../screens/TreatmentFormScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { DependientesScreen } from "../screens/DependientesScreen";
-import { DependientesInviteScreen } from "../screens/DependientesInviteScreen";
-import { LINKED_PEOPLE_SCREEN_TITLE } from "../constants/linkedPeople";
 import { useAppTheme } from "@helu/ui";
 import { withDocumentsTheme, getDocumentsStackScreenOptions } from "../components/documents";
 import type { ShareResourceType } from "@helu/api";
@@ -117,9 +119,6 @@ export type RootStackParamList = {
     resourceType: ShareResourceType;
   };
   Dependientes: WithBackTitle | undefined;
-  DependientesInvite: WithBackTitle & {
-    relationship: "I_WANT_TO_MANAGE_THEM" | "THEY_WILL_MANAGE_ME";
-  };
 };
 
 /**
@@ -150,9 +149,27 @@ export function RootNavigator() {
   const welcomePending = useWelcomeStore((s) => s.pending);
   const t = useAppTheme();
 
+  const isManaging = useAuthStore((s) => s.isManaging);
+  const activePatientId = useAuthStore((s) => s.activePatientId);
+  const switchPatientContext = useAuthStore((s) => s.switchPatientContext);
+  const insets = useSafeAreaInsets();
+  // The management banner takes the status bar area: screens below it start with no top inset.
+  const bannerShown = !!token && isManaging && !!activePatientId;
+  const screenInsets = useMemo(() => (bannerShown ? { ...insets, top: 0 } : insets), [bannerShown, insets]);
+
   return (
-    <>
-      <StatusBar barStyle={t.mode === 'dark' ? 'light-content' : 'dark-content'} />
+    <View style={{ flex: 1, backgroundColor: t.surface.bg }}>
+      {/* White text on the person's color while managing someone (module 8). */}
+      <StatusBar barStyle={token && isManaging ? 'light-content' : t.mode === 'dark' ? 'light-content' : 'dark-content'} />
+      {token ? (
+        <ManagementBanner
+          onExit={() => {
+            switchPatientContext(null);
+            if (navigationRef.isReady()) navigationRef.navigate("MainTabs");
+          }}
+        />
+      ) : null}
+      <SafeAreaInsetsContext.Provider value={screenInsets}>
       <Stack.Navigator
       screenOptions={{
         headerShown: false,
@@ -291,26 +308,7 @@ export function RootNavigator() {
             component={TreatmentFormScreen}
             options={FORM_SCREEN_OPTIONS}
           />
-          <Stack.Screen
-            name="Dependientes"
-            component={DependientesScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: LINKED_PEOPLE_SCREEN_TITLE,
-              animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Más",
-            })}
-          />
-          <Stack.Screen
-            name="DependientesInvite"
-            component={DependientesInviteScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: "Invitar",
-              animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? LINKED_PEOPLE_SCREEN_TITLE,
-            })}
-          />
+          <Stack.Screen name="Dependientes" component={DependientesScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
         </>
       ) : (
         <>
@@ -324,6 +322,7 @@ export function RootNavigator() {
         </>
       )}
     </Stack.Navigator>
-    </>
+      </SafeAreaInsetsContext.Provider>
+    </View>
   );
 }

@@ -25,7 +25,8 @@ import {
   useAppTheme,
 } from "@helu/ui";
 import { useManagedUsersQuery, useDelegationContextColorsQuery } from "@helu/api/hooks";
-import { resolveDelegationRingColor } from "../components/dependientes";
+import { resolveDelegationRingColor } from "../components/dependientes/colorTokens";
+import { initialsOf } from "../components/dependientes/PersonCard";
 import { usePatientContextGuard } from "../hooks/usePatientContextGuard";
 import { TabSceneFade } from "./TabSceneFade";
 
@@ -86,7 +87,7 @@ function CenterTabIcon({ focused }: { focused: boolean }) {
     }
 
     const name = activeDelegate?.linkedUserName ?? activeDelegate?.linkedUserEmail ?? "";
-    const initials = name.slice(0, 2).toUpperCase() || "?";
+    const initials = name ? initialsOf(name) : "?";
 
     return (
       <View

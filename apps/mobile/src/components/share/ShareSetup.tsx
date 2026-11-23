@@ -91,8 +91,18 @@ export function ShareSetup({ target, fromStepOne, onCreated }: ShareSetupProps) 
         // #61 decision 1: several documents travel in a backpack «Compartido · 23 nov».
         const now = new Date();
         title = `Compartido · ${now.getDate()} ${MONTHS_SHORT[now.getMonth()]}`;
-        const backpack = await createBackpack({ name: title, description: "Creada al compartir varios documentos.", type: "CUSTOM" });
-        for (const doc of target.documents) await addDocToBackpack(backpack.id, doc.id);
+        const ids = target.documents.map((doc) => doc.id);
+        // One request on an up-to-date API (BackendHealthGuard#21). An older one ignores `documentIds`
+        // and returns 0 documents: then add them in parallel instead of one after another.
+        const backpack = await createBackpack({
+          name: title,
+          description: "Creada al compartir varios documentos.",
+          type: "CUSTOM",
+          documentIds: ids,
+        });
+        if ((backpack.documentCount ?? 0) < ids.length) {
+          await Promise.all(ids.map((id) => addDocToBackpack(backpack.id, id)));
+        }
         resourceType = "backpack";
         result = await shareBackpackWithOptions(backpack.id, { expiresIn });
         void qc.invalidateQueries({ queryKey: ["backpacks"] });

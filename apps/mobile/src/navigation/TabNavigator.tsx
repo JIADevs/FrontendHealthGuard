@@ -27,6 +27,7 @@ import {
 import { useManagedUsersQuery, useDelegationContextColorsQuery } from "@helu/api/hooks";
 import { resolveDelegationRingColor } from "../components/dependientes";
 import { usePatientContextGuard } from "../hooks/usePatientContextGuard";
+import { TabSceneFade } from "./TabSceneFade";
 
 import type { AgendaRouteParams } from "./RootNavigator";
 
@@ -142,10 +143,15 @@ export function TabNavigator() {
   return (
     <Tab.Navigator
       initialRouteName="Home"
+      // Sibling tabs: the new one fades in over 150 ms, no slide (movimiento-interacciones.md §3).
+      // The fade runs in TabSceneFade (Reanimated); the navigator's own "fade" could leave Inicio
+      // blank after fast switching on a real iPhone.
+      screenLayout={({ navigation, route, children }) => (
+        <TabSceneFade navigation={navigation} routeKey={route.key}>
+          {children}
+        </TabSceneFade>
+      )}
       screenOptions={{
-        // Pestañas hermanas: fundido cruzado de 150 ms, sin deslizar (movimiento-interacciones.md §3)
-        animation: "fade",
-        transitionSpec: { animation: "timing", config: { duration: 150 } },
         tabBarActiveTintColor: t.brand.fg,
         tabBarInactiveTintColor: t.text.muted,
         headerShown: false,

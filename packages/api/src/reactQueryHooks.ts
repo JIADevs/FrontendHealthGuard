@@ -286,7 +286,10 @@ export function useCreateDocumentMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (doc: DocumentCreate) => createDocument(doc),
-        onSettled: () => qc.invalidateQueries({ queryKey: ["documents"] }),
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: ["documents"] });
+            invalidateTreatmentQueries(qc);
+        },
     });
 }
 
@@ -297,6 +300,7 @@ export function useUpdateDocumentMutation() {
         onSettled: (_data, _err, vars) => {
             qc.invalidateQueries({ queryKey: ["documents"] });
             qc.invalidateQueries({ queryKey: QK.document(vars.id) });
+            invalidateTreatmentQueries(qc);
         },
     });
 }
@@ -305,7 +309,10 @@ export function useDeleteDocumentMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (id: string) => deleteDocument(id),
-        onSettled: () => qc.invalidateQueries({ queryKey: ["documents"] }),
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: ["documents"] });
+            invalidateTreatmentQueries(qc);
+        },
     });
 }
 
@@ -430,6 +437,7 @@ export function useCreateAppointmentMutation() {
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["appointments"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
+            invalidateTreatmentQueries(qc);
         },
     });
 }
@@ -444,6 +452,7 @@ export function useUpdateAppointmentMutation() {
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["appointments"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
+            invalidateTreatmentQueries(qc);
         },
     });
 }
@@ -455,6 +464,7 @@ export function useDeleteAppointmentMutation() {
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["appointments"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
+            invalidateTreatmentQueries(qc);
         },
     });
 }
@@ -466,6 +476,7 @@ export function useUpdateAppointmentStatusMutation() {
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["appointments"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
+            invalidateTreatmentQueries(qc);
         },
     });
 }
@@ -576,6 +587,16 @@ export function useAppointmentOptionsQuery() {
 
 // ─── Treatments ────────────────────────────────────────
 
+/**
+ * A treatment groups medication cycles, appointments, documents and check-ins, so writing any
+ * of them changes the treatment lists (`["treatments", …]`) and every treatment detail
+ * (`["treatment", id]`). Invalidating only the list left an open detail showing stale sections.
+ */
+function invalidateTreatmentQueries(qc: ReturnType<typeof useQueryClient>) {
+    qc.invalidateQueries({ queryKey: ["treatments"] });
+    qc.invalidateQueries({ queryKey: ["treatment"] });
+}
+
 export function useTreatmentsQuery(page = 1, limit = 100) {
     return useQuery({
         queryKey: QK.treatments(page, limit),
@@ -611,6 +632,8 @@ export function useUpdateTreatmentMutation() {
             qc.invalidateQueries({ queryKey: ["treatments"] });
             qc.invalidateQueries({ queryKey: QK.treatment(vars.id) });
             qc.invalidateQueries({ queryKey: ["medications"] });
+            // Completing or deactivating a treatment ends its open cycles on the server.
+            qc.invalidateQueries({ queryKey: ["medication"] });
             qc.invalidateQueries({ queryKey: ["appointments"] });
             qc.invalidateQueries({ queryKey: ["documents"] });
             qc.invalidateQueries({ queryKey: ["daily-checkins"] });
@@ -710,6 +733,7 @@ export function useCreateMedicationCycleMutation() {
             qc.invalidateQueries({ queryKey: ["medications"] });
             qc.invalidateQueries({ queryKey: ["medication", variables.medicationId] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
+            invalidateTreatmentQueries(qc);
         },
     });
 }
@@ -722,6 +746,7 @@ export function useUpdateMedicationMutation() {
             qc.invalidateQueries({ queryKey: ["medications"] });
             qc.invalidateQueries({ queryKey: ["medication", vars.id] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
+            invalidateTreatmentQueries(qc);
         },
     });
 }
@@ -733,6 +758,7 @@ export function useDeleteMedicationMutation() {
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["medications"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
+            invalidateTreatmentQueries(qc);
         },
     });
 }
@@ -746,6 +772,7 @@ export function useUpdateMedicationCycleMutation() {
             qc.invalidateQueries({ queryKey: ["medications"] });
             qc.invalidateQueries({ queryKey: ["medication"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
+            invalidateTreatmentQueries(qc);
         },
     });
 }
@@ -758,6 +785,7 @@ export function useDeleteMedicationCycleMutation() {
             qc.invalidateQueries({ queryKey: ["medications"] });
             qc.invalidateQueries({ queryKey: ["medication"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
+            invalidateTreatmentQueries(qc);
         },
     });
 }
@@ -1037,7 +1065,7 @@ export function useCreateDailyCheckInMutation() {
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["me"] });
-            qc.invalidateQueries({ queryKey: ["treatments"] });
+            invalidateTreatmentQueries(qc);
         },
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["daily-checkins"] });
@@ -1053,7 +1081,7 @@ export function useUpdateDailyCheckInMutation() {
             updateDailyCheckIn(id, payload),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["daily-checkins"] });
-            qc.invalidateQueries({ queryKey: ["treatments"] });
+            invalidateTreatmentQueries(qc);
             qc.invalidateQueries({ queryKey: ["calendar"] });
             qc.invalidateQueries({ queryKey: ["me"] });
         },
@@ -1066,7 +1094,7 @@ export function useDeleteDailyCheckInMutation() {
         mutationFn: (id: string) => deleteDailyCheckIn(id),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["daily-checkins"] });
-            qc.invalidateQueries({ queryKey: ["treatments"] });
+            invalidateTreatmentQueries(qc);
             qc.invalidateQueries({ queryKey: ["calendar"] });
             qc.invalidateQueries({ queryKey: ["me"] });
         },

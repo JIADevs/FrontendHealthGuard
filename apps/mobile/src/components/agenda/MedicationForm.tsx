@@ -140,6 +140,8 @@ export interface MedicationFormProps {
   /** With no `cycleId`: a new cycle for this medication */
   medicationId?: string;
   medicationName?: string;
+  /** Creating: the new cycle starts linked to this treatment («+ Agregar» in the treatment's detail). */
+  treatmentId?: string;
   /** Leaves the form (after saving, or after confirming «Descartar») */
   onClose: () => void;
   subscribeBeforeLeave: SubscribeBeforeLeave;
@@ -192,7 +194,7 @@ function EditGate(props: MedicationFormProps & { cycleId: string; medicationId: 
 
 // ─── Create (new medication or new cycle) ────────────────────────────────────
 
-function CreateForm({ medicationId, medicationName, onClose, subscribeBeforeLeave }: MedicationFormProps) {
+function CreateForm({ medicationId, medicationName, treatmentId, onClose, subscribeBeforeLeave }: MedicationFormProps) {
   const leave = useRef<() => void>(() => {});
   const savedName = useRef("");
   const form = useMedicationFormCore({
@@ -205,6 +207,14 @@ function CreateForm({ medicationId, medicationName, onClose, subscribeBeforeLeav
     },
   });
   savedName.current = form.name.trim();
+
+  // Opened from a treatment: the treatment comes selected. Set while rendering (not in an effect) so
+  // the body's starting point already has it and leaving untouched does not ask «¿Descartar?».
+  const [treatmentPrefilled, setTreatmentPrefilled] = useState(false);
+  if (treatmentId && !treatmentPrefilled) {
+    setTreatmentPrefilled(true);
+    form.setTreatmentIds([treatmentId]);
+  }
 
   useEffect(() => {
     if (medicationId && medicationName) form.selectExistingMedication(medicationId, medicationName);

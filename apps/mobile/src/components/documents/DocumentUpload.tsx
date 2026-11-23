@@ -105,6 +105,8 @@ export interface DocumentUploadProps {
   backpackName?: string;
   /** Pages from the scanner: skip the system picker and start with this file. */
   initialFile?: FileSource;
+  /** The document starts linked to this treatment («+ Agregar» in the treatment's detail). */
+  treatmentId?: string;
 }
 
 /**
@@ -112,14 +114,21 @@ export interface DocumentUploadProps {
  * and the AI reads it, the fields wait as a skeleton, then come back prefilled and marked. One column
  * and a fixed «Guardar documento» bar.
  */
-export function DocumentUpload({ onClose, subscribeBeforeLeave, backpackId, backpackName, initialFile }: DocumentUploadProps) {
+export function DocumentUpload({
+  onClose,
+  subscribeBeforeLeave,
+  backpackId,
+  backpackName,
+  initialFile,
+  treatmentId: initialTreatmentId,
+}: DocumentUploadProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const form = useDocumentForm({ backpackId, backpackName, skipNavigateBackOnUpload: true, onUploaded: () => leave() });
   const treatments = useTreatmentsQuery(1, 100).data?.items ?? [];
   const [file, setFile] = useState<FileSource | null>(null);
   const [date, setDate] = useState(todayKey());
-  const [treatmentId, setTreatmentId] = useState<string | null>(null);
+  const [treatmentId, setTreatmentId] = useState<string | null>(initialTreatmentId ?? null);
   const [submitted, setSubmitted] = useState(false);
   const [titleTouched, setTitleTouched] = useState(false);
   const titleRef = useRef<ComponentRef<typeof TextInput>>(null);

@@ -30,6 +30,7 @@ import {
   useTreatmentFormCore,
   type TreatmentStatus,
 } from "@helu/api/hooks";
+import { useRecentlySaved } from "../lib/recentlySaved";
 
 const STATUS_OPTIONS: Array<{ value: TreatmentStatus; label: string }> = [
   { value: "ACTIVE", label: "Activo" },
@@ -81,7 +82,11 @@ function TreatmentFormContent({ initial }: { initial?: any }) {
   const form = useTreatmentFormCore({
     initial,
     adapters: {
-      onSaveSuccess: () => Toast.show({ type: "success", text1: initial ? "Tratamiento actualizado" : "Tratamiento creado" }),
+      onSaveSuccess: (savedId) => {
+        // The list highlights the saved card (and shows its tab).
+        useRecentlySaved.getState().markTreatment(savedId);
+        Toast.show({ type: "success", text1: initial ? "Tratamiento actualizado" : "Tratamiento creado" });
+      },
       afterSave: () => navigation.goBack(),
     },
   });

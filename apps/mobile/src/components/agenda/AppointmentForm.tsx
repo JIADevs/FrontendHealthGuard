@@ -78,13 +78,15 @@ export interface AppointmentFormNav {
 export interface AppointmentFormProps extends AppointmentFormNav {
   /** Set to edit an existing appointment */
   id?: string;
+  /** Creating: the new appointment starts linked to this treatment («+ Agregar» in the treatment's detail). */
+  treatmentId?: string;
 }
 
-export function AppointmentForm({ id, ...nav }: AppointmentFormProps) {
+export function AppointmentForm({ id, treatmentId, ...nav }: AppointmentFormProps) {
   if (id) {
     return <AppointmentFormEditor id={id} nav={nav} />;
   }
-  return <AppointmentFormBody appointment={null} nav={nav} />;
+  return <AppointmentFormBody appointment={null} nav={nav} treatmentId={treatmentId} />;
 }
 
 /** Height of the kit segmented control (44 px options + 4 px padding), for Tipo de consulta and Modalidad. */
@@ -186,7 +188,7 @@ function appointmentDraft(form: {
 
 // ─── Form body ────────────────────────────────────────────────────────────────
 
-function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: AppointmentFormNav }) {
+function AppointmentFormBody({ appointment, nav, treatmentId }: { appointment: any; nav: AppointmentFormNav; treatmentId?: string }) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const allowLeave = useRef(false);
@@ -194,10 +196,13 @@ function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: Appo
   const nameTouched = useRef(Boolean(appointment?.name));
   const [askDiscard, setAskDiscard] = useState(false);
   const [addingDoctor, setAddingDoctor] = useState(false);
+  // Opened from a treatment: it comes selected, and «Más detalles» (where the treatment lives) open.
+  const prefillTreatmentId: string | undefined = appointment ? undefined : treatmentId;
 
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(
     !!(
-      appointment?.duration || appointment?.notes || appointment?.service || appointment?.consultationType || appointment?.cost
+      prefillTreatmentId
+      || appointment?.duration || appointment?.notes || appointment?.service || appointment?.consultationType || appointment?.cost
       || appointment?.treatmentIds?.length || appointment?.preDocumentIds?.length || appointment?.postDocumentIds?.length
       || appointment?.preBackpackIds?.length || appointment?.postBackpackIds?.length
     )
@@ -223,6 +228,14 @@ function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: Appo
     },
   });
 
+  // Set while rendering (not in an effect) so it is part of the starting point below: leaving the
+  // form untouched does not ask «¿Descartar?».
+  const [treatmentPrefilled, setTreatmentPrefilled] = useState(false);
+  if (prefillTreatmentId && !treatmentPrefilled) {
+    setTreatmentPrefilled(true);
+    form.setTreatmentIds([prefillTreatmentId]);
+  }
+
   const suggestedName = [form.specialty, form.doctor].filter(Boolean).join(" — ");
 
   const fieldErrorCount = Object.keys(form.fieldErrors).length;
@@ -247,7 +260,8 @@ function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: Appo
   }, [suggestedName, form]);
 
   if (baseline.current === null) {
-    baseline.current = appointmentDraft(form);
+    // The prefilled treatment lands on the next pass of this render: count it from the start.
+    baseline.current = appointmentDraft(prefillTreatmentId ? { ...form, treatmentIds: [prefillTreatmentId] } : form);
   }
   const nameForCompare = !nameTouched.current && (form.name === "" || form.name === suggestedName) ? "" : form.name;
   const dirty = appointmentDraft({ ...form, name: nameForCompare }) !== baseline.current;
@@ -279,8 +293,9 @@ function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: Appo
   const backpacks = backpacksQuery.data?.items ?? [];
 
   // Derived labels for selected items
+  // Active treatments, plus any already selected (a completed one opened from its detail keeps its name).
   const treatmentItems = treatments
-    .filter((tx: any) => tx.status === "ACTIVE")
+    .filter((tx: any) => tx.status === "ACTIVE" || form.treatmentIds.includes(tx.id))
     .map((tx: any) => ({ id: tx.id, label: tx.name, sub: tx.description ?? undefined }));
   const docItems = documents.map((d: any) => ({ id: d.id, label: d.title, sub: d.format }));
   const bpItems = backpacks.map((b: any) => ({ id: b.id, label: b.name, sub: b.description ?? undefined }));

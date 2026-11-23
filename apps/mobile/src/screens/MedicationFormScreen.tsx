@@ -20,6 +20,7 @@ export function MedicationFormScreen() {
       cycleId={params?.cycleId}
       medicationId={params?.medicationId}
       medicationName={params?.medicationName}
+      treatmentId={params?.treatmentId}
       onClose={() => navigation.goBack()}
       subscribeBeforeLeave={subscribeBeforeLeave}
     />

@@ -69,8 +69,10 @@ export type RootStackParamList = {
   AppointmentDetail: { id: string };
   AgendaTaskDetail: { id: string; intent?: "complete" | "reschedule" };
   AgendaTaskForm: { id?: string } | undefined;
-  AppointmentForm: { id?: string } | undefined;
-  MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string } | undefined;
+  /** `treatmentId`: a new appointment that starts linked to this treatment («+ Agregar» in its detail). */
+  AppointmentForm: { id?: string; treatmentId?: string } | undefined;
+  /** `treatmentId`: a new medication that starts linked to this treatment («+ Agregar» in its detail). */
+  MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string; treatmentId?: string } | undefined;
   MedicationDetail: { id: string };
   CycleDetail: { cycleId: string; medicationId: string; medicationName: string };
   Treatments: WithBackTitle | undefined;
@@ -85,6 +87,8 @@ export type RootStackParamList = {
         initialKind?: "FILE" | "LINK";
         /** Pages from the scanner, already joined into one image or PDF. */
         scannedFile?: { uri: string; name: string; mimeType: string; size?: number };
+        /** The new document starts linked to this treatment («+ Agregar» in its detail). */
+        treatmentId?: string;
       })
     | undefined;
   DocumentDetail: WithBackTitle & { id: string; title?: string } | undefined;

@@ -27,7 +27,14 @@ import type { SubscribeBeforeLeave } from "../agenda/AppointmentForm";
 import { useTreatmentForm } from "../../hooks/useTreatmentForm";
 import { notify } from "../../lib/notify";
 import { TreatmentFields } from "./TreatmentFields";
-import { TREATMENT_STATUS, TREATMENT_STATUS_ORDER, isTreatmentStatus, type TreatmentStatus } from "./treatmentFormat";
+import { TreatmentLoadError } from "./TreatmentLoadError";
+import {
+  TREATMENT_STATUS,
+  TREATMENT_STATUS_ORDER,
+  isRetryableLoadError,
+  isTreatmentStatus,
+  type TreatmentStatus,
+} from "./treatmentFormat";
 
 export interface TreatmentEditProps {
   id: string;
@@ -77,6 +84,14 @@ export function TreatmentEdit({ id, onClose, subscribeBeforeLeave }: TreatmentEd
           </SkeletonGroup>
           <BottomActionBar primary={{ label: "Guardar cambios", onPress: () => undefined, disabled: true }} />
         </>
+      ) : query.isError && isRetryableLoadError(query.error) ? (
+        <ScrollView contentContainerStyle={styles.errorContent}>
+          <TreatmentLoadError
+            title="No se pudo cargar el tratamiento"
+            onRetry={() => void query.refetch()}
+            retrying={query.isFetching}
+          />
+        </ScrollView>
       ) : (
         // Deleted somewhere else, or the link is old (the m7 «Cita no encontrada» pattern).
         <View style={styles.centered}>
@@ -236,6 +251,7 @@ function makeStyles(t: ThemeContextValue) {
     skeleton: { flex: 1, overflow: "hidden" },
     half: { flex: 1 },
     centered: { flex: 1, justifyContent: "center", alignItems: "center", gap: spacing[3], padding: spacing[6] },
+    errorContent: { flexGrow: 1, justifyContent: "center", paddingBottom: spacing[10] },
     h3: { fontSize: 17, fontFamily: nativeFont("heading", 800), color: t.text.primary },
     sub: { fontSize: 14, lineHeight: 21, fontFamily: nativeFont("body", 400), color: t.text.secondary },
     center: { textAlign: "center" },

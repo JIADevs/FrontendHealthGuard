@@ -24,6 +24,7 @@ import { ScreenHeader } from "../ScreenHeader";
 import { useRecentlySaved } from "../../lib/recentlySaved";
 import { TreatmentCard, TreatmentCardSkeleton } from "./TreatmentCard";
 import { TreatmentCreateSheet } from "./TreatmentCreateSheet";
+import { TreatmentLoadError } from "./TreatmentLoadError";
 import { TreatmentsEmpty, TreatmentsSearchEmpty, TreatmentsTabEmpty } from "./TreatmentsEmpty";
 import {
   TREATMENT_STATUS,
@@ -103,6 +104,9 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
   }, []);
 
   const isEmpty = query.isSuccess && items.length === 0 && !showSkeleton;
+  // m7 «Error al cargar»: the request failed and there is nothing cached. A failed refetch over a
+  // list already on screen keeps the list.
+  const loadFailed = query.isError && query.data === undefined && !showSkeleton;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -110,7 +114,8 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
         title="Tratamientos"
         onBack={onBack}
         right={
-          isEmpty ? undefined : (
+          // The empty state and the load error carry the screen's one primary action.
+          isEmpty || loadFailed ? undefined : (
             <Button
               size="sm"
               icon={<Plus size={15} strokeWidth={2.6} color={t.text.onSolid} />}
@@ -123,7 +128,25 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
         }
       />
 
-      {isEmpty ? (
+      {loadFailed ? (
+        <View style={styles.flex}>
+          <Animated.View entering={contentEntering} style={styles.flex}>
+            <ScrollView
+              contentContainerStyle={styles.emptyContent}
+              refreshControl={pull.refreshControl}
+              onScroll={pull.onScroll}
+              scrollEventThrottle={16}
+            >
+              <TreatmentLoadError
+                title="No se pudieron cargar tus tratamientos"
+                onRetry={() => void query.refetch()}
+                retrying={query.isFetching}
+              />
+            </ScrollView>
+          </Animated.View>
+          <PullRefreshIndicator state={pull} />
+        </View>
+      ) : isEmpty ? (
         <View style={styles.flex}>
           <Animated.View entering={contentEntering} style={styles.flex}>
             <ScrollView

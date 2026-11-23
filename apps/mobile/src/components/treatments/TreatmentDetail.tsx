@@ -37,8 +37,17 @@ import { haptics } from "../../lib/haptics";
 import { TreatmentCheckIns } from "./TreatmentCheckIns";
 import { TreatmentRow, TreatmentSection } from "./TreatmentSection";
 import { TreatmentStarterCard } from "./TreatmentStarterCard";
+import { TreatmentLoadError } from "./TreatmentLoadError";
 import { TreatmentSummaryCard, TreatmentSummarySkeleton } from "./TreatmentSummaryCard";
-import { dayFromDate, dayFromTimestamp, hasNothingLinked, isToday, metaLine, shortDay } from "./treatmentFormat";
+import {
+  dayFromDate,
+  dayFromTimestamp,
+  hasNothingLinked,
+  isRetryableLoadError,
+  isToday,
+  metaLine,
+  shortDay,
+} from "./treatmentFormat";
 
 export interface TreatmentDetailProps {
   id: string;
@@ -100,6 +109,21 @@ export function TreatmentDetail({
   // screen is real from the first frame and nothing fades in (§6c «con datos en caché»).
   const [openedWithData] = useState(() => query.data !== undefined);
   const summary: Treatment | undefined = detail ?? cached;
+
+  if (!showSkeleton && !detail && query.isError && isRetryableLoadError(query.error)) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <ScreenHeader title="Tratamiento" onBack={onBack} />
+        <ScrollView contentContainerStyle={styles.errorContent}>
+          <TreatmentLoadError
+            title="No se pudo cargar el tratamiento"
+            onRetry={() => void query.refetch()}
+            retrying={query.isFetching}
+          />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   if (!showSkeleton && !detail) {
     return (
@@ -335,6 +359,7 @@ function makeStyles(t: ThemeContextValue) {
     content: { padding: spacing[4], gap: spacing[4], paddingBottom: spacing[10] },
     stack: { gap: spacing[4] },
     centered: { flex: 1, justifyContent: "center", alignItems: "center", gap: spacing[3], padding: spacing[6] },
+    errorContent: { flexGrow: 1, justifyContent: "center", paddingBottom: spacing[10] },
     h3: { fontSize: 17, fontFamily: nativeFont("heading", 800), color: t.text.primary },
     sub: { fontSize: 14, lineHeight: 21, fontFamily: nativeFont("body", 400), color: t.text.secondary },
     center: { textAlign: "center" },

@@ -1,4 +1,4 @@
-import type { Treatment, TreatmentDailyCheckInRef, TreatmentDetail } from "@helu/api";
+import { isApiError, type Treatment, type TreatmentDailyCheckInRef, type TreatmentDetail } from "@helu/api";
 import type { Tone } from "@helu/ui";
 import { MOOD_CONFIG } from "../agenda/moodConfig";
 
@@ -87,6 +87,16 @@ export function treatmentSubtitle(treatment: Pick<Treatment, "startDate" | "endD
   const until =
     treatment.status === "ACTIVE" ? (end ? `Hasta ${shortDay(end)}` : "En curso") : end ? `Fin ${shortDay(end)}` : null;
   return [from, until].filter(Boolean).join(" · ");
+}
+
+// ─── Load errors ─────────────────────────────────────────────────────────────
+
+/**
+ * A request that failed for a reason «Reintentar» can fix (no connection, a server error): m7 «Error al
+ * cargar». A 4xx (deleted, or not this person's) is «Tratamiento no encontrado» instead.
+ */
+export function isRetryableLoadError(error: unknown): boolean {
+  return !(isApiError(error) && error.status >= 400 && error.status < 500);
 }
 
 // ─── Search ──────────────────────────────────────────────────────────────────

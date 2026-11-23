@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, SectionList } from "react-native";
 import { Heart } from "lucide-react-native";
 import type { DailyCheckIn } from "@helu/api";
 import {
-  Button,
-  EmptyState,
+  Chip,
   Skeleton,
   SkeletonGroup,
   nativeFont,
@@ -18,7 +17,10 @@ import type { ThemeContextValue } from "@helu/ui";
 import { useWellbeingScreen } from "../../hooks/useWellbeingScreen";
 import { DailyCheckInForm } from "./DailyCheckInForm";
 import { DailyCheckInListItem, DailyCheckInListItemSkeleton } from "./DailyCheckInListItem";
-import { WellbeingFAB } from "./WellbeingFAB";
+import { Fab } from "../Fab";
+import { AgendaEmpty } from "./AgendaEmpty";
+import { Flame } from "../home/Flame";
+import { useProfileQuery } from "@helu/api/hooks";
 import { WellbeingSummary } from "./WellbeingSummary";
 import { LoadError } from "../states/LoadError";
 
@@ -42,10 +44,21 @@ export function WellbeingTab() {
     }
   }, [screen.hasNextPage, screen.isFetchingNextPage, screen.fetchNextPage]);
 
+  // Mockup «Bienestar»: the streak chip (kit `fchip`) next to «Check-ins».
+  const streak = useProfileQuery().data?.currentStreak ?? 0;
+  const empty = !showSkeleton && !screen.isError && screen.sections.length === 0;
+
   const listHeader = (
     <>
       <WellbeingSummary />
-      <Text style={styles.listTitle} accessibilityRole="header">Check-ins</Text>
+      <View style={styles.listTitleRow}>
+        <Text style={styles.listTitle} accessibilityRole="header">Check-ins</Text>
+        {streak > 0 ? (
+          <View accessible accessibilityLabel={`${streak} ${streak === 1 ? "día" : "días"} de racha`}>
+            <Chip label={String(streak)} tone="streak" icon={<Flame size={15} />} />
+          </View>
+        ) : null}
+      </View>
     </>
   );
 
@@ -86,10 +99,18 @@ export function WellbeingTab() {
           stickySectionHeadersEnabled={false}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={
-            <EmptyState
-              icon={<Heart size={48} color={t.border.medium} />}
-              message="Todavía no tienes check-ins."
-              action={<Button onPress={() => setFormTarget("new")}>Registrar check-in</Button>}
+            <AgendaEmpty
+              pose="happy"
+              title="Aún no tienes check-ins"
+              description="Cuéntanos cómo te sientes cada día y verás cómo evolucionas entre citas."
+              actionLabel="Registrar check-in"
+              onAction={() => setFormTarget("new")}
+              example={{
+                tone: "wellbeing",
+                icon: <Heart size={19} strokeWidth={2.2} color={t.accent.wellbeingFg} />,
+                title: "Bien",
+                meta: "Hoy · 8:12 a. m. · Dormí bien",
+              }}
             />
           }
           refreshControl={pull.refreshControl}
@@ -118,7 +139,8 @@ export function WellbeingTab() {
     <View style={styles.tabContent}>
       {renderList()}
 
-      <WellbeingFAB onPress={() => setFormTarget("new")} />
+      {/* One primary action: the empty state already offers «Registrar check-in» (MASTER §2). */}
+      {empty ? null : <Fab icon={Heart} onPress={() => setFormTarget("new")} accessibilityLabel="Registrar check-in" />}
 
       {formTarget !== null && (
         <DailyCheckInForm
@@ -134,12 +156,17 @@ function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     tabContent: { flex: 1 },
     listContent: { paddingBottom: spacing[12] + 56 },
+    listTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: spacing[4],
+      marginTop: spacing[5],
+    },
     listTitle: {
       fontSize: 17,
       fontFamily: nativeFont("heading", 800),
       color: t.text.primary,
-      paddingHorizontal: spacing[4],
-      marginTop: spacing[5],
     },
     // Mismo eyebrow que «PRÓXIMAS» / «ACTIVOS» (Nunito 900 11, mayúsculas, .08em)
     sectionTitle: {

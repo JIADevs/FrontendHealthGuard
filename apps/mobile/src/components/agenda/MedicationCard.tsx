@@ -14,7 +14,8 @@ export interface MedicationCardProps {
   medication: Medication;
   onPress: () => void;
   onDelete: () => void;
-  onIntake: (cycleId: string) => void;
+  /** The cycle and the dose being taken (its scheduled slot), so the server records that dose. */
+  onIntake: (cycleId: string, scheduledTime?: string | null) => void;
   intakePending?: boolean;
 }
 
@@ -99,7 +100,7 @@ export function MedicationCard({
                         <Button
                           variant="success"
                           size="sm"
-                          onPress={() => onIntake(cycle.id)}
+                          onPress={() => onIntake(cycle.id, cycle.nextIntakeTime)}
                           disabled={intakePending}
                           loading={intakePending}
                           loadingLabel="Guardando…"

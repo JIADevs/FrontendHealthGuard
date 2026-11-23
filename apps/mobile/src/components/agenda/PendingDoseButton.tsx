@@ -42,7 +42,7 @@ export function PendingDoseButton({ cycle }: PendingDoseButtonProps) {
             loading={taking}
             loadingLabel="Guardando…"
             disabled={taking}
-            onPress={() => takeDose.take(cycle.id)}
+            onPress={() => takeDose.take(cycle.id, cycle.nextIntakeTime)}
           >
             {`Tomar la dosis de ${withArticle(clock)}`}
           </Button>

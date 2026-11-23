@@ -36,6 +36,49 @@ export function isMedicationActive(medication: Medication, now = Date.now()): bo
   return (medication.cycles ?? []).some((cycle) => isCycleActive(cycle, now));
 }
 
+const HOUR_MS = 3_600_000;
+const FIXED_UNIT_HOURS: Record<string, number> = { HOUR: 1, DAY: 24, WEEK: 168 };
+
+/** Time between doses for units with a fixed length (hours, days, weeks); null otherwise. */
+function doseIntervalMs(cycle: MedicationCycle): number | null {
+  const hours = FIXED_UNIT_HOURS[cycle.frequencyUnit ?? "HOUR"];
+  return hours && cycle.frequency > 0 ? cycle.frequency * hours * HOUR_MS : null;
+}
+
+/**
+ * The cycle's pending dose on its own schedule: ``firstIntakeTime`` plus whole intervals —
+ * the same slots Agenda and Inicio draw (`generateIntakeTimesForDay`).
+ *
+ * Until 2026-11-21 the API moved ``nextIntakeTime`` to *tap time + interval*, so some cycles
+ * drifted (07:00 / 19:00 became 11:21 / 23:21) and the list contradicted the calendar. When
+ * the stored value is off schedule, the latest answered dose is matched to its nearest slot and
+ * this returns the slot after it — the same value `scripts/realign_next_intake.py` writes on the
+ * server (BackendHealthGuard#23). A cycle without a stored next dose keeps none.
+ * Months and years have no fixed length, so they keep the stored value.
+ */
+export function scheduledNextIntake(cycle: MedicationCycle): string | null | undefined {
+  const interval = doseIntervalMs(cycle);
+  const anchor = new Date(cycle.firstIntakeTime).getTime();
+  if (!interval || !Number.isFinite(anchor)) return cycle.nextIntakeTime;
+  if (!cycle.nextIntakeTime) return cycle.nextIntakeTime;
+  const stored = new Date(cycle.nextIntakeTime).getTime();
+  if (!Number.isFinite(stored)) return cycle.nextIntakeTime;
+  if (stored >= anchor && (stored - anchor) % interval < 1000) return cycle.nextIntakeTime;
+  // The slot an answer belongs to is the nearest one: doses are often tapped early or late.
+  const nearest = (ms: number) => (ms <= anchor ? anchor : anchor + Math.round((ms - anchor) / interval) * interval);
+  const answered = (cycle.intakes ?? [])
+    .map((intake) => new Date(intake.scheduledTime).getTime())
+    .filter(Number.isFinite);
+  const slot = answered.length > 0 ? nearest(Math.max(...answered)) + interval : nearest(stored);
+  return new Date(slot).toISOString();
+}
+
+/** The cycle with ``nextIntakeTime`` on its schedule (see `scheduledNextIntake`). */
+export function withScheduledNext(cycle: MedicationCycle): MedicationCycle {
+  const next = scheduledNextIntake(cycle);
+  return next === cycle.nextIntakeTime ? cycle : { ...cycle, nextIntakeTime: next ?? null };
+}
+
 /**
  * The cycle the list and the detail talk about: the active one with the nearest next dose,
  * or, for a finished medication, the one that ended last.
@@ -44,7 +87,7 @@ export function currentCycleOf(medication: Medication, now = Date.now()): Medica
   const cycles = medication.cycles ?? [];
   const active = cycles.filter((cycle) => isCycleActive(cycle, now));
   if (active.length > 0) {
-    return [...active].sort((a, b) => nextDoseMs(a) - nextDoseMs(b))[0];
+    return [...active].map(withScheduledNext).sort((a, b) => nextDoseMs(a) - nextDoseMs(b))[0];
   }
   return [...cycles].sort((a, b) => endMs(b) - endMs(a))[0];
 }
@@ -82,7 +125,8 @@ export function formatNextDose(iso: string | null | undefined, now = Date.now())
   const when = new Date(iso);
   if (Number.isNaN(when.getTime())) return "";
   const diffDays = Math.round((startOfLocalDay(when) - startOfLocalDay(now)) / DAY_MS);
-  const clock = formatClock(when);
+  // Non-breaking spaces: «11:21 p. m.» must never wrap as «11:21 p.» / «m.» (clinical data, MASTER §1).
+  const clock = formatClock(when).replace(/ /g, "\u00a0");
   if (diffDays === 0) return `hoy ${clock}`;
   if (diffDays === 1) return `mañana ${clock}`;
   return `${midSentenceDay(when)} · ${clock}`;

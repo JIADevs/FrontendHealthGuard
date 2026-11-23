@@ -45,6 +45,7 @@ import {
   formatCycleEnd,
   formatCycleRange,
   formatNextDose,
+  withScheduledNext,
   isCycleActive,
 } from "./medicationCycles";
 
@@ -92,7 +93,9 @@ export function CycleDetail({ cycleId, medicationId, medicationName, onEdit, onB
   const deleteMut = useDeleteMedicationCycleMutation();
   const [confirm, setConfirm] = useState<"finish" | "delete" | null>(null);
 
-  const cycle = med?.cycles.find((c: MedicationCycle) => c.id === cycleId);
+  const found = med?.cycles.find((c: MedicationCycle) => c.id === cycleId);
+  // Same schedule as Agenda, even if the server's next dose drifted (see `withScheduledNext`).
+  const cycle = found ? withScheduledNext(found) : undefined;
   // The medication list in cache already has this cycle: its rows and intakes give the skeleton
   // the shape of what arrives (§6c).
   const queryClient = useQueryClient();
@@ -181,7 +184,10 @@ export function CycleDetail({ cycleId, medicationId, medicationName, onEdit, onB
     ...(cycle.price != null ? [{ label: "Precio", value: `$ ${Number(cycle.price).toLocaleString("es-CO")}` }] : []),
   ];
 
-  const intakes = [...(cycle.intakes ?? [])].sort((a, b) => b.scheduledTime.localeCompare(a.scheduledTime));
+  // Newest first by the time each row shows (when it was taken, or the dose time if it was not):
+  // sorting by the scheduled slot while showing the tap time looked shuffled and duplicated.
+  const shownAt = (i: MedicationIntake) => new Date((i.status === "TAKEN" && i.takenAt) || i.scheduledTime).getTime();
+  const intakes = [...(cycle.intakes ?? [])].sort((a, b) => shownAt(b) - shownAt(a));
 
   const finish = () =>
     updateMut.mutate(
@@ -314,6 +320,10 @@ function IntakeRow({ intake }: { intake: MedicationIntake }) {
   const styles = useMemo(() => makeStyles(t), [t]);
   const taken = intake.status === "TAKEN";
   const reason = intake.notTakenReason ? NOT_TAKEN_REASON_LABELS_ES[intake.notTakenReason] : null;
+  // Taken well off its time: name the dose, so two doses marked together don't read as a duplicate.
+  const offBy = taken && intake.takenAt ? Math.abs(new Date(intake.takenAt).getTime() - new Date(intake.scheduledTime).getTime()) : 0;
+  const slotClock = formatClock(new Date(intake.scheduledTime));
+  const lateSlot = offBy > 30 * 60_000 ? ` · dosis de ${slotClock.startsWith("1:") ? "la" : "las"} ${slotClock}` : "";
   return (
     <View style={styles.intakeRow}>
       <IconTile
@@ -329,7 +339,7 @@ function IntakeRow({ intake }: { intake: MedicationIntake }) {
       />
       <View style={styles.summaryCopy}>
         <Text style={styles.rowTitle}>{formatIntakeWhen((taken && intake.takenAt) || intake.scheduledTime)}</Text>
-        <Text style={styles.meta}>{taken ? "Tomada" : reason ? `No tomada · ${reason}` : "No tomada"}</Text>
+        <Text style={styles.meta}>{taken ? `Tomada${lateSlot}` : reason ? `No tomada · ${reason}` : "No tomada"}</Text>
       </View>
     </View>
   );

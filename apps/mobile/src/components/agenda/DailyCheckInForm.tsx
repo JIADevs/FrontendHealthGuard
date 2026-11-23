@@ -252,8 +252,9 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
 
             {showDeleteConfirm && (
                 <ConfirmModal
-                    title="¿Eliminar check-in?"
-                    message="Esta acción no se puede deshacer."
+                    title="¿Eliminar este check-in?"
+                    message="Se borra de tu historial de bienestar. No se puede deshacer."
+                    keepLabel="Mantener check-in"
                     confirmLabel="Eliminar"
                     loading={deleteMutation.isPending}
                     onConfirm={handleDelete}

@@ -80,12 +80,13 @@ export function Backpacks(props: BackpacksProps) {
       </View>
 
       {showSkeleton ? (
-        // §6c: title and search are real; each backpack is a card with its tile, name and chips.
+        // §6c: the skeleton has the list's structure — backpack cards (tile, name, description, «⋮»,
+        // documents chip) and, under them, the Helu tip — so nothing jumps when the content arrives.
+        // Two cards: most people have one or two backpacks, and four turned into one card + the tip.
         <SkeletonGroup label="Cargando mochilas" style={styles.skeleton}>
           <BackpackCardSkeleton />
           <BackpackCardSkeleton />
-          <BackpackCardSkeleton />
-          <BackpackCardSkeleton />
+          <HintSkeleton />
         </SkeletonGroup>
       ) : list.isError ? (
         <View style={styles.state}>
@@ -208,6 +209,30 @@ function BackpackCardSkeleton() {
         </View>
       </View>
       <Skeleton width={110} height={26} radius={13} />
+    </View>
+  );
+}
+
+/** The MascotHint under the list (kit `.hint`): 32 px Helu and two 18 px lines, radius 16. */
+function HintSkeleton() {
+  const t = useAppTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 16,
+        backgroundColor: t.brand.tint,
+      }}
+    >
+      <Skeleton width={32} height={32} radius={16} />
+      <View style={{ flex: 1, gap: 6, paddingVertical: 3 }}>
+        <Skeleton width="85%" height={12} />
+        <Skeleton width="55%" height={12} />
+      </View>
     </View>
   );
 }

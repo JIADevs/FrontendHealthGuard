@@ -1,8 +1,17 @@
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity } from "react-native";
-import { useState, useMemo } from "react";
-import { colors, nativeFont, radii, spacing, useAppTheme } from "@helu/ui";
-import type { ThemeContextValue } from "@helu/ui";
-import { ChevronDown, ChevronUp, Search } from "lucide-react-native";
+import { useMemo, useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Check, ChevronDown } from "lucide-react-native";
+import {
+  BottomSheet,
+  SearchField,
+  colors,
+  nativeFont,
+  radii,
+  spacing,
+  useAppTheme,
+  type BottomSheetHandle,
+  type ThemeContextValue,
+} from "@helu/ui";
 
 interface SelectFieldProps {
   label: string;
@@ -13,136 +22,115 @@ interface SelectFieldProps {
   required?: boolean;
 }
 
-export function SelectField({ label, value, placeholder, options, onChange, required }: SelectFieldProps) {
+function fold(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
+/**
+ * Selector for many options or a server list (formularios.md §2: «Selector — hoja con búsqueda en
+ * móvil»): the field looks like the kit inputs and opens a kit BottomSheet with a search box and the
+ * options, the chosen one with a check. Before, the list unfolded inside the form and was hidden by
+ * the fixed bottom bar.
+ */
+export function SelectField({ label, value, placeholder, options, onChange }: SelectFieldProps) {
   const t = useAppTheme();
-  const [isOpen, setIsOpen] = useState(false);
+  const styles = useMemo(() => makeStyles(t), [t]);
+  const sheetRef = useRef<BottomSheetHandle>(null);
+  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const filteredOptions = useMemo(() => {
-    if (!search) return options;
-    return options.filter(opt =>
-      opt.toLowerCase().includes(search.toLowerCase())
-    );
+  const filtered = useMemo(() => {
+    const q = fold(search.trim());
+    return q ? options.filter((opt) => fold(opt).includes(q)) : options;
   }, [options, search]);
 
-  const handleSelect = (option: string) => {
-    onChange(option);
-    setIsOpen(false);
+  const close = () => {
+    setOpen(false);
     setSearch("");
   };
+  const pick = (option: string) => sheetRef.current?.close(() => onChange(option));
+  const title = label.replace(/\s*\(opcional\)\s*$/i, "");
 
   return (
     <View style={styles.container}>
       {/* formularios.md §2: etiqueta visible siempre; «(opcional)» va en el texto de la etiqueta, sin asterisco. */}
-      <Text style={[styles.label, { color: t.text.primary }]}>{label}</Text>
-      <TouchableOpacity
-        style={[
-          styles.selector,
-          {
-            backgroundColor: isOpen ? t.surface.bgCard : t.mode === "dark" ? t.surface.muted : colors.slate[50],
-            borderColor: isOpen ? t.brand.focus : t.border.default,
-          },
-        ]}
-        onPress={() => setIsOpen(!isOpen)}
+      <Text style={styles.label}>{label}</Text>
+      <Pressable
+        style={({ pressed }) => [styles.selector, pressed && { opacity: 0.8 }]}
+        onPress={() => setOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={value ? `${label}: ${value}` : label}
-        accessibilityState={{ expanded: isOpen }}
+        accessibilityHint="Abre la lista para elegir"
       >
         <Text style={[styles.text, { color: value ? t.text.primary : t.text.muted }]} numberOfLines={1}>
           {value || placeholder}
         </Text>
-        {isOpen ? (
-          <ChevronUp size={18} color={t.text.muted} />
-        ) : (
-          <ChevronDown size={18} color={t.text.muted} />
-        )}
-      </TouchableOpacity>
+        <ChevronDown size={18} color={t.text.muted} />
+      </Pressable>
 
-      {isOpen && (
-        <View style={[styles.dropdown, { backgroundColor: t.surface.bgCard, borderColor: t.border.medium }]}>
-          <View style={[styles.searchContainer, { borderBottomColor: t.border.light }]}>
-            <Search size={16} color={t.text.muted} />
-            <TextInput
-              style={[styles.searchInput, { color: t.text.primary }]}
-              placeholder="Buscar..."
-              placeholderTextColor={t.text.muted}
-              value={search}
-              onChangeText={setSearch}
-            />
+      {open ? (
+        <BottomSheet ref={sheetRef} title={title} onClose={close}>
+          <View style={styles.body}>
+            {options.length > 6 ? (
+              <SearchField value={search} onChange={setSearch} placeholder="Buscar" accessibilityLabel={`Buscar en ${title}`} />
+            ) : null}
+            <View accessibilityRole="radiogroup">
+              {filtered.length === 0 ? (
+                <Text style={styles.empty}>{`No encontramos «${search.trim()}».`}</Text>
+              ) : (
+                filtered.map((option) => {
+                  const selected = option === value;
+                  return (
+                    <Pressable
+                      key={option}
+                      onPress={() => pick(option)}
+                      style={({ pressed }) => [styles.option, selected && styles.optionSelected, pressed && { opacity: 0.7 }]}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                    >
+                      <Text style={[styles.optionText, selected && { color: t.brand.text, fontFamily: nativeFont("body", 600) }]}>{option}</Text>
+                      {selected ? <Check size={18} strokeWidth={3} color={t.brand.text} /> : null}
+                    </Pressable>
+                  );
+                })
+              )}
+            </View>
           </View>
-          <ScrollView style={styles.optionsList} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
-            {filteredOptions.length === 0 ? (
-              <Text style={[styles.emptyText, { color: t.text.muted }]}>
-                No se encontraron resultados
-              </Text>
-            ) : (
-              filteredOptions.map((item: string) => (
-                <TouchableOpacity
-                  key={item}
-                  style={styles.option}
-                  onPress={() => handleSelect(item)}
-                >
-                  <Text style={[styles.optionText, { color: t.text.primary }]}>{item}</Text>
-                </TouchableOpacity>
-              ))
-            )}
-          </ScrollView>
-        </View>
-      )}
+        </BottomSheet>
+      ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 13,
-    fontFamily: nativeFont("heading", 800),
-  },
-  selector: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    minHeight: 48,
-    borderWidth: 1.5,
-    borderRadius: radii.input,
-    paddingHorizontal: 14,
-  },
-  text: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: nativeFont("body", 400),
-  },
-  dropdown: {
-    borderWidth: 1.5,
-    borderRadius: radii.input,
-    marginTop: spacing[1],
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[2],
-    padding: spacing[3],
-    borderBottomWidth: 1,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-  },
-  optionsList: {
-    maxHeight: 200,
-  },
-  option: {
-    padding: spacing[3],
-  },
-  optionText: {
-    fontSize: 16,
-  },
-  emptyText: {
-    padding: spacing[4],
-    textAlign: "center",
-  },
-});
+function makeStyles(t: ThemeContextValue) {
+  return StyleSheet.create({
+    container: { gap: 6 },
+    label: { fontSize: 13, fontFamily: nativeFont("heading", 800), color: t.text.primary },
+    selector: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 10,
+      minHeight: 48,
+      borderWidth: 1.5,
+      borderRadius: radii.input,
+      paddingHorizontal: 14,
+      backgroundColor: t.mode === "dark" ? t.surface.muted : colors.slate[50],
+      borderColor: t.border.default,
+    },
+    text: { flex: 1, fontSize: 15, fontFamily: nativeFont("body", 400) },
+    body: { gap: spacing[3] },
+    option: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing[3],
+      minHeight: 48,
+      paddingHorizontal: spacing[3],
+      borderRadius: 12,
+    },
+    optionSelected: { backgroundColor: t.brand.tint },
+    optionText: { flex: 1, fontSize: 15, fontFamily: nativeFont("body", 400), color: t.text.primary },
+    empty: { paddingVertical: spacing[4], textAlign: "center", fontSize: 14, fontFamily: nativeFont("body", 400), color: t.text.secondary },
+  });
+}

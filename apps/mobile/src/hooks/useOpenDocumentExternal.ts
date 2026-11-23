@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import Toast from "react-native-toast-message";
+import { notify } from "../lib/notify";
 import type { DocFormat } from "@helu/ui";
 import { openDocumentInExternalApp } from "../utils/openDocumentInExternalApp";
 
@@ -15,11 +15,7 @@ export function useOpenDocumentExternal() {
 
   const openDocument = useCallback(async (input: OpenDocumentExternalInput) => {
     if (!input.url) {
-      Toast.show({
-        type: "error",
-        text1: "Archivo no disponible",
-        text2: "Espera a que cargue el documento e inténtalo de nuevo.",
-      });
+      notify({ tone: "error", message: "El archivo todavía no está listo", description: "Espera a que cargue el documento e intenta de nuevo." });
       return;
     }
 
@@ -27,14 +23,12 @@ export function useOpenDocumentExternal() {
     try {
       await openDocumentInExternalApp(input);
     } catch (err) {
-      const message =
-        err instanceof Error && err.message.trim()
-          ? err.message
-          : "No se pudo abrir el documento. Verifica que tengas una app compatible instalada.";
-      Toast.show({
-        type: "error",
-        text1: "No se pudo abrir",
-        text2: message,
+      // MASTER §8: what happened + what to do, never the technical error.
+      console.warn("[open document]", err);
+      notify({
+        tone: "error",
+        message: "No se pudo abrir el documento",
+        description: "Revisa que tengas una app para abrir este tipo de archivo e intenta de nuevo.",
       });
     } finally {
       setOpening(false);

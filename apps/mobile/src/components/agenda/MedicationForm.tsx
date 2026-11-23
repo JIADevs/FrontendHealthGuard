@@ -206,8 +206,14 @@ function CreateForm({ medicationId, medicationName, onClose, subscribeBeforeLeav
   });
   savedName.current = form.name.trim();
 
+  // «Nuevo ciclo» starts from an existing medication. The body takes its «¿Descartar los cambios?»
+  // baseline on mount, so it mounts again once the name is in: leaving untouched never asks.
+  const [prefilled, setPrefilled] = useState(false);
   useEffect(() => {
-    if (medicationId && medicationName) form.selectExistingMedication(medicationId, medicationName);
+    if (medicationId && medicationName) {
+      form.selectExistingMedication(medicationId, medicationName);
+      setPrefilled(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -226,6 +232,7 @@ function CreateForm({ medicationId, medicationName, onClose, subscribeBeforeLeav
   return (
     <>
       <MedicationFormBody
+        key={prefilled ? "prefilled" : "blank"}
         mode={medicationId ? "cycle" : "create"}
         form={form}
         medicationName={medicationName}

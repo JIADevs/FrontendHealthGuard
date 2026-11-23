@@ -194,7 +194,8 @@ export function MedicationsTab() {
         <MedicationsFilterSheet initial={filters} treatments={treatments} onApply={applyFilters} onClose={closeFilterSheet} />
       ) : null}
 
-      <AgendaFAB onPress={nav.newMedication} />
+      {/* One primary action (MASTER §2): an empty list already offers «Agregar …» in its empty state. */}
+      {!showSkeleton && !isError && items.length === 0 && !hasActiveFilter && !search ? null : <AgendaFAB onPress={nav.newMedication} />}
     </View>
   );
 }

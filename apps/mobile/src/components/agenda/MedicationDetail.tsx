@@ -37,6 +37,7 @@ import {
   cycleStatus,
   currentCycleOf,
   cycleDayProgress,
+  recentAdherence,
   formatCycleEnd,
   formatCycleRange,
   formatNextDose,
@@ -186,6 +187,9 @@ function CycleSummaryCard({ cycle, active, onPress }: { cycle: MedicationCycle; 
   const range = formatCycleRange(cycle);
   const doseText = cycleDoseText(cycle);
   const days = progress ? (progress.total != null ? `${progress.day} de ${progress.total} días` : `Día ${progress.day}`) : "";
+  // Mockup «Detalle de medicamento»: «6 de 30 días · 11 de 12 tomas a tiempo». Same 7-day count as the list.
+  const adherence = active ? recentAdherence(cycle) : null;
+  const doses = adherence ? `${adherence.taken} de ${adherence.due} ${adherence.due === 1 ? "toma" : "tomas"} en ${adherence.days === 1 ? "1 día" : `${adherence.days} días`}` : "";
 
   return (
     <PressableScale
@@ -204,7 +208,12 @@ function CycleSummaryCard({ cycle, active, onPress }: { cycle: MedicationCycle; 
       {progress?.ratio != null ? (
         <CycleProgressBar ratio={progress.ratio} accessibilityLabel={`Ciclo: ${days}`} />
       ) : null}
-      {days ? <Text style={styles.meta}>{days}</Text> : null}
+      {days || doses ? (
+        <View style={styles.cycleMetaRow}>
+          {days ? <Text style={styles.meta}>{days}</Text> : null}
+          {doses ? <Text style={styles.meta}>{doses}</Text> : null}
+        </View>
+      ) : null}
     </PressableScale>
   );
 }
@@ -261,6 +270,7 @@ function RenameSheet({ id, name, onClose }: { id: string; name: string; onClose:
 
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
+    cycleMetaRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", columnGap: spacing[3], rowGap: 2 },
     container: { flex: 1, backgroundColor: t.surface.bg },
     content: { padding: spacing[4], gap: spacing[4], paddingBottom: spacing[8] },
     centered: { flex: 1, justifyContent: "center", alignItems: "center", gap: spacing[3], padding: spacing[6] },

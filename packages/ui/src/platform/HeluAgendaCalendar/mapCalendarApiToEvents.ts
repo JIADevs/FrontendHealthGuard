@@ -1,5 +1,6 @@
 import { formatClock } from "../../utils/formatters";
 import type {
+    MoodEnum,
     AgendaTask,
     Appointment,
     CalendarDay,
@@ -8,6 +9,7 @@ import type {
     MedicationIntake,
 } from "@helu/api";
 import { localDateKeyFromISO } from "./calendarDateUtils";
+import { MOOD_LABEL_ES } from "./moodEmoji";
 import {
     generateIntakeTimesForDay,
     medicationIntakeSortKey,
@@ -154,7 +156,11 @@ export function eventDetailLine(event: AgendaEvent): string {
         }
         return dose ? `Toma · ${dose}` : "Toma";
     }
-    if (event.type === "checkin") return "Check-in";
+    // «Check-in · 5:32 a. m. · Check-in» repeated the type: say the module and the mood instead.
+    if (event.type === "checkin") {
+        const mood = MOOD_LABEL_ES[event.data.mood as MoodEnum];
+        return mood ? `Bienestar · ${mood}` : "Bienestar";
+    }
     if (event.type === "task") {
         return event.data.status === "completed" ? "Tarea · Completada" : "Tarea";
     }

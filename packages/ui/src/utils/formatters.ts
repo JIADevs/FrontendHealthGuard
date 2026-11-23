@@ -140,9 +140,10 @@ export function formatClock(value: string | Date | null | undefined): string {
     h = hh;
     m = Number.isFinite(mm) ? mm : 0;
   }
-  const suffix = h < 12 ? "a. m." : "p. m.";
+  // Non-breaking spaces (U+00A0): a time is clinical data and must never wrap as «11:21 p.» / «m.».
+  const suffix = h < 12 ? "a.\u00a0m." : "p.\u00a0m.";
   const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${h12}:${String(m).padStart(2, "0")} ${suffix}`;
+  return `${h12}:${String(m).padStart(2, "0")}\u00a0${suffix}`;
 }
 
 /**

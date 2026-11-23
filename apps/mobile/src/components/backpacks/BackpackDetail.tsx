@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Backpack as BackpackIcon, Clock, FileText, Pencil, Plus, QrCode, Trash2 } from "lucide-react-native";
-import { useBackpackQuery, useInfiniteBackpackDocuments } from "@helu/api/hooks";
+import { Backpack as BackpackIcon, Clock, FileText, Pencil, Plus, QrCode, Share2, Trash2 } from "lucide-react-native";
+import { useBackpackQuery, useInfiniteBackpackDocuments, useShareHistoryQuery } from "@helu/api/hooks";
 import type { Backpack, Document } from "@helu/api";
 import {
   Button,
@@ -53,6 +53,9 @@ export function BackpackDetail({ id, onClose, onEdit, onAddDocuments, onShare, o
   const docsQuery = useInfiniteBackpackDocuments(id);
   const removeWithUndo = useBackpackDocRemoveWithUndo(id);
   const deleteWithUndo = useBackpackDeleteWithUndo();
+  // Phase 11: «Compartida N veces» counts the links made for this backpack (revoked ones are gone).
+  const shares = useShareHistoryQuery();
+  const timesShared = (shares.data ?? []).filter((l) => l.resourceType === "backpack" && l.resourceId === id).length;
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // The detail shows every document: load the remaining pages behind the first one.
@@ -164,6 +167,13 @@ export function BackpackDetail({ id, onClose, onEdit, onAddDocuments, onShare, o
             <View style={styles.chips}>
               <Chip label={documentCountLabel(count)} tone="neutral" icon={<FileText size={12} color={t.text.onMuted} />} />
               {temporary ? <Chip label="Temporal" tone="warning" icon={<Clock size={12} color={t.status.warningFg} />} /> : null}
+              {timesShared > 0 ? (
+                <Chip
+                  label={timesShared === 1 ? "Compartida 1 vez" : `Compartida ${timesShared} veces`}
+                  tone="neutral"
+                  icon={<Share2 size={12} color={t.text.onMuted} />}
+                />
+              ) : null}
             </View>
           </Animated.View>
 

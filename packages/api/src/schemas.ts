@@ -672,6 +672,8 @@ export const BackpackCreateSchema = z.object({
     name: z.string().min(1, "El nombre es obligatorio"),
     description: z.string().optional(),
     type: z.enum(["CUSTOM", "TEMPORARY_SHARE"]).default("CUSTOM"),
+    /** Create the backpack with these documents in one request (API ≥ BackendHealthGuard#21; older servers ignore it). */
+    documentIds: z.array(z.string().uuid()).max(100).optional(),
 });
 
 // --- Daily Check-Ins ---

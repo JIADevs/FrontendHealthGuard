@@ -64,16 +64,16 @@ export const UserProfileSchema = z.object({
 });
 
 export const UserUpdateSchema = z.object({
-    name: z.string().optional(),
-    documentId: z.string().optional(),
-    birthDate: z.string().optional(),
-    gender: z.string().optional(),
-    countryCode: z.string().optional(),
-    phone: z.string().optional(),
-    address: z.string().optional(),
-    emergencyContactName: z.string().optional(),
-    emergencyContactPhone: z.string().optional(),
-    bloodType: z.string().optional(),
+    name: z.string().nullable().optional(),
+    documentId: z.string().nullable().optional(),
+    birthDate: z.string().nullable().optional(),
+    gender: z.string().nullable().optional(),
+    countryCode: z.string().nullable().optional(),
+    phone: z.string().nullable().optional(),
+    address: z.string().nullable().optional(),
+    emergencyContactName: z.string().nullable().optional(),
+    emergencyContactPhone: z.string().nullable().optional(),
+    bloodType: z.string().nullable().optional(),
 });
 
 // --- Documents ---

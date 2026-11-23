@@ -20,6 +20,7 @@ import { DailyCheckInForm } from "./DailyCheckInForm";
 import { DailyCheckInListItem, DailyCheckInListItemSkeleton } from "./DailyCheckInListItem";
 import { WellbeingFAB } from "./WellbeingFAB";
 import { WellbeingSummary } from "./WellbeingSummary";
+import { LoadError } from "../states/LoadError";
 
 /**
  * Bienestar (mockup `m2-agenda.js` · Bienestar): the «Tu bienestar» summary card with the week of
@@ -66,15 +67,8 @@ export function WellbeingTab() {
     if (screen.isError) {
       return (
         <View>
-          {listHeader}
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>
-              No se pudieron cargar tus check-ins. Revisa tu conexión e intenta de nuevo.
-            </Text>
-            <Button variant="secondary" onPress={() => { void screen.refetch(); }}>
-              Reintentar
-            </Button>
-          </View>
+          {/* No chart either: it would be empty and push the message out of sight. */}
+          <LoadError title="No se pudieron cargar tus check-ins" onRetry={() => void screen.refetch()} />
         </View>
       );
     }
@@ -160,7 +154,5 @@ function makeStyles(t: ThemeContextValue) {
     },
     itemGap: { height: spacing[2] },
     skeletonList: { gap: spacing[3], paddingHorizontal: spacing[4], paddingTop: spacing[3] },
-    errorBox: { margin: spacing[4], gap: spacing[3], alignItems: "flex-start" },
-    errorText: { fontSize: 14, fontFamily: nativeFont("body", 400), color: t.status.errorFg },
   });
 }

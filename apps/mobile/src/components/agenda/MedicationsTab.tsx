@@ -31,6 +31,7 @@ import { MedicationCard, MedicationCardSkeleton } from "./MedicationCard";
 import { MedicationsFilterSheet } from "./MedicationsFilterSheet";
 import { useTakeDose } from "./useTakeDose";
 import { currentCycleOf, isMedicationActive } from "./medicationCycles";
+import { LoadError } from "../states/LoadError";
 
 type MedicationSection = { title: string; data: Medication[] };
 
@@ -58,6 +59,8 @@ export function MedicationsTab() {
     items,
     totalPages,
     isLoading,
+    isError,
+    isRefetching,
     refetch,
     updatedAt,
     treatments,
@@ -152,7 +155,9 @@ export function MedicationsTab() {
               />
             )}
             ListEmptyComponent={
-              hasActiveFilter || search ? (
+              isError ? (
+                <LoadError title="No se pudieron cargar tus medicamentos" onRetry={() => void refetch()} retrying={isRefetching} />
+              ) : hasActiveFilter || search ? (
                 <EmptyState
                   icon={<Pill size={48} color={t.border.medium} />}
                   message="No hay medicamentos que coincidan con los filtros."

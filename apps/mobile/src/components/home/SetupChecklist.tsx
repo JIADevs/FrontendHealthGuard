@@ -5,6 +5,7 @@ import { Button, Chip, nativeFont, spacing, useAppTheme } from "@helu/ui";
 import { HomeCard } from "./HomeCard";
 import { HomeRow } from "./HomeRow";
 import { ProgressRing } from "./ProgressRing";
+import { useManagingSomeone } from "./useManagingSomeone";
 
 export type SetupStepKey = "medication" | "appointment" | "document";
 
@@ -26,11 +27,19 @@ const PRIMARY_LABEL: Record<SetupStepKey, string> = {
   document: "Subir un documento",
 };
 
+/** The same buttons while you manage someone else's account. */
+const PRIMARY_LABEL_OTHER: Record<SetupStepKey, string> = {
+  medication: "Agregar su primer medicamento",
+  appointment: "Agregar su próxima cita",
+  document: "Subir un documento",
+};
+
 /**
  * «Configura Helu · k de 4» (mockup «Inicio · primer uso»). Crear la cuenta ya cuenta como hecho,
  * así la barra no arranca en cero. El botón principal lleva al siguiente paso que falta.
  */
 export function SetupChecklist({ state, onStep, onHide }: SetupChecklistProps) {
+  const other = useManagingSomeone();
   const t = useAppTheme();
   const done = 1 + Number(state.medication) + Number(state.appointment) + Number(state.document);
   const next = (["medication", "appointment", "document"] as const).find((k) => !state[k]);
@@ -69,14 +78,14 @@ export function SetupChecklist({ state, onStep, onHide }: SetupChecklistProps) {
         </ProgressRing>
       </View>
 
-      <HomeRow tone="success" icon={icon(Check, t.status.successFg)} title="Crear tu cuenta" meta="Listo" right={doneChip} />
-      {step("medication", Pill, "Agregar tu primer medicamento", "1 min")}
-      {step("appointment", CalendarDays, "Agregar tu próxima cita", "1 min")}
+      <HomeRow tone="success" icon={icon(Check, t.status.successFg)} title={other ? "Crear su cuenta" : "Crear tu cuenta"} meta="Listo" right={doneChip} />
+      {step("medication", Pill, other ? "Agregar su primer medicamento" : "Agregar tu primer medicamento", "1 min")}
+      {step("appointment", CalendarDays, other ? "Agregar su próxima cita" : "Agregar tu próxima cita", "1 min")}
       {step("document", FileUp, "Subir un documento", "30 s")}
 
       {next ? (
         <Button fullWidth onPress={() => onStep(next)}>
-          {PRIMARY_LABEL[next]}
+          {(other ? PRIMARY_LABEL_OTHER : PRIMARY_LABEL)[next]}
         </Button>
       ) : null}
       <Pressable

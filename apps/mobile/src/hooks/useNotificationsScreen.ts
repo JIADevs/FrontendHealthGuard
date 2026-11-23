@@ -29,6 +29,7 @@ export function useNotificationsScreen() {
     ...core,
     notifications,
     isLoading: query.isLoading,
+    isError: query.isError && !query.data,
     isRefetching: query.isRefetching && !query.isFetchingNextPage,
     fetchNextPage: query.fetchNextPage,
     hasNextPage: query.hasNextPage,

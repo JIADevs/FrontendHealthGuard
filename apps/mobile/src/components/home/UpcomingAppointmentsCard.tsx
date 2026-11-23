@@ -5,6 +5,7 @@ import { formatClock, formatShortDay, nativeFont, useAppTheme } from "@helu/ui";
 import { HomeCard } from "./HomeCard";
 import { HomeRow } from "./HomeRow";
 import { SeeAllLink } from "./SeeAllLink";
+import { useManagingSomeone } from "./useManagingSomeone";
 
 function appointmentMeta(a: Appointment): string {
   const time = a.time ? formatClock(a.time.slice(0, 5)) : "";
@@ -23,12 +24,13 @@ export function UpcomingAppointmentsCard({
   onOpen: (id: string) => void;
   onSeeAll: () => void;
 }) {
+  const other = useManagingSomeone();
   const t = useAppTheme();
   return (
     <HomeCard title="Próximas citas" right={<SeeAllLink label="Ver todas" onPress={onSeeAll} />}>
       {appointments.length === 0 ? (
         <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: nativeFont("body", 400), color: t.text.secondary }}>
-          No tienes citas próximas.
+          {other ? "No tiene citas próximas." : "No tienes citas próximas."}
         </Text>
       ) : (
         appointments.map((a) => (

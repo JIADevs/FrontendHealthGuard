@@ -49,6 +49,7 @@ export function More(props: MoreProps) {
   const profile = useProfileQuery();
   const storeEmail = useAuthStore((s) => s.user?.email);
   const logout = useAuthStore((s) => s.logout);
+  const managingSomeone = useAuthStore((s) => s.isManaging && !!s.activePatientId);
   const qc = useQueryClient();
   const unread = useUnreadCount();
   const managed = useManagedUsersQuery();
@@ -112,7 +113,7 @@ export function More(props: MoreProps) {
           </PressableScale>
         )}
 
-        <Group title="Tu salud">
+        <Group title={managingSomeone ? "Su salud" : "Tu salud"}>
           <MenuRow icon={<Activity size={18} color={t.text.onMuted} />} label="Tratamientos" onPress={props.onTreatments} />
           <MenuRow icon={<Pill size={18} color={t.text.onMuted} />} label="Medicamentos" onPress={props.onMedications} />
           <MenuRow icon={<Share2 size={18} color={t.text.onMuted} />} label="Compartidos" onPress={props.onShared} />

@@ -21,7 +21,6 @@ export function useAppointmentsList() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<AppointmentFilters>(EMPTY_APPOINTMENT_FILTERS);
-  const [draftFilters, setDraftFilters] = useState<AppointmentFilters>(EMPTY_APPOINTMENT_FILTERS);
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
 
   const debouncedSearch = useDebounceSearch(search);
@@ -33,30 +32,16 @@ export function useAppointmentsList() {
 
   const hasActiveFilter = hasActiveAppointmentFilters(appliedFilters);
 
-  const openFilterSheet = useCallback(() => {
-    setDraftFilters(appliedFilters);
-    setFilterSheetVisible(true);
-  }, [appliedFilters]);
+  const openFilterSheet = useCallback(() => setFilterSheetVisible(true), []);
+  const closeFilterSheet = useCallback(() => setFilterSheetVisible(false), []);
 
-  const closeFilterSheet = useCallback(() => {
-    setFilterSheetVisible(false);
-  }, []);
-
-  const applyFilters = useCallback(() => {
-    setAppliedFilters(draftFilters);
+  /** The sheet keeps its own draft; nothing applies until «Aplicar filtros». */
+  const applyFilters = useCallback((next: AppointmentFilters) => {
+    setAppliedFilters(next);
     setPage(1);
-    setFilterSheetVisible(false);
-  }, [draftFilters]);
-
-  const clearDraftFilters = useCallback(() => {
-    setDraftFilters(EMPTY_APPOINTMENT_FILTERS);
   }, []);
 
-  useEffect(() => {
-    if (filterSheetVisible) {
-      setDraftFilters(appliedFilters);
-    }
-  }, [filterSheetVisible, appliedFilters]);
+  const clearFilters = useCallback(() => applyFilters(EMPTY_APPOINTMENT_FILTERS), [applyFilters]);
 
   useEffect(() => {
     setPage(1);
@@ -71,9 +56,8 @@ export function useAppointmentsList() {
     doctors: doctorsQuery.data?.items ?? [],
     treatments: treatmentsQuery.data?.items ?? [],
     specialties: optionsQuery.data?.specialties ?? [],
-    draftFilters,
-    setDraftFilters,
-    clearDraftFilters,
+    filters: appliedFilters,
+    clearFilters,
     filterSheetVisible,
     openFilterSheet,
     closeFilterSheet,

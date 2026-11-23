@@ -1,11 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, SectionList } from "react-native";
-import Toast from "react-native-toast-message";
+import { View, Text, StyleSheet, SectionList } from "react-native";
 import { useDeleteMedicationMutation } from "@helu/api/hooks";
-import { isApiError, type Medication } from "@helu/api";
+import type { Medication } from "@helu/api";
 import {
   spacing,
-  radii,
   nativeFont,
   useAppTheme,
   Pagination,
@@ -15,13 +13,11 @@ import {
   useSkeletonVisible,
   ConfirmModal,
   Chip,
-  EmptyState,
-  SearchField,
   PullRefreshIndicator,
   usePullRefresh,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { Pill, Filter } from "lucide-react-native";
+import { Pill } from "lucide-react-native";
 
 import { useMedicationsList } from "../../hooks/useMedicationsList";
 import { AgendaEmpty } from "./AgendaEmpty";
@@ -32,6 +28,9 @@ import { MedicationsFilterSheet } from "./MedicationsFilterSheet";
 import { useTakeDose } from "./useTakeDose";
 import { currentCycleOf, isMedicationActive } from "./medicationCycles";
 import { LoadError } from "../states/LoadError";
+import { notify } from "../../lib/notify";
+import { AgendaListToolbar } from "./AgendaListToolbar";
+import { AgendaFilterEmpty } from "./AgendaFilterEmpty";
 
 type MedicationSection = { title: string; data: Medication[] };
 
@@ -64,9 +63,8 @@ export function MedicationsTab() {
     refetch,
     updatedAt,
     treatments,
-    draftFilters,
-    setDraftFilters,
-    clearDraftFilters,
+    filters,
+    clearFilters,
     filterSheetVisible,
     openFilterSheet,
     closeFilterSheet,
@@ -82,43 +80,29 @@ export function MedicationsTab() {
 
   const handleDelete = useCallback(() => {
     if (!deleteTarget) return;
-    deleteMut.mutate(deleteTarget.id, {
+    const target = deleteTarget;
+    deleteMut.mutate(target.id, {
       onSuccess: () => {
         setDeleteTarget(null);
-        Toast.show({ type: "success", text1: "Medicamento eliminado" });
+        notify({ message: "Medicamento eliminado", description: target.name });
       },
-      onError: (err) => {
-        Toast.show({
-          type: "error",
-          text1: "Error al eliminar",
-          text2: isApiError(err) ? err.message : "Intenta de nuevo",
-        });
+      onError: () => {
+        // MASTER §8: what happened + what to do. The modal stays open, so «Eliminar» is the retry.
+        notify({ tone: "error", message: "No se pudo eliminar el medicamento", description: "Revisa tu conexión e intenta de nuevo." });
       },
     });
   }, [deleteTarget, deleteMut]);
 
   return (
     <View style={styles.tabContent}>
-      <View style={styles.toolbar}>
-        <View style={styles.searchWrap}>
-          <SearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Buscar por nombre..."
-            accessibilityLabel="Buscar medicamentos"
-          />
-        </View>
-        <TouchableOpacity
-          style={[styles.filterBtn, hasActiveFilter && styles.filterBtnActive]}
-          onPress={openFilterSheet}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Abrir filtros de medicamentos"
-          accessibilityState={{ selected: hasActiveFilter }}
-        >
-          <Filter size={18} color={hasActiveFilter ? t.brand.fg : t.text.secondary} />
-        </TouchableOpacity>
-      </View>
+      <AgendaListToolbar
+        search={search}
+        onSearch={setSearch}
+        placeholder="Buscar por nombre..."
+        noun="medicamentos"
+        hasActiveFilter={hasActiveFilter}
+        onOpenFilters={openFilterSheet}
+      />
 
       {showSkeleton ? (
         // §6c: buscador y filtros reales; el grupo y las tarjetas, con el bloque de su botón.
@@ -158,9 +142,13 @@ export function MedicationsTab() {
               isError ? (
                 <LoadError title="No se pudieron cargar tus medicamentos" onRetry={() => void refetch()} retrying={isRefetching} />
               ) : hasActiveFilter || search ? (
-                <EmptyState
-                  icon={<Pill size={48} color={t.border.medium} />}
-                  message="No hay medicamentos que coincidan con los filtros."
+                <AgendaFilterEmpty
+                  noun="medicamentos"
+                  allYour="todos tus"
+                  search={search}
+                  hasActiveFilter={hasActiveFilter}
+                  onClearFilters={clearFilters}
+                  onClearSearch={() => setSearch("")}
                 />
               ) : (
                 <AgendaEmpty
@@ -190,9 +178,11 @@ export function MedicationsTab() {
       )}
 
       {deleteTarget && (
+        // MASTER §7 «Diálogo de confirmación»: question + consequence, the safe option first with its own name.
         <ConfirmModal
-          title="Eliminar Medicamento"
-          message={`¿Eliminar "${deleteTarget.name}"? Los ciclos y recordatorios también se eliminarán.`}
+          title="¿Eliminar este medicamento?"
+          message={`Se borran «${deleteTarget.name}», sus ciclos, las tomas registradas y los recordatorios. No se puede deshacer.`}
+          keepLabel="Mantener medicamento"
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
           onConfirm={handleDelete}
@@ -200,15 +190,9 @@ export function MedicationsTab() {
         />
       )}
 
-      <MedicationsFilterSheet
-        visible={filterSheetVisible}
-        draft={draftFilters}
-        onChangeDraft={setDraftFilters}
-        onClear={clearDraftFilters}
-        onApply={applyFilters}
-        onClose={closeFilterSheet}
-        treatments={treatments}
-      />
+      {filterSheetVisible ? (
+        <MedicationsFilterSheet initial={filters} treatments={treatments} onApply={applyFilters} onClose={closeFilterSheet} />
+      ) : null}
 
       <AgendaFAB onPress={nav.newMedication} />
     </View>
@@ -238,31 +222,6 @@ function makeStyles(t: ThemeContextValue) {
       textTransform: "uppercase",
       marginTop: spacing[3],
       marginBottom: spacing[2],
-    },
-    toolbar: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[2],
-      paddingHorizontal: spacing[4],
-      paddingTop: spacing[3],
-    },
-    searchWrap: {
-      flex: 1,
-    },
-    // Mockup: 46 × 46, radio 14 (MASTER §6: mínimo 44)
-    filterBtn: {
-      width: 46,
-      height: 46,
-      borderRadius: radii.lg,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: t.border.light,
-      borderWidth: 1,
-      borderColor: t.border.medium,
-    },
-    filterBtnActive: {
-      backgroundColor: t.brand.tint,
-      borderColor: t.brand.tintBorder,
     },
   });
 }

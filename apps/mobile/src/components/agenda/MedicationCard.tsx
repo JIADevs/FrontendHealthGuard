@@ -2,13 +2,13 @@ import { useMemo, useRef, useState, useCallback, type ComponentRef } from "react
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Pill, Check, MoreVertical, Trash2 } from "lucide-react-native";
 import type { Medication } from "@helu/api";
-import { Button, Card, Chip, FadeThrough, Skeleton, radii, spacing, fontSize, nativeFont, useAppTheme } from "@helu/ui";
+import { Button, Card, Chip, FadeThrough, PressableScale, Skeleton, radii, spacing, fontSize, nativeFont, useAppTheme } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { AgendaRowActionsMenu, measureAgendaRowActionsMenuLeft } from "./AgendaRowActionsMenu";
 import { formatDose, formatFrequency } from "./medicationFormat";
 import { doseStateForCycle } from "./doseRowState";
 import { CycleProgressBar } from "./CycleProgressBar";
-import { currentCycleOf, cycleDayProgress, formatCycleEnd, formatNextDose, isMedicationActive } from "./medicationCycles";
+import { currentCycleOf, cycleDayProgress, formatCycleEnd, formatNextDose, isMedicationActive, recentAdherence } from "./medicationCycles";
 
 export interface MedicationCardProps {
   medication: Medication;
@@ -36,6 +36,8 @@ export function MedicationCard({
   const cycle = currentCycleOf(m);
   const doseState = active && cycle ? doseStateForCycle(cycle) : null;
   const progress = active && cycle ? cycleDayProgress(cycle) : null;
+  // Without an end date there is no «X de N días»: the bar shows the last 7 days' doses instead.
+  const adherence = progress && progress.total == null && cycle ? recentAdherence(cycle) : null;
 
   const menuTriggerRef = useRef<ComponentRef<typeof View>>(null);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -65,13 +67,19 @@ export function MedicationCard({
   const cycleLabel = progress
     ? progress.total != null
       ? `Ciclo: ${progress.day} de ${progress.total} días`
-      : `Día ${progress.day} del ciclo`
+      : adherence
+        ? `${adherence.taken} de ${adherence.due} ${adherence.due === 1 ? "toma" : "tomas"} en ${adherence.days === 1 ? "1 día" : `${adherence.days} días`}`
+        : `Día ${progress.day} del ciclo`
     : "";
+  const barRatio = progress?.ratio ?? (adherence ? adherence.taken / adherence.due : null);
+  const barLabel = adherence
+    ? `Tomaste ${adherence.taken} de ${adherence.due} dosis en los últimos ${adherence.days === 1 ? "1 día" : `${adherence.days} días`}`
+    : cycleLabel;
 
   return (
     <>
-      <TouchableOpacity
-        activeOpacity={0.8}
+      {/* Tarjeta tocable (movimiento-interacciones.md §5): escala 0,98 + tinte, como la de Citas. */}
+      <PressableScale
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={`${m.name}, ${active ? "activo" : "finalizado"}`}
@@ -90,6 +98,7 @@ export function MedicationCard({
                       {cycle && kind === "pending" ? (
                         <Button
                           variant="success"
+                          size="sm"
                           onPress={() => onIntake(cycle.id)}
                           disabled={intakePending}
                           loading={intakePending}
@@ -128,20 +137,17 @@ export function MedicationCard({
             progress ? (
               // Mockup: the bar and the meta row span the whole card, below the header row.
               <View style={styles.progress}>
-                {progress.ratio != null ? (
-                  <CycleProgressBar ratio={progress.ratio} accessibilityLabel={cycleLabel} />
-                ) : null}
+                {barRatio != null ? <CycleProgressBar ratio={barRatio} accessibilityLabel={barLabel} /> : null}
+                {/* MASTER principle 4: dose times are clinical data, never cut — the row wraps instead. */}
                 <View style={styles.metaRow}>
-                  <Text style={[styles.metaText, styles.metaGrow, overdue && styles.metaOverdue]} numberOfLines={1}>
-                    {doseLine}
-                  </Text>
-                  <Text style={styles.metaText} numberOfLines={1}>{cycleLabel}</Text>
+                  <Text style={[styles.metaText, overdue && styles.metaOverdue]}>{doseLine}</Text>
+                  <Text style={styles.metaText}>{cycleLabel}</Text>
                 </View>
               </View>
             ) : undefined
           }
         />
-      </TouchableOpacity>
+      </PressableScale>
 
       <AgendaRowActionsMenu
         visible={menuVisible}
@@ -157,10 +163,9 @@ export function MedicationCard({
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     progress: { flex: 1, gap: spacing[2] },
-    metaGrow: { flex: 1 },
     metaOverdue: { color: t.status.warningFg },
-    metaRow: { flexDirection: "row", justifyContent: "space-between", gap: spacing[3] },
-    metaText: { flexShrink: 1, fontSize: fontSize.sm, fontFamily: nativeFont("body", 400), color: t.text.secondary },
+    metaRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", columnGap: spacing[3], rowGap: 2 },
+    metaText: { fontSize: fontSize.sm, fontFamily: nativeFont("body", 400), color: t.text.secondary },
     headerActions: {
       flexDirection: "row",
       alignItems: "center",

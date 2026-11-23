@@ -1,7 +1,13 @@
 import type { Medication, MedicationCycle } from "@helu/api";
-import { formatClock, formatShortDay } from "@helu/ui";
+import { findIntakeForSlot, formatClock, formatShortDay, generateIntakeTimesForDay } from "@helu/ui";
 
 const DAY_MS = 86_400_000;
+
+/** «YYYY-MM-DD» of a local date (the calendar's day key). */
+function localDateKey(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 /**
  * Local midnight of a date. A bare «YYYY-MM-DD» is read as a local date; a full timestamp
@@ -79,13 +85,56 @@ export function formatNextDose(iso: string | null | undefined, now = Date.now())
   const clock = formatClock(when);
   if (diffDays === 0) return `hoy ${clock}`;
   if (diffDays === 1) return `mañana ${clock}`;
-  return `${formatShortDay(when)} · ${clock}`;
+  return `${midSentenceDay(when)} · ${clock}`;
 }
 
 /** «Terminó el Jue 3 dic» for a finished cycle. */
 export function formatCycleEnd(cycle: MedicationCycle | undefined): string {
   if (!cycle?.endDate) return "Sin ciclo activo";
-  return `Terminó el ${formatShortDay(cycle.endDate)}`;
+  return `Terminó el ${midSentenceDay(cycle.endDate)}`;
+}
+
+/** «Dom 22 nov» → «dom 22 nov»: these always follow other words, and weekdays are lowercase in Spanish. */
+function midSentenceDay(value: string | Date): string {
+  const day = formatShortDay(value);
+  return day.charAt(0).toLowerCase() + day.slice(1);
+}
+
+export interface RecentAdherence {
+  /** Doses of the window marked «Tomado». */
+  taken: number;
+  /** Doses the schedule asked for in the window, up to now. */
+  due: number;
+  /** Days the window covers (fewer than `days` when the cycle started inside it). */
+  days: number;
+}
+
+/**
+ * For a cycle without an end date there is no «X de N días»: the list shows how many of the doses
+ * scheduled in the last `days` days (today included, only those whose time already came) were
+ * marked as taken. Same slots as the calendar (`generateIntakeTimesForDay`) and the same matching
+ * of a recorded intake to its slot (`findIntakeForSlot`). Null when nothing was due yet.
+ */
+export function recentAdherence(cycle: MedicationCycle, now = Date.now(), days = 7): RecentAdherence | null {
+  const firstMs = new Date(cycle.firstIntakeTime).getTime();
+  const startMs = Math.max(startOfLocalDay(cycle.startDate), Number.isFinite(firstMs) ? firstMs : -Infinity);
+  let taken = 0;
+  let due = 0;
+  let covered = 0;
+  for (let back = days - 1; back >= 0; back -= 1) {
+    const day = new Date(now);
+    day.setDate(day.getDate() - back);
+    const dayKey = localDateKey(day);
+    if (startOfLocalDay(dayKey) + DAY_MS <= startOfLocalDay(startMs)) continue;
+    covered += 1;
+    for (const time of generateIntakeTimesForDay(cycle.firstIntakeTime, cycle.frequency, dayKey, cycle.frequencyUnit)) {
+      const slotMs = new Date(`${dayKey}T${time}`).getTime();
+      if (slotMs < startMs - 60_000 || slotMs > now) continue;
+      due += 1;
+      if (findIntakeForSlot(cycle, dayKey, time)?.status === "TAKEN") taken += 1;
+    }
+  }
+  return due > 0 ? { taken, due, days: covered } : null;
 }
 
 const MONTHS_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];

@@ -8,7 +8,6 @@ import {
   PressableScale,
   Skeleton,
   SkeletonGroup,
-  Spinner,
   nativeFont,
   spacing,
   useAppTheme,
@@ -25,7 +24,6 @@ export function AddToBackpackSheet({ documentId, onClose }: { documentId: string
   const sheetRef = useRef<BottomSheetHandle>(null);
   const backpacks = useBackpacksQuery("", 100);
   const add = useAddDocToBackpackMutation();
-  const [pendingId, setPendingId] = useState<string | null>(null);
   const [addedIds, setAddedIds] = useState<string[]>([]);
   const items = backpacks.data?.items ?? [];
   // Backpacks made elsewhere since the last visit: show the cached list and refresh it.
@@ -34,25 +32,20 @@ export function AddToBackpackSheet({ documentId, onClose }: { documentId: string
     void refetch();
   }, [refetch]);
 
+  // Adding to a backpack is low risk and reversible («Quitar de la mochila»), so it answers on tap
+  // (movimiento §8, v2.14): the sheet closes and the toast shows at once; the save runs in the
+  // background and, if it fails, the toast says so. mutateAsync: the sheet unmounts right away.
   const pick = (backpackId: string, name: string) => {
-    if (pendingId || addedIds.includes(backpackId)) return;
-    setPendingId(backpackId);
-    add.mutate(
-      { backpackId, documentId },
-      {
-        onSuccess: () => {
-          setAddedIds((ids) => [...ids, backpackId]);
-          sheetRef.current?.close(() => notify({ message: "Agregado a la mochila", description: name }));
-        },
-        onError: () =>
-          notify({
-            tone: "error",
-            message: "No se pudo agregar",
-            description: "Puede que ya esté en esa mochila. Revisa tu conexión e intenta de nuevo.",
-          }),
-        onSettled: () => setPendingId(null),
-      },
+    if (addedIds.includes(backpackId)) return;
+    setAddedIds((ids) => [...ids, backpackId]);
+    add.mutateAsync({ backpackId, documentId }).catch(() =>
+      notify({
+        tone: "error",
+        message: `No se pudo agregar a «${name}»`,
+        description: "Puede que ya esté en esa mochila. Revisa tu conexión e intenta de nuevo.",
+      }),
     );
+    sheetRef.current?.close(() => notify({ message: "Agregado a la mochila", description: name }));
   };
 
   return (
@@ -82,7 +75,7 @@ export function AddToBackpackSheet({ documentId, onClose }: { documentId: string
                 onPress={() => pick(b.id, b.name)}
                 accessibilityRole="button"
                 accessibilityLabel={`Agregar a ${b.name}`}
-                accessibilityState={{ busy: pendingId === b.id, disabled: done }}
+                accessibilityState={{ disabled: done }}
                 style={[styles.card, { backgroundColor: t.surface.bgCard, borderColor: t.border.default }]}
               >
                 <IconTile tone="backpack" icon={<Backpack size={19} strokeWidth={2.2} color={t.accent.backpackFg} />} />
@@ -96,9 +89,7 @@ export function AddToBackpackSheet({ documentId, onClose }: { documentId: string
                     </Text>
                   ) : null}
                 </View>
-                {pendingId === b.id ? (
-                  <Spinner size="sm" />
-                ) : done ? (
+                {done ? (
                   <Check size={18} strokeWidth={3} color={t.status.successFg} />
                 ) : (
                   <ChevronRight size={18} color={t.text.muted} />

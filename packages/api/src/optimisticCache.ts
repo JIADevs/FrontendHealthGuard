@@ -1,5 +1,7 @@
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import type {
+    AgendaTask,
+    AgendaTaskComplete,
     CalendarDay,
     DailyCheckIn,
     DailyCheckInCreate,
@@ -231,4 +233,40 @@ function isDocumentPage(data: unknown): data is { items: Document[]; total: numb
 
 function isCheckInPage(data: unknown): data is DailyCheckInPage {
     return isRecord(data) && Array.isArray(data.items) && typeof data.total === "number";
+}
+
+/**
+ * Marks an agenda task as completed in every cache that holds it (detail, task pages, calendar days),
+ * so «Completar tarea» changes at once and rolls back if the server fails (movimiento §8, bajo riesgo).
+ */
+export function applyOptimisticTaskCompletion(data: unknown, taskId: string, result?: AgendaTaskComplete): unknown {
+    const complete = (task: AgendaTask): AgendaTask =>
+        task.id !== taskId
+            ? task
+            : {
+                  ...task,
+                  status: "completed",
+                  completedAt: new Date().toISOString(),
+                  resultComment: result?.resultComment ?? task.resultComment ?? null,
+                  resultDocumentIds: result?.resultDocumentIds ?? task.resultDocumentIds,
+                  resultBackpackIds: result?.resultBackpackIds ?? task.resultBackpackIds,
+              };
+    if (isCalendarDays(data)) {
+        let changed = false;
+        const days = data.map((day) => {
+            if (!day.tasks?.some((t) => t.id === taskId)) return day;
+            changed = true;
+            return { ...day, tasks: day.tasks.map(complete) };
+        });
+        return changed ? days : data;
+    }
+    if (data && typeof data === "object" && Array.isArray((data as { items?: unknown }).items)) {
+        const page = data as { items: AgendaTask[] };
+        if (!page.items.some((t) => t?.id === taskId)) return data;
+        return { ...page, items: page.items.map(complete) };
+    }
+    if (data && typeof data === "object" && (data as AgendaTask).id === taskId && "startAt" in (data as object)) {
+        return complete(data as AgendaTask);
+    }
+    return data;
 }

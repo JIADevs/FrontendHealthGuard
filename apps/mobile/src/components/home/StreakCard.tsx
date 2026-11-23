@@ -13,6 +13,7 @@ import { Check, CheckCircle2, Heart } from "lucide-react-native";
 import { Button, motion, motionEasing, nativeFont, radii, spacing, useAppTheme } from "@helu/ui";
 import { LinearGradient } from "expo-linear-gradient";
 import { Flame } from "./Flame";
+import { useManagingSomeone } from "./useManagingSomeone";
 
 export interface StreakDay {
   key: string;
@@ -40,6 +41,7 @@ interface StreakCardProps {
  * (movimiento-interacciones.md §6). Con movimiento reducido no se mueve nada.
  */
 export function StreakCard({ current, longest, week, doneToday, confirmedToday, onCheckIn, celebrateKey }: StreakCardProps) {
+  const other = useManagingSomeone();
   const t = useAppTheme();
   const reduced = useReducedMotion();
   const flame = useSharedValue(1);
@@ -100,7 +102,7 @@ export function StreakCard({ current, longest, week, doneToday, confirmedToday, 
           <View
             style={{ flex: 1 }}
             accessible
-            accessibilityLabel={current === 0 ? "Empieza hoy tu racha" : `${current} ${current === 1 ? "día" : "días"} de racha cuidándote`}
+            accessibilityLabel={current === 0 ? (other ? "Empieza hoy su racha" : "Empieza hoy tu racha") : `${current} ${current === 1 ? "día" : "días"} de racha ${other ? "cuidándose" : "cuidándote"}`}
           >
             <Animated.Text
               style={[
@@ -111,7 +113,11 @@ export function StreakCard({ current, longest, week, doneToday, confirmedToday, 
               {current === 0 ? "Empieza hoy" : `${current} ${current === 1 ? "día" : "días"}`}
             </Animated.Text>
             <Text style={{ fontSize: 14, fontFamily: nativeFont("body", 400), color: t.motivation.streakEdge }}>
-              {current > 0 ? "de racha cuidándote" : doneToday ? "Ya hiciste tu check-in de hoy" : "Haz tu check-in para sumar el primer día"}
+              {current > 0
+                ? other ? "de racha cuidándose" : "de racha cuidándote"
+                : doneToday
+                  ? other ? "Ya tiene el check-in de hoy" : "Ya hiciste tu check-in de hoy"
+                  : other ? "Registra su check-in para sumar el primer día" : "Haz tu check-in para sumar el primer día"}
             </Text>
           </View>
           {longest > 0 ? (

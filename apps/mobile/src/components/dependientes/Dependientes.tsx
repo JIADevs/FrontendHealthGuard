@@ -72,7 +72,7 @@ export function Dependientes({ onManage, onExitManaging }: DependientesProps) {
   const userEmail = (profile.data?.email ?? storeEmail ?? "").toLowerCase();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [toRevoke, setToRevoke] = useState<Revoke | null>(null);
-  const [colorFor, setColorFor] = useState<{ patientId: string; color: string } | null>(null);
+  const [colorFor, setColorFor] = useState<{ patientId: string; color: string; name: string } | null>(null);
 
   const { refetch: refetchManaged } = managedQuery;
   const { refetch: refetchManagers } = managersQuery;
@@ -195,7 +195,7 @@ export function Dependientes({ onManage, onExitManaging }: DependientesProps) {
                             </Button>
                           )}
                           <PersonMenu
-                            onColor={() => setColorFor({ patientId, color })}
+                            onColor={() => setColorFor({ patientId, color, name })}
                             onRevoke={() => setToRevoke({ id: d.id, name, kind: "dependent", patientId })}
                           />
                         </View>
@@ -284,7 +284,7 @@ export function Dependientes({ onManage, onExitManaging }: DependientesProps) {
 
       {colorFor ? (
         <ContextColorPicker
-          visible
+          name={colorFor.name}
           currentColor={colorFor.color}
           onClose={() => setColorFor(null)}
           onSelectColor={(color) => {

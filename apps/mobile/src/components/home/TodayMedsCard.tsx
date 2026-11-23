@@ -4,6 +4,7 @@ import type { AgendaEvent } from "@helu/ui";
 import { HomeCard } from "./HomeCard";
 import { MedicationDoseListItem } from "./MedicationDoseListItem";
 import { eventSlotIso } from "../agenda/doseRowState";
+import { useManagingSomeone } from "./useManagingSomeone";
 
 type MedicationEvent = Extract<AgendaEvent, { type: "medication" }>;
 
@@ -22,6 +23,7 @@ interface TodayMedsCardProps {
  * única acción primaria de Inicio (botón de 48 px, éxito sólido).
  */
 export function TodayMedsCard({ events, takenCount, takingCycleId, takingScheduledTime, onOpenDose, onTake }: TodayMedsCardProps) {
+  const other = useManagingSomeone();
   const t = useAppTheme();
   return (
     <HomeCard
@@ -30,7 +32,7 @@ export function TodayMedsCard({ events, takenCount, takingCycleId, takingSchedul
     >
       {events.length === 0 ? (
         <Text style={{ fontSize: 14, lineHeight: 20, fontFamily: nativeFont("body", 400), color: t.text.secondary }}>
-          No tienes tomas programadas para hoy.
+          {other ? "No tiene tomas programadas para hoy." : "No tienes tomas programadas para hoy."}
         </Text>
       ) : (
         <View>

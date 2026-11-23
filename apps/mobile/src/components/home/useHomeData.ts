@@ -100,11 +100,12 @@ export function useHomeData() {
   }, [checkIns.data, days]);
   const doneToday = week.some((d) => d.isToday && d.done);
 
-  // El punto del día se llena al instante (el check-in es optimista, §8), pero la racha solo cuenta
-  // hoy cuando el servidor lo confirma: `lastInteractionDate` del perfil pasa a ser hoy.
+  // El punto del día y la racha cuentan hoy al tocar (v2.15, check-in optimista): el formulario
+  // escribe en el perfil en caché la racha que dará el servidor (`useOptimisticStreak`) y la revierte
+  // si falla; `lastInteractionDate` pasa a ser hoy.
   const streakIncludesToday = profile.data?.lastInteractionDate?.slice(0, 10) === days.todayKey;
 
-  // Celebración solo cuando el servidor confirma un check-in hecho en esta sesión (MASTER §8).
+  // Celebración cuando hoy pasa a contar en la racha durante esta sesión (al tocar «Guardar check-in»).
   const [celebrateKey, setCelebrateKey] = useState(0);
   const previousConfirmed = useRef<boolean | null>(null);
   useEffect(() => {

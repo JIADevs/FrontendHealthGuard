@@ -387,3 +387,11 @@ La regla decía que en una toma la fila cambiaba al tocar pero el toast esperaba
 |---|---|
 | Toast y cierre de hoja al tocar en «Tomar», «Sí, la tomé», «Guardar hora», «Guardar motivo», check-in y «Completar tarea» | `system/pages/movimiento-interacciones.md` §6 «Toma registrada» y §8; `system/movimiento.html` «Toma registrada · al tocar» |
 | Completar una tarea pasa a ser optimista | `@helu/api` |
+
+## 22. v2.15 · La racha del check-in responde al tocar
+
+En el check-in la hoja se cerraba y el punto del día se llenaba al tocar, pero la llama, el número y el toast de racha esperaban tres llamadas seguidas al servidor (guardar, releer el perfil y leer la racha), así que la celebración llegaba tarde. Ahora la app calcula la racha con la misma regla del servidor (hoy ya contado: igual; última vez ayer: +1; si no: 1) y todo pasa al tocar; el toast entra al terminar la animación. Si el guardado falla, la racha vuelve a su valor y el toast dice la causa. Un check-in de otro día no mueve la racha y sigue esperando al servidor. Las celebraciones de misión y nivel no cambian. Decisión de producto del 2026-11-23.
+
+| Cambio | Dónde |
+|---|---|
+| «Check-in guardado» al tocar, con la excepción para la racha | `system/pages/movimiento-interacciones.md` §6 y §8; `system/MASTER.md` §8 |

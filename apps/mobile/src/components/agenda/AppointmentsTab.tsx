@@ -1,14 +1,12 @@
 import { useCallback, useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, SectionList } from "react-native";
-import Toast from "react-native-toast-message";
+import { View, Text, StyleSheet, SectionList } from "react-native";
 import {
   useDeleteAppointmentMutation,
 } from "@helu/api/hooks";
-import { isApiError, type Appointment } from "@helu/api";
+import type { Appointment } from "@helu/api";
 import {
   spacing,
   nativeFont,
-  radii,
   useAppTheme,
   formatApptDate,
   Pagination,
@@ -18,13 +16,11 @@ import {
   SkeletonCard,
   useSkeletonVisible,
   ConfirmModal,
-  EmptyState,
-  SearchField,
   PullRefreshIndicator,
   usePullRefresh,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { CalendarDays, Filter } from "lucide-react-native";
+import { CalendarDays } from "lucide-react-native";
 
 import { useAppointmentsList } from "../../hooks/useAppointmentsList";
 import { AgendaFAB } from "./AgendaFAB";
@@ -33,6 +29,9 @@ import { useAgendaNavigation } from "./AgendaNavigation";
 import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentsFilterSheet } from "./AppointmentsFilterSheet";
 import { LoadError } from "../states/LoadError";
+import { notify } from "../../lib/notify";
+import { AgendaListToolbar } from "./AgendaListToolbar";
+import { AgendaFilterEmpty } from "./AgendaFilterEmpty";
 
 export function AppointmentsTab() {
   const t = useAppTheme();
@@ -50,9 +49,8 @@ export function AppointmentsTab() {
     doctors,
     treatments,
     specialties,
-    draftFilters,
-    setDraftFilters,
-    clearDraftFilters,
+    filters,
+    clearFilters,
     filterSheetVisible,
     openFilterSheet,
     closeFilterSheet,
@@ -70,14 +68,11 @@ export function AppointmentsTab() {
     deleteMut.mutate(deleteTarget.id, {
       onSuccess: () => {
         setDeleteTarget(null);
-        Toast.show({ type: "success", text1: "Cita eliminada" });
+        notify({ message: "Cita eliminada" });
       },
-      onError: (err) => {
-        Toast.show({
-          type: "error",
-          text1: "Error al eliminar",
-          text2: isApiError(err) ? err.message : "Intenta de nuevo",
-        });
+      onError: () => {
+        // MASTER §8: what happened + what to do. The modal stays open, so «Eliminar» is the retry.
+        notify({ tone: "error", message: "No se pudo eliminar la cita", description: "Revisa tu conexión e intenta de nuevo." });
       },
     });
   }, [deleteTarget, deleteMut]);
@@ -88,26 +83,14 @@ export function AppointmentsTab() {
 
   return (
     <View style={styles.tabContent}>
-      <View style={styles.toolbar}>
-        <View style={styles.searchWrap}>
-          <SearchField
-            value={search}
-            onChange={setSearch}
-            placeholder="Buscar por nombre, especialidad o doctor..."
-            accessibilityLabel="Buscar citas"
-          />
-        </View>
-        <TouchableOpacity
-          style={[styles.filterBtn, hasActiveFilter && styles.filterBtnActive]}
-          onPress={openFilterSheet}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel="Abrir filtros de citas"
-          accessibilityState={{ selected: hasActiveFilter }}
-        >
-          <Filter size={18} color={hasActiveFilter ? t.brand.fg : t.text.secondary} />
-        </TouchableOpacity>
-      </View>
+      <AgendaListToolbar
+        search={search}
+        onSearch={setSearch}
+        placeholder="Buscar por nombre, especialidad o doctor..."
+        noun="citas"
+        hasActiveFilter={hasActiveFilter}
+        onOpenFilters={openFilterSheet}
+      />
 
       {showSkeleton ? (
         // §6c: el buscador y los filtros se ven reales; las tarjetas son esqueleto.
@@ -142,9 +125,13 @@ export function AppointmentsTab() {
               appts.isError && !appts.data ? (
                 <LoadError title="No se pudieron cargar tus citas" onRetry={() => void appts.refetch()} retrying={appts.isRefetching} />
               ) : hasActiveFilter || search ? (
-                <EmptyState
-                  icon={<CalendarDays size={48} color={t.border.medium} />}
-                  message="No hay citas que coincidan con los filtros."
+                <AgendaFilterEmpty
+                  noun="citas"
+                  allYour="todas tus"
+                  search={search}
+                  hasActiveFilter={hasActiveFilter}
+                  onClearFilters={clearFilters}
+                  onClearSearch={() => setSearch("")}
                 />
               ) : (
                 <AgendaEmpty
@@ -173,9 +160,11 @@ export function AppointmentsTab() {
       )}
 
       {deleteTarget && (
+        // MASTER §7: question + consequence; «Eliminar» borra la cita (≠ «Cancelar cita», que la conserva).
         <ConfirmModal
-          title="Eliminar Cita"
-          message={`¿Eliminar la cita programada para el ${formatApptDate(deleteTarget.date)}?`}
+          title="¿Eliminar esta cita?"
+          message={`Se borra la cita del ${formatApptDate(deleteTarget.date)} con sus recordatorios. No queda en tu historial y no se puede deshacer.`}
+          keepLabel="Mantener cita"
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
           onConfirm={handleDelete}
@@ -183,17 +172,16 @@ export function AppointmentsTab() {
         />
       )}
 
-      <AppointmentsFilterSheet
-        visible={filterSheetVisible}
-        draft={draftFilters}
-        onChangeDraft={setDraftFilters}
-        onClear={clearDraftFilters}
-        onApply={applyFilters}
-        onClose={closeFilterSheet}
-        doctors={doctors}
-        treatments={treatments}
-        specialties={specialties}
-      />
+      {filterSheetVisible ? (
+        <AppointmentsFilterSheet
+          initial={filters}
+          doctors={doctors}
+          treatments={treatments}
+          specialties={specialties}
+          onApply={applyFilters}
+          onClose={closeFilterSheet}
+        />
+      ) : null}
 
       <AgendaFAB onPress={nav.newAppointment} />
     </View>
@@ -235,30 +223,6 @@ function makeStyles(t: ThemeContextValue) {
       textTransform: "uppercase",
       marginTop: spacing[3],
       marginBottom: spacing[2],
-    },
-    toolbar: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[2],
-      paddingHorizontal: spacing[4],
-      paddingTop: spacing[3],
-    },
-    searchWrap: {
-      flex: 1,
-    },
-    filterBtn: {
-      width: 40,
-      height: 40,
-      borderRadius: radii.lg,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: t.border.light,
-      borderWidth: 1,
-      borderColor: t.border.medium,
-    },
-    filterBtnActive: {
-      backgroundColor: t.brand.tint,
-      borderColor: t.brand.tintBorder,
     },
   });
 }

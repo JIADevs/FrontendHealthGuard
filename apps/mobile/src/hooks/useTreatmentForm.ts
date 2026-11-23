@@ -44,6 +44,19 @@ export interface UseTreatmentFormOptions {
    * hook has already marked the treatment for the list highlight.
    */
   onSaved: (name: string) => void;
+  /**
+   * Where a failed save is reported. `toast` (default): «No se pudo guardar» + «Reintentar». `banner`:
+   * `saveFailure` is set for an inline banner, for forms inside a sheet: the sheet is a `Modal`, and
+   * on iOS the app's toast renders under it.
+   */
+  showErrorAs?: "toast" | "banner";
+}
+
+/** A failed save, for the inline banner (formularios.md §6 «Error de red o 5xx»). */
+export interface TreatmentSaveFailure {
+  message: string;
+  /** False when retrying cannot help (the treatment no longer exists). */
+  canRetry: boolean;
 }
 
 /**
@@ -53,9 +66,10 @@ export interface UseTreatmentFormOptions {
  * - «Fin» before «Inicio» shows under «Fin» as soon as it is picked;
  * - on submit with errors: warning haptic, focus on «Nombre» and «Revisa N campos» for screen readers;
  * - a 422 puts our own text under the field the server rejected;
- * - any other failure keeps what was typed and shows «No se pudo guardar» with «Reintentar».
+ * - any other failure keeps what was typed and shows «No se pudo guardar» with «Reintentar» (a toast,
+ *   or `saveFailure` for a banner).
  */
-export function useTreatmentForm({ initial, onSaved }: UseTreatmentFormOptions) {
+export function useTreatmentForm({ initial, onSaved, showErrorAs = "toast" }: UseTreatmentFormOptions) {
   const isEdit = !!initial;
   const nameRef = useRef<ComponentRef<typeof TextInput>>(null);
   const onSavedRef = useRef(onSaved);
@@ -65,6 +79,7 @@ export function useTreatmentForm({ initial, onSaved }: UseTreatmentFormOptions) 
   const retryRef = useRef<() => void>(() => undefined);
   const [nameChecked, setNameChecked] = useState(false);
   const [serverErrors, setServerErrors] = useState<Partial<Record<FieldKey, string>>>({});
+  const [saveFailure, setSaveFailure] = useState<TreatmentSaveFailure | null>(null);
   const [defaultStartDate] = useState(todayKey);
 
   const form = useTreatmentFormCore({
@@ -95,16 +110,22 @@ export function useTreatmentForm({ initial, onSaved }: UseTreatmentFormOptions) 
           }
         }
         haptics.error();
-        if (isApiError(err) && err.isNotFound) {
-          notify({ tone: "error", message: "No se pudo guardar", description: "Este tratamiento ya no existe." });
+        const gone = isApiError(err) && err.isNotFound;
+        const rejected = isApiError(err) && err.status >= 400 && err.status < 500;
+        const description = gone
+          ? "Este tratamiento ya no existe."
+          : rejected
+            ? "Revisa los datos e intenta de nuevo."
+            : "Revisa tu conexión e intenta de nuevo.";
+        if (showErrorAs === "banner") {
+          setSaveFailure({ message: `No pudimos guardar. ${description}`, canRetry: !gone });
           return;
         }
-        const rejected = isApiError(err) && err.status >= 400 && err.status < 500;
         notify({
           tone: "error",
           message: "No se pudo guardar",
-          description: rejected ? "Revisa los datos e intenta de nuevo." : "Revisa tu conexión e intenta de nuevo.",
-          action: { label: "Reintentar", onPress: () => retryRef.current() },
+          description,
+          action: gone ? undefined : { label: "Reintentar", onPress: () => retryRef.current() },
         });
       },
     },
@@ -137,6 +158,7 @@ export function useTreatmentForm({ initial, onSaved }: UseTreatmentFormOptions) 
   /** Validates and saves. The button shows «Creando…» / «Guardando…» until the server answers. */
   const save = () => {
     if (form.saving || !validate()) return;
+    setSaveFailure(null);
     savedName.current = form.name.trim();
     form.handleSave();
   };
@@ -155,6 +177,7 @@ export function useTreatmentForm({ initial, onSaved }: UseTreatmentFormOptions) 
     startDate: form.startDate,
     endDate: form.endDate,
     saving: form.saving,
+    saveFailure,
     dirty,
     nameRef,
     nameError,

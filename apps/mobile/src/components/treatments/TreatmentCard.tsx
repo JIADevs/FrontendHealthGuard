@@ -1,11 +1,25 @@
 import { useEffect, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { Activity } from "lucide-react-native";
 import type { Treatment } from "@helu/api";
-import { IconTile, PressableScale, fontSize, nativeFont, spacing, useAppTheme, useHighlight, type ThemeContextValue } from "@helu/ui";
+import { useTreatmentByIdQuery } from "@helu/api/hooks";
+import {
+  Chip,
+  IconTile,
+  PressableScale,
+  Skeleton,
+  fontSize,
+  motion,
+  nativeFont,
+  radii,
+  spacing,
+  useAppTheme,
+  useHighlight,
+  type ThemeContextValue,
+} from "@helu/ui";
 import { useRecentlySaved } from "../../lib/recentlySaved";
-import { treatmentSinceLabel } from "./treatmentFormat";
+import { treatmentChips, treatmentSinceLabel } from "./treatmentFormat";
 
 export interface TreatmentCardProps {
   treatment: Treatment;
@@ -13,14 +27,20 @@ export interface TreatmentCardProps {
 }
 
 /**
- * Mockup «Tratamientos» (kit `tcard`): violet tile with the pulse, the name and «Desde 10 oct». The whole
- * card opens the detail. No status chip (the tab already says it) and no counts: the list API has
- * none (decision 8).
+ * Mockup «Tratamientos» (kit `tcard`): violet tile with the pulse, the name, «Desde 10 oct» and gray
+ * chips with what it groups («Metformina», «3 documentos», «4 citas»). The whole card opens the
+ * detail. No status chip: the tab already says it.
+ *
+ * The list API has no counts, so each card reads its treatment's detail (the same query the detail
+ * screen uses, which then opens from the cache). While it loads the chips wait as two gray pills; if
+ * it fails, the card stays as it is, without chips.
  */
 export function TreatmentCard({ treatment, onPress }: TreatmentCardProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const since = treatmentSinceLabel(treatment);
+  const detail = useTreatmentByIdQuery(treatment.id);
+  const chips = useMemo(() => (detail.data ? treatmentChips(detail.data) : []), [detail.data]);
 
   // Just created or edited: blue border that fades in 1.2 s (movimiento-interacciones.md §6).
   const justSaved = useRecentlySaved((s) => s.treatmentId === treatment.id);
@@ -31,13 +51,10 @@ export function TreatmentCard({ treatment, onPress }: TreatmentCardProps) {
     return () => clearTimeout(timer);
   }, [justSaved]);
 
+  const label = [treatment.name, since, ...chips].filter(Boolean).join(", ");
+
   return (
-    <PressableScale
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={since ? `${treatment.name}, ${since}` : treatment.name}
-      style={styles.card}
-    >
+    <PressableScale onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.card}>
       <View style={styles.row}>
         <IconTile tone="treatment" icon={<Activity size={19} strokeWidth={2.2} color={t.accent.treatmentFg} />} />
         <View style={styles.copy}>
@@ -51,8 +68,46 @@ export function TreatmentCard({ treatment, onPress }: TreatmentCardProps) {
           ) : null}
         </View>
       </View>
+      {detail.isLoading ? (
+        // §6c: the shape of what arrives. Most treatments group something, so the pills keep the
+        // card from growing under the person's finger when the chips land.
+        <View style={styles.chips} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Skeleton width={92} height={CHIP_HEIGHT} radius={radii.full} />
+          <Skeleton width={72} height={CHIP_HEIGHT} radius={radii.full} />
+        </View>
+      ) : chips.length > 0 ? (
+        <Animated.View entering={FadeIn.duration(motion.fast)} style={styles.chips} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {chips.map((chip) => (
+            <Chip key={chip} label={chip} tone="neutral" />
+          ))}
+        </Animated.View>
+      ) : null}
       <Animated.View pointerEvents="none" style={highlight} />
     </PressableScale>
+  );
+}
+
+/** Kit `chip`: 12.5 px label with 5 px above and below. */
+const CHIP_HEIGHT = 26;
+
+/** A card while the list loads (§6c, inside the list's `SkeletonGroup`): tile, two lines and two chips. */
+export function TreatmentCardSkeleton() {
+  const t = useAppTheme();
+  const styles = useMemo(() => makeStyles(t), [t]);
+  return (
+    <View style={styles.card}>
+      <View style={styles.row}>
+        <Skeleton width={40} height={40} radius={13} />
+        <View style={[styles.copy, styles.skeletonLines]}>
+          <Skeleton width="70%" height={14} />
+          <Skeleton width="45%" height={12} />
+        </View>
+      </View>
+      <View style={styles.chips}>
+        <Skeleton width={92} height={CHIP_HEIGHT} radius={radii.full} />
+        <Skeleton width={72} height={CHIP_HEIGHT} radius={radii.full} />
+      </View>
+    </View>
   );
 }
 
@@ -71,5 +126,8 @@ function makeStyles(t: ThemeContextValue) {
     copy: { flex: 1, minWidth: 0, gap: 2 },
     title: { fontSize: 14, lineHeight: 18, fontFamily: nativeFont("body", 600), color: t.text.primary },
     meta: { fontSize: fontSize.sm, lineHeight: 18, fontFamily: nativeFont("body", 400), color: t.text.secondary },
+    // Kit `row g8 wrap` under the header row, from the card's left edge.
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing[2], marginTop: spacing[3] },
+    skeletonLines: { gap: 8 },
   });
 }

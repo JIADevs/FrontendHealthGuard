@@ -10,7 +10,6 @@ import {
   PullRefreshIndicator,
   SearchField,
   SegmentedControl,
-  SkeletonCard,
   SkeletonGroup,
   contentEntering,
   motion,
@@ -23,7 +22,7 @@ import {
 } from "@helu/ui";
 import { ScreenHeader } from "../ScreenHeader";
 import { useRecentlySaved } from "../../lib/recentlySaved";
-import { TreatmentCard } from "./TreatmentCard";
+import { TreatmentCard, TreatmentCardSkeleton } from "./TreatmentCard";
 import { TreatmentCreateSheet } from "./TreatmentCreateSheet";
 import { TreatmentsEmpty, TreatmentsSearchEmpty, TreatmentsTabEmpty } from "./TreatmentsEmpty";
 import {
@@ -146,12 +145,12 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
           </View>
 
           {showSkeleton ? (
-            // §6c: header, search and tabs are real; the cards wait as 4 skeletons (tile + two lines).
+            // §6c: header, search and tabs are real; the cards wait as 4 skeletons (tile, two lines, chips).
             <SkeletonGroup label="Cargando tratamientos" style={styles.skeleton}>
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
+              <TreatmentCardSkeleton />
+              <TreatmentCardSkeleton />
+              <TreatmentCardSkeleton />
+              <TreatmentCardSkeleton />
             </SkeletonGroup>
           ) : (
             <View style={styles.flex}>

@@ -96,6 +96,9 @@ export function TreatmentDetail({
   }, [queryClient, id]);
   // A summary drawn from the cache is real from the first frame: it does not fade in with the content.
   const [summaryFromCache] = useState(() => query.data === undefined && cached !== undefined);
+  // The list cards read this same detail for their chips, so it is usually cached: then the whole
+  // screen is real from the first frame and nothing fades in (§6c «con datos en caché»).
+  const [openedWithData] = useState(() => query.data !== undefined);
   const summary: Treatment | undefined = detail ?? cached;
 
   if (!showSkeleton && !detail) {
@@ -161,7 +164,7 @@ export function TreatmentDetail({
         >
           {/* Same place in both states, so the summary from the cache stays put when the sections arrive. */}
           {summary ? (
-            <Animated.View entering={summaryFromCache ? undefined : contentEntering}>
+            <Animated.View entering={summaryFromCache || openedWithData ? undefined : contentEntering}>
               <TreatmentSummaryCard treatment={summary} justCreated={justCreated} />
             </Animated.View>
           ) : null}
@@ -176,7 +179,7 @@ export function TreatmentDetail({
           ) : null}
 
           {!showSkeleton && detail ? (
-            <Animated.View entering={contentEntering} style={styles.stack}>
+            <Animated.View entering={openedWithData ? undefined : contentEntering} style={styles.stack}>
               {nothingLinked ? (
                 <TreatmentStarterCard
                   onAddMedication={onAddMedication}

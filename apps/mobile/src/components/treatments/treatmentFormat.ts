@@ -116,6 +116,31 @@ export function hasNothingLinked(detail: TreatmentDetail): boolean {
   );
 }
 
+/** «1 documento», «3 documentos». */
+function countLabel(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+const MAX_CHIPS = 3;
+
+/**
+ * Chips of a list card (mockup «Tratamientos», decision 8 revisited): what the treatment groups, worked
+ * out from its detail because the list API has no counts. The medication by name when there is one
+ * («Metformina»), else «2 medicamentos»; then documents, appointments and check-ins; three at most.
+ * Missions and the specialty have no API (#35), so «1 misión» and «· Ortopedia» never show.
+ */
+export function treatmentChips(detail: TreatmentDetail): string[] {
+  const medications = new Map<string, string>();
+  for (const cycle of detail.medicationCycles) medications.set(cycle.medicationId, cycle.medicationName);
+  const chips: string[] = [];
+  if (medications.size === 1) chips.push([...medications.values()][0]!);
+  if (medications.size > 1) chips.push(`${medications.size} medicamentos`);
+  if (detail.documents.length > 0) chips.push(countLabel(detail.documents.length, "documento", "documentos"));
+  if (detail.appointments.length > 0) chips.push(countLabel(detail.appointments.length, "cita", "citas"));
+  if (detail.dailyCheckins.length > 0) chips.push(countLabel(detail.dailyCheckins.length, "check-in", "check-ins"));
+  return chips.slice(0, MAX_CHIPS);
+}
+
 const MAX_FACES = 5;
 const TREND_DAYS = 7;
 

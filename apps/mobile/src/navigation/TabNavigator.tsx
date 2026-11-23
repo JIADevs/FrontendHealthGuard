@@ -22,6 +22,7 @@ import {
   spacing,
   fontSize,
   fontWeight,
+  nativeFont,
   useAppTheme,
 } from "@helu/ui";
 import { useManagedUsersQuery, useDelegationContextColorsQuery } from "@helu/api/hooks";
@@ -156,9 +157,10 @@ export function TabNavigator() {
         tabBarActiveTintColor: t.brand.fg,
         tabBarInactiveTintColor: t.text.muted,
         headerShown: false,
+        // Kit `.tab`: Inter 500 11 px, never cut («Documentos» used to show as «Document…» in the system font).
         tabBarLabelStyle: {
           fontSize: fontSize.xs,
-          fontWeight: fontWeight.medium,
+          fontFamily: nativeFont("body", 500),
           marginTop: 2,
         },
         tabBarItemStyle: {
@@ -207,7 +209,7 @@ export function TabNavigator() {
           tabBarIcon: ({ focused }) => <CenterTabIcon focused={focused} />,
           tabBarLabelStyle: {
             fontSize: fontSize.xs,
-            fontWeight: fontWeight.bold,
+            fontFamily: nativeFont("body", 600),
             marginTop: spacing[1],
           },
         }}

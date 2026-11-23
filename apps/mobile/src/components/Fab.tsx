@@ -1,14 +1,16 @@
 import { StyleSheet, View } from "react-native";
-import { Plus } from "lucide-react-native";
+import { Plus, type LucideIcon } from "lucide-react-native";
 import { PressableScale, spacing, useAppTheme } from "@helu/ui";
 
 interface FabProps {
   onPress: () => void;
   accessibilityLabel: string;
+  /** Kit `fab(n)`: «+» by default; Bienestar uses the heart (mockup «Bienestar»). */
+  icon?: LucideIcon;
 }
 
 /** Kit `.fab`: 58 px, radio 20 y canto inferior de 4 px del tono «edge». Agenda y Documentos. */
-export function Fab({ onPress, accessibilityLabel }: FabProps) {
+export function Fab({ onPress, accessibilityLabel, icon: Icon = Plus }: FabProps) {
   const t = useAppTheme();
   // The anchor is absolute, not the button: PressableScale puts its style on an inner view, so the
   // outer Pressable used to sit in the flow and the FAB moved with the content above it (it jumped
@@ -21,7 +23,7 @@ export function Fab({ onPress, accessibilityLabel }: FabProps) {
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
       >
-        <Plus color={t.text.onSolid} size={26} strokeWidth={2.6} />
+        <Icon color={t.text.onSolid} size={26} strokeWidth={2.6} />
       </PressableScale>
     </View>
   );

@@ -123,7 +123,8 @@ export function formatNextDose(iso: string | null | undefined, now = Date.now())
   const when = new Date(iso);
   if (Number.isNaN(when.getTime())) return "";
   const diffDays = Math.round((startOfLocalDay(when) - startOfLocalDay(now)) / DAY_MS);
-  const clock = formatClock(when);
+  // Non-breaking spaces: «11:21 p. m.» must never wrap as «11:21 p.» / «m.» (clinical data, MASTER §1).
+  const clock = formatClock(when).replace(/ /g, "\u00a0");
   if (diffDays === 0) return `hoy ${clock}`;
   if (diffDays === 1) return `mañana ${clock}`;
   return `${midSentenceDay(when)} · ${clock}`;

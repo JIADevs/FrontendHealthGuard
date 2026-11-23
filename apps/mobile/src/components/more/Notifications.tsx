@@ -95,7 +95,6 @@ export function Notifications({ onOpenSettings }: { onOpenSettings: () => void }
   const styles = useMemo(() => makeStyles(t), [t]);
   const screen = useNotificationsScreen();
   const [filter, setFilter] = useState<Filter>("all");
-  const [markingAll, setMarkingAll] = useState(false);
   // Only a pull shows the refresh spinner; «Marcar todo» refetches quietly.
   const [pulling, setPulling] = useState(false);
   const showSkeleton = useSkeletonVisible(screen.isLoading);
@@ -115,10 +114,8 @@ export function Notifications({ onOpenSettings }: { onOpenSettings: () => void }
     [markRead],
   );
 
-  const markAll = () => {
-    setMarkingAll(true);
-    void markAllRead().finally(() => setMarkingAll(false));
-  };
+  // Low risk and reversible: the rows and the badge change on tap (@helu/api, PR #82); no spinner.
+  const markAll = () => void markAllRead();
 
   const header = (
     <ScreenHeader
@@ -127,13 +124,12 @@ export function Notifications({ onOpenSettings }: { onOpenSettings: () => void }
         screen.unreadCount > 0 ? (
           <Pressable
             onPress={markAll}
-            disabled={markingAll}
             hitSlop={8}
             style={styles.link}
             accessibilityRole="button"
             accessibilityLabel="Marcar todo como leído"
           >
-            {markingAll ? <ActivityIndicator size="small" color={t.brand.fg} /> : <Text style={styles.linkText}>Marcar todo</Text>}
+            <Text style={styles.linkText}>Marcar todo</Text>
           </Pressable>
         ) : undefined
       }

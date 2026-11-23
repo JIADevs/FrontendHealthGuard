@@ -22,7 +22,7 @@ import {
   type ThemeContextValue,
   type Tone,
 } from "@helu/ui";
-import { isApiError, type Appointment } from "@helu/api";
+import type { Appointment } from "@helu/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { notify } from "../../lib/notify";
 import {
@@ -46,7 +46,7 @@ import {
   Plus,
   XCircle,
 } from "lucide-react-native";
-import Toast from "react-native-toast-message";
+
 import { ScreenHeader } from "../ScreenHeader";
 import { SkeletonHeaderAction } from "../SkeletonPieces";
 
@@ -152,12 +152,9 @@ export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDeta
   const statusMut = useUpdateAppointmentStatusMutation();
   const qc = useQueryClient();
 
-  const showError = (err: unknown) =>
-    Toast.show({
-      type: "error",
-      text1: "No se pudo actualizar la cita",
-      text2: isApiError(err) ? err.message : "Revisa tu conexión e intenta de nuevo.",
-    });
+  // MASTER §8: cause + what to do; the server's technical message stays out of the toast.
+  const showError = () =>
+    notify({ tone: "error", message: "No se pudo actualizar la cita", description: "Revisa tu conexión e intenta de nuevo." });
 
   // «Sí, asistí» / «No pude» are low risk and reversible (movimiento §8, v2.14): the card, the chip
   // and the toast change on tap and the status saves in the background; on error it goes back and
@@ -170,9 +167,9 @@ export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDeta
           onSuccess: () => {
             setShowCancelDialog(false);
             qc.setQueryData<Appointment>(["appointment", id], (prev) => (prev ? { ...prev, status } : prev));
-            Toast.show({ type: "success", text1: success });
+            notify({ message: success });
           },
-          onError: showError,
+          onError: () => showError(),
         },
       );
       return;
@@ -185,9 +182,9 @@ export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDeta
     after?.();
     // mutateAsync: «No pude» opens the edit screen, and per-call callbacks of `mutate` are dropped
     // if this screen unmounts first.
-    statusMut.mutateAsync({ id, status }).catch((err: unknown) => {
+    statusMut.mutateAsync({ id, status }).catch(() => {
       qc.setQueryData(key, previous);
-      showError(err);
+      showError();
     });
   };
 

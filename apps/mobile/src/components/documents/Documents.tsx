@@ -250,13 +250,16 @@ export function Documents(props: DocumentsProps) {
         </Animated.View>
       )}
 
-      <Fab
-        onPress={() => {
-          Keyboard.dismiss();
-          setAddOpen(true);
-        }}
-        accessibilityLabel="Agregar documento"
-      />
+      {/* One primary action (MASTER §2): the empty state already offers «Subir documento». */}
+      {list.settled && !list.isError && list.items.length === 0 && !searching && !list.hasActiveFilter ? null : (
+        <Fab
+          onPress={() => {
+            Keyboard.dismiss();
+            setAddOpen(true);
+          }}
+          accessibilityLabel="Agregar documento"
+        />
+      )}
 
       <DocumentsAddSheet
         visible={addOpen}

@@ -28,7 +28,7 @@ import {
 import { ScreenHeader } from "../ScreenHeader";
 import { notify } from "../../lib/notify";
 import { useOpenDocumentExternal } from "../../hooks/useOpenDocumentExternal";
-import { CATEGORY_META, categoryOf } from "./documentCategories";
+import { CATEGORY_META, categoryOf, documentTypeLabel } from "./documentCategories";
 import { DocumentPdfViewer } from "./DocumentPdfViewer";
 import { DocumentViewerModal } from "./DocumentViewerModal";
 import { AddToBackpackSheet } from "./AddToBackpackSheet";
@@ -129,7 +129,7 @@ export function DocumentDetail({ id, onBack, onShare, onEdit, onDelete }: Docume
   const dateLabel = Number.isNaN(day.getTime()) ? "" : `${day.getDate()} ${MONTHS[day.getMonth()]} ${day.getFullYear()}`;
   const doctorLabel = [doctors.map((d) => d.value).join(", "), doc.specialties[0]?.name].filter(Boolean).join(" · ");
   const rows: [string, string][] = [
-    ["Tipo", doc.documentType?.name ?? category.label],
+    ["Tipo", documentTypeLabel(doc.documentType?.name) ?? category.label],
     ["Fecha", dateLabel],
     ...(doctorLabel ? ([["Médico", doctorLabel]] as [string, string][]) : []),
     ...(treatment.data?.name ? ([["Tratamiento", treatment.data.name]] as [string, string][]) : []),

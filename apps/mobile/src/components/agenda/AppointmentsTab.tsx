@@ -183,7 +183,8 @@ export function AppointmentsTab() {
         />
       ) : null}
 
-      <AgendaFAB onPress={nav.newAppointment} />
+      {/* One primary action (MASTER §2): an empty list already offers «Agregar …» in its empty state. */}
+      {!showSkeleton && !(appts.isError && !appts.data) && items.length === 0 && !hasActiveFilter && !search ? null : <AgendaFAB onPress={nav.newAppointment} />}
     </View>
   );
 }

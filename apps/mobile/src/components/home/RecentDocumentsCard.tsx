@@ -6,11 +6,12 @@ import { HomeCard } from "./HomeCard";
 import { HomeRow } from "./HomeRow";
 import { SeeAllLink } from "./SeeAllLink";
 import { useManagingSomeone } from "./useManagingSomeone";
+import { documentTypeLabel } from "../documents/documentCategories";
 
 /** «28 oct · Orden» (mockup «Documentos recientes»): fecha sin día de la semana y el tipo. */
 function documentMeta(d: Document): string {
   const date = formatShortDay(d.uploadedAt).split(" ").slice(1).join(" ");
-  return [date, d.documentType?.name].filter(Boolean).join(" · ");
+  return [date, documentTypeLabel(d.documentType?.name)].filter(Boolean).join(" · ");
 }
 
 /** «Documentos recientes» (bloque 7). */

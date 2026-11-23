@@ -24,6 +24,7 @@ import {
 import { ScreenHeader } from "../ScreenHeader";
 import { useRecentlySaved } from "../../lib/recentlySaved";
 import { TreatmentCard } from "./TreatmentCard";
+import { TreatmentCreateSheet } from "./TreatmentCreateSheet";
 import { TreatmentsEmpty, TreatmentsSearchEmpty, TreatmentsTabEmpty } from "./TreatmentsEmpty";
 import {
   TREATMENT_STATUS,
@@ -36,8 +37,6 @@ import {
 export interface TreatmentsProps {
   onBack: () => void;
   onOpen: (treatment: Treatment) => void;
-  /** «Crear» in the header and «Crear tratamiento» in the empty state. */
-  onCreate: () => void;
 }
 
 const STAGGER_MAX = 6;
@@ -47,8 +46,9 @@ const SEGMENT_OPTIONS = TREATMENT_STATUS_ORDER.map((status) => ({ value: status,
  * Mockup «Tratamientos» (m3) with its states: back, title and «Crear»; «Buscar tratamiento» and the
  * «Activos · Inactivos · Completados» segmented control; one card per treatment. With no treatments
  * at all it is m7 «Tratamientos · vacío» (no «Crear» in the header, the empty state carries it).
+ * Both «Crear» open the «Nuevo tratamiento» sheet over the list.
  */
-export function Treatments({ onBack, onOpen, onCreate }: TreatmentsProps) {
+export function Treatments({ onBack, onOpen }: TreatmentsProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const query = useTreatmentsQuery(1, 100);
@@ -67,9 +67,10 @@ export function Treatments({ onBack, onOpen, onCreate }: TreatmentsProps) {
     Keyboard.dismiss();
     onOpen(treatment);
   };
+  const [creating, setCreating] = useState(false);
   const create = () => {
     Keyboard.dismiss();
-    onCreate();
+    setCreating(true);
   };
 
   // Just saved: show it where it lives now (its tab, and without a search that would hide it).
@@ -199,6 +200,8 @@ export function Treatments({ onBack, onOpen, onCreate }: TreatmentsProps) {
           )}
         </>
       )}
+
+      {creating ? <TreatmentCreateSheet onClose={() => setCreating(false)} /> : null}
     </SafeAreaView>
   );
 }

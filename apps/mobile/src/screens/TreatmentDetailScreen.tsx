@@ -12,7 +12,7 @@ export function TreatmentDetailScreen() {
     <TreatmentDetail
       id={id}
       onBack={() => navigation.goBack()}
-      onEdit={() => navigation.navigate("TreatmentForm", { id })}
+      onEdit={() => navigation.navigate("TreatmentEdit", { id })}
       onAddMedication={() => navigation.navigate("MedicationForm", { treatmentId: id })}
       onAddAppointment={() => navigation.navigate("AppointmentForm", { treatmentId: id })}
       onAddDocument={() => navigation.navigate("DocumentUpload", { initialKind: "FILE", treatmentId: id, backTitle: "Tratamiento" })}

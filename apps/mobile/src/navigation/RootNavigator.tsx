@@ -29,7 +29,7 @@ import { MedicationDetailScreen } from "../screens/MedicationDetailScreen";
 import { CycleDetailScreen } from "../screens/CycleDetailScreen";
 import { TreatmentsScreen } from "../screens/TreatmentsScreen";
 import { TreatmentDetailScreen } from "../screens/TreatmentDetailScreen";
-import { TreatmentFormScreen } from "../screens/TreatmentFormScreen";
+import { TreatmentEditScreen } from "../screens/TreatmentEditScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { DependientesScreen } from "../screens/DependientesScreen";
@@ -77,7 +77,8 @@ export type RootStackParamList = {
   CycleDetail: { cycleId: string; medicationId: string; medicationName: string };
   Treatments: WithBackTitle | undefined;
   TreatmentDetail: WithBackTitle & { id: string };
-  TreatmentForm: WithBackTitle & { id?: string } | undefined;
+  /** «Editar tratamiento»; «Nuevo tratamiento» is a sheet over the list (#42, decision 1). */
+  TreatmentEdit: WithBackTitle & { id: string };
   Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
   DocumentUpload:
     | (WithBackTitle & {
@@ -342,10 +343,11 @@ export function RootNavigator() {
             component={TreatmentDetailScreen}
             options={{ headerShown: false, animation: "slide_from_right" }}
           />
+          {/* Editing is pushed from the right with the edge swipe, as «Editar documento» (#42, decision 2). */}
           <Stack.Screen
-            name="TreatmentForm"
-            component={TreatmentFormScreen}
-            options={FORM_SCREEN_OPTIONS}
+            name="TreatmentEdit"
+            component={TreatmentEditScreen}
+            options={{ headerShown: false, animation: "slide_from_right" }}
           />
           <Stack.Screen
             name="Dependientes"

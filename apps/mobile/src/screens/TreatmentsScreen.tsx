@@ -11,7 +11,6 @@ export function TreatmentsScreen() {
     <Treatments
       onBack={() => navigation.goBack()}
       onOpen={(treatment) => navigation.navigate("TreatmentDetail", { id: treatment.id, backTitle: "Tratamientos" })}
-      onCreate={() => navigation.navigate("TreatmentForm", undefined)}
     />
   );
 }

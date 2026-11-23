@@ -37,6 +37,11 @@ export interface TreatmentFormAdapters {
      */
     onSaveSuccess: (savedId?: string) => void;
     afterSave: () => void;
+    /**
+     * Optional: called with the raw error when create or update fails (`error` is still set). Lets the
+     * app put a 422's `fieldErrors` under each field and tell a network error from a rejected one.
+     */
+    onSaveError?: (error: unknown) => void;
 }
 
 export function useTreatmentFormCore({
@@ -94,6 +99,7 @@ export function useTreatmentFormCore({
                     },
                     onError: (err) => {
                         setError(isApiError(err) ? err.message : "Error actualizando el tratamiento.");
+                        adapters.onSaveError?.(err);
                     },
                 },
             );
@@ -107,6 +113,7 @@ export function useTreatmentFormCore({
             },
             onError: (err) => {
                 setError(isApiError(err) ? err.message : "Error guardando el tratamiento.");
+                adapters.onSaveError?.(err);
             },
         });
     }

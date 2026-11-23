@@ -1,2 +1,4 @@
-export { ProfileCard } from "./ProfileCard";
-export { MenuItem, MenuSection } from "./MenuSection";
+export { More } from "./More";
+export { Notifications } from "./Notifications";
+export { Profile } from "./Profile";
+export { Settings } from "./Settings";

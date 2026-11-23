@@ -64,6 +64,12 @@ export function StreakCard({ current, longest, week, doneToday, confirmedToday, 
     );
   }, [celebrateKey, reduced, flame, number]);
 
+  // Dark mode has no dark override for streak-solid / streak-edge (#C2410C / #9A3412): on the dark
+  // card they fail contrast, so text uses streak-text there (#FB923C). Light keeps the kit tones.
+  const dark = t.mode === "dark";
+  const streakStrong = dark ? t.motivation.streakText : t.motivation.streakSolid;
+  const streakSoft = dark ? t.motivation.streakText : t.motivation.streakEdge;
+
   const flameStyle = useAnimatedStyle(() => ({ transform: [{ scale: flame.value }] }));
   const numberStyle = useAnimatedStyle(() => ({ transform: [{ scale: number.value }] }));
 
@@ -106,13 +112,13 @@ export function StreakCard({ current, longest, week, doneToday, confirmedToday, 
           >
             <Animated.Text
               style={[
-                { alignSelf: "flex-start", fontSize: 28, lineHeight: 32, fontFamily: nativeFont("heading", 900), color: t.motivation.streakSolid },
+                { alignSelf: "flex-start", fontSize: 28, lineHeight: 32, fontFamily: nativeFont("heading", 900), color: streakStrong },
                 numberStyle,
               ]}
             >
               {current === 0 ? "Empieza hoy" : `${current} ${current === 1 ? "día" : "días"}`}
             </Animated.Text>
-            <Text style={{ fontSize: 14, fontFamily: nativeFont("body", 400), color: t.motivation.streakEdge }}>
+            <Text style={{ fontSize: 14, fontFamily: nativeFont("body", 400), color: streakSoft }}>
               {current > 0
                 ? other ? "de racha cuidándose" : "de racha cuidándote"
                 : doneToday
@@ -173,7 +179,7 @@ export function StreakCard({ current, longest, week, doneToday, confirmedToday, 
                 style={{
                   fontSize: 13,
                   fontFamily: nativeFont("heading", 800),
-                  color: day.done || day.isToday ? t.motivation.streakSolid : t.text.secondary,
+                  color: day.done || day.isToday ? streakStrong : t.text.secondary,
                 }}
               >
                 {day.initial}

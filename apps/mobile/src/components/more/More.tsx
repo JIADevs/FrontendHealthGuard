@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,6 +18,7 @@ import {
   SkeletonGroup,
   colors,
   fontSize,
+  motion,
   nativeFont,
   radii,
   spacing,
@@ -183,7 +185,14 @@ function MenuRow({ icon, label, onPress, trailing }: { icon: ReactNode; label: s
     <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]} accessibilityRole="button" accessibilityLabel={label}>
       <IconTile tone="neutral" icon={icon} />
       <Text style={styles.rowLabel}>{label}</Text>
-      {trailing ? <View style={styles.trailing}>{trailing}</View> : <ChevronRight size={18} color={t.text.muted} />}
+      {trailing ? (
+        // Counts arrive after the delegation/notification queries load: fade in instead of popping.
+        <Animated.View entering={FadeIn.duration(motion.base)} style={styles.trailing}>
+          {trailing}
+        </Animated.View>
+      ) : (
+        <ChevronRight size={18} color={t.text.muted} />
+      )}
     </Pressable>
   );
 }

@@ -92,7 +92,7 @@ export function useTreatmentForm({ initial, onSaved, showErrorAs = "toast" }: Us
       },
       afterSave: () => onSavedRef.current(savedName.current),
       onSaveError: (err) => {
-        // The core also keeps its own text in `error`; the toast below replaces it.
+        // The core also keeps its own text in `error` (the backend's); ours below replaces it.
         form.clearError();
         if (isApiError(err) && err.isValidation && err.fieldErrors) {
           const mapped: Partial<Record<FieldKey, string>> = {};

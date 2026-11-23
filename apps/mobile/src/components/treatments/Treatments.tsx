@@ -170,13 +170,15 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
                     scrollEventThrottle={16}
                     renderItem={({ item, index }) => (
                       <Animated.View
-                        // v2.13: results update at once; rows that leave fade out in 100 ms, new ones fade in in 150 ms.
+                        // v2.13: search results update at once; rows that leave fade out in 100 ms, new ones fade
+                        // in in 150 ms. With no search a row only leaves because it was deleted or changed
+                        // status: it fades out in 250 ms while the others close the gap (§5).
                         entering={
                           entered
                             ? FadeIn.duration(motion.fast)
                             : FadeIn.duration(motion.base).delay(Math.min(index, STAGGER_MAX) * motion.stagger)
                         }
-                        exiting={FadeOut.duration(motion.instant)}
+                        exiting={FadeOut.duration(searching ? motion.instant : motion.base)}
                         layout={LinearTransition.duration(motion.base)}
                         style={styles.rowWrap}
                       >

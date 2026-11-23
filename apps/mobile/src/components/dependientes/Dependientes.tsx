@@ -181,13 +181,13 @@ export function Dependientes({ onManage, onExitManaging }: DependientesProps) {
                   <Animated.View key={d.id} entering={FadeIn.duration(motion.base)} exiting={FadeOut.duration(motion.base)} layout={LinearTransition.duration(motion.base)}>
                     <PersonCard
                       name={name}
-                      detail={`Dependiente · ${since(d.createdAt)}`}
+                      detail={managingId === patientId ? "Gestionando ahora" : `Dependiente · ${since(d.createdAt)}`}
                       color={color}
                       right={
                         <View style={styles.actions}>
                           {managingId === patientId ? (
                             <Button variant="secondary" size="sm" onPress={onExitManaging} accessibilityLabel="Volver a mi cuenta">
-                              Volver a mi cuenta
+                              Salir
                             </Button>
                           ) : (
                             <Button variant="secondary" size="sm" onPress={() => onManage(patientId)} accessibilityLabel={`Gestionar la cuenta de ${name}`}>

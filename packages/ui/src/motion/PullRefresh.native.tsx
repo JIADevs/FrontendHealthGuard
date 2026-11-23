@@ -166,7 +166,7 @@ export function PullRefreshIndicator({ state, top = 0 }: PullRefreshIndicatorPro
       opacity: shown * fade.value,
       transform: [{ translateY: Math.max(0, (pull.value - PILL_HEIGHT) / 2) }],
     };
-  }, [active]);
+  });
 
   const ink = phase === 'error' ? t.status.errorFg : t.text.secondary;
   const icon =

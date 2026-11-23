@@ -4,7 +4,8 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-na
 import { motion, motionEasing, useReducedMotion } from "@helu/ui";
 
 /**
- * Tab switch fade (movimiento-interacciones.md §3 · «Cambiar de pestaña»), on the UI thread.
+ * Tab switch (movimiento-interacciones.md §3 · «Cambiar de pestaña»), on the UI thread: the new
+ * tab enters in 250 ms rising 4 px, like Agenda's inner tabs.
  *
  * bottom-tabs' own `animation: "fade"` drives each scene's opacity with the JS `Animated` API.
  * On a real iPhone, switching fast between tabs could leave a scene at opacity 0: Inicio
@@ -21,18 +22,19 @@ export function TabSceneFade({
   children: ReactNode;
 }) {
   const reduced = useReducedMotion();
-  const opacity = useSharedValue(reduced || !navigation.isFocused() ? 1 : 0);
+  // 0 = hidden and 4 px low, 1 = in place.
+  const shown = useSharedValue(reduced || !navigation.isFocused() ? 1 : 0);
 
   useEffect(() => {
     const show = () => {
-      opacity.value = reduced ? 1 : withTiming(1, { duration: motion.fast, easing: motionEasing.out });
+      shown.value = reduced ? 1 : withTiming(1, { duration: motion.base, easing: motionEasing.standard });
     };
     // Only when another tab is chosen (not on "blur", which also fires when a detail is pushed
     // over the tabs and this scene must stay visible under it). That tab is already off screen,
     // so starting it at 0 lets the next visit fade in.
     const offState = navigation.addListener("state", (e) => {
       const state = e.data.state as { index: number; routes: { key: string }[] } | undefined;
-      if (!reduced && state && state.routes[state.index]?.key !== routeKey) opacity.value = 0;
+      if (!reduced && state && state.routes[state.index]?.key !== routeKey) shown.value = 0;
     });
     if (navigation.isFocused()) show();
     const offFocus = navigation.addListener("focus", show);
@@ -40,8 +42,13 @@ export function TabSceneFade({
       offFocus();
       offState();
     };
-  }, [navigation, opacity, reduced, routeKey]);
+  }, [navigation, shown, reduced, routeKey]);
 
-  const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const style = useAnimatedStyle(() => ({
+    opacity: shown.value,
+    transform: [{ translateY: (1 - shown.value) * RISE }],
+  }));
   return <Animated.View style={[{ flex: 1 }, style]}>{children}</Animated.View>;
 }
+
+const RISE = 4;

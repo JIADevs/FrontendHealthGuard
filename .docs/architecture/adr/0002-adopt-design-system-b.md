@@ -56,7 +56,7 @@ El código se migra por fases siguiendo [`componentes.md`](../../design/system/c
 | Formularios | Asterisco en obligatorios; validación variable | «(opcional)» en opcionales, una columna (también en web) y el resto de `pages/formularios.md` |
 | Motivación | Racha de check-in sin UI dedicada | Tarjeta de racha con pausas, nivel, insignias y misiones, con opción de ocultarlos |
 | Misiones | No existen en runtime | Módulo según PRD y `pages/misiones.md` |
-| Movimiento | **En curso (Fase 1, mobile):** `react-native-reanimated` y `expo-haptics` instalados; tokens `motion` en `tokens.ts` y helpers en `packages/ui/src/motion/` (fade through, toque con escala, rebote, resaltado, esqueletos con un solo brillo). Formularios suben desde abajo; pestañas con fundido de 150 ms; hoja con resorte, cierre de 220 ms y umbral 30 % / 800 px/s; esqueletos en Agenda y citas; «Tomar» → «✓ Tomado» con fade through y háptica. Falta: web (CSS y View Transitions) y el resto de pantallas al migrarlas | + fundido en pestañas, hojas con resorte, feedback por acción y esqueletos de carga (`pages/movimiento-interacciones.md`) |
+| Movimiento | **En curso (Fase 1, mobile):** `react-native-reanimated` y `expo-haptics` instalados; tokens `motion` en `tokens.ts` y helpers en `packages/ui/src/motion/` (fade through, toque con escala, rebote, resaltado, esqueletos con un solo brillo). Formularios suben desde abajo; pestañas con fundido de 150 ms; hoja con resorte, cierre de 220 ms y umbral 30 % / 800 px/s; esqueletos en Agenda y citas; «Tomar» → «✓ Tomado» con fade through y háptica. Tratamientos (Fase 8) ya lo usa en lista, detalle, hoja y edición. Falta: web (CSS y View Transitions) y el resto de pantallas al migrarlas | + fundido en pestañas, hojas con resorte, feedback por acción y esqueletos de carga (`pages/movimiento-interacciones.md`) |
 | Acciones optimistas | Solo colores de contexto y revocar delegación (`onMutate` en `reactQueryHooks.ts`) | Toma, check-in y pasos de misión optimistas; revocar delegación espera al servidor |
 | Web: navegación | Barra lateral de 8 entradas con Perfil y Configuraciones; se oculta a 768 px; detalles y formularios en modales sin URL | Barra lateral de 5 destinos + «Más», cuenta en el menú del avatar, cortes a 1280 y 1024 px, URL por detalle y formulario (`pages/web.md`) |
 | Microcopy | Voseo mezclado | Tuteo |
@@ -72,3 +72,11 @@ El código se migra por fases siguiendo [`componentes.md`](../../design/system/c
 - **BottomActionBar:** nuevo en `@helu/ui`, con `BOTTOM_ACTION_BAR_HEIGHT` y el área segura en mobile; en web es un pie `sticky`.
 
 **Siguiente paso:** las pantallas, empezando por Agenda e Inicio en móvil (Fase 1). Ahí se cambian los borrados recuperables a toast con «Deshacer» y las 5 pantallas con `DetailFooter` a `BottomActionBar`.
+
+**Fase 8 (Tratamientos, móvil, issue #42):**
+
+- Lista, detalle, hoja «Nuevo tratamiento» y pantalla «Editar tratamiento» viven en `apps/mobile/src/components/treatments/`; las pantallas solo leen la ruta. Se borraron `TreatmentFormScreen` y las copias `* 2.tsx` de las tres pantallas.
+- Usa componentes v2 que ya existían (`ScreenHeader`, `SearchField`, `SegmentedControl`, `IconTile` con el acento `treatment`, `BottomSheet`, `BottomActionBar`, `ConfirmModal`, `DangerLink`, `DiscardChangesDialog`, esqueletos, `usePullRefresh`, `useHighlight`). No cambia `@helu/ui`.
+- `@helu/api`: `invalidateTreatmentQueries()` refresca el detalle cuando se le vincula o se edita algo; `useTreatmentFormCore` envía `null` para vaciar un campo al editar, entrega el id guardado y el error crudo (`onSaveError`) para poner los 422 bajo cada campo.
+- Lo que el API no tiene se omite (sin cambios de backend): misiones, conteos y especialidad en las tarjetas, frecuencia de los medicamentos, y hora, médico y especialidad de las citas. La lista de brechas está en el issue #42.
+- «Editar tratamiento» no tiene mockup: pantalla completa desde la derecha con «Estado» segmentado. Pasar a Completado o Inactivo con ciclos abiertos pide confirmación, porque el servidor los finaliza.

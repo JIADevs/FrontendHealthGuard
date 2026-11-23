@@ -40,6 +40,7 @@ Este documento describe el código actual. El diseño objetivo (rediseño B, ver
 - Web emite las `--color-*` de la v2 y mantiene los nombres de la v1 como alias.
 - Nunito e Inter se cargan en las dos apps. En mobile, cada peso es una familia: usar `nativeFont(rol, peso)`, no `fontWeight`.
 - Falta la Fase 0.2 (componentes base) y que las pantallas adopten los componentes y las fuentes.
+- Tratamientos (Fase 8, issue #42) ya está en la v2 en móvil: `apps/mobile/src/components/treatments/` compone los componentes de `@helu/ui` sin agregar ninguno, y su formulario usa `hooks/useTreatmentForm.ts` sobre `useTreatmentFormCore` para la validación de `pages/formularios.md` §6–7.
 
 ## Lectura siguiente
 

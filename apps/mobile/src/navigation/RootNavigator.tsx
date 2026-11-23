@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { StatusBar } from "react-native";
+import { StatusBar, View } from "react-native";
 import { useAuthStore } from "@helu/stores";
+import { ManagementBanner } from "../components/dependientes/ManagementBanner";
 import { TabNavigator } from "./TabNavigator";
 import { LoginScreen } from "../screens/LoginScreen";
 import { SignupScreen } from "../screens/SignupScreen";
@@ -34,8 +35,6 @@ import { TreatmentFormScreen } from "../screens/TreatmentFormScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { DependientesScreen } from "../screens/DependientesScreen";
-import { DependientesInviteScreen } from "../screens/DependientesInviteScreen";
-import { LINKED_PEOPLE_SCREEN_TITLE } from "../constants/linkedPeople";
 import { useAppTheme } from "@helu/ui";
 import { withDocumentsTheme, getDocumentsStackScreenOptions } from "../components/documents";
 import type { ShareResourceType } from "@helu/api";
@@ -117,9 +116,6 @@ export type RootStackParamList = {
     resourceType: ShareResourceType;
   };
   Dependientes: WithBackTitle | undefined;
-  DependientesInvite: WithBackTitle & {
-    relationship: "I_WANT_TO_MANAGE_THEM" | "THEY_WILL_MANAGE_ME";
-  };
 };
 
 /**
@@ -151,7 +147,7 @@ export function RootNavigator() {
   const t = useAppTheme();
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: t.surface.bg }}>
       <StatusBar barStyle={t.mode === 'dark' ? 'light-content' : 'dark-content'} />
       <Stack.Navigator
       screenOptions={{
@@ -291,26 +287,7 @@ export function RootNavigator() {
             component={TreatmentFormScreen}
             options={FORM_SCREEN_OPTIONS}
           />
-          <Stack.Screen
-            name="Dependientes"
-            component={DependientesScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: LINKED_PEOPLE_SCREEN_TITLE,
-              animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Más",
-            })}
-          />
-          <Stack.Screen
-            name="DependientesInvite"
-            component={DependientesInviteScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: "Invitar",
-              animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? LINKED_PEOPLE_SCREEN_TITLE,
-            })}
-          />
+          <Stack.Screen name="Dependientes" component={DependientesScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
         </>
       ) : (
         <>
@@ -324,6 +301,8 @@ export function RootNavigator() {
         </>
       )}
     </Stack.Navigator>
-    </>
+      {/* «Gestionando a …» slides over everything for a second when you switch accounts. */}
+      {token ? <ManagementBanner /> : null}
+    </View>
   );
 }

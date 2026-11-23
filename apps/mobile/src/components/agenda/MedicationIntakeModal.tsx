@@ -91,21 +91,21 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
     };
 
 
+    // v2.14: registering a dose is low risk and reversible (movimiento §8). The sheet closes and the
+    // toast shows on tap; the cache is already patched optimistically, and on error the row rolls
+    // back and the error toast takes over.
     const saveTakenNow = () => {
         if (!cycle) return;
         haptics.success();
-        confirmMutation.mutate(cycle.id, {
-            onSuccess: () => {
-                closeSheet();
-                notify({ message: `Toma registrada a las ${formatClock(new Date())}` });
-            },
-            onError: showError,
-        });
+        // mutateAsync: the sheet unmounts right away, and mutate()'s callbacks would not fire after that.
+        confirmMutation.mutateAsync(cycle.id).catch(showError);
+        closeSheet();
+        notify({ message: `Toma registrada a las ${formatClock(new Date())}` });
     };
 
     const saveChangedTime = () => {
         if (!cycle) return;
-        recordMutation.mutate(
+        recordMutation.mutateAsync(
             {
                 cycleId: cycle.id,
                 payload: {
@@ -114,19 +114,14 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
                     takenAt: toUtcIsoFromPickerValue(takenAtValue),
                 },
             },
-            {
-                onSuccess: () => {
-                    closeSheet();
-                    notify({ message: `Toma registrada a las ${formatClock(new Date(toUtcIsoFromPickerValue(takenAtValue)))}` });
-                },
-                onError: showError,
-            },
-        );
+        ).catch(showError);
+        closeSheet();
+        notify({ message: `Toma registrada a las ${formatClock(new Date(toUtcIsoFromPickerValue(takenAtValue)))}` });
     };
 
     const saveMissed = () => {
         if (!cycle || !reason) return;
-        recordMutation.mutate(
+        recordMutation.mutateAsync(
             {
                 cycleId: cycle.id,
                 payload: {
@@ -136,14 +131,9 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
                     notes: notes.trim() || undefined,
                 },
             },
-            {
-                onSuccess: () => {
-                    closeSheet();
-                    notify({ message: "Registrada como no tomada" });
-                },
-                onError: showError,
-            },
-        );
+        ).catch(showError);
+        closeSheet();
+        notify({ message: "Registrada como no tomada" });
     };
 
     const isToday = event.dayKey === toISOLocal(new Date()).slice(0, 10);
@@ -173,8 +163,6 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
                         icon={<Check size={17} strokeWidth={3} color={t.text.onSolid} />}
                         onPress={saveTakenNow}
                         disabled={saving}
-                        loading={confirmMutation.isPending}
-                        loadingLabel="Guardando…"
                     >
                         Sí, la tomé
                     </Button>
@@ -209,8 +197,6 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
                         fullWidth
                         onPress={saveChangedTime}
                         disabled={saving}
-                        loading={recordMutation.isPending}
-                        loadingLabel="Guardando…"
                     >
                         Guardar hora
                     </Button>
@@ -235,8 +221,6 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
                         fullWidth
                         onPress={saveMissed}
                         disabled={!reason || saving}
-                        loading={recordMutation.isPending}
-                        loadingLabel="Guardando…"
                     >
                         Guardar motivo
                     </Button>

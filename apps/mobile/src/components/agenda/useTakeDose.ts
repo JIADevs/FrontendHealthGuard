@@ -5,9 +5,9 @@ import { notify } from "../../lib/notify";
 import { haptics } from "../../lib/haptics";
 
 /**
- * «Tomar» en un toque (movimiento-interacciones.md §6 «Toma registrada» y §8):
- * la fila cambia al tocar (mutación optimista de `@helu/api`) y la háptica de éxito acompaña ese
- * cambio; si el servidor falla, la fila vuelve atrás, vibra el error y el toast ofrece «Reintentar».
+ * «Tomar» en un toque (movimiento-interacciones.md §6 «Toma registrada» y §8, v2.14):
+ * todo responde al tocar — la fila (mutación optimista de `@helu/api`), la háptica de éxito y el toast.
+ * Si el servidor falla, la fila vuelve atrás, vibra el error y el toast cambia a «Reintentar».
  *
  * `scheduledTime` es la hora de la toma que se marca (la de la fila). Sin ella el servidor guardaba la
  * toma a la hora del toque, la fila de las 7:00 no la encontraba y volvía a ofrecer «Tomar».
@@ -18,10 +18,11 @@ export function useTakeDose() {
   const take = (cycleId: string, scheduledTime?: string | null) => {
     haptics.success();
     const takenAt = new Date().toISOString();
+    // Low risk and reversible: confirm on tap, like the row and Helu; the error toast replaces it if it fails.
+    notify({ message: `Toma registrada a las ${formatClock(new Date(takenAt))}` });
     mutation.mutate(
       { cycleId, payload: { status: "TAKEN", scheduledTime: scheduledTime ?? takenAt, takenAt } },
       {
-        onSuccess: () => notify({ message: `Toma registrada a las ${formatClock(new Date(takenAt))}` }),
         onError: (err) => {
           haptics.error();
           notify({

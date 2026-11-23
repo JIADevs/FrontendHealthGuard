@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -174,6 +174,9 @@ export function BackpackAddDocuments({ id, onClose, onUpload, onScan }: Backpack
           ) : (
             <FlatList
               data={docs.items}
+              onEndReached={docs.loadMore}
+              onEndReachedThreshold={0.3}
+              ListFooterComponent={docs.isLoadingMore ? <ActivityIndicator style={{ marginTop: spacing[4] }} color={t.brand.fg} accessibilityLabel="Cargando más documentos" /> : undefined}
               keyExtractor={(d) => d.id}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
@@ -197,6 +200,7 @@ export function BackpackAddDocuments({ id, onClose, onUpload, onScan }: Backpack
                 );
               }}
               ListEmptyComponent={
+                docs.hasMore ? undefined : (
                 <Animated.View entering={FadeIn.duration(motion.fast)} style={styles.noMatch}>
                   <Text style={styles.h3}>{searching ? `Sin resultados para «${docs.debouncedSearch.trim()}»` : "Nada en esta categoría"}</Text>
                   <Text style={styles.meta}>
@@ -212,6 +216,7 @@ export function BackpackAddDocuments({ id, onClose, onUpload, onScan }: Backpack
                     {searching && !filtered ? "Borrar búsqueda" : "Ver todos"}
                   </Button>
                 </Animated.View>
+                )
               }
             />
           )}

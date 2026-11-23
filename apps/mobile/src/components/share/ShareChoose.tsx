@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Backpack as BackpackIcon, Check } from "lucide-react-native";
@@ -92,7 +92,7 @@ export function ShareChoose({ onContinue, onClose, subscribeBeforeLeave }: Share
 
   const next = () => {
     if (tab === "documents") {
-      const byId = new Map(docs.items.map((d) => [d.id, d]));
+      const byId = new Map(docs.loaded.map((d) => [d.id, d]));
       const chosen = selectedDocs.map((id) => byId.get(id)).filter((d): d is Document => !!d);
       if (chosen.length > 0) onContinue({ kind: "documents", documents: chosen });
       return;
@@ -132,6 +132,9 @@ export function ShareChoose({ onContinue, onClose, subscribeBeforeLeave }: Share
         <FlatList
           key="documents"
           data={docs.items}
+          onEndReached={docs.loadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={docs.isLoadingMore ? <ActivityIndicator style={{ marginTop: spacing[4] }} color={t.brand.fg} accessibilityLabel="Cargando más documentos" /> : undefined}
           keyExtractor={(d) => d.id}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -149,9 +152,11 @@ export function ShareChoose({ onContinue, onClose, subscribeBeforeLeave }: Share
             </Animated.View>
           )}
           ListEmptyComponent={
-            <Text style={styles.emptyLine}>
-              {docs.total === 0 ? "Aún no tienes documentos para compartir." : `Ningún documento coincide con «${docs.debouncedSearch.trim()}».`}
-            </Text>
+            docs.hasMore ? undefined : (
+              <Text style={styles.emptyLine}>
+                {docs.total === 0 ? "Aún no tienes documentos para compartir." : `Ningún documento coincide con «${docs.debouncedSearch.trim()}».`}
+              </Text>
+            )
           }
         />
       ) : (

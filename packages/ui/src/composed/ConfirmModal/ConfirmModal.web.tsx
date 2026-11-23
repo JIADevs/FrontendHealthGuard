@@ -26,7 +26,9 @@ export function ConfirmModal({
   onCancel,
   icon,
   iconTone = 'danger',
+  actionsLayout = 'row',
 }: ConfirmModalProps) {
+  const stacked = actionsLayout === 'stacked';
   if (icon) {
     return (
       <div
@@ -86,7 +88,7 @@ export function ConfirmModal({
           >
             {message}
           </p>
-          <div style={{ display: 'flex', gap: spacing[3], width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: stacked ? 'column' : 'row', gap: spacing[3], width: '100%' }}>
             <div style={{ flex: 1 }}>
               <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>
                 {keepLabel}
@@ -118,17 +120,18 @@ export function ConfirmModal({
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: stacked ? 'column' : 'row',
+            alignItems: stacked ? 'stretch' : 'center',
             justifyContent: 'flex-end',
             flexWrap: 'nowrap',
             gap: 8,
             width: '100%',
           }}
         >
-          <Button variant={keepVariant} onPress={onCancel} disabled={loading}>
+          <Button variant={keepVariant} fullWidth={stacked} onPress={onCancel} disabled={loading}>
             {keepLabel}
           </Button>
-          <Button variant={confirmVariant} onPress={onConfirm} disabled={loading} loading={loading}>
+          <Button variant={confirmVariant} fullWidth={stacked} onPress={onConfirm} disabled={loading} loading={loading}>
             {confirmLabel}
           </Button>
         </div>

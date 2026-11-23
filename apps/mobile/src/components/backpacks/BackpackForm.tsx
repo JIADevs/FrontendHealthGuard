@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Trash2 } from "lucide-react-native";
@@ -365,6 +365,9 @@ function PickDocuments({
   return (
     <Animated.FlatList
       data={docs.items}
+      onEndReached={docs.loadMore}
+      onEndReachedThreshold={0.3}
+      ListFooterComponent={docs.isLoadingMore ? <ActivityIndicator style={{ marginTop: spacing[4] }} color={t.brand.fg} accessibilityLabel="Cargando más documentos" /> : undefined}
       keyExtractor={(d) => d.id}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
@@ -396,7 +399,7 @@ function PickDocuments({
             <Skeleton height={72} radius={18} />
             <Skeleton height={72} radius={18} />
           </SkeletonGroup>
-        ) : (
+        ) : docs.hasMore ? undefined : (
           <Text style={[styles.meta, styles.emptyLine]}>
             {searching
               ? `Ningún documento coincide con «${docs.debouncedSearch.trim()}».`

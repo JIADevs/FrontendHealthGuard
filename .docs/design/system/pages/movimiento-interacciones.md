@@ -123,7 +123,7 @@ Salen de leyes de UX conocidas; la ley va entre paréntesis para que se pueda bu
 |---|---|---|---|
 | Acción guardada | El elemento guardado aparece resaltado en su lista (borde de 1,2 s) + toast desde arriba (250 ms), visible 4 s, sale en 150 ms | «Cita guardada» | Ligera (`impactLight`) |
 | Acción con deshacer | Toast con «Deshacer» durante 5 s | «Documento quitado de la mochila» | — |
-| Toma registrada | **Al tocar** (sin esperar al servidor), la fila cambia «Tomar» → «✓ Tomado» (fundido cruzado) + el anillo de la meta avanza | Toast «Toma registrada a las 1:05 p. m.» | Éxito (`notificationSuccess`) |
+| Toma registrada | **Al tocar** (sin esperar al servidor), la fila cambia «Tomar» → «✓ Tomado» (fundido cruzado) + el anillo de la meta avanza. Si viene de una hoja, la hoja se cierra al tocar | Toast «Toma registrada a las 1:05 p. m.», **también al tocar** (v2.14) | Éxito (`notificationSuccess`) |
 | Check-in guardado | La hoja baja → la llama escala 1 → 1,6 → 1 (600 ms) → el número sube con rebote → el punto del día se llena. Todo en ≤ 1,2 s; la llama y el número esperan la confirmación del servidor | Toast «¡13 días seguidos cuidándote!», al terminar la secuencia | Éxito |
 | Paso de misión completado | El nodo late (escala 1,2), el riel se dibuja hasta el siguiente (700 ms) y el siguiente nodo se desbloquea con rebote | Toast «¡Paso completado! Sigue: …» | Éxito |
 | Misión completada | Pantalla de celebración: **la mascota celebra** (3 saltos, brazos arriba, destellos; ver §6b), estadísticas escalonadas, insignia que gira, confeti de una vez (≤ 1,2 s) | «¡Lo lograste, {nombre}!» | Éxito |
@@ -279,7 +279,7 @@ Toda lista o pantalla que se puede actualizar tirando hacia abajo usa `usePullRe
 
   | Tipo de acción | Ejemplos | El estado cambia | Si el servidor falla |
   |---|---|---|---|
-  | **Bajo riesgo y reversible** | Registrar una toma, marcar un chip o un filtro, interruptores, check-in, marcar un paso de misión | Al tocar (actualización optimista) y se guarda en segundo plano | Vuelve atrás y avisa (§6) |
+  | **Bajo riesgo y reversible** | Registrar una toma, marcar un chip o un filtro, interruptores, check-in, completar una tarea, marcar un paso de misión | Al tocar (actualización optimista) y se guarda en segundo plano. **Todo responde al tocar** (v2.14): el elemento, la hoja (se cierra) y el toast de confirmación. Solo las celebraciones (racha, misión) esperan al servidor | Vuelve atrás y el toast cambia a la causa con «Reintentar» (§6) |
   | **Alto riesgo o con efecto fuera de la app** | Borrar, compartir o revocar un enlace, eliminar la cuenta, cambiar de perfil gestionado | Cuando el servidor confirma; mientras tanto, el botón en carga | Mensaje de error; nada cambió |
 
   Las **animaciones motivacionales** (llama, nodo que se desbloquea, subir de nivel, celebración) esperan siempre la confirmación del servidor, aunque el cambio de estado sea optimista: no se celebra algo que no quedó guardado (MASTER, anti-patrones).

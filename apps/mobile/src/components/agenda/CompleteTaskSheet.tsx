@@ -51,35 +51,30 @@ export function CompleteTaskSheet({ taskId, taskTitle, onClose }: CompleteTaskSh
   const backpackOptions = (backpacks.data?.items ?? []).map((b) => ({ value: b.id, label: b.name }));
   const dirty = comment.trim() !== "" || documentIds.length > 0 || backpackIds.length > 0;
 
+  // v2.14: completing a task is low risk and reversible (movimiento §8): the task shows as done at once
+  // (optimistic in @helu/api), the sheet closes and the toast shows on tap. On error the task rolls
+  // back and the error toast offers «Reintentar». mutateAsync: the sheet unmounts right away.
   const handleComplete = () => {
-    completeMut.mutate(
-      {
-        id: taskId,
-        result: {
-          resultComment: comment.trim() || null,
-          resultDocumentIds: documentIds,
-          resultBackpackIds: backpackIds,
-        },
-      },
-      {
-        onSuccess: () => {
-          haptics.success();
-          sheetRef.current?.close(() => {
-            onClose();
-            notify({ message: "Tarea completada", description: taskTitle });
-          });
-        },
-        onError: () => {
-          haptics.error();
-          notify({
-            tone: "error",
-            message: "No se pudo completar la tarea",
-            description: "Revisa tu conexión e intenta de nuevo.",
-            action: { label: "Reintentar", onPress: handleComplete },
-          });
-        },
-      },
-    );
+    const result = {
+      resultComment: comment.trim() || null,
+      resultDocumentIds: documentIds,
+      resultBackpackIds: backpackIds,
+    };
+    const save = (): void => {
+      completeMut.mutateAsync({ id: taskId, result }).catch(() => {
+        haptics.error();
+        notify({
+          tone: "error",
+          message: "No se pudo completar la tarea",
+          description: "Revisa tu conexión e intenta de nuevo.",
+          action: { label: "Reintentar", onPress: save },
+        });
+      });
+    };
+    haptics.success();
+    save();
+    sheetRef.current?.close(onClose) ?? onClose();
+    notify({ message: "Tarea completada", description: taskTitle });
   };
 
   return (
@@ -124,8 +119,6 @@ export function CompleteTaskSheet({ taskId, taskTitle, onClose }: CompleteTaskSh
           size="lg"
           fullWidth
           onPress={handleComplete}
-          loading={completeMut.isPending}
-          loadingLabel="Guardando…"
           disabled={completeMut.isPending}
         >
           Completar tarea

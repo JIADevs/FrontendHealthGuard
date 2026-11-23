@@ -98,7 +98,7 @@ export function Documents(props: DocumentsProps) {
   // (150 ms) and the search field shows the spinner; then rows that stay keep still, rows that leave
   // fade out in 100 ms and new ones fade in in 150 ms.
   const busy = !list.settled && (list.search.trim().length > 0 || list.debouncedSearch.trim().length > 0);
-  const dim = useAnimatedStyle(() => ({ opacity: withTiming(busy ? 0.5 : 1, { duration: motion.fast }) }), [busy]);
+  const dim = useAnimatedStyle(() => ({ opacity: withTiming(busy ? 0.5 : 1, { duration: motion.fast }) }));
   // v2.13: when a search finds nothing because of the active filter, the empty state says so.
   const hiddenByFilter = useMemo(
     () => (searching && list.hasActiveFilter ? documentsMatching(list.debouncedSearch, list.allDocuments) : []),

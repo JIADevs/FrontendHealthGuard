@@ -123,15 +123,19 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
             return;
         }
 
-        createMutation.mutate(payload, {
-            onSuccess: () => {
-                onClose();
-                void notifyStreak();
-            },
-            onError: () => {
-                notify({ tone: "error", message: "No se pudo registrar el check-in", description: "Revisa tu conexión e intenta de nuevo." });
-            },
-        });
+        // v2.14: a check-in is low risk and reversible (movimiento §8). The sheet closes on tap and the
+        // day fills at once (optimistic in @helu/api); the streak toast is a celebration, so it still
+        // waits for the server (§7). mutateAsync: the sheet unmounts right away.
+        createMutation
+            .mutateAsync(payload)
+            .then(
+                // Saved: if reading the streak fails, still confirm the check-in.
+                () => notifyStreak().catch(() => notify({ message: "Check-in registrado" })),
+                () => {
+                    notify({ tone: "error", message: "No se pudo registrar el check-in", description: "Revisa tu conexión e intenta de nuevo." });
+                },
+            );
+        onClose();
     };
 
     const handleDelete = () => {

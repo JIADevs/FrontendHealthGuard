@@ -378,3 +378,12 @@ En Documentos, con un solo filtro sin resultados aparecían debajo dos documento
 | Filtro sin resultados: con un solo filtro, sin documentos sueltos; con dos, «Aparecen si quitas «…»» y filas que se pueden tocar | `mockups/m9-vacios.js` «Documentos · filtro sin resultados» y «(un filtro)» |
 | Búsqueda sin resultados por el filtro: «No encontramos «…» en Fórmulas» + «Buscar en todos los documentos» | `mockups/m9-vacios.js` «Búsqueda · sin resultados por el filtro», «Búsqueda · buscando» |
 | `SearchField` acepta `loading` (spinner en lugar de la ✕) | `@helu/ui` |
+
+## 21. v2.14 · Las acciones de bajo riesgo responden al tocar
+
+La regla decía que en una toma la fila cambiaba al tocar pero el toast esperaba al servidor, así que el toast llegaba 1,5–2 s después de que Helu y la fila ya habían cambiado. Además, las hojas de toma, check-in y completar tarea quedaban abiertas hasta que el servidor respondía. Ahora, en las acciones de bajo riesgo y reversibles, todo responde al tocar: el elemento, la hoja (se cierra) y el toast. Si el servidor falla, todo vuelve atrás y el toast cambia a la causa con «Reintentar». Las celebraciones (racha, misión) siguen esperando al servidor.
+
+| Cambio | Dónde |
+|---|---|
+| Toast y cierre de hoja al tocar en «Tomar», «Sí, la tomé», «Guardar hora», «Guardar motivo», check-in y «Completar tarea» | `system/pages/movimiento-interacciones.md` §6 «Toma registrada» y §8; `system/movimiento.html` «Toma registrada · al tocar» |
+| Completar una tarea pasa a ser optimista | `@helu/api` |

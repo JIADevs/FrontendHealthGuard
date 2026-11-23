@@ -50,21 +50,20 @@ export function InviteSheet({ onClose }: { onClose: () => void }) {
       emailRef.current?.focus();
       return;
     }
-    create.mutate(
-      { email: value.toLowerCase(), relationship, permissions: "FULL_ACCESS" },
-      {
-        onSuccess: () => {
-          notify({ message: "Invitación enviada", description: `Le avisamos a ${value}.` });
-          sheetRef.current ? sheetRef.current.close() : onClose();
-        },
-        onError: (err) =>
-          notify({
-            tone: "error",
-            message: "No se pudo enviar la invitación",
-            description: isApiError(err) ? err.message : "Revisa tu conexión e intenta de nuevo.",
-          }),
-      },
-    );
+    // mutateAsync, not mutate callbacks: if the sheet is closed while sending, the toast still shows.
+    create
+      .mutateAsync({ email: value.toLowerCase(), relationship, permissions: "FULL_ACCESS" })
+      .then(() => {
+        notify({ message: "Invitación enviada", description: `Le avisamos a ${value}.` });
+        sheetRef.current ? sheetRef.current.close() : onClose();
+      })
+      .catch((err) =>
+        notify({
+          tone: "error",
+          message: "No se pudo enviar la invitación",
+          description: isApiError(err) ? err.message : "Revisa tu conexión e intenta de nuevo.",
+        }),
+      );
   };
 
   return (
@@ -73,7 +72,8 @@ export function InviteSheet({ onClose }: { onClose: () => void }) {
       eyebrow="DEPENDIENTES"
       title="¿A quién quieres invitar?"
       icon={<IconTile tone="mission" size="lg" round icon={<UserPlus size={24} strokeWidth={2.4} color={t.brand.solid} />} />}
-      dirty={value.length > 0}
+      // Nothing to discard once it is on its way.
+      dirty={value.length > 0 && !create.isPending}
       onClose={onClose}
     >
       <View style={styles.body}>

@@ -211,12 +211,7 @@ export function RootNavigator() {
           <Stack.Screen
             name="Notifications"
             component={NotificationsScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: "Notificaciones",
-              animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Atrás",
-            })}
+            options={{ headerShown: false, animation: "slide_from_right" }}
           />
           <Stack.Screen
             name="BackpackDetail"
@@ -241,22 +236,12 @@ export function RootNavigator() {
           <Stack.Screen
             name="Profile"
             component={ProfileScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: "Mi Perfil",
-              animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Más",
-            })}
+            options={{ headerShown: false, animation: "slide_from_right" }}
           />
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
-            options={({ route }) => ({
-              headerShown: true,
-              title: "Configuraciones",
-              animation: "slide_from_right" as const,
-              headerBackTitle: (route.params as WithBackTitle | undefined)?.backTitle ?? "Más",
-            })}
+            options={{ headerShown: false, animation: "slide_from_right" }}
           />
           <Stack.Screen
             name="AppointmentDetail"

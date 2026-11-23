@@ -124,6 +124,7 @@ import {
     applyOptimisticCheckIn,
     applyOptimisticIntake,
     buildOptimisticCheckIn,
+    applyOptimisticTaskCompletion,
     patchQueryFamilies,
     restoreQuerySnapshot,
 } from "./optimisticCache";
@@ -529,11 +530,19 @@ export function useUpdateAgendaTaskMutation() {
     });
 }
 
+const AGENDA_TASK_QUERY_FAMILIES = [["agenda-tasks"], ["agenda-task"], ["calendar"]] as const;
+
 export function useCompleteAgendaTaskMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ id, result }: { id: string; result?: AgendaTaskComplete }) =>
             completeAgendaTask(id, result ?? {}),
+        // Low risk and reversible (movimiento §8): the task shows as done at once and rolls back on error.
+        onMutate: ({ id, result }) =>
+            patchQueryFamilies(qc, AGENDA_TASK_QUERY_FAMILIES, (data) => applyOptimisticTaskCompletion(data, id, result)),
+        onError: (_error, _variables, context) => {
+            restoreQuerySnapshot(qc, context);
+        },
         // The API returns the updated task: write it to the detail cache instead of dropping it,
         // so the open detail changes in place (no full-screen spinner, movimiento §6c).
         onSuccess: (task, variables) => {

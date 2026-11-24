@@ -16,13 +16,15 @@ export function MissionRow({ mission, onPress }: { mission: MissionSummary; onPr
   const completed = mission.status === "completed";
   const { completed: done, total } = mission.progress;
   const ratio = total ? done / total : 0;
+  // Therapy without a known total (RF-40): no percentage, «–» in the ring and «Total pendiente».
+  const pendingTotal = !total && mission.progress.unit === "sessions";
   const due = mission.nextAction?.dueAt;
 
   const detail = completed
     ? `Terminada el ${shortDate(mission.completedAt)}`
     : paused
       ? "Pausada · toca para reanudar"
-      : `Sigue: ${nextLabel(mission.nextAction?.stepKey)}`;
+      : `Sigue: ${nextLabel(mission.nextAction?.stepKey)}${pendingTotal ? " · Total pendiente" : ""}`;
 
   return (
     <Pressable
@@ -35,8 +37,8 @@ export function MissionRow({ mission, onPress }: { mission: MissionSummary; onPr
       ]}
     >
       <ProgressRing size={52} progress={paused ? 0 : ratio}>
-        <Text style={[styles.ring, { color: paused ? t.text.muted : t.text.primary }]}>
-          {total ? `${done}/${total}` : `${done}`}
+        <Text style={[styles.ring, { color: paused || pendingTotal ? t.text.muted : t.text.primary }]}>
+          {total ? `${done}/${total}` : pendingTotal ? "–" : `${done}`}
         </Text>
       </ProgressRing>
       <View style={styles.copy}>

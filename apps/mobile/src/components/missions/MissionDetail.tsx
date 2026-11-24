@@ -142,7 +142,9 @@ export function MissionDetail({ missionId, openStep, onSchedule, onBack }: Missi
                 <Chip
                   label={
                     progress?.unit === "sessions"
-                      ? `${progress.completed} de ${progress.total ?? "?"} sesiones`
+                      ? progress.total
+                        ? `${progress.completed} de ${progress.total} sesiones`
+                        : "Total pendiente"
                       : `${progress?.completed ?? 0} de ${progress?.total ?? 0} pasos`
                   }
                   tone="neutral"
@@ -153,6 +155,8 @@ export function MissionDetail({ missionId, openStep, onSchedule, onBack }: Missi
               {mission.status === "completed" ? "¡Misión completada!" : missionGoal[mission.type]}
             </Text>
             <Text style={[styles.sub, { color: t.text.secondary }]}>{mission.title}</Text>
+            {/* Therapy without a total has no progress to show (RF-40, mockup «Misión de terapia»). */}
+            {progress?.unit === "sessions" && !progress.total ? null : (
             <View style={[styles.track, { backgroundColor: t.motivation.track }]}>
               {/* The bar never starts empty (misiones.md v2 · Progreso). */}
               <Animated.View
@@ -166,6 +170,7 @@ export function MissionDetail({ missionId, openStep, onSchedule, onBack }: Missi
                 ]}
               />
             </View>
+            )}
             <Text style={[styles.meta, { color: t.text.secondary }]}>
               {mission.status === "completed"
                 ? "Cumpliste el objetivo."

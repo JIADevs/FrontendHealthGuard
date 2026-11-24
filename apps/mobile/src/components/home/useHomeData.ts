@@ -135,8 +135,8 @@ export function useHomeData() {
     // Managing someone (mockup «Modo gestión · Inicio de Juan»): it's their agenda, told in the third
     // person, never «¡Hola, Juan!» to the person who is actually holding the phone.
     if (managing) {
-      const title = name ? `Agenda de ${name}` : "Agenda de esta cuenta";
-      if (showSetup) return { pose: "wave", title, message: "Todavía no tiene medicamentos, citas ni documentos." };
+      const title = managedTitle(name);
+      if (showSetup) return { pose: "wave", title, message: managedSetupMessage(setupState) };
       if (doses.open.length === 0 && doneToday && todayAppointments.length === 0) {
         return { pose: "joy", title, message: "Todo al día por hoy." };
       }
@@ -181,7 +181,7 @@ export function useHomeData() {
         ? `tu cita de ${todayAppointments[0].name || todayAppointments[0].specialty || "hoy"}`
         : "tu check-in de hoy";
     return { pose: "wave", title: hello, message: sentence(`Tienes ${left} para hoy. Lo siguiente: ${next}`) };
-  }, [managing, dash.userFirstName, dash.upcomingAppts, showSetup, doses.open, doneToday, todayAppointments, meds, pendingCount, celebrateKey]);
+  }, [managing, dash.userFirstName, dash.upcomingAppts, showSetup, setupState.medication, setupState.appointment, setupState.document, doses.open, doneToday, todayAppointments, meds, pendingCount, celebrateKey]);
 
   const unread = (notifications.data?.items ?? []).filter((n) => !n.isRead).length;
 
@@ -194,7 +194,7 @@ export function useHomeData() {
       ? {
           pose: "wave" as MascotPose,
           title: managing
-            ? dash.userFirstName ? `Agenda de ${dash.userFirstName}` : "Agenda de esta cuenta"
+            ? managedTitle(dash.userFirstName)
             : dash.userFirstName ? `¡Hola, ${dash.userFirstName}!` : "¡Hola!",
           message: "",
           loading: true,
@@ -230,4 +230,25 @@ export function useHomeData() {
     /** Newest arrival among Inicio's queries, shown while pulling (the dashboard hook does not expose its own). */
     updatedAt: Math.max(calendar.dataUpdatedAt, checkIns.dataUpdatedAt, profile.dataUpdatedAt) || undefined,
   };
+}
+
+/** Managing someone: it is their Inicio (mockup «Modo gestión · Inicio de Juan»), as «Volver al inicio de Juan». */
+function managedTitle(name: string | null | undefined): string {
+  return name ? `Inicio de ${name}` : "Inicio de esta cuenta";
+}
+
+/**
+ * First use while managing: say only what is still missing, as the checklist below does. «Todavía no
+ * tiene medicamentos, citas ni documentos» was shown even when only the medication was missing.
+ */
+function managedSetupMessage(state: SetupState): string {
+  const missing = [
+    !state.medication && { noun: "medicamentos", one: "agregar su primer medicamento" },
+    !state.appointment && { noun: "citas", one: "agregar su próxima cita" },
+    !state.document && { noun: "documentos", one: "subir un documento" },
+  ].filter(Boolean) as { noun: string; one: string }[];
+  if (missing.length === 0) return "Ya tiene todo listo para empezar.";
+  if (missing.length === 1) return `Le falta ${missing[0]!.one}.`;
+  const nouns = missing.map((m) => m.noun);
+  return `Todavía no tiene ${nouns.slice(0, -1).join(", ")} ni ${nouns[nouns.length - 1]}.`;
 }

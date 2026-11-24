@@ -60,5 +60,5 @@ export function MissionEditSheet({ mission, onClose }: { mission: Mission; onClo
 }
 
 const styles = StyleSheet.create({
-  body: { gap: spacing[4], paddingBottom: spacing[2] },
+  body: { gap: spacing[4] },
 });

@@ -228,7 +228,7 @@ export function SessionsBody({
 }
 
 const styles = StyleSheet.create({
-  body: { gap: spacing[3], paddingBottom: spacing[2] },
+  body: { gap: spacing[3] },
   text: { fontSize: 15, lineHeight: 22, fontFamily: nativeFont("body", 400) },
   meta: { fontSize: 13, lineHeight: 18, textAlign: "center", fontFamily: nativeFont("body", 400) },
   when: { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: 14, borderRadius: 14, borderWidth: 1 },

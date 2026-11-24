@@ -67,7 +67,7 @@ export function FirstMedicationSheet({
 }
 
 const styles = StyleSheet.create({
-  body: { gap: spacing[3], paddingBottom: spacing[2] },
+  body: { gap: spacing[3] },
   option: { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: 12, borderRadius: 16, borderWidth: 1.5 },
   title: { fontSize: 15, fontFamily: nativeFont("body", 600) },
   hint: { fontSize: 13, lineHeight: 18, fontFamily: nativeFont("body", 400) },

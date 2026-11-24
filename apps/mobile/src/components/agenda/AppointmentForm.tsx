@@ -28,6 +28,7 @@ import {
   nativeFont,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
+import type { AppointmentMissionLink } from "@helu/api/hooks";
 import { useAppointmentForm } from "../../hooks/useAppointmentForm";
 import {
   useDoctorsQuery,
@@ -78,13 +79,15 @@ export interface AppointmentFormNav {
 export interface AppointmentFormProps extends AppointmentFormNav {
   /** Set to edit an existing appointment */
   id?: string;
+  /** New appointment from a mission step: created linked to it (Misiones DA-12). */
+  mission?: AppointmentMissionLink;
 }
 
-export function AppointmentForm({ id, ...nav }: AppointmentFormProps) {
+export function AppointmentForm({ id, mission, ...nav }: AppointmentFormProps) {
   if (id) {
     return <AppointmentFormEditor id={id} nav={nav} />;
   }
-  return <AppointmentFormBody appointment={null} nav={nav} />;
+  return <AppointmentFormBody appointment={null} nav={nav} mission={mission} />;
 }
 
 /** Height of the kit segmented control (44 px options + 4 px padding), for Tipo de consulta and Modalidad. */
@@ -186,12 +189,21 @@ function appointmentDraft(form: {
 
 // ─── Form body ────────────────────────────────────────────────────────────────
 
-function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: AppointmentFormNav }) {
+function AppointmentFormBody({
+  appointment,
+  nav,
+  mission,
+}: {
+  appointment: any;
+  nav: AppointmentFormNav;
+  mission?: AppointmentMissionLink;
+}) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const allowLeave = useRef(false);
   const baseline = useRef<string | null>(null);
-  const nameTouched = useRef(Boolean(appointment?.name));
+  // A name that came from the mission (the exam name) counts as chosen: the suggestion does not replace it.
+  const nameTouched = useRef(Boolean(appointment?.name || mission?.examName));
   const [askDiscard, setAskDiscard] = useState(false);
   const [addingDoctor, setAddingDoctor] = useState(false);
 
@@ -217,6 +229,7 @@ function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: Appo
 
   const form = useAppointmentForm({
     initial: appointment,
+    mission,
     onClose: () => {
       allowLeave.current = true;
       nav.onClose();

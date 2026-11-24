@@ -8,6 +8,7 @@ export function MoreScreen() {
   return (
     <More
       onProfile={() => navigation.navigate("Profile", { backTitle: "Más" })}
+      onMissions={() => navigation.navigate("Missions", { backTitle: "Más" })}
       onTreatments={() => navigation.navigate("Treatments", { backTitle: "Más" })}
       onMedications={() =>
         navigation.navigate("MainTabs", { screen: "Agenda", params: { initialTab: "medications" } } as never)

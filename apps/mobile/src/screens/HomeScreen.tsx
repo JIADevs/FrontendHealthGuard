@@ -19,6 +19,7 @@ export function HomeScreen() {
       share: () => navigation.navigate("SharedHistory", { backTitle: "Inicio" }),
       newMedication: () => navigation.navigate("MedicationForm"),
       newAppointment: () => navigation.navigate("AppointmentForm"),
+      openMission: (id, openStep) => navigation.navigate("MissionDetail", { id, openStep, backTitle: "Inicio" }),
     }),
     [navigation],
   );

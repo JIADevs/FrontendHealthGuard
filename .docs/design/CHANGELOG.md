@@ -395,3 +395,119 @@ En el check-in la hoja se cerraba y el punto del día se llenaba al tocar, pero 
 | Cambio | Dónde |
 |---|---|
 | «Check-in guardado» al tocar, con la excepción para la racha | `system/pages/movimiento-interacciones.md` §6 y §8; `system/MASTER.md` §8 |
+
+## 23. v2.16 · Misiones: el paso actual se toca y abre su hoja
+
+El detalle de misión mostraba el paso actual desplegado con sus botones, y las pantallas «Paso 1–4» abrían encima una hoja con los mismos botones: dos patrones para lo mismo y dos acciones primarias a la vista. Ahora la línea de tiempo no lleva botones: el paso actual se resalta (halo + «Toca para continuar» + ›) y al tocarlo se abre su hoja con todas las opciones. Mismo patrón para todos los pasos y tipos. Además, la línea de tiempo tiene más aire entre pasos y el nodo del paso actual queda centrado con su tarjeta. Se compararon tres opciones (tarjeta en línea, todo en hoja, todo en hoja + barra fija «Continuar»); decisión de producto del 2026-11-23: todo en hoja, sin barra fija.
+
+| Cambio | Dónde |
+|---|---|
+| Paso actual como fila tocable; acciones solo en la hoja del paso | `mockups/m3-misiones.js` (`timeline`, «Detalle de misión»); `system/pages/misiones.md` «Jerarquía», «Estados de paso» y «Reglas» |
+| Espaciado: 26 px entre pasos, conector con aire, nodo actual centrado, «Adjuntar documento» separado | `mockups/m3-misiones.js`; `system/pages/misiones.md` «Reglas» |
+
+## 24. v2.17 · Misiones: pantallas del MVP que faltaban
+
+Revisión del PRD de Misiones contra el lienzo: solo el examen estaba dibujado completo. Se agregan las pantallas del MVP que faltaban, todas con el patrón v2.16 (el paso se toca y abre su hoja). Se retiran «Misión de terapia» (copy anterior a DU-30/31) y se marca «Nueva misión» con IA y tratamiento como «después».
+
+| Cambio | Dónde |
+|---|---|
+| Cita: detalle, «¿Pudiste asistir?», «No pude asistir» (reprogramar o cerrar sin completar) | `mockups/m3-misiones.js` |
+| Paso final de documentos («Guardar y terminar» / «Omitir») | `mockups/m3-misiones.js` |
+| Seguimiento de cita con varias necesidades, sección «Sugeridas», hoja «Aceptar sugerencia» con documentos preseleccionados | `mockups/m3-misiones.js` |
+| Medicamento: detalle con «Surgió de…», recepción completa o parcial, «¿Ya lo tienes?» del primer medicamento | `mockups/m3-misiones.js` |
+| Terapia: paso de ciclo «Sesiones» (próxima, ¿asististe?, programar #11, cantidad, ¿terminaste?) | `mockups/m3-misiones.js`; `system/pages/misiones.md` «Nombre y tipos» |
+| Menú «⋯», «¿Cancelar la misión?», misión pausada, historial con autor, compartir documentos con aviso solo-dispositivo | `mockups/m3-misiones.js` |
+| Tareas de apoyo dentro del paso y su formulario | `mockups/m3-misiones.js` |
+| Modo gestión en una misión y celebración en tercera persona | `mockups/m3-misiones.js` |
+| «Nueva misión · MVP» (sin IA ni tratamiento) | `mockups/m3-misiones.js`; `system/pages/misiones.md` «v2.17» |
+
+## 25. v2.18 · Racha y nivel con un solo interruptor; celebración del gestor unificada
+
+Decisiones de producto del 2026-11-23. Configuración tenía un interruptor «Pasos de las misiones» que en el MVP no apagaba nada (los avisos de misión son los de la cita) y el PRD guardaba racha y nivel por separado aunque la pantalla tenía un solo interruptor. Además, la celebración del gestor se había dibujado aparte y no mostraba los mismos datos que la del paciente.
+
+| Cambio | Dónde |
+|---|---|
+| Sin «Pasos de las misiones» en Notificaciones hasta que existan avisos propios de misión | `mockups/m6-cuenta.js` «Configuración» |
+| Un solo interruptor «Mostrar racha y nivel», con la lista de lo que oculta | `system/MASTER.md` §8; `mockups/m6-cuenta.js` |
+| La celebración del gestor reutiliza la del paciente (mismos datos y estructura; banner, tercera persona y «Volver al inicio de Juan») | `mockups/m3-misiones.js`; `system/pages/misiones.md` |
+
+## 26. v2.19 · Modo gestión sin banner fijo en la documentación
+
+La app ya muestra «Gestionando a…» como un aviso de 1 s al cambiar de cuenta, con la pestaña Inicio (iniciales + anillo de color) como señal permanente (decisión de producto del 2026-11-23, `ManagementBanner.tsx`). La documentación y las pantallas nuevas de Misiones todavía lo dibujaban fijo.
+
+| Cambio | Dónde |
+|---|---|
+| Sin banner en «Modo gestión · misión de Juan» y «Celebración · gestor» | `mockups/m3-misiones.js` |
+| El banner pasa a «Aviso de modo gestión» de 1 s | `system/MASTER.md` §7; `system/pages/documentos-compartir-delegacion.md`; `system/pages/misiones.md` |
+
+## 27. v2.20 · La sugerencia de la lista de Misiones muestra su origen
+
+En «Misiones», la tarjeta «¿Quieres crear una misión para revisar tus resultados con el médico?» no decía de qué misión venía, estaba mezclada con «En curso» y ninguna misión de la pantalla podía haberla generado (el examen estaba en curso). Ahora va en «Sugeridas · de tu examen de sangre», arriba, y ese examen («Hemograma») aparece en «Completadas». Mismo patrón que «Misiones · con sugeridas».
+
+| Cambio | Dónde |
+|---|---|
+| Sección «Sugeridas» con origen; «Hemograma» en Completadas; tarjeta con el tipo («Una cita para revisar tus resultados») | `mockups/m3-misiones.js` «Misiones» |
+
+## 28. v2.20 · Revisión de Misiones contra el PRD y el sistema de diseño
+
+Revisión pantalla por pantalla del módulo Misiones contra el PRD (`BackendHealthGuard/.docs/features/missions/prd.md`) y contra `MASTER.md`. Se corrigen reglas y pantallas que se contradecían.
+
+| Cambio | Dónde |
+|---|---|
+| Los pasos son optimistas y el cierre espera al servidor (antes la regla decía que nada cambiaba hasta la respuesta) | `system/pages/misiones.md` «Reglas»; nota de «Paso desbloqueado» |
+| La línea de tiempo de misión describe el patrón v2.16 (paso tocable, sin botones) | `system/MASTER.md` §7 |
+| El seguimiento posterior del examen crea una **sugerencia** («Sí, la necesito» → «Sugeridas»), no una misión | `mockups/m3-misiones.js` «Seguimiento posterior» |
+| Chips de opción del seguimiento con el estilo `.pick` (radio 12, canto inferior, ✓) | `mockups/m3-misiones.js` |
+| «Misión pausada» ya no promete apagar recordatorios (los de la cita siguen) | `mockups/m3-misiones.js` |
+| Colores escritos a mano → variables de `tokens.css` en las pantallas nuevas | `mockups/m3-misiones.js` |
+| Pantallas web de Misiones marcadas «después del MVP» (`DU-12`) | `mockups/m3-misiones.js` |
+| Nuevas: «Misión completada · detalle» (RF-60, DU-18) y «Misiones · sin misiones» con contenido clínico (RF-97) | `mockups/m3-misiones.js` |
+| Reglas de Nueva misión, Sugerencias y ubicación en «Más» alineadas con el PRD (`DU-9`, RF-21, RF-68) | `system/pages/misiones.md` |
+
+## 29. v2.21 · El nivel con su barra se ve en Perfil
+
+El PRD de Misiones pide un nivel global con nombre y barra (RF-91), pero la barra no estaba en ninguna pantalla: Perfil solo mostraba el chip «Nivel 4». Decisión de producto del 2026-11-23: la tarjeta de nivel va en Perfil, antes de las insignias. Se oculta con «Mostrar racha y nivel».
+
+| Cambio | Dónde |
+|---|---|
+| Tarjeta «Nivel 4 · Organizada» con barra y «Llevas 26 de 30 acciones de cuidado para el nivel 5» (móvil y web) | `mockups/m6-cuenta.js` «Perfil» |
+| La lista de lo que oculta «Mostrar racha y nivel» incluye esta tarjeta | `system/MASTER.md` §8 |
+
+## 30. v2.22 · Los seguimientos se abren sobre Inicio
+
+Las hojas de seguimiento posterior se dibujaban sobre la lista de Misiones con un toast «Misión completada» encima de la capa oscura. No coincidía con el flujo (se abren al cerrar la celebración con «Volver al inicio»), el toast repetía la celebración y tapaba el encabezado. Decisión de producto del 2026-11-23.
+
+| Cambio | Dónde |
+|---|---|
+| Fondo: Inicio con la siguiente misión en curso; sin toast; ícono en lugar de mascota en la hoja (una mascota por pantalla) | `mockups/m3-misiones.js` «Seguimiento posterior» y «Seguimiento de cita · ¿algo más?» |
+| Regla del seguimiento actualizada | `system/pages/misiones.md` «Reglas» |
+
+## 31. v2.23 · El fondo de los seguimientos es el Inicio completo
+
+En v2.22 el fondo de los seguimientos era un Inicio recortado (saludo y misión). Ahora es el Inicio real de m1, con medicamentos de hoy, racha, la siguiente misión en curso, accesos rápidos, citas y documentos. Para no duplicarlo, m1 expone `window.homeScreen(tarjetaDeMisión)` y la pantalla «Inicio» la usa también.
+
+| Cambio | Dónde |
+|---|---|
+| `window.homeScreen()` | `mockups/m1-acceso-inicio.js` |
+| Seguimientos sobre el Inicio completo | `mockups/m3-misiones.js` |
+
+## 32. v2.24 · Motivación: niveles configurables, 8 insignias y sin «pausas»
+
+Se valida el PRD de Motivación (`BackendHealthGuard/.docs/features/motivation/prd.md`, 2026-11-24). Los niveles se guardan en una tabla y se pueden renombrar y ampliar sin publicar una nueva versión de la app (sí con un despliegue del backend); la app muestra el nombre que manda la API. Los nombres son neutros (sin género).
+
+| Cambio | Dónde |
+|---|---|
+| «Nivel 4 · Organizada» → «Nivel 4 · Constancia» | `mockups/m1-acceso-inicio.js`, `m3-misiones.js`, `m6-cuenta.js`; `system/MASTER.md` |
+| Perfil muestra las 8 insignias en una grilla de 4 × 2 con «2 de 8» (móvil y web) | `mockups/m6-cuenta.js` |
+| La tarjeta de racha ya no promete «2 pausas» (el código no las tiene) | `mockups/m1-acceso-inicio.js`; `system/MASTER.md` §8 |
+| §8 enlaza al PRD de Motivación para valores, nombres y criterios; se quita «primer proceso» y la «meta semanal de tomas» | `system/MASTER.md` §8 |
+
+## 33. v2.25 · El dependiente se entera de lo que completó su gestor
+
+Si un gestor completa una misión del dependiente, el dependiente no estaba presente en la celebración. Ahora, la próxima vez que abre la app, ve un toast una sola vez: «Carlos completó tu misión «…» · Nueva insignia: …» (PRD de Misiones `RF-74`, `DU-36`, 2026-11-24).
+
+| Cambio | Dónde |
+|---|---|
+| Pantalla «Inicio · misión completada por el gestor» | `mockups/m3-misiones.js` |
+| Regla del toast del dependiente | `system/pages/misiones.md` |
+

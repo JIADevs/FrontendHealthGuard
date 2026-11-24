@@ -174,10 +174,10 @@ Superficies `#0C1222` (fondo) → `#1E293B` (tarjeta) → `#334155` (borde). Los
 | **Hoja inferior / modal** | Hoja: radio 28 arriba, asa, encabezado con ícono circular + eyebrow + título + cerrar. Modal web de 560 px. Fondo `rgba(15,23,42,.5)`. |
 | **Toast** | Arriba, 320 px, ícono en cuadro, Nunito 800 14. Visible 4 s; con «Deshacer», 5 s. Sin acciones destructivas dentro. **v2:** borrar algo recuperable (documento, quitar de una mochila) se confirma con este toast y «Deshacer», no con un modal. |
 | **Anillo de progreso** | Trazo de 8 px, `#E2E8F0` de fondo, texto «3/8» en Nunito 900 en el centro. |
-| **Línea de tiempo de misión** | Riel de 3 px. Nodo hecho: verde con ✓. Actual: azul de 40 px con halo de 5 px y tarjeta desplegada. Pendiente: blanco con borde y texto gris. Siempre con texto de estado. |
+| **Línea de tiempo de misión** | Riel de 3 px con 6 px de aire alrededor de cada nodo; 26 px entre pasos. Nodo hecho: verde con ✓. Actual: azul de 40 px con halo de 5 px, **centrado con una tarjeta tocable** («PASO n DE N · AHORA», título, «Toca para continuar» + ›) que abre la hoja del paso; la línea de tiempo no lleva botones (v2.16). Pendiente: blanco con borde y texto gris. No aplica: gris con «–». Siempre con texto de estado. |
 | **Tarjeta de racha** | Degradado `#FFF7ED → #FFF`, llama de 34 px, número en Nunito 900, semana L–D, botón de check-in y la nota de pausas. |
 | **Insignia (medalla)** | Círculo de 28/46 px con borde inferior de 3 px; bloqueada en gris con candado. |
-| **Banner de modo gestión** | Color del dependiente, avatar, «Gestionando a {nombre}» y botón «Volver a mi cuenta». Fijo arriba en todas las pantallas. |
+| **Aviso de modo gestión** | Color del dependiente, avatar y «Gestionando a {nombre} · Todo lo que hagas queda en su cuenta». **v2.19:** no es fijo; entra desde arriba al cambiar de cuenta y se va a 1 s (se puede tocar para cerrarlo). La señal permanente es la pestaña Inicio con las iniciales y el anillo de color del dependiente. Decisión de producto del 2026-11-23, ya en la app (`ManagementBanner.tsx`). |
 | **Estado vacío** | Mascota de 110 px + título H2 + una frase + una o dos acciones. |
 | **Esqueleto** | Bloques `--color-border` (brillo más claro en `--color-surface-muted`) con la forma del contenido; nunca un spinner de pantalla completa. Sin esqueleto si hay datos guardados. Reglas completas: `pages/movimiento-interacciones.md` §6c. |
 | **Tirar para actualizar** | v2.12 (móvil): píldora del kit en lugar del spinner nativo, con la última actualización, «Actualizando…» (`Spinner` sm) y «Actualizado ahora». `usePullRefresh` + `PullRefreshIndicator` de `@helu/ui`. Reglas: `pages/movimiento-interacciones.md` §6c |
@@ -187,11 +187,11 @@ Superficies `#0C1222` (fondo) → `#1E293B` (tarjeta) → `#334155` (borde). Los
 ## 8. Motivación (gamificación con medida)
 
 **Sí:**
-- Racha de check-in diario, con **2 pausas** para que un día malo no la rompa.
+- Racha de check-in diario (cómo se cuenta un día: `agenda/prd.md`). *v2.24:* sin «pausas» en el MVP; el código no las tiene.
 - Progreso de misiones (pasos y anillo).
-- Nivel por tareas de cuidado (30 por nivel).
-- Insignias por hitos reales: primer proceso, racha de 7 y de 30.
-- Meta semanal de tomas a tiempo.
+- Nivel global por puntos (check-in, tomas, pasos, misiones). Nombres y umbrales **configurables**: no se escriben en la app, llegan de la API.
+- Insignias por hitos reales (8: Primera misión, Paso a paso, Cinco misiones, Terapia completa, Racha de 7, Racha de 30, Semana al día, Documentos listos).
+- **Valores, nombres y criterios:** `BackendHealthGuard/.docs/features/motivation/prd.md` es la única fuente. Este archivo no repite números.
 
 **No:**
 - Vidas, castigos ni «perdiste tu racha».
@@ -204,6 +204,7 @@ Superficies `#0C1222` (fondo) → `#1E293B` (tarjeta) → `#334155` (borde). Los
 - La celebración grande (confeti) solo aparece al completar una misión. Lo demás se celebra con un toast.
 - Nada motivacional tapa datos clínicos.
 - En Configuración se puede **ocultar la racha y el nivel**, y apagar las celebraciones.
+  - **v2.18 · Un solo interruptor** («Mostrar racha y nivel»). Apagado, se ocultan: la tarjeta de racha de Inicio (queda «Check-in de hoy» con su botón, sin conteo), el chip de racha del encabezado de misión, los cuadros de racha y nivel de la celebración (quedan los pasos) y, en Perfil, el chip de nivel, el cuadro de racha y la tarjeta «Nivel 4 · Constancia» con su barra (v2.21). Las insignias **no** se ocultan.
 - Copy en positivo: «Llevas 12 de 14», nunca «Te faltan 2, ¡no falles!».
 
 ---

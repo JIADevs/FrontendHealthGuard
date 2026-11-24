@@ -28,6 +28,7 @@
 ## Delegación (modo gestión)
 - Cada dependiente tiene un **color de contexto** (selector existente `ContextColorPicker`).
 - Cuando el cuidador opera como otra persona, el **banner de modo gestión** va fijo arriba en todas las pantallas: color del dependiente, avatar, «Gestionando a {nombre}» y «Volver a mi cuenta». Contraste del texto blanco verificado ≥ 4,5:1 sobre el color elegido; si no llega, se usa texto oscuro.
+- **v2.19 (manda sobre la línea anterior):** el banner ya no es fijo. Es un aviso que entra al cambiar de cuenta y se va a 1 s; la señal permanente es la pestaña Inicio con las iniciales y el anillo de color del dependiente (`ManagementBanner.tsx`, decisión del 2026-11-23).
 - Las solicitudes pendientes van con «Aceptar» (éxito) y «Rechazar» (secundario). Revocar pide confirmación roja con la consecuencia explicada.
 - La mascota no aparece en el banner ni en confirmaciones de revocación.
 - **v2:** en modo gestión, el header no muestra la racha ni el nivel de la cuenta propia. En «Quién gestiona mi cuenta», cada cuidador tiene «Quitar acceso» visible. «Gestionar» usa el mismo estilo para todos los dependientes, y las tarjetas de «Invitar» usan indicador de radio.

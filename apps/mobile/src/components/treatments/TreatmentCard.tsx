@@ -3,7 +3,6 @@ import { StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Activity } from "lucide-react-native";
 import type { Treatment } from "@helu/api";
-import { useTreatmentByIdQuery } from "@helu/api/hooks";
 import {
   Chip,
   IconTile,
@@ -19,11 +18,15 @@ import {
   type ThemeContextValue,
 } from "@helu/ui";
 import { useRecentlySaved } from "../../lib/recentlySaved";
-import { treatmentChips, treatmentSinceLabel } from "./treatmentFormat";
+import { treatmentSinceLabel } from "./treatmentFormat";
 
 export interface TreatmentCardProps {
   treatment: Treatment;
   onPress: () => void;
+  /** What it groups («Metformina», «3 documentos»), from its detail; empty when there is nothing or it failed. */
+  chips?: string[];
+  /** Its detail has not arrived yet: the chips wait as two gray pills. */
+  chipsLoading?: boolean;
 }
 
 /**
@@ -31,16 +34,14 @@ export interface TreatmentCardProps {
  * chips with what it groups («Metformina», «3 documentos», «4 citas»). The whole card opens the
  * detail. No status chip: the tab already says it.
  *
- * The list API has no counts, so each card reads its treatment's detail (the same query the detail
- * screen uses, which then opens from the cache). While it loads the chips wait as two gray pills; if
- * it fails, the card stays as it is, without chips.
+ * The list API has no counts: `Treatments` reads each treatment's detail (two at a time) and passes
+ * the chips. While they load they wait as two gray pills; if the detail fails, the card stays as it
+ * is, without chips.
  */
-export function TreatmentCard({ treatment, onPress }: TreatmentCardProps) {
+export function TreatmentCard({ treatment, onPress, chips = [], chipsLoading = false }: TreatmentCardProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const since = treatmentSinceLabel(treatment);
-  const detail = useTreatmentByIdQuery(treatment.id);
-  const chips = useMemo(() => (detail.data ? treatmentChips(detail.data) : []), [detail.data]);
 
   // Just created or edited: blue border that fades in 1.2 s (movimiento-interacciones.md §6).
   const justSaved = useRecentlySaved((s) => s.treatmentId === treatment.id);
@@ -68,7 +69,7 @@ export function TreatmentCard({ treatment, onPress }: TreatmentCardProps) {
           ) : null}
         </View>
       </View>
-      {detail.isLoading ? (
+      {chipsLoading ? (
         // §6c: the shape of what arrives. Most treatments group something, so the pills keep the
         // card from growing under the person's finger when the chips land.
         <View style={styles.chips} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">

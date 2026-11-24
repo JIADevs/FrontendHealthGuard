@@ -4,7 +4,7 @@ import Animated, { FadeIn, FadeOut, LayoutAnimationConfig, LinearTransition } fr
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Plus } from "lucide-react-native";
 import type { Treatment } from "@helu/api";
-import { useTreatmentsQuery } from "@helu/api/hooks";
+import { useTreatmentDetailsInOrderQuery, useTreatmentsQuery } from "@helu/api/hooks";
 import {
   Button,
   PullRefreshIndicator,
@@ -30,6 +30,7 @@ import {
   TREATMENT_STATUS,
   TREATMENT_STATUS_ORDER,
   isTreatmentStatus,
+  treatmentChips,
   treatmentMatches,
   type TreatmentStatus,
 } from "./treatmentFormat";
@@ -98,6 +99,21 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
     }
     return best;
   }, [searching, visible.length, items, tabFade.shown, search]);
+
+  // Card chips come from each treatment's detail (the list API has no counts), two at a time in the
+  // order shown: the hosted database has few connections.
+  const visibleIds = useMemo(() => visible.map((tr) => tr.id), [visible]);
+  const details = useTreatmentDetailsInOrderQuery(visibleIds);
+  const summaries = new Map<string, { chips: string[]; loading: boolean }>();
+  visibleIds.forEach((id, i) => {
+    const result = details[i];
+    summaries.set(id, {
+      chips: result?.data ? treatmentChips(result.data) : [],
+      loading: !result?.data && !result?.isError,
+    });
+  });
+  // FlatList only re-renders its rows when `data` or `extraData` change: this changes when a chip arrives.
+  const summariesKey = JSON.stringify([...summaries]);
 
   const onTabChange = useCallback((value: string) => {
     if (isTreatmentStatus(value)) setTab(value);
@@ -183,6 +199,7 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
                   <FlatList
                     data={visible}
                     keyExtractor={(tr) => tr.id}
+                    extraData={summariesKey}
                     contentContainerStyle={styles.content}
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode="on-drag"
@@ -204,7 +221,12 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
                         layout={LinearTransition.duration(motion.base)}
                         style={styles.rowWrap}
                       >
-                        <TreatmentCard treatment={item} onPress={() => open(item)} />
+                        <TreatmentCard
+                          treatment={item}
+                          onPress={() => open(item)}
+                          chips={summaries.get(item.id)?.chips}
+                          chipsLoading={summaries.get(item.id)?.loading}
+                        />
                       </Animated.View>
                     )}
                     ListEmptyComponent={

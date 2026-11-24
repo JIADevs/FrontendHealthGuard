@@ -99,14 +99,22 @@ export function BackpacksError({ onRetry }: { onRetry: () => void }) {
 }
 
 /** m9 «Agregar documentos · sin documentos»: explains why and leads to uploading, then back here. */
-export function PickerNoDocuments({ onUpload, onScan }: { onUpload: () => void; onScan: () => void }) {
+export function PickerNoDocuments({
+  onUpload,
+  onScan,
+  description = "Para llenar la mochila necesitas documentos. Sube uno y vuelves aquí para agregarlo.",
+}: {
+  onUpload: () => void;
+  onScan: () => void;
+  description?: string;
+}) {
   const t = useAppTheme();
   return (
     <EmptyHero
       pose="happy"
       top={60}
       title="Primero sube un documento"
-      description="Para llenar la mochila necesitas documentos. Sube uno y vuelves aquí para agregarlo."
+      description={description}
     >
       <Button fullWidth icon={<Upload size={17} strokeWidth={2.4} color={t.text.onSolid} />} onPress={onUpload}>
         Subir documento

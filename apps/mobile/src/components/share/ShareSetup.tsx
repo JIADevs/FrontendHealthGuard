@@ -10,6 +10,7 @@ import {
   isApiError,
   shareBackpackWithOptions,
   shareDocumentWithOptions,
+  shareMission,
   type Document,
   type ShareExpiresIn,
   type ShareResourceType,
@@ -34,10 +35,16 @@ import { documentCountLabel } from "../backpacks/backpackCopy";
 import { notify } from "../../lib/notify";
 import { SHARE_EXPIRATION_OPTIONS } from "./shareUtils";
 
-/** What step 2 shares: one or several documents, or a backpack. */
+type SharedDocument = Pick<Document, "id" | "title" | "kind" | "documentType" | "documentDate" | "uploadedAt">;
+
+/**
+ * What step 2 shares: one or several documents, a backpack, or a mission's documents (RF-63: the
+ * server composes the mission backpack, syncs it and renews an active link with the new expiry).
+ */
 export type ShareTarget =
-  | { kind: "documents"; documents: Pick<Document, "id" | "title" | "kind" | "documentType" | "documentDate" | "uploadedAt">[] }
-  | { kind: "backpack"; id: string; name: string; documentCount: number };
+  | { kind: "documents"; documents: SharedDocument[] }
+  | { kind: "backpack"; id: string; name: string; documentCount: number }
+  | { kind: "mission"; missionId: string; name: string; documents: SharedDocument[] };
 
 export interface ShareCreated {
   shareUrl: string;
@@ -71,6 +78,7 @@ export function ShareSetup({ target, fromStepOne, onCreated }: ShareSetupProps) 
   const [creating, setCreating] = useState(false);
 
   const count = target.kind === "backpack" ? target.documentCount : target.documents.length;
+  const docsToList = target.kind === "backpack" ? [] : target.documents;
   const subtitle = `${fromStepOne ? "Paso 2 de 3 · " : ""}${documentCountLabel(count)}`;
 
   const generate = async () => {
@@ -83,6 +91,12 @@ export function ShareSetup({ target, fromStepOne, onCreated }: ShareSetupProps) 
         resourceType = "backpack";
         title = target.name;
         result = await shareBackpackWithOptions(target.id, { expiresIn });
+      } else if (target.kind === "mission") {
+        resourceType = "backpack";
+        title = target.name;
+        result = await shareMission(target.missionId, { expiresIn });
+        void qc.invalidateQueries({ queryKey: ["backpacks"] });
+        void qc.invalidateQueries({ queryKey: ["missions"] });
       } else if (target.documents.length === 1) {
         resourceType = "document";
         title = target.documents[0]!.title;
@@ -137,7 +151,7 @@ export function ShareSetup({ target, fromStepOne, onCreated }: ShareSetupProps) 
               </View>
             </View>
           ) : (
-            target.documents.map((doc) => {
+            docsToList.map((doc) => {
               const Icon = CATEGORY_META[categoryOf(doc)].icon;
               return (
                 <View key={doc.id} style={styles.line}>

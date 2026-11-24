@@ -89,6 +89,9 @@ export const MissionDocumentSchema = z.object({
     title: z.string(),
     stepKey: z.string().nullish(),
     addedAt: z.string().nullish(),
+    uploadedAt: z.string().nullish(),
+    format: z.string().nullish(),
+    kind: z.string().nullish(),
     /** Post-appointment document (DU-19). */
     fromAppointment: z.boolean().default(false),
 });

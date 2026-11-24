@@ -14,10 +14,13 @@ export function BackpackDocumentLine({
   document,
   onPress,
   onRemove,
+  removeLabel = "de la mochila",
 }: {
-  document: Document;
+  document: Pick<Document, "title" | "kind" | "documentType" | "documentDate" | "uploadedAt">;
   onPress: () => void;
   onRemove: () => void;
+  /** «Quitar {title} de la mochila» / «… de la misión». */
+  removeLabel?: string;
 }) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -47,7 +50,7 @@ export function BackpackDocumentLine({
         onPress={onRemove}
         style={({ pressed }) => [styles.remove, pressed && { backgroundColor: t.surface.muted }]}
         accessibilityRole="button"
-        accessibilityLabel={`Quitar ${document.title} de la mochila`}
+        accessibilityLabel={`Quitar ${document.title} ${removeLabel}`}
       >
         <X size={18} color={t.text.muted} />
       </Pressable>

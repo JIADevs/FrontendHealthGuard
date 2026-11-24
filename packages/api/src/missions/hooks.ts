@@ -7,11 +7,13 @@ import {
     getMissionEvents,
     getMissions,
     getMissionsOverview,
+    linkMissionDocument,
     pauseMission,
     resumeMission,
     scheduleMissionSession,
     setMissionSessionAttendance,
     skipMissionStep,
+    unlinkMissionDocument,
 } from "./endpoints";
 import { missionQK } from "./keys";
 import type {
@@ -212,4 +214,29 @@ export function useMissionSessionAttendanceMutation() {
             invalidateMissionQueries(qc, mission.id);
         },
     });
+}
+
+// --- documents (RF-60, RF-61, DU-18, DU-19) ------------------------------------------------
+
+function useDocumentMutation(fn: (vars: { missionId: string; documentId: string; stepKey?: string }) => Promise<Mission>) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: fn,
+        onSuccess: (mission) => {
+            qc.setQueryData(missionQK.detail(mission.id), mission);
+            invalidateMissionQueries(qc, mission.id);
+            // Final documents of an appointment mission are the appointment's post documents (DU-19).
+            if (mission.appointment?.id) qc.invalidateQueries({ queryKey: ["appointment", mission.appointment.id] });
+        },
+    });
+}
+
+/** Links an uploaded document; in an appointment mission, `final_documents` goes to the appointment. */
+export function useLinkMissionDocumentMutation() {
+    return useDocumentMutation(({ missionId, documentId, stepKey }) => linkMissionDocument(missionId, documentId, stepKey));
+}
+
+/** Removes the link only: the document stays in Documentos. */
+export function useUnlinkMissionDocumentMutation() {
+    return useDocumentMutation(({ missionId, documentId }) => unlinkMissionDocument(missionId, documentId));
 }

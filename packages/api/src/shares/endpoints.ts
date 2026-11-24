@@ -7,6 +7,7 @@ import {
     ShareResultSchema,
     ShareStatusFilter,
     ShareResourceType,
+    SharedBackpackSchema,
     SharedSignedUrlSchema,
 } from "./schemas";
 
@@ -47,6 +48,20 @@ export async function shareBackpackWithOptions(backpackId: string, options: Shar
 export async function getSharedDocumentSignedUrlViewOnly(token: string, expiresInSeconds = 3600) {
     const { data } = await apiClient.get("/documents/shared/signed-url", {
         params: { token, expires_in: expiresInSeconds },
+    });
+    return SharedSignedUrlSchema.parse(data);
+}
+
+/** Public backpack share (no auth; the token is the capability). Expired → 400, revoked → 404. */
+export async function consumeSharedBackpack(token: string) {
+    const { data } = await apiClient.get("/backpacks/shared/consume", { params: { token } });
+    return SharedBackpackSchema.parse(data);
+}
+
+/** View-only URL for one document of a shared backpack. */
+export async function getSharedBackpackDocumentUrl(token: string, documentId: string, expiresInSeconds = 3600) {
+    const { data } = await apiClient.get("/backpacks/shared/signed-url", {
+        params: { token, document_id: documentId, expires_in: expiresInSeconds },
     });
     return SharedSignedUrlSchema.parse(data);
 }

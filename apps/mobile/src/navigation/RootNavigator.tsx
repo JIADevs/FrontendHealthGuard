@@ -94,7 +94,8 @@ export type RootStackParamList = {
   Missions: WithBackTitle | undefined;
   /** `openStep`: open that step's sheet on arrival (from «Tu próximo paso»). */
   MissionDetail: WithBackTitle & { id: string; openStep?: string };
-  MissionNew: WithBackTitle | undefined;
+  /** `initialType`: preselected type, e.g. «Necesito conseguirlo» from the first medication (RF-36). */
+  MissionNew: (WithBackTitle & { initialType?: MissionType }) | undefined;
   Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
   DocumentUpload:
     | (WithBackTitle & {

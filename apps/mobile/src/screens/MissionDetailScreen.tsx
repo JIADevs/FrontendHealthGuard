@@ -39,6 +39,7 @@ export function MissionDetailScreen() {
           missionExamName: textDetail(mission.details.examName),
         })
       }
+      onOpenAppointment={(appointmentId) => navigation.navigate("AppointmentDetail", { id: appointmentId })}
       onBack={() => navigation.goBack()}
     />
   );

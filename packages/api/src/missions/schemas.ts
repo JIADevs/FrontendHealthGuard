@@ -113,6 +113,22 @@ export const MissionSessionsSchema = z.object({
         })
         .nullish(),
     phase: MissionSessionsPhaseSchema,
+    /** Message of the phase with its ordinal (RF-43, DU-31): «Programa tu quinta sesión». Backend M3. */
+    label: z.string().nullish(),
+    /** «Tus sesiones», newest first (mockup v2.29 · A). */
+    items: z
+        .array(
+            z.object({
+                appointmentId: z.string().uuid(),
+                date: z.string(),
+                time: z.string().nullish(),
+                status: z.enum(["PROGRAMADA", "ASISTI", "NO_ASISTI", "CANCELADA"]),
+                number: z.number().int().nullish(),
+                counts: z.boolean(),
+                label: z.string(),
+            }),
+        )
+        .default([]),
 });
 
 // --- mission -------------------------------------------------------------------------
@@ -250,6 +266,7 @@ export const MissionSessionCreateSchema = z.object({
     date: z.string(),
     time: z.string(),
     location: z.string().max(300).optional(),
+    clinic: z.string().max(255).optional(),
     modality: z.enum(["PRESENCIAL", "VIRTUAL", "DOMICILIARIA"]).default("PRESENCIAL"),
 });
 

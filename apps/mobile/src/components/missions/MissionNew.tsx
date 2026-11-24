@@ -32,11 +32,19 @@ const FIELD: Record<MissionType, { label: string; placeholder: string; key: stri
  * «Crear misión». La vía con IA (RF-21) y el tratamiento (RF-26) son para después. Crear espera al
  * servidor; si la cita o el medicamento ya tienen misión, se abre esa (RF-24).
  */
-export function MissionNew({ onCreated, onBack }: { onCreated: (mission: Mission) => void; onBack?: () => void }) {
+export function MissionNew({
+  onCreated,
+  onBack,
+  initialType = "medical_appointment",
+}: {
+  onCreated: (mission: Mission) => void;
+  onBack?: () => void;
+  initialType?: MissionType;
+}) {
   const t = useAppTheme();
   const online = useIsOnline();
   const create = useCreateMissionMutation();
-  const [type, setType] = useState<MissionType>("medical_appointment");
+  const [type, setType] = useState<MissionType>(initialType);
   const [value, setValue] = useState("");
   const [touched, setTouched] = useState(false);
   const field = FIELD[type];

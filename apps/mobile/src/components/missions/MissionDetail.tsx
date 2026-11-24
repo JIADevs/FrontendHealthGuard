@@ -30,14 +30,26 @@ import { useIsOnline } from "../states/OfflineBanner";
 import { MissionStepSheet } from "./MissionStepSheet";
 import { MissionTimeline } from "./MissionTimeline";
 import { MissionTypeIcon } from "./MissionTypeIcon";
-import { missionGoal, missionTypeLabel, missionTypeTone, nextLabel } from "./missionCopy";
+import { missionGoal, missionTypeLabel, missionTypeTone, nextActionLabel } from "./missionCopy";
 
 export interface MissionDetailProps {
   missionId: string;
   /** Open this step's sheet on arrival (from «Tu próximo paso» or a push). */
   openStep?: string;
   onSchedule: (mission: Mission) => void;
+  /** A session in «Tus sesiones» opens its appointment. */
+  onOpenAppointment: (appointmentId: string) => void;
   onBack?: () => void;
+}
+
+/** Toast after a saved step. A receipt that is not complete keeps the step: say what was kept (RF-37). */
+function stepToast(key: string, data: Record<string, unknown> | undefined, next: Mission) {
+  if (key === "receipt" && data?.status === "partial") {
+    return { message: "Guardamos lo que falta", description: "Tu misión sigue activa hasta que recibas todo." };
+  }
+  if (key === "receipt" && data?.status === "not_yet") return { message: "Listo, te esperamos" };
+  if (key === "sessions_count" && data?.total == null) return { message: "Listo, puedes registrarlo después" };
+  return { message: `¡Listo! Sigue: ${nextActionLabel(next.nextAction)}` };
 }
 
 const OFFLINE = { tone: "warning" as const, message: "Sin conexión", description: "Revisa tu conexión y vuelve a intentarlo." };
@@ -47,7 +59,7 @@ const OFFLINE = { tone: "warning" as const, message: "Sin conexión", descriptio
  * línea de tiempo v2.16. Los pasos se guardan al tocar y vuelven atrás con «Reintentar» si fallan
  * (DU-6, RNF-10); el paso final espera al servidor porque cierra la misión. Sin red, nada cambia (DU-7).
  */
-export function MissionDetail({ missionId, openStep, onSchedule, onBack }: MissionDetailProps) {
+export function MissionDetail({ missionId, openStep, onSchedule, onOpenAppointment, onBack }: MissionDetailProps) {
   const t = useAppTheme();
   const online = useIsOnline();
   const query = useMissionQuery(missionId);
@@ -85,7 +97,7 @@ export function MissionDetail({ missionId, openStep, onSchedule, onBack }: Missi
           setSheetKey(null);
           notify({ message: "¡Misión completada!", description: next.title });
         } else if (!isFinal) {
-          notify({ message: `¡Listo! Sigue: ${nextLabel(next.nextAction?.stepKey)}` });
+          notify(stepToast(step.key, data, next));
         }
       },
       onError: () => onFail(() => runComplete(step, data)),
@@ -99,7 +111,7 @@ export function MissionDetail({ missionId, openStep, onSchedule, onBack }: Missi
     skip.mutate(
       { missionId: mission.id, stepKey: step.key, reason },
       {
-        onSuccess: (next) => notify({ message: `Listo. Sigue: ${nextLabel(next.nextAction?.stepKey)}` }),
+        onSuccess: (next) => notify({ message: `Listo. Sigue: ${nextActionLabel(next.nextAction)}` }),
         onError: () => onFail(() => runSkip(step, reason)),
       },
     );
@@ -176,7 +188,7 @@ export function MissionDetail({ missionId, openStep, onSchedule, onBack }: Missi
                 ? "Cumpliste el objetivo."
                 : mission.status === "paused"
                   ? "Pausada. Tu cita y tus documentos siguen igual."
-                  : `Sigue: ${nextLabel(mission.nextAction?.stepKey)}`}
+                  : `Sigue: ${nextActionLabel(mission.nextAction)}`}
             </Text>
           </Animated.View>
 
@@ -196,6 +208,7 @@ export function MissionDetail({ missionId, openStep, onSchedule, onBack }: Missi
             complete: runComplete,
             skip: runSkip,
             schedule: () => onSchedule(mission),
+            openAppointment: onOpenAppointment,
           }}
         />
       ) : null}

@@ -1,9 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { LinearTransition, ZoomIn } from "react-native-reanimated";
-import { Check, ChevronRight, FilePlus, FileText, Minus } from "lucide-react-native";
+import { Check, ChevronRight, FilePlus, FileText, Heart, Minus } from "lucide-react-native";
 import type { Mission, MissionStep } from "@helu/api";
 import { motion, nativeFont, spacing, useAppTheme } from "@helu/ui";
-import { shortDate, stepLabel, stepPendingHint } from "./missionCopy";
+import { sessionMessage, sessionsTitle, shortDate, stepLabel, stepPendingHint } from "./missionCopy";
 
 const DONE = new Set(["completed", "skipped"]);
 
@@ -47,7 +47,11 @@ export function MissionTimeline({
                   {/* 40 px node with a 5 px halo (kit: box-shadow 0 0 0 5px brand-tint), centered on the card. */}
                   <View style={[styles.halo, { backgroundColor: t.brand.tint }]}>
                     <View style={[styles.nodeCurrent, { backgroundColor: t.brand.solid }]}>
-                      <FileText size={19} strokeWidth={2.2} color={t.text.onSolid} />
+                      {step.key === "sessions" ? (
+                        <Heart size={19} strokeWidth={2.2} color={t.text.onSolid} />
+                      ) : (
+                        <FileText size={19} strokeWidth={2.2} color={t.text.onSolid} />
+                      )}
                     </View>
                   </View>
                   <View style={[styles.seg, { backgroundColor: last ? "transparent" : line }]} />
@@ -65,8 +69,15 @@ export function MissionTimeline({
                     <Text style={[styles.eyebrow, { color: t.brand.text }]}>
                       PASO {i + 1} DE {total} · AHORA
                     </Text>
-                    <Text style={[styles.currentTitle, { color: t.text.primary }]}>{stepLabel[step.key] ?? step.key}</Text>
-                    <Text style={[styles.meta, { color: t.brand.text }]}>Toca para continuar</Text>
+                    <Text style={[styles.currentTitle, { color: t.text.primary }]}>
+                      {step.key === "sessions" ? sessionsTitle(mission.sessions) : stepLabel[step.key] ?? step.key}
+                    </Text>
+                    {/* The sessions cycle says where it stands: «Tu quinta sesión es el jueves» (RF-43). */}
+                    <Text style={[styles.meta, { color: t.brand.text }]}>
+                      {step.key === "sessions"
+                        ? sessionMessage(mission.sessions)
+                        : pendingDetail(step) ?? "Toca para continuar"}
+                    </Text>
                   </View>
                   <ChevronRight size={20} strokeWidth={2.6} color={t.brand.solid} />
                 </Pressable>
@@ -79,8 +90,9 @@ export function MissionTimeline({
         const sub = step.status === "skipped"
           ? "No aplica"
           : done
-            ? `Completado${step.completedAt ? ` · ${shortDate(step.completedAt)}` : ""}${step.completedBy?.name && step.completedBy.id !== mission.userId ? ` · ${step.completedBy.name}` : ""}`
-            : stepPendingHint[step.key] ?? "";
+            ? doneDetail(step, mission) ??
+              `Completado${step.completedAt ? ` · ${shortDate(step.completedAt)}` : ""}${step.completedBy?.name && step.completedBy.id !== mission.userId ? ` · ${step.completedBy.name}` : ""}`
+            : pendingDetail(step) ?? finalHint(step, mission) ?? stepPendingHint[step.key] ?? "";
 
         return (
           <Animated.View key={step.key} layout={LinearTransition.duration(motion.base)} style={styles.row}>
@@ -117,6 +129,31 @@ function Connector({ color }: { color: string }) {
       </View>
     </View>
   );
+}
+
+/** What a done step achieved, when it says more than «Completado» (mockups «Misión de terapia»). */
+function doneDetail(step: MissionStep, mission: Mission): string | null {
+  if (step.key === "sessions_count" && mission.sessions?.total) return `${mission.sessions.total} sesiones`;
+  if (step.key === "sessions" && mission.sessions) return `${mission.sessions.attended} sesiones`;
+  return null;
+}
+
+/** The final documents step names what each type usually keeps (templates v1). */
+function finalHint(step: MissionStep, mission: Mission): string | null {
+  if (step.key !== "final_documents") return null;
+  if (mission.type === "therapy") return "Informe final · opcional";
+  if (mission.type === "medication") return "Fórmula o comprobante · opcional";
+  return null;
+}
+
+/** A step started but not done: a partial receipt keeps what is pending (RF-37). */
+function pendingDetail(step: MissionStep): string | null {
+  if (step.key === "receipt" && step.status === "in_progress") {
+    const note = (step.data as { pendingNote?: string } | null | undefined)?.pendingNote;
+    return note ? `Recibiste una parte · te falta: ${note}` : "Recibiste una parte";
+  }
+  if (step.key === "sessions_count" && step.status === "in_progress") return "Total pendiente";
+  return null;
 }
 
 function Node({ status }: { status: MissionStep["status"]; last: boolean }) {

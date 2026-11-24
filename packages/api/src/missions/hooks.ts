@@ -9,10 +9,19 @@ import {
     getMissionsOverview,
     pauseMission,
     resumeMission,
+    scheduleMissionSession,
+    setMissionSessionAttendance,
     skipMissionStep,
 } from "./endpoints";
 import { missionQK } from "./keys";
-import type { Mission, MissionCreate, MissionStatus, MissionStep } from "./schemas";
+import type {
+    Mission,
+    MissionCreate,
+    MissionSessionAttendance,
+    MissionSessionCreate,
+    MissionStatus,
+    MissionStep,
+} from "./schemas";
 
 /** One key per user action, reused on retries of that action (RNF-13). */
 function newIdempotencyKey() {
@@ -168,4 +177,39 @@ export function useResumeMissionMutation() {
 
 export function useCancelMissionMutation() {
     return useTransition((id) => cancelMission(id, "user_canceled", { idempotencyKey: newIdempotencyKey() }));
+}
+
+// --- therapy sessions (DU-30, RF-39) --------------------------------------------------
+
+/** «Programar sesión»: creates the session's appointment; waits for the server (it changes the count). */
+export function useScheduleMissionSessionMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ missionId, payload }: { missionId: string; payload: MissionSessionCreate }) =>
+            scheduleMissionSession(missionId, payload, { idempotencyKey: newIdempotencyKey() }),
+        onSuccess: (mission) => {
+            qc.setQueryData(missionQK.detail(mission.id), mission);
+            invalidateMissionQueries(qc, mission.id);
+        },
+    });
+}
+
+/** «Sí, asistí» · «No pude asistir» · «Reprogramar» (attended false + newDate/newTime). */
+export function useMissionSessionAttendanceMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({
+            missionId,
+            appointmentId,
+            payload,
+        }: {
+            missionId: string;
+            appointmentId: string;
+            payload: MissionSessionAttendance;
+        }) => setMissionSessionAttendance(missionId, appointmentId, payload, { idempotencyKey: newIdempotencyKey() }),
+        onSuccess: (mission) => {
+            qc.setQueryData(missionQK.detail(mission.id), mission);
+            invalidateMissionQueries(qc, mission.id);
+        },
+    });
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { MoreHorizontal } from "lucide-react-native";
+import { MoreHorizontal, Route } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
@@ -48,9 +48,11 @@ import { ScreenHeader } from "../ScreenHeader";
 import { LoadError } from "../states/LoadError";
 import { useIsOnline } from "../states/OfflineBanner";
 import { MissionStepSheet } from "./MissionStepSheet";
+import { StepTaskSheet } from "./StepTaskSheet";
+import { MissionLink } from "./MissionLink";
 import { MissionTimeline } from "./MissionTimeline";
 import { MissionTypeIcon } from "./MissionTypeIcon";
-import { missionGoal, missionTypeLabel, missionTypeTone, nextActionLabel } from "./missionCopy";
+import { missionGoal, missionTypeLabel, missionTypeTone, nextActionLabel, originPhrase } from "./missionCopy";
 
 export interface MissionDetailProps {
   missionId: string;
@@ -68,6 +70,10 @@ export interface MissionDetailProps {
   onOpenDocument: (documentId: string, title: string) => void;
   /** «Ver historial» from the «⋯» menu. */
   onOpenHistory: (missionId: string) => void;
+  /** The server closed the mission (DU-17): the celebration takes over (RF-50). */
+  onCompleted: (mission: Mission) => void;
+  /** «Surgió de…»: the mission this one came from (RF-55). */
+  onOpenMission: (missionId: string) => void;
   onBack?: () => void;
 }
 
@@ -98,6 +104,8 @@ export function MissionDetail({
   onShare,
   onOpenDocument,
   onOpenHistory,
+  onCompleted,
+  onOpenMission,
   onBack,
 }: MissionDetailProps) {
   const t = useAppTheme();
@@ -118,6 +126,8 @@ export function MissionDetail({
   /** «Adjuntar documento» sheet; `stepKey` when it came from a step. */
   const [attachFor, setAttachFor] = useState<{ stepKey?: string } | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  /** «Crear recordatorio» from a step (RF-27). */
+  const [reminderFor, setReminderFor] = useState<string | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -137,6 +147,25 @@ export function MissionDetail({
     haptics.success();
     afterSequence(() => setConfirmedKey((k) => (k === key ? null : k)), 1500);
   };
+  /**
+   * «Cambiar» on an attached document (B2): once a new document lands in that step, the old one leaves
+   * it (it stays in Documentos). Expires so a later, unrelated attach never removes it.
+   */
+  const replacing = useRef<{ stepKey: string; oldId: string; before: string[]; until: number } | null>(null);
+  useEffect(() => {
+    const r = replacing.current;
+    if (!r) return;
+    if (Date.now() > r.until) {
+      replacing.current = null;
+      return;
+    }
+    const arrived = documents.some((d) => d.stepKey === r.stepKey && !r.before.includes(d.id));
+    if (arrived && documents.some((d) => d.id === r.oldId)) {
+      replacing.current = null;
+      unlink.mutate({ missionId, documentId: r.oldId });
+    }
+  }, [documents]); // eslint-disable-line react-hooks/exhaustive-deps
+
   /** Set before leaving to attach: on return, link an upload and reopen the step it came from. */
   const resume = useRef<{ stepKey?: string; reopen: boolean } | null>(null);
 
@@ -188,6 +217,7 @@ export function MissionDetail({
   }, [openStep, mission?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sheetStep = useMemo(() => mission?.steps.find((s) => s.key === sheetKey) ?? null, [mission, sheetKey]);
+  const reminderStep = useMemo(() => mission?.steps.find((s) => s.key === reminderFor) ?? null, [mission, reminderFor]);
   const applicable = mission?.steps.filter((s) => s.applies) ?? [];
   const finalKey = applicable[applicable.length - 1]?.key;
 
@@ -206,8 +236,7 @@ export function MissionDetail({
       onSuccess: (next) => {
         if (next.status === "completed") {
           setSheetKey(null);
-          haptics.success();
-          notify({ message: "¡Misión completada!", description: next.title });
+          onCompleted(next);
         } else if (!isFinal) {
           const done = next.steps.find((s) => s.key === step.key)?.status === "completed";
           if (done) {
@@ -235,8 +264,7 @@ export function MissionDetail({
         onSuccess: (next) => {
           if (next.status === "completed") {
             setSheetKey(null);
-            haptics.success();
-            notify({ message: "¡Misión completada!", description: next.title });
+            onCompleted(next);
           } else {
             confirmStep(step.key);
             afterSequence(() => notify({ message: `Listo. Sigue: ${nextActionLabel(next.nextAction)}` }));
@@ -375,6 +403,14 @@ export function MissionDetail({
                   ? "Pausada. Tu cita y tus documentos siguen igual."
                   : `Sigue: ${nextActionLabel(mission.nextAction)}`}
             </Text>
+            {mission.parentMission ? (
+              // RF-55 (v2.17 · Encabezado): «Surgió de tu cita de ortopedia ›».
+              <MissionLink
+                icon={<Route size={14} strokeWidth={2.4} color={t.brand.text} />}
+                label={`Surgió de ${originPhrase(mission.parentMission)}`}
+                onPress={() => onOpenMission(mission.parentMission!.id)}
+              />
+            ) : null}
           </Animated.View>
 
           <MissionTimeline
@@ -412,6 +448,29 @@ export function MissionDetail({
             addMedication: () => onAddMedication(mission),
             openAppointment: onOpenAppointment,
             attach: (step) => setAttachFor({ stepKey: step.key }),
+            addReminder: (step) => setReminderFor(step.key),
+            replace: (step, documentId) => {
+              replacing.current = {
+                stepKey: step.key,
+                oldId: documentId,
+                before: documents.filter((d) => d.stepKey === step.key).map((d) => d.id),
+                until: Date.now() + 5 * 60_000,
+              };
+              setAttachFor({ stepKey: step.key });
+            },
+          }}
+        />
+      ) : null}
+
+      {mission && reminderStep ? (
+        <StepTaskSheet
+          mission={mission}
+          step={reminderStep}
+          onClose={() => {
+            // Back to the step it came from: the new reminder shows there (mockup «Paso con tarea de apoyo»).
+            const key = reminderStep.key;
+            setReminderFor(null);
+            if (mission.status === "active") setSheetKey(key);
           }}
         />
       ) : null}

@@ -36,6 +36,14 @@ export const missionTypeTone: Record<MissionType, Tone> = {
     therapy: "treatment",
 };
 
+/** Dato mínimo por tipo (mission_details.py): solo lo que hace falta para empezar. */
+export const missionField: Record<MissionType, { label: string; placeholder: string; key: string; required: boolean }> = {
+    medical_appointment: { label: "Especialidad (opcional)", placeholder: "Ej: Ortopedia", key: "specialty", required: false },
+    medical_exam: { label: "¿Qué examen?", placeholder: "Ej: Resonancia magnética de rodilla", key: "exam_name", required: true },
+    medication: { label: "¿Qué medicamento? (opcional)", placeholder: "Ej: Metformina 850 mg", key: "medication_name", required: false },
+    therapy: { label: "¿Qué terapia?", placeholder: "Ej: Fisioterapia", key: "therapy_type", required: true },
+};
+
 export const missionTypeHint: Record<MissionType, string> = {
     medical_appointment: "Hasta que asistas",
     medical_exam: "De la orden al resultado",
@@ -191,4 +199,87 @@ export function nextActionLabel(action: { stepKey: string; label?: string | null
     if (!action) return "¡Todo listo!";
     const label = action.label || stepLabel[action.stepKey] || action.stepKey;
     return label.startsWith("¿") ? label : label.charAt(0).toLowerCase() + label.slice(1);
+}
+
+// --- M5 · cierre, seguimiento y sugerencias ---------------------------------------------
+
+/** Qué se logró, para la celebración (mockup «Celebración»: «Te realizaste la resonancia…»). */
+export function celebrationSummary(type: MissionType, managing: boolean): string {
+    const you = {
+        medical_appointment: "Asististe a tu cita y guardaste lo que te dieron.",
+        medical_exam: "Te realizaste el examen y ya tienes los resultados.",
+        medication: "Ya tienes tu medicamento.",
+        therapy: "Terminaste todas tus sesiones.",
+    }[type];
+    // Neutral thanks: we do not know the dependent's gender.
+    const them = {
+        medical_appointment: "Asistió a su cita. Gracias por tu compañía.",
+        medical_exam: "Se realizó el examen y ya tiene los resultados. Gracias por tu compañía.",
+        medication: "Ya tiene su medicamento. Gracias por tu compañía.",
+        therapy: "Terminó todas sus sesiones. Gracias por tu compañía.",
+    }[type];
+    return managing ? them : you;
+}
+
+/**
+ * Seguimiento posterior (RF-30–33): la cita pregunta con opción múltiple; los demás tipos, una sola
+ * pregunta que deja una cita sugerida.
+ */
+export function followUpQuestion(type: MissionType, managing = false): { eyebrow: string; question: string } {
+    // Management mode (DA-13): the same sheet, in third person.
+    const your = managing ? "SU" : "TU";
+    const noun = missionTypeShort[type].toUpperCase();
+    const question = {
+        medical_appointment: managing ? "¿El médico le pidió algo más?" : "¿El médico te pidió algo más?",
+        medical_exam: managing ? "¿Necesita una cita médica para revisar sus resultados?" : "¿Necesitas una cita médica para revisar tus resultados?",
+        medication: managing ? "¿Necesita una cita médica de control?" : "¿Necesitas una cita médica de control?",
+        therapy: managing ? "¿Necesita una cita médica de control?" : "¿Necesitas una cita médica de control?",
+    }[type];
+    return { eyebrow: `DESPUÉS DE ${your} ${noun}`, question };
+}
+
+/** Chips del seguimiento de una cita (mockup «Seguimiento de cita · ¿algo más?»). */
+export const followUpNeeds: { type: MissionType; label: string }[] = [
+    { type: "medical_exam", label: "Un examen" },
+    { type: "medication", label: "Un medicamento" },
+    { type: "medical_appointment", label: "Una cita de control" },
+    { type: "therapy", label: "Una terapia" },
+];
+
+/** Título de una sugerencia: lo que propone, en lenguaje humano. */
+export function suggestionTitle(type: MissionType, sourceType: MissionType): string {
+    if (type === "medical_appointment" && sourceType === "medical_exam") return "Una cita para revisar tus resultados";
+    if (type === "medical_appointment") return "Una cita médica de control";
+    return missionTypeLabel[type];
+}
+
+/** De dónde viene (mockup: «El médico te lo pidió en tu cita»). */
+export function suggestionOrigin(sourceType: MissionType): string {
+    switch (sourceType) {
+        case "medical_appointment":
+            return "El médico te lo pidió en tu cita";
+        case "medical_exam":
+            return "Te la sugerimos después de tu examen";
+        case "medication":
+            return "Te la sugerimos después de tu medicamento";
+        case "therapy":
+            return "Te la sugerimos después de tu terapia";
+    }
+}
+
+/** «tu cita de Ortopedia», «tu medicamento Losartán»: the origin of a mission, without repeating the noun. */
+export function originPhrase(source: { type: MissionType; title: string }): string {
+    const noun = missionTypeShort[source.type].toLowerCase();
+    const title = source.title.trim();
+    if (title.toLowerCase().startsWith(noun)) return `tu ${noun}${title.slice(noun.length)}`;
+    return `tu ${noun} ${title}`;
+}
+
+/** Encabezado de cada grupo: «DE TU CITA · ORTOPEDIA · 24 NOV». */
+export function suggestionGroupLabel(source: { type: MissionType; title: string }, createdAt: string): string {
+    const noun = missionTypeShort[source.type].toLowerCase();
+    const title = source.title.trim();
+    const sameAsNoun = title.toLowerCase().startsWith(noun);
+    const parts = [`De tu ${noun}`, sameAsNoun ? title.slice(noun.length).replace(/^\s*de\s+/i, "") : title, shortDate(createdAt)];
+    return parts.filter(Boolean).join(" · ").toUpperCase();
 }

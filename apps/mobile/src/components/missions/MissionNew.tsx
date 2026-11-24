@@ -14,17 +14,9 @@ import { notify } from "../../lib/notify";
 import { ScreenHeader } from "../ScreenHeader";
 import { useIsOnline } from "../states/OfflineBanner";
 import { MissionTypeIcon } from "./MissionTypeIcon";
-import { missionTypeHint, missionTypeLabel, missionTypeTone } from "./missionCopy";
+import { missionField, missionTypeHint, missionTypeLabel, missionTypeTone } from "./missionCopy";
 
 const TYPES: MissionType[] = ["medical_appointment", "medication", "medical_exam", "therapy"];
-
-/** Dato mínimo por tipo (mission_details.py): solo lo que hace falta para empezar. */
-const FIELD: Record<MissionType, { label: string; placeholder: string; key: string; required: boolean }> = {
-  medical_appointment: { label: "Especialidad (opcional)", placeholder: "Ej: Ortopedia", key: "specialty", required: false },
-  medical_exam: { label: "¿Qué examen?", placeholder: "Ej: Resonancia magnética de rodilla", key: "exam_name", required: true },
-  medication: { label: "¿Qué medicamento? (opcional)", placeholder: "Ej: Metformina 850 mg", key: "medication_name", required: false },
-  therapy: { label: "¿Qué terapia?", placeholder: "Ej: Fisioterapia", key: "therapy_type", required: true },
-};
 
 /**
  * «Nueva misión · MVP» (v2.17): los cuatro tipos como tarjetas con radio, el dato mínimo y la barra fija
@@ -46,7 +38,7 @@ export function MissionNew({
   const [type, setType] = useState<MissionType>(initialType);
   const [value, setValue] = useState("");
   const [touched, setTouched] = useState(false);
-  const field = FIELD[type];
+  const field = missionField[type];
   const error = touched && field.required && !value.trim() ? "Escribe cuál es para poder crear la misión." : undefined;
 
   const submit = () => {

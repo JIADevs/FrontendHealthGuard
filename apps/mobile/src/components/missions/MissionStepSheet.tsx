@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { CalendarDays, Check, FilePlus, FileText, Heart, ListOrdered, Pill, Plus, Stethoscope } from "lucide-react-native";
+import { CalendarDays, Check, FilePlus, FileText, Heart, ListOrdered, Pill, Plus, Stethoscope, Upload } from "lucide-react-native";
 import type { Mission, MissionStep } from "@helu/api";
 import { BottomSheet, Button, IconTile, nativeFont, spacing, useAppTheme, type BottomSheetHandle } from "@helu/ui";
 import { MascotHint } from "../brand/MascotHint";
@@ -9,6 +9,7 @@ import { notify } from "../../lib/notify";
 import { ReceiptBody } from "./ReceiptBody";
 import { SessionsBody } from "./SessionsBody";
 import { SessionsCountBody } from "./SessionsCountBody";
+import { StepReminders } from "./StepReminders";
 import { capitalize, relativeDay, sessionMessage, shortDate, stepTitle, timeLabel } from "./missionCopy";
 
 export interface StepSheetActions {
@@ -22,6 +23,10 @@ export interface StepSheetActions {
   addMedication: () => void;
   /** «Adjuntar documento» from this step (RF-60); the sheet comes back after attaching. */
   attach: (step: MissionStep) => void;
+  /** «Crear recordatorio»: a support task in Agenda for this step (RF-27); the sheet comes back. */
+  addReminder: (step: MissionStep) => void;
+  /** «Cambiar»: attach another document; it takes the place of `documentId` in this step. */
+  replace: (step: MissionStep, documentId: string) => void;
 }
 
 /** What each type usually keeps in its final step (RF-42). */
@@ -53,7 +58,7 @@ export function MissionStepSheet({
   /** The final step is waiting for the server. */
   closing?: boolean;
   /** Documents attached from this step, shown in the step. */
-  stepDocuments?: { id: string; title: string }[];
+  stepDocuments?: { id: string; title: string; uploadedAt?: string | null }[];
 }) {
   const t = useAppTheme();
   const ref = useRef<BottomSheetHandle>(null);
@@ -223,26 +228,35 @@ export function MissionStepSheet({
           </>
         ) : step.key === "authorization" ? (
           <>
-            {/* DU-41: the authorization document goes in this step; skipping is «No necesito autorización». */}
-            <Text style={[styles.text, { color: t.text.primary }]}>
-              Si tu EPS te dio una autorización, súbela aquí para tenerla a mano. Es opcional.
-            </Text>
-            <StepDocuments docs={stepDocuments} />
-            <MissionLink
-              center
-              icon={<Plus size={15} strokeWidth={2.6} color={t.brand.text} />}
-              label={stepDocuments.length > 0 ? "Adjuntar otro documento" : "Subir la autorización"}
-              onPress={thenClose(() => actions.attach(step))}
-            />
-            <Button
-              variant="primary"
-              fullWidth
-              onPress={thenClose(() => actions.complete(step, { status: "authorized" }))}
-            >
-              {stepDocuments.length > 0 ? "Guardar autorización" : "Ya tengo la autorización"}
-            </Button>
+            {/*
+              B2 (mockups «4b · Hoja de paso · opciones», misiones.md v2.30): two actions only. Without a
+              document the primary attaches it; with one, it saves. «Omitir este paso» covers «la tengo en
+              papel» and «no la necesito» and leaves the step as «No aplica» (DU-41).
+            */}
+            <Text style={[styles.text, { color: t.text.primary }]}>Si tu EPS te la dio, guárdala aquí para tenerla a mano.</Text>
+            {stepDocuments.map((d) => (
+              <AttachedDocument key={d.id} doc={d} onChange={thenClose(() => actions.replace(step, d.id))} />
+            ))}
+            {stepDocuments.length > 0 ? (
+              <Button
+                variant="primary"
+                fullWidth
+                onPress={thenClose(() => actions.complete(step, { status: "authorized" }))}
+              >
+                Guardar autorización
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                fullWidth
+                icon={<Upload size={17} strokeWidth={2.4} color={t.text.onSolid} />}
+                onPress={thenClose(() => actions.attach(step))}
+              >
+                Adjuntar la autorización
+              </Button>
+            )}
             <Button variant="ghost" fullWidth onPress={thenClose(() => actions.skip(step, "no_authorization_needed"))}>
-              No necesito autorización
+              Omitir este paso
             </Button>
           </>
         ) : step.key === "add_to_app" ? (
@@ -291,6 +305,10 @@ export function MissionStepSheet({
                 />
               </>
             ) : null}
+            {/* RF-27 / DA-10: support tasks live in «Prepararte», as in the mockup «Paso con tarea de apoyo». */}
+            {step.key === "prepare" ? (
+              <StepReminders mission={mission} step={step} onCreate={thenClose(() => actions.addReminder(step))} />
+            ) : null}
             <Button variant="primary" fullWidth onPress={thenClose(() => actions.complete(step))}>
               {step.key === "prepare" ? "Ya estoy listo" : "Listo"}
             </Button>
@@ -303,6 +321,23 @@ export function MissionStepSheet({
         )}
       </View>
     </BottomSheet>
+  );
+}
+
+/** B2 «Con el documento»: the attached document as a card, with «Cambiar» (≥ 44 px, MissionLink). */
+function AttachedDocument({ doc, onChange }: { doc: { id: string; title: string; uploadedAt?: string | null }; onChange: () => void }) {
+  const t = useAppTheme();
+  return (
+    <View style={[styles.attached, { backgroundColor: t.surface.bgCard, borderColor: t.border.default }]}>
+      <IconTile tone="document" icon={<FileText size={18} strokeWidth={2.2} color={t.accent.docFg} />} />
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.attachedTitle, { color: t.text.primary }]} numberOfLines={2}>
+          {doc.title}
+        </Text>
+        {doc.uploadedAt ? <Text style={[styles.meta, { color: t.text.secondary }]}>{capitalize(shortDate(doc.uploadedAt))}</Text> : null}
+      </View>
+      <MissionLink label="Cambiar" onPress={onChange} />
+    </View>
   );
 }
 
@@ -336,7 +371,9 @@ function iconFor(key: string, color: string) {
 }
 
 const styles = StyleSheet.create({
-  body: { gap: spacing[3], paddingBottom: spacing[2] },
+  body: { gap: spacing[3] },
+  attached: { flexDirection: "row", alignItems: "center", gap: spacing[3], paddingLeft: 12, paddingVertical: 4, borderRadius: 16, borderWidth: 1 },
+  attachedTitle: { fontSize: 15, fontFamily: nativeFont("body", 600) },
   text: { fontSize: 15, lineHeight: 22, fontFamily: nativeFont("body", 400) },
   meta: { fontSize: 13, lineHeight: 18, fontFamily: nativeFont("body", 400) },
   docs: { gap: 6, padding: spacing[3], borderRadius: 12 },

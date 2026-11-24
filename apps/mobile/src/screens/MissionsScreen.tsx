@@ -10,6 +10,7 @@ export function MissionsScreen() {
     <Missions
       onOpen={(id, openStep) => navigation.navigate("MissionDetail", { id, openStep, backTitle: "Misiones" })}
       onCreate={() => navigation.navigate("MissionNew")}
+      onOpenSuggestions={() => navigation.navigate("MissionSuggestions", { backTitle: "Misiones" })}
       onBack={() => navigation.goBack()}
     />
   );

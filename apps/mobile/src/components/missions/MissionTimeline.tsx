@@ -3,7 +3,7 @@ import Animated, { LinearTransition, ZoomIn } from "react-native-reanimated";
 import { Check, ChevronRight, FilePlus, FileText, Heart, Minus } from "lucide-react-native";
 import type { Mission, MissionStep } from "@helu/api";
 import { motion, nativeFont, spacing, useAppTheme } from "@helu/ui";
-import { sessionMessage, sessionsTitle, shortDate, stepLabel, stepPendingHint } from "./missionCopy";
+import { sessionMessage, sessionsTitle, shortDate, stepHint, stepTitle } from "./missionCopy";
 
 const DONE = new Set(["completed", "skipped"]);
 
@@ -59,7 +59,7 @@ export function MissionTimeline({
                 <Pressable
                   onPress={() => onOpenStep(step)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Paso ${i + 1} de ${total}, ahora: ${stepLabel[step.key] ?? step.key}. Toca para continuar`}
+                  accessibilityLabel={`Paso ${i + 1} de ${total}, ahora: ${stepTitle(mission, step.key)}. Toca para continuar`}
                   style={({ pressed }) => [
                     styles.currentCard,
                     { backgroundColor: t.brand.tint, borderColor: t.brand.tintBorder, opacity: pressed ? 0.85 : 1 },
@@ -70,7 +70,7 @@ export function MissionTimeline({
                       PASO {i + 1} DE {total} · AHORA
                     </Text>
                     <Text style={[styles.currentTitle, { color: t.text.primary }]}>
-                      {step.key === "sessions" ? sessionsTitle(mission.sessions) : stepLabel[step.key] ?? step.key}
+                      {step.key === "sessions" ? sessionsTitle(mission.sessions) : stepTitle(mission, step.key)}
                     </Text>
                     {/* The sessions cycle says where it stands: «Tu quinta sesión es el jueves» (RF-43). */}
                     <Text style={[styles.meta, { color: t.brand.text }]}>
@@ -92,7 +92,7 @@ export function MissionTimeline({
           : done
             ? doneDetail(step, mission) ??
               `Completado${step.completedAt ? ` · ${shortDate(step.completedAt)}` : ""}${step.completedBy?.name && step.completedBy.id !== mission.userId ? ` · ${step.completedBy.name}` : ""}`
-            : pendingDetail(step) ?? finalHint(step, mission) ?? stepPendingHint[step.key] ?? "";
+            : pendingDetail(step) ?? finalHint(step, mission) ?? stepHint(mission, step.key) ?? "";
 
         return (
           <Animated.View key={step.key} layout={LinearTransition.duration(motion.base)} style={styles.row}>
@@ -107,7 +107,7 @@ export function MissionTimeline({
               style={{ flex: 1, paddingTop: 4, paddingBottom: last ? 4 : nextIsCurrent ? 6 : 26, gap: 3 }}
             >
               <Text style={[styles.title, { color: done ? t.text.primary : t.text.muted, fontFamily: nativeFont("body", done ? 600 : 500) }]}>
-                {stepLabel[step.key] ?? step.key}
+                {stepTitle(mission, step.key)}
               </Text>
               {sub ? (
                 <Text style={[styles.meta, { color: step.status === "completed" ? t.status.successFg : t.text.muted }]}>{sub}</Text>

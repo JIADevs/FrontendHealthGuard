@@ -8,7 +8,7 @@ import { notify } from "../../lib/notify";
 import { ReceiptBody } from "./ReceiptBody";
 import { SessionsBody } from "./SessionsBody";
 import { SessionsCountBody } from "./SessionsCountBody";
-import { capitalize, relativeDay, sessionMessage, shortDate, stepLabel, timeLabel } from "./missionCopy";
+import { capitalize, relativeDay, sessionMessage, shortDate, stepTitle, timeLabel } from "./missionCopy";
 
 export interface StepSheetActions {
   complete: (step: MissionStep, data?: Record<string, unknown>) => void;
@@ -79,7 +79,7 @@ export function MissionStepSheet({
       ? "¿Cuántas sesiones te ordenaron?"
       : receiptPartial
         ? "¿Qué quedó pendiente?"
-        : stepLabel[step.key] ?? step.key;
+        : stepTitle(mission, step.key);
   const eyebrow = isSessions && sessions?.total
     ? `SESIONES · ${sessions.attended} DE ${sessions.total}`
     : receiptPartial
@@ -217,6 +217,30 @@ export function MissionStepSheet({
                 </Button>
               </>
             )}
+          </>
+        ) : step.key === "authorization" ? (
+          <>
+            {/* DU-41: the authorization document goes in this step; skipping is «No necesito autorización». */}
+            <Text style={[styles.text, { color: t.text.primary }]}>
+              Si tu EPS te dio una autorización, súbela aquí para tenerla a mano. Es opcional.
+            </Text>
+            <StepDocuments docs={stepDocuments} />
+            <Pressable onPress={thenClose(() => actions.attach(step))} hitSlop={8} accessibilityRole="button" style={styles.attach}>
+              <Plus size={15} strokeWidth={2.6} color={t.brand.text} />
+              <Text style={[styles.attachText, { color: t.brand.text }]}>
+                {stepDocuments.length > 0 ? "Adjuntar otro documento" : "Subir la autorización"}
+              </Text>
+            </Pressable>
+            <Button
+              variant="primary"
+              fullWidth
+              onPress={thenClose(() => actions.complete(step, { status: "authorized" }))}
+            >
+              {stepDocuments.length > 0 ? "Guardar autorización" : "Ya tengo la autorización"}
+            </Button>
+            <Button variant="ghost" fullWidth onPress={thenClose(() => actions.skip(step, "no_authorization_needed"))}>
+              No necesito autorización
+            </Button>
           </>
         ) : step.key === "receipt" ? (
           <ReceiptBody

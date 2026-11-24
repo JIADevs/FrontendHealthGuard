@@ -1,8 +1,16 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import {
+    acceptMissionSuggestion,
     cancelMission,
     completeMissionStep,
     createMission,
+    createMissionStepTask,
+    dismissMissionSuggestion,
+    getMissionSuggestionSourceDocuments,
+    getMissionSuggestions,
+    markMissionNoticeSeen,
+    restoreMissionSuggestion,
+    sendMissionFollowUp,
     getMission,
     getMissionEvents,
     getMissions,
@@ -20,6 +28,9 @@ import { missionQK } from "./keys";
 import type {
     Mission,
     MissionCreate,
+    MissionStepTaskCreate,
+    MissionSuggestionAccept,
+    MissionType,
     MissionUpdate,
     MissionSessionAttendance,
     MissionSessionCreate,
@@ -253,4 +264,83 @@ export function useLinkMissionDocumentMutation() {
 /** Removes the link only: the document stays in Documentos. */
 export function useUnlinkMissionDocumentMutation() {
     return useDocumentMutation(({ missionId, documentId }) => unlinkMissionDocument(missionId, documentId));
+}
+
+// --- closure follow-up and suggestions (M5) ----------------------------------------------
+
+/** Pending suggestions, newest first (RF-53). The screen groups them by `sourceMission`. */
+export function useMissionSuggestionsQuery(enabled = true) {
+    return useQuery({ queryKey: missionQK.suggestions(), queryFn: getMissionSuggestions, enabled });
+}
+
+/** Final-step documents of the source mission, preselected in «Crear misión» (RF-57). */
+export function useSuggestionSourceDocumentsQuery(suggestionId: string | undefined) {
+    return useQuery({
+        queryKey: missionQK.suggestionSourceDocuments(suggestionId ?? ""),
+        queryFn: () => getMissionSuggestionSourceDocuments(suggestionId!),
+        enabled: !!suggestionId,
+    });
+}
+
+/** «¿El médico te pidió algo más?» → suggestions. `needs: []` is «No, nada más» (RF-54). */
+export function useMissionFollowUpMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ missionId, needs, idempotencyKey }: { missionId: string; needs: MissionType[]; idempotencyKey?: string }) =>
+            sendMissionFollowUp(missionId, { needs }, { idempotencyKey: idempotencyKey ?? newIdempotencyKey() }),
+        onSuccess: () => invalidateMissionQueries(qc),
+    });
+}
+
+/** Creates the mission from a suggestion and links the confirmed documents. Waits for the server. */
+export function useAcceptSuggestionMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ suggestionId, payload }: { suggestionId: string; payload: MissionSuggestionAccept }) =>
+            acceptMissionSuggestion(suggestionId, payload),
+        onSuccess: (mission) => {
+            qc.setQueryData(missionQK.detail(mission.id), mission);
+            invalidateMissionQueries(qc, mission.id);
+        },
+    });
+}
+
+/** «Ahora no» and its «Deshacer» (DU-42). */
+export function useDismissSuggestionMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (suggestionId: string) => dismissMissionSuggestion(suggestionId),
+        onSettled: () => invalidateMissionQueries(qc),
+    });
+}
+
+export function useRestoreSuggestionMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (suggestionId: string) => restoreMissionSuggestion(suggestionId),
+        onSettled: () => invalidateMissionQueries(qc),
+    });
+}
+
+/** Support task of a step (RF-27): a normal Agenda task that the step shows. */
+export function useCreateStepTaskMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ missionId, stepKey, payload }: { missionId: string; stepKey: string; payload: MissionStepTaskCreate }) =>
+            createMissionStepTask(missionId, stepKey, payload, { idempotencyKey: newIdempotencyKey() }),
+        onSuccess: (mission) => {
+            qc.setQueryData(missionQK.detail(mission.id), mission);
+            invalidateMissionQueries(qc, mission.id);
+            qc.invalidateQueries({ queryKey: ["agenda-tasks"] });
+        },
+    });
+}
+
+/** The patient saw «Carlos completó tu misión» (RF-74). Idempotent; a manager never consumes it. */
+export function useMarkNoticeSeenMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (missionId: string) => markMissionNoticeSeen(missionId),
+        onSettled: () => qc.invalidateQueries({ queryKey: missionQK.overview() }),
+    });
 }

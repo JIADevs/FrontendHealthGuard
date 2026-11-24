@@ -163,6 +163,12 @@ export async function dismissMissionSuggestion(suggestionId: string) {
     return MissionSuggestionSchema.parse(data);
 }
 
+/** «Deshacer» after «Ahora no»: the suggestion is pending again (DU-42). */
+export async function restoreMissionSuggestion(suggestionId: string) {
+    const { data } = await apiClient.post(`/missions/suggestions/${suggestionId}/restore`);
+    return MissionSuggestionSchema.parse(data);
+}
+
 /** Marks the «Carlos completó tu misión» toast as seen (RF-74). Idempotent. */
 export async function markMissionNoticeSeen(id: string) {
     await apiClient.post(`/missions/${id}/notice-seen`);

@@ -53,6 +53,8 @@ export function MissionDetailScreen() {
       }}
       onShare={(target) => navigation.navigate("ShareConfigure", { target, backTitle: "Misión" })}
       onOpenHistory={(missionId) => navigation.navigate("MissionHistory", { id: missionId, backTitle: "Misión" })}
+      onCompleted={(mission) => navigation.navigate("MissionCelebration", { id: mission.id })}
+      onOpenMission={(missionId) => navigation.push("MissionDetail", { id: missionId, backTitle: "Misión" })}
       onOpenDocument={(documentId, title) => navigation.navigate("DocumentDetail", { id: documentId, title })}
       onBack={() => navigation.goBack()}
     />

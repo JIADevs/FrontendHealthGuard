@@ -38,6 +38,8 @@ import { MissionDetailScreen } from "../screens/MissionDetailScreen";
 import { MissionAddDocumentsScreen } from "../screens/MissionAddDocumentsScreen";
 import { MissionHistoryScreen } from "../screens/MissionHistoryScreen";
 import { MissionNewScreen } from "../screens/MissionNewScreen";
+import { MissionCelebrationScreen } from "../screens/MissionCelebrationScreen";
+import { MissionSuggestionsScreen } from "../screens/MissionSuggestionsScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { DependientesScreen } from "../screens/DependientesScreen";
@@ -111,6 +113,10 @@ export type RootStackParamList = {
   MissionAddDocuments: WithBackTitle & { missionId: string; stepKey?: string };
   /** `initialType`: preselected type, e.g. «Necesito conseguirlo» from the first medication (RF-36). */
   MissionNew: (WithBackTitle & { initialType?: MissionType }) | undefined;
+  /** The server just closed the mission (RF-50). Modal with fade, over the detail. */
+  MissionCelebration: { id: string };
+  /** «Misiones sugeridas» (v2.28), from the row at the end of «En curso». */
+  MissionSuggestions: WithBackTitle | undefined;
   Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
   DocumentUpload:
     | (WithBackTitle & {
@@ -314,6 +320,12 @@ export function RootNavigator() {
           <Stack.Screen name="MissionAddDocuments" component={MissionAddDocumentsScreen} options={FORM_SCREEN_OPTIONS} />
           <Stack.Screen name="MissionHistory" component={MissionHistoryScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
           <Stack.Screen name="MissionNew" component={MissionNewScreen} options={FORM_SCREEN_OPTIONS} />
+          <Stack.Screen
+            name="MissionCelebration"
+            component={MissionCelebrationScreen}
+            options={{ headerShown: false, presentation: "fullScreenModal", animation: "fade", gestureEnabled: false }}
+          />
+          <Stack.Screen name="MissionSuggestions" component={MissionSuggestionsScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
           <Stack.Screen name="Dependientes" component={DependientesScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
         </>
       ) : (

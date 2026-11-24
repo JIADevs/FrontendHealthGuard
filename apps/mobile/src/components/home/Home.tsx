@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { ScrollView, StatusBar, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -34,6 +35,9 @@ import { useHomeData } from "./useHomeData";
 import { LoadError } from "../states/LoadError";
 import { HomeMissionCard } from "../missions/HomeMissionCard";
 import { FirstMedicationSheet } from "../missions/FirstMedicationSheet";
+import { MissionFollowUpSheet } from "../missions/MissionFollowUpSheet";
+import { useMissionNotices } from "../missions/useMissionNotices";
+import { useMissionClosure, type PendingFollowUp } from "../../lib/missionClosure";
 
 type MedicationEvent = Extract<AgendaEvent, { type: "medication" }>;
 
@@ -71,6 +75,16 @@ export function Home({ nav }: { nav: HomeNavigation }) {
   const [doseSheet, setDoseSheet] = useState<MedicationEvent | null>(null);
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [firstMedication, setFirstMedication] = useState(false);
+  /** «Volver al inicio» from the celebration: the follow-up opens here, over Inicio (RF-52, v2.22). */
+  const [followUp, setFollowUp] = useState<PendingFollowUp | null>(null);
+  const takeFollowUp = useMissionClosure((s) => s.takeFollowUp);
+  useFocusEffect(
+    useCallback(() => {
+      const pending = takeFollowUp();
+      if (pending) setFollowUp(pending);
+    }, [takeFollowUp]),
+  );
+  useMissionNotices(missionOverview.data?.notices);
 
   // Primer uso: hasta saber si va la lista «Empieza en 4 pasos» solo hay un esqueleto, en el primer
   // lugar; las listas que el primer uso oculta no muestran esqueleto para luego desaparecer.
@@ -193,6 +207,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
           onClose={() => setFirstMedication(false)}
         />
       ) : null}
+      {followUp ? <MissionFollowUpSheet followUp={followUp} onClose={() => setFollowUp(null)} /> : null}
     </View>
   );
 }

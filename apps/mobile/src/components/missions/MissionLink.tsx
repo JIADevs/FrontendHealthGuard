@@ -13,7 +13,7 @@ export function MissionLink({
   onPress,
   center = false,
 }: {
-  icon: ReactNode;
+  icon?: ReactNode;
   label: string;
   onPress: () => void;
   center?: boolean;

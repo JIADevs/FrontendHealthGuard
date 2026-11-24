@@ -668,6 +668,40 @@ export function useTreatmentsByIdsQuery(ids: string[]) {
     });
 }
 
+/**
+ * Details of several treatments for list cards that summarize each one (what it groups), loaded in
+ * the order given and at most `concurrency` at a time. The list API has no counts, and the hosted
+ * database allows few connections: firing every detail at once exhausted its pool.
+ * - Shares `QK.treatment(id)` with the detail screen, so opening a treatment is instant.
+ * - A detail already in the cache is shown as is when the cards mount again (no refetch burst);
+ *   writes that touch treatments still refresh it through `invalidateTreatmentQueries`.
+ * - A failed detail is not retried: the card simply shows without its summary.
+ */
+export function useTreatmentDetailsInOrderQuery(ids: string[], concurrency = 2) {
+    const qc = useQueryClient();
+    let busy = 0;
+    return useQueries({
+        queries: ids.map((id) => {
+            const state = qc.getQueryState(QK.treatment(id));
+            let enabled = true;
+            if (state?.fetchStatus === "fetching") {
+                busy += 1;
+            } else if (state?.data === undefined && state?.status !== "error") {
+                enabled = busy < concurrency;
+                if (enabled) busy += 1;
+            }
+            return {
+                queryKey: QK.treatment(id),
+                queryFn: () => getTreatmentById(id),
+                staleTime: 30_000,
+                retry: false,
+                refetchOnMount: false,
+                enabled,
+            };
+        }),
+    });
+}
+
 export function useDocumentsByIdsQuery(ids: string[]) {
     return useQueries({
         queries: ids.map((id) => ({

@@ -511,3 +511,35 @@ Si un gestor completa una misión del dependiente, el dependiente no estaba pres
 | Pantalla «Inicio · misión completada por el gestor» | `mockups/m3-misiones.js` |
 | Regla del toast del dependiente | `system/pages/misiones.md` |
 
+## 34. v2.26 · Botón fantasma pequeño sin canto y secundarios con ícono visible
+
+Dos fallas del kit que se veían en la lista de Misiones: el botón fantasma `sm` («Ahora no») heredaba el canto azul de `.btn.sm` y parecía subrayado, y los secundarios del encabezado («Nueva», «Invitar») tenían el ícono en blanco sobre blanco, así que no se veía.
+
+| Cambio | Dónde |
+|---|---|
+| `.btn.ghost.sm` sin sombra ni canto, como cualquier fantasma | `mockups/kit.css` |
+| Ícono de los secundarios en `--color-brand-solid` | `mockups/m3-misiones.js` («Nueva»), `mockups/m6-cuenta.js` («Invitar») |
+
+## 35. v2.27 · `preview.html` al día con Misiones y Motivación
+
+La vista previa del sistema mostraba la línea de tiempo con botones dentro del paso, la racha con «2 pausas», el nivel como «26 de 30 tareas» y el banner de gestión como fijo.
+
+| Cambio | Dónde |
+|---|---|
+| Columna de misiones con el patrón de la lista (H2): «Tu próximo paso» con su acción, pestañas, fila de misión y fila de sugerencias | `system/preview.html` «Motivación y misiones» |
+| Línea de tiempo v2.16: paso actual tocable, sin botones, nodo centrado y 26 px entre pasos | `system/preview.html` |
+| Racha sin «pausas»; nivel con nombre configurable y «Llevas 26 de 30…»; 8 insignias | `system/preview.html` |
+| Aviso de modo gestión de 1 s (no fijo) | `system/preview.html` «Formularios y navegación» |
+
+## 36. v2.28 · Lista de Misiones «H2»
+
+Decisión de producto del 2026-11-24 (PRD de Misiones `DU-37`, RF-03). Las sugerencias ya no van primero: si eran muchas, empujaban las misiones en curso. Se compararon cinco opciones y una combinación; queda «H2».
+
+| Cambio | Dónde |
+|---|---|
+| «Tu próximo paso» arriba, con la acción del paso más cercano («Prepararme ahora» abre la hoja del paso) | `mockups/m3-misiones.js` «Misiones» |
+| Pestañas «En curso · n | Completadas · n»; misiones en curso como filas ordenadas por cercanía; pausadas al final | `mockups/m3-misiones.js` |
+| Sugerencias en una sola fila que abre «Misiones sugeridas» (agrupadas por origen); «Ahora no» con toast y «Deshacer» | `mockups/m3-misiones.js` |
+| Estados: completadas, paso desde la lista, sin fecha, muchas sugerencias, con pausada, sin misiones en curso | `mockups/m3-misiones.js` |
+| Regla de la lista | `system/pages/misiones.md` |
+

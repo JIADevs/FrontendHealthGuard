@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Globe, Link2, ShieldCheck } from "lucide-react";
 import { consumeSharedBackpack, getSharedBackpackDocumentUrl, isApiError, type SharedBackpack } from "@helu/api";
-import { Chip, IconTile, Spinner, Typography } from "@helu/ui";
+import { Button, Chip, IconTile, Typography } from "@helu/ui";
 
 /**
  * Public page of a shared backpack (PRD Misiones RF-67, DU-13; mockups m5 «Vista pública (móvil)» and
@@ -42,6 +42,23 @@ const card: React.CSSProperties = {
   borderRadius: 18,
   padding: "14px 16px",
 };
+
+
+/** Page-local CSS: skeleton shimmer (one for the screen, 1,4 s), «Ver» states, content fade-in (§6c). */
+const PAGE_CSS = `
+.sb-skel { background: var(--border); border-radius: 6px; animation: sb-shimmer 1.4s linear infinite; }
+@keyframes sb-shimmer { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+.sb-enter { animation: sb-fade 150ms cubic-bezier(0.2, 0, 0, 1) both; }
+@keyframes sb-fade { from { opacity: 0; } to { opacity: 1; } }
+.sb-ver { border: 0; background: transparent; color: var(--brand-600); font-weight: 700; font-size: 14px;
+  min-width: 44px; min-height: 44px; padding: 0 12px; border-radius: 12px; cursor: pointer;
+  transition: filter 150ms ease-out, background-color 100ms ease-out; }
+.sb-ver:hover { filter: brightness(1.07); background: var(--brand-50); }
+.sb-ver:active { background: var(--brand-100); }
+.sb-ver:focus-visible { outline: 3px solid #3B82F6; outline-offset: 2px; }
+.sb-ver:disabled { cursor: progress; }
+@media (prefers-reduced-motion: reduce) { .sb-skel, .sb-enter { animation: none; } }
+`;
 
 function dayLabel(iso: string): string {
   const d = new Date(iso);
@@ -133,24 +150,43 @@ function DocumentRow({ token, doc }: { token: string; doc: SharedBackpack["docum
           {failed ? "No se pudo abrir. Intenta de nuevo." : meta}
         </Typography>
       </div>
-      <button
-        type="button"
-        onClick={() => void open()}
-        disabled={opening}
-        aria-label={`Ver ${doc.title}`}
-        style={{
-          border: 0,
-          background: "transparent",
-          color: "var(--brand-600)",
-          fontWeight: 700,
-          fontSize: 14,
-          cursor: opening ? "progress" : "pointer",
-          padding: "10px 4px",
-          minWidth: 44,
-        }}
-      >
+      <button type="button" className="sb-ver" onClick={() => void open()} disabled={opening} aria-label={`Ver ${doc.title}`}>
         {opening ? "Abriendo…" : "Ver"}
       </button>
+    </div>
+  );
+}
+
+/** §6c: skeleton with the shape of the page (header real, cards as grey blocks); never a full-screen spinner. */
+function LoadingSkeleton() {
+  return (
+    <div style={page} aria-busy="true">
+      <style>{PAGE_CSS}</style>
+      <span className="sr-only">Cargando documentos</span>
+      <header style={top}>
+        <Logo />
+      </header>
+      <main style={main}>
+        <div style={{ ...card, display: "flex", alignItems: "center", gap: 14 }}>
+          <div className="sb-skel" style={{ width: 48, height: 48, borderRadius: "50%" }} />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="sb-skel" style={{ width: "70%", height: 16 }} />
+            <div className="sb-skel" style={{ width: "45%", height: 12 }} />
+          </div>
+        </div>
+        <section style={{ ...card, paddingTop: 6, paddingBottom: 6 }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0" }}>
+              <div className="sb-skel" style={{ width: 40, height: 40, borderRadius: 13 }} />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="sb-skel" style={{ width: "70%", height: 14 }} />
+                <div className="sb-skel" style={{ width: "45%", height: 12 }} />
+              </div>
+              <div className="sb-skel" style={{ width: 44, height: 20 }} />
+            </div>
+          ))}
+        </section>
+      </main>
     </div>
   );
 }
@@ -168,16 +204,7 @@ function ShareBackpackInner() {
 
   if (!token) return <Unavailable missingToken />;
 
-  if (query.isLoading) {
-    return (
-      <div style={{ ...page, alignItems: "center", justifyContent: "center", gap: 12 }}>
-        <Spinner size="lg" />
-        <Typography variant="bodySm" color="secondary">
-          Abriendo documentos…
-        </Typography>
-      </div>
-    );
-  }
+  if (query.isLoading) return <LoadingSkeleton />;
 
   if (query.isError) {
     const err = query.error;
@@ -192,9 +219,9 @@ function ShareBackpackInner() {
           <Typography variant="body" color="secondary">
             Revisa tu conexión e intenta de nuevo.
           </Typography>
-          <button type="button" className="btn btn-primary" onClick={() => void query.refetch()}>
+          <Button variant="primary" onPress={() => void query.refetch()} loading={query.isFetching} loadingLabel="Reintentando…">
             Reintentar
-          </button>
+          </Button>
         </main>
       </div>
     );
@@ -206,12 +233,13 @@ function ShareBackpackInner() {
 
   return (
     <div style={page}>
+      <style>{PAGE_CSS}</style>
       <header style={top}>
         <Logo />
         <span style={{ flex: 1 }} />
         <Chip label={expiryLabel(data.expiresAt)} tone="success" icon={<ShieldCheck size={12} />} />
       </header>
-      <main style={main}>
+      <main style={main} className="sb-enter">
         <div style={{ ...card, display: "flex", alignItems: "center", gap: 14 }}>
           <div
             aria-hidden
@@ -262,11 +290,7 @@ function ShareBackpackInner() {
 export default function ShareBackpackPage() {
   return (
     <Suspense
-      fallback={(
-        <div style={{ ...page, alignItems: "center", justifyContent: "center" }}>
-          <Spinner size="lg" />
-        </div>
-      )}
+      fallback={<LoadingSkeleton />}
     >
       <ShareBackpackInner />
     </Suspense>

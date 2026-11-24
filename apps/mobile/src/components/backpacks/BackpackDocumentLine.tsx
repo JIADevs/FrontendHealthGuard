@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { X } from "lucide-react-native";
 import type { Document } from "@helu/api";
-import { IconTile, fontSize, nativeFont, spacing, useAppTheme, type ThemeContextValue } from "@helu/ui";
+import { IconTile, PressableScale, fontSize, nativeFont, spacing, useAppTheme, type ThemeContextValue } from "@helu/ui";
 import { CATEGORY_META, categoryOf } from "../documents/documentCategories";
 import { documentDateLabel } from "../documents/utils/groupDocumentsByDate";
 
@@ -30,9 +30,11 @@ export function BackpackDocumentLine({
 
   return (
     <View style={styles.row}>
-      <Pressable
+      {/* PressableScale puts the style on its inner view: this wrapper gives the row its width. */}
+      <View style={styles.mainWrap}>
+      <PressableScale
         onPress={onPress}
-        style={({ pressed }) => [styles.main, pressed && { opacity: 0.7 }]}
+        style={styles.main}
         accessibilityRole="button"
         accessibilityLabel={`${document.title}, ${meta}`}
       >
@@ -45,7 +47,8 @@ export function BackpackDocumentLine({
             {meta}
           </Text>
         </View>
-      </Pressable>
+      </PressableScale>
+      </View>
       <Pressable
         onPress={onRemove}
         style={({ pressed }) => [styles.remove, pressed && { backgroundColor: t.surface.muted }]}
@@ -61,7 +64,8 @@ export function BackpackDocumentLine({
 function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     row: { flexDirection: "row", alignItems: "center", gap: spacing[1], paddingVertical: 6 },
-    main: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing[3], minHeight: 44 },
+    mainWrap: { flex: 1, minWidth: 0 },
+    main: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing[3], minHeight: 44, borderRadius: 12 },
     copy: { flex: 1, minWidth: 0, gap: 2 },
     title: { fontSize: 14, lineHeight: 18, fontFamily: nativeFont("body", 600), color: t.text.primary },
     meta: { fontSize: fontSize.sm, lineHeight: 18, fontFamily: nativeFont("body", 400), color: t.text.secondary },

@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { CalendarDays, Check, FilePlus, FileText, Heart, ListOrdered, Pill, Plus, Stethoscope } from "lucide-react-native";
 import type { Mission, MissionStep } from "@helu/api";
 import { BottomSheet, Button, IconTile, nativeFont, spacing, useAppTheme, type BottomSheetHandle } from "@helu/ui";
 import { MascotHint } from "../brand/MascotHint";
+import { MissionLink } from "./MissionLink";
 import { notify } from "../../lib/notify";
 import { ReceiptBody } from "./ReceiptBody";
 import { SessionsBody } from "./SessionsBody";
@@ -227,12 +228,12 @@ export function MissionStepSheet({
               Si tu EPS te dio una autorización, súbela aquí para tenerla a mano. Es opcional.
             </Text>
             <StepDocuments docs={stepDocuments} />
-            <Pressable onPress={thenClose(() => actions.attach(step))} hitSlop={8} accessibilityRole="button" style={styles.attach}>
-              <Plus size={15} strokeWidth={2.6} color={t.brand.text} />
-              <Text style={[styles.attachText, { color: t.brand.text }]}>
-                {stepDocuments.length > 0 ? "Adjuntar otro documento" : "Subir la autorización"}
-              </Text>
-            </Pressable>
+            <MissionLink
+              center
+              icon={<Plus size={15} strokeWidth={2.6} color={t.brand.text} />}
+              label={stepDocuments.length > 0 ? "Adjuntar otro documento" : "Subir la autorización"}
+              onPress={thenClose(() => actions.attach(step))}
+            />
             <Button
               variant="primary"
               fullWidth
@@ -282,10 +283,12 @@ export function MissionStepSheet({
               <>
                 <StepDocuments docs={stepDocuments} />
                 {/* «Adjuntar documento» is a permanent secondary action (misiones.md, RF-60). */}
-                <Pressable onPress={thenClose(() => actions.attach(step))} hitSlop={8} accessibilityRole="button" style={styles.attach}>
-                  <Plus size={15} strokeWidth={2.6} color={t.brand.text} />
-                  <Text style={[styles.attachText, { color: t.brand.text }]}>Adjuntar documento</Text>
-                </Pressable>
+                <MissionLink
+                  center
+                  icon={<Plus size={15} strokeWidth={2.6} color={t.brand.text} />}
+                  label="Adjuntar documento"
+                  onPress={thenClose(() => actions.attach(step))}
+                />
               </>
             ) : null}
             <Button variant="primary" fullWidth onPress={thenClose(() => actions.complete(step))}>
@@ -336,8 +339,6 @@ const styles = StyleSheet.create({
   body: { gap: spacing[3], paddingBottom: spacing[2] },
   text: { fontSize: 15, lineHeight: 22, fontFamily: nativeFont("body", 400) },
   meta: { fontSize: 13, lineHeight: 18, fontFamily: nativeFont("body", 400) },
-  attach: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, minHeight: 36 },
-  attachText: { fontSize: 13, fontFamily: nativeFont("body", 700) },
   docs: { gap: 6, padding: spacing[3], borderRadius: 12 },
   docRow: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
 });

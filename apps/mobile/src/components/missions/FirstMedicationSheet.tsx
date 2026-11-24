@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Check, Pill, Route } from "lucide-react-native";
-import { BottomSheet, Button, IconTile, nativeFont, spacing, useAppTheme, type BottomSheetHandle } from "@helu/ui";
+import { BottomSheet, Button, IconTile, nativeFont, spacing, useAppTheme, type BottomSheetHandle, PressableScale } from "@helu/ui";
 
 type Choice = "have" | "need";
 
@@ -25,18 +25,14 @@ export function FirstMedicationSheet({
   const option = (value: Choice, title: string, hint: string, icon: React.ReactNode, tone: "success" | "medication") => {
     const selected = choice === value;
     return (
-      <Pressable
+      <PressableScale
         key={value}
         onPress={() => setChoice(value)}
         accessibilityRole="radio"
         accessibilityState={{ selected }}
-        style={({ pressed }) => [
+        style={[
           styles.option,
-          {
-            borderColor: selected ? t.brand.solid : t.border.default,
-            backgroundColor: selected ? t.brand.tint : t.surface.bgCard,
-            opacity: pressed ? 0.85 : 1,
-          },
+          { borderColor: selected ? t.brand.solid : t.border.default, backgroundColor: selected ? t.brand.tint : t.surface.bgCard },
         ]}
       >
         <IconTile tone={tone} icon={icon} />
@@ -47,7 +43,7 @@ export function FirstMedicationSheet({
         <View style={[styles.radio, { borderColor: selected ? t.brand.solid : t.border.default }]}>
           {selected ? <View style={[styles.dot, { backgroundColor: t.brand.solid }]} /> : null}
         </View>
-      </Pressable>
+      </PressableScale>
     );
   };
 

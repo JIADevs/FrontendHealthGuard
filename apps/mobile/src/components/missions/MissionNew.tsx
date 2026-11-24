@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCreateMissionMutation, type Mission, type MissionType } from "@helu/api";
 import {
@@ -9,8 +9,7 @@ import {
   TextField,
   nativeFont,
   spacing,
-  useAppTheme,
-} from "@helu/ui";
+  useAppTheme, PressableScale } from "@helu/ui";
 import { notify } from "../../lib/notify";
 import { ScreenHeader } from "../ScreenHeader";
 import { useIsOnline } from "../states/OfflineBanner";
@@ -78,7 +77,7 @@ export function MissionNew({
               {TYPES.map((ty) => {
                 const selected = ty === type;
                 return (
-                  <Pressable
+                  <PressableScale
                     key={ty}
                     onPress={() => {
                       setType(ty);
@@ -87,13 +86,9 @@ export function MissionNew({
                     }}
                     accessibilityRole="radio"
                     accessibilityState={{ selected }}
-                    style={({ pressed }) => [
+                    style={[
                       styles.option,
-                      {
-                        borderColor: selected ? t.brand.solid : t.border.default,
-                        backgroundColor: selected ? t.brand.tint : t.surface.bgCard,
-                        opacity: pressed ? 0.85 : 1,
-                      },
+                      { borderColor: selected ? t.brand.solid : t.border.default, backgroundColor: selected ? t.brand.tint : t.surface.bgCard },
                     ]}
                   >
                     <IconTile tone={missionTypeTone[ty]} icon={<MissionTypeIcon type={ty} size={19} color={t.text.secondary} />} />
@@ -104,7 +99,7 @@ export function MissionNew({
                     <View style={[styles.radio, { borderColor: selected ? t.brand.solid : t.border.default }]}>
                       {selected ? <View style={[styles.radioDot, { backgroundColor: t.brand.solid }]} /> : null}
                     </View>
-                  </Pressable>
+                  </PressableScale>
                 );
               })}
             </View>

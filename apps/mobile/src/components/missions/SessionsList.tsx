@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { CalendarDays, Check, ChevronRight, X } from "lucide-react-native";
 import type { MissionSessions } from "@helu/api";
-import { IconTile, nativeFont, spacing, useAppTheme } from "@helu/ui";
+import { IconTile, nativeFont, spacing, useAppTheme, PressableScale } from "@helu/ui";
 import { capitalize, relativeDay, shortDate } from "./missionCopy";
 
 const RECENT = 3;
@@ -43,12 +43,12 @@ export function SessionsList({
       {shown.map((i) => {
         const counts = i.counts || i.status === "PROGRAMADA";
         return (
-          <Pressable
+          <PressableScale
             key={i.appointmentId}
             onPress={() => onOpen(i.appointmentId)}
             accessibilityRole="button"
             accessibilityLabel={`${i.label}, ${detail(i)}. Abrir la cita`}
-            style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+            style={styles.row}
           >
             <IconTile
               tone={i.counts ? "success" : i.status === "PROGRAMADA" ? "treatment" : "neutral"}
@@ -67,7 +67,7 @@ export function SessionsList({
               <Text style={[styles.meta, { color: t.text.secondary }]}>{detail(i)}</Text>
             </View>
             <ChevronRight size={16} strokeWidth={2.4} color={t.text.muted} />
-          </Pressable>
+          </PressableScale>
         );
       })}
       {rows.length > RECENT ? (

@@ -1,8 +1,19 @@
+import { useEffect, useRef, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import Animated, { LinearTransition, ZoomIn } from "react-native-reanimated";
-import { Check, ChevronRight, FilePlus, FileText, Heart, Minus } from "lucide-react-native";
+import Animated, {
+  Easing,
+  LinearTransition,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
+import { Check, ChevronRight, FilePlus, FileText, Heart, Minus, Pause } from "lucide-react-native";
 import type { Mission, MissionStep } from "@helu/api";
-import { motion, nativeFont, spacing, useAppTheme } from "@helu/ui";
+import { PressableScale, motion, motionEasing, nativeFont, spacing, useAppTheme, useReducedMotion } from "@helu/ui";
 import { sessionMessage, sessionsTitle, shortDate, stepHint, stepTitle } from "./missionCopy";
 
 const DONE = new Set(["completed", "skipped"]);
@@ -15,13 +26,30 @@ const DONE = new Set(["completed", "skipped"]);
 export function MissionTimeline({
   mission,
   onOpenStep,
+  confirmedKey,
+  onResume,
 }: {
   mission: Mission;
   onOpenStep: (step: MissionStep) => void;
+  /**
+   * The step the server just confirmed (movimiento §6 «Paso de misión completado»): its node pulses,
+   * the rail draws to the next step (700 ms) and the next node unlocks with a short bounce. The
+   * motivational motion waits for the server even though the timeline moved on tap (§8).
+   */
+  confirmedKey?: string | null;
+  /** A paused mission shows its current step as «Toca para reanudar» (mockup «Misión pausada», RF-12). */
+  onResume?: () => void;
 }) {
   const t = useAppTheme();
   const steps = mission.steps.filter((s) => s.applies);
-  const currentKey = mission.status === "active" ? mission.nextAction?.stepKey : undefined;
+  const paused = mission.status === "paused";
+  // A paused mission has no next action from the API: its current step is the first one not done.
+  const currentKey =
+    mission.status === "active"
+      ? mission.nextAction?.stepKey
+      : paused
+        ? mission.nextAction?.stepKey ?? steps.find((s) => !DONE.has(s.status))?.key
+        : undefined;
   const ok = t.status.successGraphic;
   const line = t.border.default;
   const total = steps.length;
@@ -40,47 +68,62 @@ export function MissionTimeline({
             <Animated.View key={step.key} layout={LinearTransition.duration(motion.base)}>
               {/* 20 px of rail above and below the card, except at the ends of the timeline, so the
                   first or last card sits on the card padding without a gap. */}
-              {i > 0 ? <Connector color={ok} /> : null}
+              {i > 0 ? <Connector color={ok} draw={steps[i - 1].key === confirmedKey} /> : null}
               <View style={styles.row}>
                 <View style={[styles.rail, { gap: 6 }]}>
                   <View style={[styles.seg, { backgroundColor: i > 0 ? ok : "transparent" }]} />
                   {/* 40 px node with a 5 px halo (kit: box-shadow 0 0 0 5px brand-tint), centered on the card. */}
-                  <View style={[styles.halo, { backgroundColor: t.brand.tint }]}>
-                    <View style={[styles.nodeCurrent, { backgroundColor: t.brand.solid }]}>
-                      {step.key === "sessions" ? (
+                  <CurrentNode
+                    paused={paused}
+                    unlocked={i > 0 && steps[i - 1].key === confirmedKey}
+                    icon={
+                      paused ? (
+                        <Pause size={19} strokeWidth={2.4} color={t.text.onSolid} />
+                      ) : step.key === "sessions" ? (
                         <Heart size={19} strokeWidth={2.2} color={t.text.onSolid} />
                       ) : (
                         <FileText size={19} strokeWidth={2.2} color={t.text.onSolid} />
-                      )}
-                    </View>
-                  </View>
+                      )
+                    }
+                  />
                   <View style={[styles.seg, { backgroundColor: last ? "transparent" : line }]} />
                 </View>
-                <Pressable
-                  onPress={() => onOpenStep(step)}
+                {/* PressableScale styles its inner view: this wrapper takes the row's remaining width. */}
+                <View style={{ flex: 1 }}>
+                <PressableScale
+                  onPress={() => (paused ? onResume?.() : onOpenStep(step))}
                   accessibilityRole="button"
-                  accessibilityLabel={`Paso ${i + 1} de ${total}, ahora: ${stepTitle(mission, step.key)}. Toca para continuar`}
-                  style={({ pressed }) => [
+                  accessibilityLabel={
+                    paused
+                      ? `Misión pausada en el paso ${i + 1} de ${total}: ${stepTitle(mission, step.key)}. Toca para reanudar`
+                      : `Paso ${i + 1} de ${total}, ahora: ${stepTitle(mission, step.key)}. Toca para continuar`
+                  }
+                  style={[
                     styles.currentCard,
-                    { backgroundColor: t.brand.tint, borderColor: t.brand.tintBorder, opacity: pressed ? 0.85 : 1 },
+                    paused
+                      ? { backgroundColor: t.surface.muted, borderColor: t.border.default }
+                      : { backgroundColor: t.brand.tint, borderColor: t.brand.tintBorder },
                   ]}
                 >
                   <View style={{ flex: 1, gap: 3 }}>
-                    <Text style={[styles.eyebrow, { color: t.brand.text }]}>
-                      PASO {i + 1} DE {total} · AHORA
+                    <Text style={[styles.eyebrow, { color: paused ? t.text.secondary : t.brand.text }]}>
+                      {paused ? "MISIÓN PAUSADA" : `PASO ${i + 1} DE ${total} · AHORA`}
                     </Text>
                     <Text style={[styles.currentTitle, { color: t.text.primary }]}>
                       {step.key === "sessions" ? sessionsTitle(mission.sessions) : stepTitle(mission, step.key)}
                     </Text>
                     {/* The sessions cycle says where it stands: «Tu quinta sesión es el jueves» (RF-43). */}
-                    <Text style={[styles.meta, { color: t.brand.text }]}>
-                      {step.key === "sessions"
-                        ? sessionMessage(mission.sessions)
-                        : pendingDetail(step) ?? "Toca para continuar"}
+                    <Text style={[styles.meta, { color: paused ? t.text.secondary : t.brand.text }]}>
+                      {paused
+                        ? "Toca para reanudar"
+                        : step.key === "sessions"
+                          ? sessionMessage(mission.sessions)
+                          : pendingDetail(step) ?? "Toca para continuar"}
                     </Text>
                   </View>
-                  <ChevronRight size={20} strokeWidth={2.6} color={t.brand.solid} />
-                </Pressable>
+                  <ChevronRight size={20} strokeWidth={2.6} color={paused ? t.text.muted : t.brand.solid} />
+                </PressableScale>
+                </View>
               </View>
               {last ? null : <Connector color={line} />}
             </Animated.View>
@@ -97,8 +140,10 @@ export function MissionTimeline({
         return (
           <Animated.View key={step.key} layout={LinearTransition.duration(motion.base)} style={styles.row}>
             <View style={[styles.rail, { gap: 6 }]}>
-              <Node status={step.status} last={last} />
-              {last ? null : <View style={[styles.seg, { minHeight: nextIsCurrent ? 6 : 28, backgroundColor: below }]} />}
+              <Node status={step.status} pulse={step.key === confirmedKey} />
+              {last ? null : (
+                <Rail draw={step.key === confirmedKey} color={below} minHeight={nextIsCurrent ? 6 : 28} />
+              )}
             </View>
             <Pressable
               disabled={!done}
@@ -121,12 +166,106 @@ export function MissionTimeline({
 }
 
 /** Rail-only gap between the current card and its neighbours. */
-function Connector({ color }: { color: string }) {
+function Connector({ color, draw = false }: { color: string; draw?: boolean }) {
   return (
     <View style={styles.row}>
       <View style={styles.rail}>
-        <View style={[styles.seg, { height: 20, flex: 0, backgroundColor: color }]} />
+        <Rail draw={draw} color={color} height={20} delay={DRAW_MS / 2} />
       </View>
+    </View>
+  );
+}
+
+/** Node pulse, then the rail draws to the next step, then the next node bounces: ≤ 1,2 s in all. */
+const PULSE_MS = 300;
+const DRAW_MS = 700;
+
+/**
+ * A rail segment. With `draw` it fills from the top in 700 ms (§6 «el riel se dibuja hasta el
+ * siguiente»), animating `scaleY` only (§8: transform and opacity).
+ */
+function Rail({
+  draw,
+  color,
+  minHeight,
+  height,
+  delay = 0,
+}: {
+  draw: boolean;
+  color: string;
+  minHeight?: number;
+  height?: number;
+  delay?: number;
+}) {
+  const reduced = useReducedMotion();
+  const fill = useSharedValue(1);
+  useEffect(() => {
+    if (!draw || reduced) return;
+    fill.value = 0;
+    fill.value = withDelay(
+      PULSE_MS / 2 + delay,
+      withTiming(1, { duration: DRAW_MS / (height ? 2 : 1), easing: motionEasing.standard }),
+    );
+  }, [draw, reduced, delay, height, fill]);
+  const animated = useAnimatedStyle(() => ({ transform: [{ scaleY: fill.value }] }));
+  return (
+    <Animated.View
+      style={[
+        styles.seg,
+        height ? { height, flex: 0 } : { minHeight },
+        { backgroundColor: color, transformOrigin: "top" },
+        animated,
+      ]}
+    />
+  );
+}
+
+/**
+ * The current node: «Estás aquí» is the halo that pulses (1,8 s loop, §1b), the only loop allowed
+ * besides the AI shimmer; still with reduced motion or when paused. When a confirmed step unlocks
+ * it, the node comes in with the short bounce of a positive confirmation (`ease-spring`).
+ */
+function CurrentNode({ paused, unlocked, icon }: { paused: boolean; unlocked: boolean; icon: ReactNode }) {
+  const t = useAppTheme();
+  const reduced = useReducedMotion();
+  const halo = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (reduced || paused) {
+      cancelAnimation(halo);
+      halo.value = 0;
+      return;
+    }
+    halo.value = withRepeat(withTiming(1, { duration: 900, easing: Easing.inOut(Easing.ease) }), -1, true);
+    return () => cancelAnimation(halo);
+  }, [reduced, paused, halo]);
+
+  const bounced = useRef(false);
+  useEffect(() => {
+    if (!unlocked || reduced || bounced.current) return;
+    bounced.current = true;
+    scale.value = withDelay(
+      PULSE_MS / 2 + DRAW_MS,
+      withSequence(
+        withTiming(0.95, { duration: 60, easing: motionEasing.out }),
+        withTiming(1.04, { duration: 110, easing: motionEasing.spring }),
+        withTiming(1, { duration: 80, easing: motionEasing.out }),
+      ),
+    );
+  }, [unlocked, reduced, scale]);
+
+  const haloStyle = useAnimatedStyle(() => ({ transform: [{ scale: 1 + halo.value * 0.14 }], opacity: 1 - halo.value * 0.45 }));
+  const nodeStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <View style={styles.haloBox}>
+      <Animated.View
+        style={[styles.halo, { backgroundColor: paused ? t.surface.muted : t.brand.tint }, haloStyle]}
+      />
+      <Animated.View style={[styles.nodeCurrent, { backgroundColor: paused ? t.text.muted : t.brand.solid }, nodeStyle]}>
+        {icon}
+      </Animated.View>
     </View>
   );
 }
@@ -156,12 +295,35 @@ function pendingDetail(step: MissionStep): string | null {
   return null;
 }
 
-function Node({ status }: { status: MissionStep["status"]; last: boolean }) {
+/**
+ * Done, skipped or pending node. Nothing moves on load (§6c); a node the server just confirmed
+ * pulses once (scale 1,2) to start the «paso completado» sequence.
+ */
+function Node({ status, pulse }: { status: MissionStep["status"]; pulse: boolean }) {
   const t = useAppTheme();
+  const reduced = useReducedMotion();
+  const scale = useSharedValue(1);
+  useEffect(() => {
+    if (!pulse || reduced) return;
+    scale.value = withSequence(
+      withTiming(1.2, { duration: PULSE_MS / 2, easing: motionEasing.out }),
+      withTiming(1, { duration: PULSE_MS / 2, easing: motionEasing.standard }),
+    );
+  }, [pulse, reduced, scale]);
+  const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   if (status === "completed") {
     return (
-      <Animated.View entering={ZoomIn.duration(motion.base)} style={[styles.node, { backgroundColor: t.status.successGraphic }]}>
+      <Animated.View style={[styles.node, { backgroundColor: t.status.successGraphic }, animated]}>
         <Check size={15} strokeWidth={3} color={t.text.onSolid} />
+      </Animated.View>
+    );
+  }
+  if (status === "skipped" && pulse) {
+    return (
+      <Animated.View
+        style={[styles.node, { backgroundColor: t.surface.muted, borderWidth: 1.5, borderStyle: "dashed", borderColor: t.border.default }, animated]}
+      >
+        <Minus size={14} strokeWidth={3} color={t.text.muted} />
       </Animated.View>
     );
   }
@@ -186,10 +348,10 @@ const styles = StyleSheet.create({
   // Square ends: two rows meet edge to edge, and rounded caps would leave a notch at the seam.
   seg: { width: 3, flex: 1 },
   node: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  halo: { width: 50, height: 50, borderRadius: 25, margin: -5, alignItems: "center", justifyContent: "center" },
+  haloBox: { width: 50, height: 50, margin: -5, alignItems: "center", justifyContent: "center" },
+  halo: { position: "absolute", width: 50, height: 50, borderRadius: 25 },
   nodeCurrent: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   currentCard: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,

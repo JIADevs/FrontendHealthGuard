@@ -79,7 +79,8 @@ export interface MedicationFormActions {
 }
 
 export interface MedicationFormAdapters {
-  onSaveSuccess: () => void;
+  /** `medicationId`: the medication saved (new or existing), e.g. to link it to a mission. */
+  onSaveSuccess: (medicationId?: string) => void;
   afterSave: () => void;
 }
 
@@ -215,7 +216,7 @@ export function useMedicationFormCore({
       updateMedMut.mutate(
         { id: initial!.id, name },
         {
-          onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
+          onSuccess: () => { adapters.onSaveSuccess(initial!.id); adapters.afterSave(); },
           onError: (err) => {
             setError(isApiError(err) ? err.message : "Error actualizando el medicamento.");
           },
@@ -228,7 +229,7 @@ export function useMedicationFormCore({
       createCycleMut.mutate(
         { medicationId: selectedMedicationId, cycle: cyclePayload },
         {
-          onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
+          onSuccess: () => { adapters.onSaveSuccess(selectedMedicationId); adapters.afterSave(); },
           onError: (err) => {
             setError(isApiError(err) ? err.message : "Error guardando el ciclo.");
           },
@@ -242,7 +243,7 @@ export function useMedicationFormCore({
         createCycleMut.mutate(
           { medicationId: med.id, cycle: cyclePayload },
           {
-            onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
+            onSuccess: () => { adapters.onSaveSuccess(med.id); adapters.afterSave(); },
             onError: (err) => {
               setError(isApiError(err) ? err.message : "Error guardando el ciclo.");
             },
@@ -265,7 +266,7 @@ export function useMedicationFormCore({
     createCycleMut.mutate(
       { medicationId, cycle: buildCyclePayload() },
       {
-        onSuccess: () => { adapters.onSaveSuccess(); adapters.afterSave(); },
+        onSuccess: () => { adapters.onSaveSuccess(medicationId); adapters.afterSave(); },
         onError: (err) => {
           setError(isApiError(err) ? err.message : "Error guardando el ciclo.");
         },

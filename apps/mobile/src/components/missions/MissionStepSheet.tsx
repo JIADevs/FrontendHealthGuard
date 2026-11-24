@@ -17,6 +17,8 @@ export interface StepSheetActions {
   schedule: () => void;
   /** Open an appointment of the mission (a session from «Tus sesiones»). */
   openAppointment: (appointmentId: string) => void;
+  /** «Agregarlo a tus medicamentos»: open the medication form; saving completes the step (RF-25). */
+  addMedication: () => void;
   /** «Adjuntar documento» from this step (RF-60); the sheet comes back after attaching. */
   attach: (step: MissionStep) => void;
 }
@@ -240,6 +242,23 @@ export function MissionStepSheet({
             </Button>
             <Button variant="ghost" fullWidth onPress={thenClose(() => actions.skip(step, "no_authorization_needed"))}>
               No necesito autorización
+            </Button>
+          </>
+        ) : step.key === "add_to_app" ? (
+          <>
+            <Text style={[styles.text, { color: t.text.primary }]}>
+              Agrégalo a tus medicamentos y te avisamos en cada toma. El paso queda listo al guardarlo.
+            </Text>
+            <Button
+              variant="primary"
+              fullWidth
+              icon={<Pill size={17} strokeWidth={2.4} color={t.text.onSolid} />}
+              onPress={thenClose(actions.addMedication)}
+            >
+              Agregar medicamento
+            </Button>
+            <Button variant="ghost" fullWidth onPress={thenClose(() => actions.skip(step, "not_applicable"))}>
+              No aplica
             </Button>
           </>
         ) : step.key === "receipt" ? (

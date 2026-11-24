@@ -46,6 +46,8 @@ export interface MissionDetailProps {
   /** Open this step's sheet on arrival (from «Tu próximo paso» or a push). */
   openStep?: string;
   onSchedule: (mission: Mission) => void;
+  /** «Agregarlo a tus medicamentos»: the medication form, linked to this mission. */
+  onAddMedication: (mission: Mission) => void;
   /** A session in «Tus sesiones» opens its appointment. */
   onOpenAppointment: (appointmentId: string) => void;
   /** «Adjuntar documento»: open the picker, the scanner or the upload form (RF-61). */
@@ -77,6 +79,7 @@ export function MissionDetail({
   missionId,
   openStep,
   onSchedule,
+  onAddMedication,
   onOpenAppointment,
   onAttach,
   onShare,
@@ -303,6 +306,7 @@ export function MissionDetail({
             complete: runComplete,
             skip: runSkip,
             schedule: () => onSchedule(mission),
+            addMedication: () => onAddMedication(mission),
             openAppointment: onOpenAppointment,
             attach: (step) => setAttachFor({ stepKey: step.key }),
           }}

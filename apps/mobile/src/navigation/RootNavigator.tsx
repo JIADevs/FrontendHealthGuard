@@ -86,7 +86,16 @@ export type RootStackParamList = {
         missionExamName?: string;
       }
     | undefined;
-  MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string } | undefined;
+  MedicationForm:
+    | {
+        medicationId?: string;
+        medicationName?: string;
+        cycleId?: string;
+        /** From «Agregarlo a tus medicamentos»: the step completes with the saved medication (RF-25). */
+        missionId?: string;
+        prefillName?: string;
+      }
+    | undefined;
   MedicationDetail: { id: string };
   CycleDetail: { cycleId: string; medicationId: string; medicationName: string };
   Treatments: WithBackTitle | undefined;

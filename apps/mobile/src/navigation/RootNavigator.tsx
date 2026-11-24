@@ -36,6 +36,7 @@ import { TreatmentFormScreen } from "../screens/TreatmentFormScreen";
 import { MissionsScreen } from "../screens/MissionsScreen";
 import { MissionDetailScreen } from "../screens/MissionDetailScreen";
 import { MissionAddDocumentsScreen } from "../screens/MissionAddDocumentsScreen";
+import { MissionHistoryScreen } from "../screens/MissionHistoryScreen";
 import { MissionNewScreen } from "../screens/MissionNewScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
@@ -104,6 +105,8 @@ export type RootStackParamList = {
   Missions: WithBackTitle | undefined;
   /** `openStep`: open that step's sheet on arrival (from «Tu próximo paso»). */
   MissionDetail: WithBackTitle & { id: string; openStep?: string };
+  /** «Ver historial» from the mission menu (RF-17, RF-71). */
+  MissionHistory: WithBackTitle & { id: string };
   /** «Vincular un documento que ya subí» to a mission (RF-61), from a step or the documents card. */
   MissionAddDocuments: WithBackTitle & { missionId: string; stepKey?: string };
   /** `initialType`: preselected type, e.g. «Necesito conseguirlo» from the first medication (RF-36). */
@@ -309,6 +312,7 @@ export function RootNavigator() {
           <Stack.Screen name="Missions" component={MissionsScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
           <Stack.Screen name="MissionDetail" component={MissionDetailScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
           <Stack.Screen name="MissionAddDocuments" component={MissionAddDocumentsScreen} options={FORM_SCREEN_OPTIONS} />
+          <Stack.Screen name="MissionHistory" component={MissionHistoryScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
           <Stack.Screen name="MissionNew" component={MissionNewScreen} options={FORM_SCREEN_OPTIONS} />
           <Stack.Screen name="Dependientes" component={DependientesScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
         </>

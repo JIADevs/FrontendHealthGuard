@@ -33,7 +33,8 @@ export function SessionsCountBody({
       accessibilityLabel={label}
       style={({ pressed }) => [
         styles.stepBtn,
-        { borderColor: t.border.default, backgroundColor: t.surface.bgCard, opacity: disabled ? 0.4 : pressed ? 0.8 : 1 },
+        // Icon button (movimiento §5): `surface-muted` while pressed; disabled at 50 % (MASTER §7).
+        { borderColor: t.border.default, backgroundColor: pressed ? t.surface.muted : t.surface.bgCard, opacity: disabled ? 0.5 : 1 },
       ]}
     >
       {icon}

@@ -59,39 +59,90 @@ export function BottomSheet({
   const backdrop = useSharedValue(0);
   const sheetOpacity = useSharedValue(reduced ? 0 : 1);
   const closing = useRef(false);
+  /**
+   * Leaving is guarded so the sheet can never stay mounted as an invisible modal that blocks
+   * every touch (a close tapped while the sheet was still opening could do that):
+   * - a close requested before the native modal finished presenting waits for `onShow`;
+   * - the exit always finishes, even if its animation was interrupted (plus a timeout fallback);
+   * - on iOS, `onClose`/`after` run once the native modal is dismissed (`onDismiss`), so the next
+   *   sheet or dialog is never presented while this one is still going away.
+   */
+  const [visible, setVisible] = useState(true);
+  const presented = useRef(false);
+  const pendingClose = useRef<{ after?: () => void } | null>(null);
+  const afterRef = useRef<(() => void) | undefined>(undefined);
+  const completed = useRef(false);
+  const fallback = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (fallback.current) clearTimeout(fallback.current);
+  }, []);
 
   useEffect(() => {
+    // Safety net if `onShow` never reports: by then the modal is surely on screen.
+    const shown = setTimeout(onShow, motion.slow);
     backdrop.value = withTiming(1, { duration: reduced ? motion.fast : motion.base });
     if (reduced) {
       sheetOpacity.value = withTiming(1, { duration: motion.fast });
     } else {
       translateY.value = withSpring(0, motion.sheetSpring);
     }
+    return () => clearTimeout(shown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /** Runs once: tells the parent the sheet is gone, then the caller's follow-up. */
+  const complete = () => {
+    if (completed.current) return;
+    completed.current = true;
+    if (fallback.current) clearTimeout(fallback.current);
+    onClose();
+    afterRef.current?.();
+  };
+
+  /** The exit animation ended (or was cut): hide the native modal, then complete. */
+  const finishExit = () => {
+    setVisible(false);
+    if (Platform.OS !== 'ios') complete();
+    // iOS completes in `onDismiss`; the fallback covers a dismissal that never reports back.
+    fallback.current = setTimeout(complete, 500);
+  };
+
   const animateOut = (after?: () => void) => {
     if (closing.current) return;
+    if (!presented.current) {
+      // Still presenting: close as soon as the native modal is on screen.
+      pendingClose.current = { after };
+      return;
+    }
     closing.current = true;
-    const done = () => {
-      onClose();
-      after?.();
-    };
-    backdrop.value = withTiming(0, { duration: reduced ? motion.fast : motion.exit });
+    afterRef.current = after;
+    const exit = reduced ? motion.fast : motion.exit;
+    backdrop.value = withTiming(0, { duration: exit });
     if (reduced) {
-      sheetOpacity.value = withTiming(0, { duration: motion.fast }, (finished) => {
-        if (finished) runOnJS(done)();
+      sheetOpacity.value = withTiming(0, { duration: motion.fast }, () => {
+        runOnJS(finishExit)();
       });
     } else {
       translateY.value = withTiming(
         sheetHeight.current + insets.bottom,
         { duration: motion.exit, easing: motionEasing.in },
-        (finished) => {
-          if (finished) runOnJS(done)();
+        // Finished or interrupted, the sheet is leaving: never leave it half-closed.
+        () => {
+          runOnJS(finishExit)();
         },
       );
     }
   };
+
+  function onShow() {
+    if (presented.current) return;
+    presented.current = true;
+    const pending = pendingClose.current;
+    if (pending) {
+      pendingClose.current = null;
+      animateOut(pending.after);
+    }
+  }
 
   const springBack = () => {
     translateY.value = reduced ? 0 : withSpring(0, motion.sheetSpring);
@@ -135,7 +186,14 @@ export function BottomSheet({
   }));
 
   return (
-    <RNModal transparent visible animationType="none" onRequestClose={() => requestCloseRef.current()}>
+    <RNModal
+      transparent
+      visible={visible}
+      animationType="none"
+      onShow={onShow}
+      onDismiss={complete}
+      onRequestClose={() => requestCloseRef.current()}
+    >
       <KeyboardAvoidingView
         style={styles.fill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

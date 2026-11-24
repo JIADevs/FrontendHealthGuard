@@ -14,11 +14,13 @@ import {
     setMissionSessionAttendance,
     skipMissionStep,
     unlinkMissionDocument,
+    updateMission,
 } from "./endpoints";
 import { missionQK } from "./keys";
 import type {
     Mission,
     MissionCreate,
+    MissionUpdate,
     MissionSessionAttendance,
     MissionSessionCreate,
     MissionStatus,
@@ -162,6 +164,18 @@ function useTransition(fn: (id: string) => Promise<Mission>) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: fn,
+        onSuccess: (mission) => {
+            qc.setQueryData(missionQK.detail(mission.id), mission);
+            invalidateMissionQueries(qc, mission.id);
+        },
+    });
+}
+
+/** «Editar nombre y datos» (RF-18): waits for the server. */
+export function useUpdateMissionMutation() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: MissionUpdate }) => updateMission(id, payload),
         onSuccess: (mission) => {
             qc.setQueryData(missionQK.detail(mission.id), mission);
             invalidateMissionQueries(qc, mission.id);

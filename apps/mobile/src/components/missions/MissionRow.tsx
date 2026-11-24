@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { ChevronRight, Pause } from "lucide-react-native";
 import type { MissionSummary } from "@helu/api";
-import { Chip, nativeFont, spacing, useAppTheme } from "@helu/ui";
+import { Chip, nativeFont, spacing, useAppTheme, PressableScale } from "@helu/ui";
 import { ProgressRing } from "../home/ProgressRing";
 import { MissionTypeIcon } from "./MissionTypeIcon";
 import { missionTypeShort, nextActionLabel, relativeDay, shortDate } from "./missionCopy";
@@ -27,14 +27,11 @@ export function MissionRow({ mission, onPress }: { mission: MissionSummary; onPr
       : `Sigue: ${nextActionLabel(mission.nextAction)}${pendingTotal ? " · Total pendiente" : ""}`;
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${mission.title}. ${detail}${due && !paused && !completed ? `, ${relativeDay(due)}` : ""}`}
-      style={({ pressed }) => [
-        styles.card,
-        { borderColor: t.border.default, backgroundColor: t.surface.bgCard, opacity: pressed ? 0.85 : 1 },
-      ]}
+      style={[styles.card, { borderColor: t.border.default, backgroundColor: t.surface.bgCard }]}
     >
       <ProgressRing size={52} progress={paused ? 0 : ratio}>
         <Text style={[styles.ring, { color: paused || pendingTotal ? t.text.muted : t.text.primary }]}>
@@ -61,7 +58,7 @@ export function MissionRow({ mission, onPress }: { mission: MissionSummary; onPr
         </Text>
       </View>
       <ChevronRight size={18} strokeWidth={2.4} color={t.text.muted} />
-    </Pressable>
+    </PressableScale>
   );
 }
 

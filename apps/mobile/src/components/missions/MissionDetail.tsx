@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { MoreHorizontal } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   missionQK,
+  useCancelMissionMutation,
   useLinkMissionDocumentMutation,
+  usePauseMissionMutation,
+  useResumeMissionMutation,
   useUnlinkMissionDocumentMutation,
   useCompleteMissionStepMutation,
   useMissionQuery,
@@ -16,6 +20,9 @@ import {
 } from "@helu/api";
 import {
   Chip,
+  ConfirmModal,
+  IconButton,
+  motionEasing,
   PullRefreshIndicator,
   Skeleton,
   SkeletonGroup,
@@ -24,9 +31,13 @@ import {
   spacing,
   useAppTheme,
   usePullRefresh,
+  useReducedMotion,
   useSkeletonVisible,
 } from "@helu/ui";
 import { notify } from "../../lib/notify";
+import { haptics } from "../../lib/haptics";
+import { MissionEditSheet } from "./MissionEditSheet";
+import { MissionOptionsSheet, type MissionOption } from "./MissionOptionsSheet";
 import { useRecentlySaved } from "../../lib/recentlySaved";
 import type { ShareTarget } from "../share/ShareSetup";
 import { MissionAttachSheet, type AttachMode } from "./MissionAttachSheet";
@@ -55,6 +66,8 @@ export interface MissionDetailProps {
   /** «Crear enlace y QR»: continue in Compartir, step 2 (RF-63). */
   onShare: (target: ShareTarget) => void;
   onOpenDocument: (documentId: string, title: string) => void;
+  /** «Ver historial» from the «⋯» menu. */
+  onOpenHistory: (missionId: string) => void;
   onBack?: () => void;
 }
 
@@ -84,6 +97,7 @@ export function MissionDetail({
   onAttach,
   onShare,
   onOpenDocument,
+  onOpenHistory,
   onBack,
 }: MissionDetailProps) {
   const t = useAppTheme();
@@ -104,6 +118,25 @@ export function MissionDetail({
   /** «Adjuntar documento» sheet; `stepKey` when it came from a step. */
   const [attachFor, setAttachFor] = useState<{ stepKey?: string } | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const pauseMission = usePauseMissionMutation();
+  const resumeMission = useResumeMissionMutation();
+  const cancelMission = useCancelMissionMutation();
+  /** Step the server just confirmed: the timeline plays «paso completado» for it (movimiento §6). */
+  const [confirmedKey, setConfirmedKey] = useState<string | null>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  /** Node pulse + rail + unlock end at ~1,1 s; the toast comes in after, not at the same time (§2). */
+  const afterSequence = (fn: () => void, ms = 750) => {
+    timers.current.push(setTimeout(fn, ms));
+  };
+  const confirmStep = (key: string) => {
+    setConfirmedKey(key);
+    haptics.success();
+    afterSequence(() => setConfirmedKey((k) => (k === key ? null : k)), 1500);
+  };
   /** Set before leaving to attach: on return, link an upload and reopen the step it came from. */
   const resume = useRef<{ stepKey?: string; reopen: boolean } | null>(null);
 
@@ -158,8 +191,10 @@ export function MissionDetail({
   const applicable = mission?.steps.filter((s) => s.applies) ?? [];
   const finalKey = applicable[applicable.length - 1]?.key;
 
-  const onFail = (retry: () => void) =>
+  const onFail = (retry: () => void) => {
+    haptics.error();
     notify({ tone: "error", message: "No se pudo guardar", action: { label: "Reintentar", onPress: retry } });
+  };
 
   const runComplete = (step: MissionStep, data?: Record<string, unknown>) => {
     if (!mission) return;
@@ -171,9 +206,16 @@ export function MissionDetail({
       onSuccess: (next) => {
         if (next.status === "completed") {
           setSheetKey(null);
+          haptics.success();
           notify({ message: "¡Misión completada!", description: next.title });
         } else if (!isFinal) {
-          notify(stepToast(step.key, data, next));
+          const done = next.steps.find((s) => s.key === step.key)?.status === "completed";
+          if (done) {
+            confirmStep(step.key);
+            afterSequence(() => notify(stepToast(step.key, data, next)));
+          } else {
+            notify(stepToast(step.key, data, next));
+          }
         }
       },
       onError: () => onFail(() => runComplete(step, data)),
@@ -193,9 +235,11 @@ export function MissionDetail({
         onSuccess: (next) => {
           if (next.status === "completed") {
             setSheetKey(null);
+            haptics.success();
             notify({ message: "¡Misión completada!", description: next.title });
           } else {
-            notify({ message: `Listo. Sigue: ${nextActionLabel(next.nextAction)}` });
+            confirmStep(step.key);
+            afterSequence(() => notify({ message: `Listo. Sigue: ${nextActionLabel(next.nextAction)}` }));
           }
         },
         onError: () => onFail(() => runSkip(step, reason)),
@@ -204,16 +248,79 @@ export function MissionDetail({
     );
   };
 
+  const transition = (
+    run: typeof pauseMission,
+    done: { message: string; description?: string },
+  ) => {
+    if (!mission) return;
+    if (!online) return notify(OFFLINE);
+    run.mutate(mission.id, {
+      onSuccess: () => {
+        haptics.light();
+        notify(done);
+      },
+      onError: () => {
+        haptics.error();
+        notify({ tone: "error", message: "No se pudo guardar", description: "Revisa tu conexión e intenta de nuevo." });
+      },
+    });
+  };
+
+  const chooseOption = (option: MissionOption) => {
+    if (!mission) return;
+    if (option === "share") setShareOpen(true);
+    else if (option === "history") onOpenHistory(mission.id);
+    else if (option === "edit") setEditOpen(true);
+    else if (option === "pause") transition(pauseMission, { message: "Misión pausada", description: "La retomas cuando quieras." });
+    else if (option === "resume") transition(resumeMission, { message: "Misión reanudada", description: "Sigues donde la dejaste." });
+    else if (option === "cancel") setConfirmCancel(true);
+  };
+
   const progress = mission ? mission.progress : null;
   const ratio = progress?.total ? progress.completed / progress.total : 0;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: t.surface.bg }]} edges={["top"]}>
-      <ScreenHeader title="Misión" onBack={onBack} />
+      <ScreenHeader
+        title="Misión"
+        onBack={onBack}
+        right={
+          mission ? (
+            <IconButton
+              icon={<MoreHorizontal size={20} strokeWidth={2.4} color={t.text.primary} />}
+              accessibilityLabel="Opciones de la misión"
+              onPress={() => setOptionsOpen(true)}
+            />
+          ) : null
+        }
+      />
       {showSkeleton ? (
+        // §6c «Detalle de misión»: header (type, goal, bar) and 4 steps with their node.
         <SkeletonGroup label="Cargando la misión" style={styles.content}>
-          <Skeleton width="100%" height={150} radius={18} />
-          <Skeleton width="100%" height={320} radius={18} />
+          <View style={[styles.head, { backgroundColor: t.surface.bgCard, borderColor: t.border.default }]}>
+            <View style={styles.headTop}>
+              <Skeleton width={150} height={26} radius={999} />
+              <View style={{ flex: 1 }} />
+              <Skeleton width={90} height={26} radius={999} />
+            </View>
+            <Skeleton width="70%" height={20} />
+            <Skeleton width="45%" height={14} />
+            <Skeleton width="100%" height={10} radius={5} />
+            <Skeleton width="45%" height={12} />
+          </View>
+          <View style={[styles.head, { backgroundColor: t.surface.bgCard, borderColor: t.border.default, gap: 26 }]}>
+            {[0, 1, 2, 3].map((i) => (
+              <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                <View style={{ width: 40, alignItems: "center" }}>
+                  <Skeleton width={30} height={30} radius={15} />
+                </View>
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Skeleton width="70%" height={14} />
+                  <Skeleton width="45%" height={12} />
+                </View>
+              </View>
+            ))}
+          </View>
         </SkeletonGroup>
       ) : query.isError || !mission ? (
         <View style={styles.content}>
@@ -258,16 +365,7 @@ export function MissionDetail({
             {progress?.unit === "sessions" && !progress.total ? null : (
             <View style={[styles.track, { backgroundColor: t.motivation.track }]}>
               {/* The bar never starts empty (misiones.md v2 · Progreso). */}
-              <Animated.View
-                entering={FadeIn}
-                style={[
-                  styles.fill,
-                  {
-                    width: `${Math.max(ratio, 0.08) * 100}%`,
-                    backgroundColor: mission.status === "paused" ? t.text.muted : t.status.successGraphic,
-                  },
-                ]}
-              />
+              <ProgressFill ratio={Math.max(ratio, 0.08)} color={mission.status === "paused" ? t.text.muted : t.status.successGraphic} />
             </View>
             )}
             <Text style={[styles.meta, { color: t.text.secondary }]}>
@@ -279,7 +377,12 @@ export function MissionDetail({
             </Text>
           </Animated.View>
 
-          <MissionTimeline mission={mission} onOpenStep={(s) => setSheetKey(s.key)} />
+          <MissionTimeline
+            mission={mission}
+            onOpenStep={(s) => setSheetKey(s.key)}
+            confirmedKey={confirmedKey}
+            onResume={() => transition(resumeMission, { message: "Misión reanudada", description: "Sigues donde la dejaste." })}
+          />
 
           {mission.status === "canceled" ? null : (
             <MissionDocumentsCard
@@ -336,7 +439,65 @@ export function MissionDetail({
           }}
         />
       ) : null}
+      {mission && optionsOpen ? (
+        <MissionOptionsSheet
+          mission={mission}
+          canShare={documents.length > 0}
+          onClose={() => setOptionsOpen(false)}
+          onChoose={(option) => {
+            setOptionsOpen(false);
+            chooseOption(option);
+          }}
+        />
+      ) : null}
+
+      {mission && editOpen ? <MissionEditSheet mission={mission} onClose={() => setEditOpen(false)} /> : null}
+
+      {mission && confirmCancel ? (
+        // Mockup «¿Cancelar la misión?»: the safe option first, with its own name (MASTER §7, DU-24).
+        <ConfirmModal
+          title="¿Cancelar la misión?"
+          message="Queda en tu historial como cancelada. Tu cita, tus documentos y tus tareas no se borran."
+          keepLabel="Mantener misión"
+          confirmLabel="Cancelar misión"
+          confirmVariant="danger"
+          loading={cancelMission.isPending}
+          onConfirm={() =>
+            cancelMission.mutate(mission.id, {
+              onSuccess: () => {
+                setConfirmCancel(false);
+                haptics.light();
+                notify({ message: "Misión cancelada", description: "Queda en tu historial." });
+              },
+              onError: () => {
+                haptics.error();
+                notify({ tone: "error", message: "No se pudo cancelar", description: "Revisa tu conexión e intenta de nuevo." });
+              },
+            })
+          }
+          onCancel={() => setConfirmCancel(false)}
+        />
+      ) : null}
     </SafeAreaView>
+  );
+}
+
+/**
+ * Progress fill (movimiento §6c «Anillos y barras»): grows from 0 the first time the screen opens
+ * (600 ms, `scaleX` from the left: transform only, §8); later changes do not animate.
+ */
+function ProgressFill({ ratio, color }: { ratio: number; color: string }) {
+  const reduced = useReducedMotion();
+  const grow = useSharedValue(reduced ? 1 : 0);
+  useEffect(() => {
+    if (!reduced) grow.value = withTiming(1, { duration: 600, easing: motionEasing.out });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const animated = useAnimatedStyle(() => ({ transform: [{ scaleX: grow.value }] }));
+  return (
+    <Animated.View
+      style={[styles.fill, { width: `${ratio * 100}%`, backgroundColor: color, transformOrigin: "left" }, animated]}
+    />
   );
 }
 

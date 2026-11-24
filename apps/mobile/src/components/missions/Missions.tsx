@@ -14,6 +14,7 @@ import {
   nativeFont,
   spacing,
   useAppTheme,
+  useFadeThrough,
   usePullRefresh,
   useSkeletonVisible,
 } from "@helu/ui";
@@ -42,15 +43,20 @@ export function Missions({ onOpen, onCreate, onBack }: MissionsProps) {
   const t = useAppTheme();
   const [tab, setTab] = useState<Tab>("active");
   const overview = useMissionsOverviewQuery();
-  const list = useMissionsQuery(tab);
+  // Same place, other content: fade through (movimiento §2/§3 «Pestañas internas»). The list asks
+  // for the tab once the old content is gone, so two lists never overlap.
+  const { shown: shownTab, style: tabFade } = useFadeThrough(tab);
+  const list = useMissionsQuery(shownTab);
   const refetch = () => Promise.all([overview.refetch(), list.refetch()]);
   const pull = usePullRefresh(refetch, Math.max(overview.dataUpdatedAt, list.dataUpdatedAt) || undefined);
   const showSkeleton = useSkeletonVisible(overview.isLoading || (list.isLoading && !list.data));
 
   const counts = overview.data?.counts;
   const nextStep = overview.data?.nextStep ?? null;
-  // The hero is already the first mission of «En curso»: the list shows the rest («También en curso»).
-  const items = (list.data?.items ?? []).filter((m) => !(tab === "active" && nextStep && m.id === nextStep.missionId));
+  // «En curso · n» lists every active mission, also the one in «Tu próximo paso»: hiding it left the
+  // list empty with a count of 1 when it was the only one. The hero is a shortcut to its next step.
+  const items = list.data?.items ?? [];
+  const settled = !list.isPlaceholderData;
   const failed = overview.isError || list.isError;
 
   return (
@@ -100,7 +106,8 @@ export function Missions({ onOpen, onCreate, onBack }: MissionsProps) {
             ]}
           />
 
-          {tab === "active" && (counts?.active ?? 0) === 0 ? (
+          <Animated.View style={[{ gap: spacing[3] }, tabFade]}>
+          {shownTab === "active" && (counts?.active ?? 0) === 0 ? (
             <Animated.View entering={FadeIn.duration(motion.fast)} style={styles.empty}>
               <Mascot pose="happy" size={100} />
               <Text style={[styles.emptyTitle, { color: t.text.primary }]}>No tienes misiones en curso</Text>
@@ -112,7 +119,7 @@ export function Missions({ onOpen, onCreate, onBack }: MissionsProps) {
                 Iniciar una misión
               </Button>
             </Animated.View>
-          ) : tab === "completed" && items.length === 0 ? (
+          ) : !settled ? null : shownTab === "completed" && items.length === 0 ? (
             <Text style={[styles.emptyText, { color: t.text.secondary, paddingTop: spacing[4] }]}>
               Cuando completes una misión, la verás aquí con sus documentos.
             </Text>
@@ -127,6 +134,7 @@ export function Missions({ onOpen, onCreate, onBack }: MissionsProps) {
               </Animated.View>
             ))
           )}
+          </Animated.View>
         </ScrollView>
         <PullRefreshIndicator state={pull} />
         </View>

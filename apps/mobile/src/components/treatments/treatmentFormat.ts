@@ -9,12 +9,16 @@ export const TREATMENT_STATUS_ORDER: TreatmentStatus[] = ["ACTIVE", "INACTIVE", 
 
 /**
  * Status chip of the detail (Activo in brand blue, Completado in success, Inactivo in gray), the
- * tab label of the list and the one line an empty tab shows.
+ * tab label of the list and the adjective an empty tab uses («No tienes tratamientos completados»,
+ * «Tienes 1 tratamiento activo»).
  */
-export const TREATMENT_STATUS: Record<TreatmentStatus, { label: string; tab: string; tone: Tone; emptyTab: string }> = {
-  ACTIVE: { label: "Activo", tab: "Activos", tone: "brand", emptyTab: "No tienes tratamientos activos." },
-  INACTIVE: { label: "Inactivo", tab: "Inactivos", tone: "neutral", emptyTab: "No tienes tratamientos inactivos." },
-  COMPLETED: { label: "Completado", tab: "Completados", tone: "success", emptyTab: "No tienes tratamientos completados." },
+export const TREATMENT_STATUS: Record<
+  TreatmentStatus,
+  { label: string; tab: string; tone: Tone; one: string; many: string }
+> = {
+  ACTIVE: { label: "Activo", tab: "Activos", tone: "brand", one: "activo", many: "activos" },
+  INACTIVE: { label: "Inactivo", tab: "Inactivos", tone: "neutral", one: "inactivo", many: "inactivos" },
+  COMPLETED: { label: "Completado", tab: "Completados", tone: "success", one: "completado", many: "completados" },
 };
 
 export function isTreatmentStatus(value: string): value is TreatmentStatus {

@@ -18,7 +18,6 @@ import { Mascot, type MascotPose } from "../brand";
 /**
  * Empty list of an agenda tab (m9 «Citas · vacío», «Medicamentos · vacío»): mascot, what will
  * appear here, one clear action, and an example of how it will look (principles 97 · 98 · 99).
- * Without `example` it is the m7 version (mascot, text and the action only, e.g. «Tratamientos · vacío»).
  */
 export function AgendaEmpty({
   pose,
@@ -38,8 +37,8 @@ export function AgendaEmpty({
   /** A second, secondary action under the primary one (m9 «Documentos · vacío»: «Escanear con la cámara»). */
   secondaryAction?: { label: string; icon?: ReactNode; onPress: () => void };
   exampleLabel?: string;
-  /** `footer`: a row under the example card (the example's tags). Optional: m7 empty states have none. */
-  example?: { tone: Tone; icon: ReactNode; title: string; meta: string; trailing?: ReactNode; footer?: ReactNode };
+  /** `footer`: a row under the example card (the example's tags). */
+  example: { tone: Tone; icon: ReactNode; title: string; meta: string; trailing?: ReactNode; footer?: ReactNode };
 }) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -63,25 +62,23 @@ export function AgendaEmpty({
         </View>
       </View>
 
-      {example ? (
-        <View style={styles.example} accessible accessibilityLabel={`Ejemplo: ${example.title}, ${example.meta}`}>
-          <View style={styles.exampleHead}>
-            <Text style={styles.eyebrow}>{exampleLabel}</Text>
-            <Chip label="Ejemplo" tone="neutral" />
-          </View>
-          <View style={styles.exampleCard}>
-            <View style={styles.exampleRow}>
-              <IconTile tone={example.tone} icon={example.icon} />
-              <View style={styles.copy}>
-                <Text style={styles.rowTitle}>{example.title}</Text>
-                <Text style={styles.meta}>{example.meta}</Text>
-              </View>
-              {example.trailing}
-            </View>
-            {example.footer}
-          </View>
+      <View style={styles.example} accessible accessibilityLabel={`Ejemplo: ${example.title}, ${example.meta}`}>
+        <View style={styles.exampleHead}>
+          <Text style={styles.eyebrow}>{exampleLabel}</Text>
+          <Chip label="Ejemplo" tone="neutral" />
         </View>
-      ) : null}
+        <View style={styles.exampleCard}>
+          <View style={styles.exampleRow}>
+            <IconTile tone={example.tone} icon={example.icon} />
+            <View style={styles.copy}>
+              <Text style={styles.rowTitle}>{example.title}</Text>
+              <Text style={styles.meta}>{example.meta}</Text>
+            </View>
+            {example.trailing}
+          </View>
+          {example.footer}
+        </View>
+      </View>
     </View>
   );
 }

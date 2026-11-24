@@ -1,72 +1,106 @@
-import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { Button, nativeFont, spacing, useAppTheme, type ThemeContextValue } from "@helu/ui";
-import { AgendaEmpty } from "../agenda/AgendaEmpty";
+import { Plus } from "lucide-react-native";
+import { Button, useAppTheme } from "@helu/ui";
+import { EmptyHero } from "../states/EmptyHero";
 import { TREATMENT_STATUS, type TreatmentStatus } from "./treatmentFormat";
 
-/** m7 «Tratamientos · vacío»: waving mascot, what a treatment is for and «Crear tratamiento» as the only action. */
+/** Where the treatments are when the selected tab shows none: the tab with the most of them. */
+export interface TreatmentsElsewhere {
+  status: TreatmentStatus;
+  count: number;
+}
+
+/**
+ * m7 «Tratamientos · vacío»: waving Helu, what a treatment is for and «Crear tratamiento» as the only
+ * action. Built on the shared `EmptyHero` (kit `empty`), like every list's empty state.
+ */
 export function TreatmentsEmpty({ onCreate }: { onCreate: () => void }) {
+  const t = useAppTheme();
   return (
-    <AgendaEmpty
+    <EmptyHero
       pose="wave"
       title="Todavía no tienes tratamientos"
       description="Agrupa medicamentos, citas y documentos de una misma condición."
-      actionLabel="Crear tratamiento"
-      onAction={onCreate}
-    />
-  );
-}
-
-/** A tab with nothing in it and no search (decision 9): one line, no mascot. */
-export function TreatmentsTabEmpty({ status }: { status: TreatmentStatus }) {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
-  return (
-    <View style={styles.wrap}>
-      <Text style={styles.sub}>{TREATMENT_STATUS[status].emptyTab}</Text>
-    </View>
+    >
+      <Button fullWidth icon={<Plus size={17} strokeWidth={2.6} color={t.text.onSolid} />} onPress={onCreate}>
+        Crear tratamiento
+      </Button>
+    </EmptyHero>
   );
 }
 
 /**
- * The search finds nothing in the selected tab (decision 9, v2.13). When another tab has matches it
- * says where they are and offers to go there: «No encontramos «migraña» en Activos» + «Ver en
- * Completados (1)».
+ * A tab with nothing in it, like m9 «Documentos · filtro sin resultados (un filtro)»: thinking Helu,
+ * the title, how many there are in another tab and the way there. Secondary button: «Crear» in the
+ * header stays the screen's one primary action.
+ */
+export function TreatmentsTabEmpty({
+  status,
+  elsewhere,
+  onShowTab,
+}: {
+  status: TreatmentStatus;
+  elsewhere: TreatmentsElsewhere | null;
+  onShowTab: (status: TreatmentStatus) => void;
+}) {
+  const other = elsewhere ? TREATMENT_STATUS[elsewhere.status] : null;
+  return (
+    <EmptyHero
+      pose="think"
+      title={`No tienes tratamientos ${TREATMENT_STATUS[status].many}`}
+      description={
+        elsewhere && other
+          ? `Tienes ${elsewhere.count} ${elsewhere.count === 1 ? `tratamiento ${other.one}` : `tratamientos ${other.many}`}.`
+          : "Cambia de pestaña para ver tus otros tratamientos."
+      }
+    >
+      {elsewhere && other ? (
+        <Button variant="secondary" fullWidth onPress={() => onShowTab(elsewhere.status)}>
+          {`Ver ${other.tab}`}
+        </Button>
+      ) : null}
+    </EmptyHero>
+  );
+}
+
+/**
+ * The search finds nothing in the selected tab (decision 9, v2.13; m7 «Búsqueda sin resultados»).
+ * When another tab has matches it says where and goes there; otherwise it offers to clear the search.
  */
 export function TreatmentsSearchEmpty({
   query,
   status,
   elsewhere,
   onShowTab,
+  onClearSearch,
 }: {
   query: string;
   status: TreatmentStatus;
-  elsewhere: { status: TreatmentStatus; count: number } | null;
+  elsewhere: TreatmentsElsewhere | null;
   onShowTab: (status: TreatmentStatus) => void;
+  onClearSearch: () => void;
 }) {
-  const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
   const q = query.trim();
-  return (
-    <View style={styles.wrap}>
-      <Text style={styles.h3} accessibilityRole="header">
-        {elsewhere ? `No encontramos «${q}» en ${TREATMENT_STATUS[status].tab}` : `No encontramos «${q}»`}
-      </Text>
-      {elsewhere ? (
-        <Button variant="secondary" onPress={() => onShowTab(elsewhere.status)}>
-          {`Ver en ${TREATMENT_STATUS[elsewhere.status].tab} (${elsewhere.count})`}
+  if (elsewhere) {
+    const other = TREATMENT_STATUS[elsewhere.status];
+    return (
+      <EmptyHero
+        pose="think"
+        title={`No encontramos «${q}» en ${TREATMENT_STATUS[status].tab}`}
+        description={
+          elsewhere.count === 1 ? `Hay 1 resultado en ${other.tab}.` : `Hay ${elsewhere.count} resultados en ${other.tab}.`
+        }
+      >
+        <Button variant="secondary" fullWidth onPress={() => onShowTab(elsewhere.status)}>
+          {`Ver en ${other.tab}`}
         </Button>
-      ) : (
-        <Text style={styles.sub}>Busca por el nombre o la descripción del tratamiento.</Text>
-      )}
-    </View>
+      </EmptyHero>
+    );
+  }
+  return (
+    <EmptyHero pose="think" title={`No encontramos «${q}»`} description="Busca por el nombre o la descripción del tratamiento.">
+      <Button variant="secondary" fullWidth onPress={onClearSearch}>
+        Borrar la búsqueda
+      </Button>
+    </EmptyHero>
   );
-}
-
-function makeStyles(t: ThemeContextValue) {
-  return StyleSheet.create({
-    wrap: { alignItems: "center", gap: spacing[3], paddingHorizontal: spacing[6], paddingTop: spacing[8] },
-    h3: { fontSize: 17, lineHeight: 22, fontFamily: nativeFont("heading", 800), color: t.text.primary, textAlign: "center" },
-    sub: { fontSize: 14, lineHeight: 21, fontFamily: nativeFont("body", 400), color: t.text.secondary, textAlign: "center" },
-  });
 }

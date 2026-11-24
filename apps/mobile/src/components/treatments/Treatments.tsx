@@ -97,9 +97,10 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
     () => items.filter((tr) => tr.status === tabFade.shown && treatmentMatches(tr, search)),
     [items, tabFade.shown, search],
   );
-  // Decision 9: the search runs inside the tab; when it finds nothing here, say which tab has matches.
+  // Decision 9: the search runs inside the tab. When the tab shows nothing (with or without a
+  // search), say which other tab has the most treatments that match.
   const elsewhere = useMemo(() => {
-    if (!searching || visible.length > 0) return null;
+    if (visible.length > 0) return null;
     let best: { status: TreatmentStatus; count: number } | null = null;
     for (const status of TREATMENT_STATUS_ORDER) {
       if (status === tabFade.shown) continue;
@@ -107,7 +108,7 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
       if (count > 0 && (!best || count > best.count)) best = { status, count };
     }
     return best;
-  }, [searching, visible.length, items, tabFade.shown, search]);
+  }, [visible.length, items, tabFade.shown, search]);
 
   // Card chips come from each treatment's detail (the list API has no counts), two at a time in the
   // order shown: the hosted database has few connections.
@@ -241,9 +242,15 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
                     ListEmptyComponent={
                       <Animated.View entering={FadeIn.duration(motion.fast)}>
                         {searching ? (
-                          <TreatmentsSearchEmpty query={search} status={tabFade.shown} elsewhere={elsewhere} onShowTab={setTab} />
+                          <TreatmentsSearchEmpty
+                            query={search}
+                            status={tabFade.shown}
+                            elsewhere={elsewhere}
+                            onShowTab={setTab}
+                            onClearSearch={() => setSearch("")}
+                          />
                         ) : (
-                          <TreatmentsTabEmpty status={tabFade.shown} />
+                          <TreatmentsTabEmpty status={tabFade.shown} elsewhere={elsewhere} onShowTab={setTab} />
                         )}
                       </Animated.View>
                     }

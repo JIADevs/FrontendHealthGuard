@@ -78,13 +78,15 @@ export interface AppointmentFormNav {
 export interface AppointmentFormProps extends AppointmentFormNav {
   /** Set to edit an existing appointment */
   id?: string;
+  /** New appointment from a mission step: created linked to it (Misiones DA-12). */
+  mission?: { id: string; isExam: boolean };
 }
 
-export function AppointmentForm({ id, ...nav }: AppointmentFormProps) {
+export function AppointmentForm({ id, mission, ...nav }: AppointmentFormProps) {
   if (id) {
     return <AppointmentFormEditor id={id} nav={nav} />;
   }
-  return <AppointmentFormBody appointment={null} nav={nav} />;
+  return <AppointmentFormBody appointment={null} nav={nav} mission={mission} />;
 }
 
 /** Height of the kit segmented control (44 px options + 4 px padding), for Tipo de consulta and Modalidad. */
@@ -186,7 +188,15 @@ function appointmentDraft(form: {
 
 // ─── Form body ────────────────────────────────────────────────────────────────
 
-function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: AppointmentFormNav }) {
+function AppointmentFormBody({
+  appointment,
+  nav,
+  mission,
+}: {
+  appointment: any;
+  nav: AppointmentFormNav;
+  mission?: { id: string; isExam: boolean };
+}) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const allowLeave = useRef(false);
@@ -217,6 +227,7 @@ function AppointmentFormBody({ appointment, nav }: { appointment: any; nav: Appo
 
   const form = useAppointmentForm({
     initial: appointment,
+    mission,
     onClose: () => {
       allowLeave.current = true;
       nav.onClose();

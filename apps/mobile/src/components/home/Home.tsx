@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ScrollView, StatusBar, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { Document } from "@helu/api";
+import { useMissionsOverviewQuery, type Document } from "@helu/api";
 import {
   PullRefreshIndicator,
   Skeleton,
@@ -32,6 +32,7 @@ import { RecentDocumentsCard } from "./RecentDocumentsCard";
 import { SetupChecklist, type SetupStepKey } from "./SetupChecklist";
 import { useHomeData } from "./useHomeData";
 import { LoadError } from "../states/LoadError";
+import { HomeMissionCard } from "../missions/HomeMissionCard";
 
 type MedicationEvent = Extract<AgendaEvent, { type: "medication" }>;
 
@@ -47,17 +48,22 @@ export interface HomeNavigation {
   share: () => void;
   newMedication: () => void;
   newAppointment: () => void;
+  /** Opens the mission on its next step (bloque 4, «Continuar la misión»). */
+  openMission: (missionId: string, stepKey: string) => void;
 }
 
 /**
  * Inicio v2 (inicio-agenda.md · Inicio, mockups «Inicio», «primer uso», «todo al día»).
- * Orden fijo: saludo → medicamentos de hoy (o la lista de primer uso) → racha → acciones rápidas
- * → próximas citas → documentos recientes. Sin misiones: la API todavía no las tiene.
+ * Orden fijo: saludo → medicamentos de hoy (o la lista de primer uso) → racha
+ * → misión activa → acciones rápidas → próximas citas → documentos recientes. Sin misión en curso,
+ * el bloque 4 no se muestra.
  */
 export function Home({ nav }: { nav: HomeNavigation }) {
   const t = useAppTheme();
   const insets = useSafeAreaInsets();
   const data = useHomeData();
+  const missionOverview = useMissionsOverviewQuery();
+  const nextMissionStep = missionOverview.data?.nextStep ?? null;
   const takeDose = useTakeDose();
   const [doseSheet, setDoseSheet] = useState<MedicationEvent | null>(null);
   const [checkInOpen, setCheckInOpen] = useState(false);
@@ -71,7 +77,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
   const docsSkeleton = useSkeletonVisible(data.loading.documents && data.setupKnown);
 
   // Solo el gesto de tirar muestra la píldora; las recargas en segundo plano no (§6c).
-  const pull = usePullRefresh(data.refetch, data.updatedAt);
+  const pull = usePullRefresh(() => Promise.all([data.refetch(), missionOverview.refetch()]), data.updatedAt);
 
   const take = (event: MedicationEvent) => {
     const cycle = resolveCycleForDay(event.data, event.dayKey);
@@ -143,6 +149,12 @@ export function Home({ nav }: { nav: HomeNavigation }) {
                 />
               </Animated.View>
             )}
+
+            {nextMissionStep ? (
+              <Animated.View entering={contentEntering} layout={homeBlockLayout}>
+                <HomeMissionCard step={nextMissionStep} onContinue={() => nav.openMission(nextMissionStep.missionId, nextMissionStep.stepKey)} />
+              </Animated.View>
+            ) : null}
 
             <Animated.View layout={homeBlockLayout}>
               <QuickActions onUpload={nav.upload} onScan={nav.scan} onShare={nav.share} />

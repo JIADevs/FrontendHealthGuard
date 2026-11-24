@@ -429,6 +429,8 @@ export function useCreateAppointmentMutation() {
         mutationFn: (appt: AppointmentCreate) => createAppointment(appt),
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["appointments"] });
+            // The mission's derived steps follow the appointment (Misiones DA-12).
+            qc.invalidateQueries({ queryKey: ["missions"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
         },
     });
@@ -443,6 +445,8 @@ export function useUpdateAppointmentMutation() {
         },
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["appointments"] });
+            // The mission's derived steps follow the appointment (Misiones DA-12).
+            qc.invalidateQueries({ queryKey: ["missions"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
         },
     });
@@ -454,6 +458,8 @@ export function useDeleteAppointmentMutation() {
         mutationFn: (id: string) => deleteAppointment(id),
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["appointments"] });
+            // The mission's derived steps follow the appointment (Misiones DA-12).
+            qc.invalidateQueries({ queryKey: ["missions"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
         },
     });
@@ -465,6 +471,8 @@ export function useUpdateAppointmentStatusMutation() {
         mutationFn: ({ id, status }: { id: string; status: string }) => updateAppointmentStatus(id, status),
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["appointments"] });
+            // The mission's derived steps follow the appointment (Misiones DA-12).
+            qc.invalidateQueries({ queryKey: ["missions"] });
             qc.invalidateQueries({ queryKey: ["calendar"] });
         },
     });

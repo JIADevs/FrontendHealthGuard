@@ -7,12 +7,16 @@ import type { Appointment } from "@helu/api";
 export function useAppointmentForm({
   initial,
   onClose,
+  mission,
 }: {
   initial?: Appointment | null;
   onClose: () => void;
+  /** New appointment for a mission step («Programar la cita / el examen»). */
+  mission?: { id: string; isExam: boolean };
 }) {
   return useAppointmentFormCore({
     initial,
+    mission,
     adapters: {
       onSaveSuccess: (savedId) => {
         // §6 «Acción guardada»: resaltado en la lista + toast + háptica ligera.

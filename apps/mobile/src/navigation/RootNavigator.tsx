@@ -33,12 +33,15 @@ import { CycleDetailScreen } from "../screens/CycleDetailScreen";
 import { TreatmentsScreen } from "../screens/TreatmentsScreen";
 import { TreatmentDetailScreen } from "../screens/TreatmentDetailScreen";
 import { TreatmentFormScreen } from "../screens/TreatmentFormScreen";
+import { MissionsScreen } from "../screens/MissionsScreen";
+import { MissionDetailScreen } from "../screens/MissionDetailScreen";
+import { MissionNewScreen } from "../screens/MissionNewScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
 import { DependientesScreen } from "../screens/DependientesScreen";
 import { useAppTheme } from "@helu/ui";
 import { withDocumentsTheme, getDocumentsStackScreenOptions } from "../components/documents";
-import type { ShareResourceType } from "@helu/api";
+import type { MissionType, ShareResourceType } from "@helu/api";
 import type { ShareTarget } from "../components/share/ShareSetup";
 
 /** Shared optional param so any screen can show a contextual back label. */
@@ -71,13 +74,18 @@ export type RootStackParamList = {
   AppointmentDetail: { id: string };
   AgendaTaskDetail: { id: string; intent?: "complete" | "reschedule" };
   AgendaTaskForm: { id?: string } | undefined;
-  AppointmentForm: { id?: string } | undefined;
+  /** `missionId`: the appointment (or exam) is created linked to that mission (step «Programar»). */
+  AppointmentForm: { id?: string; missionId?: string; missionType?: MissionType } | undefined;
   MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string } | undefined;
   MedicationDetail: { id: string };
   CycleDetail: { cycleId: string; medicationId: string; medicationName: string };
   Treatments: WithBackTitle | undefined;
   TreatmentDetail: WithBackTitle & { id: string };
   TreatmentForm: WithBackTitle & { id?: string } | undefined;
+  Missions: WithBackTitle | undefined;
+  /** `openStep`: open that step's sheet on arrival (from «Tu próximo paso»). */
+  MissionDetail: WithBackTitle & { id: string; openStep?: string };
+  MissionNew: WithBackTitle | undefined;
   Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
   DocumentUpload:
     | (WithBackTitle & {
@@ -276,6 +284,9 @@ export function RootNavigator() {
             component={TreatmentFormScreen}
             options={FORM_SCREEN_OPTIONS}
           />
+          <Stack.Screen name="Missions" component={MissionsScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
+          <Stack.Screen name="MissionDetail" component={MissionDetailScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
+          <Stack.Screen name="MissionNew" component={MissionNewScreen} options={FORM_SCREEN_OPTIONS} />
           <Stack.Screen name="Dependientes" component={DependientesScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
         </>
       ) : (

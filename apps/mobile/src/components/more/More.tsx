@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
-import { Activity, Bell, ChevronRight, LogOut, Pill, Settings as SettingsIcon, Share2, Users } from "lucide-react-native";
+import { Activity, Bell, ChevronRight, LogOut, Pill, Route, Settings as SettingsIcon, Share2, Users } from "lucide-react-native";
 import { useAuthStore, useUnreadCount } from "@helu/stores";
 import { isDelegationInbound } from "@helu/api";
 import { useManagedUsersQuery, useManagersQuery, useProfileQuery } from "@helu/api/hooks";
@@ -30,6 +30,7 @@ import { unregisterDevicePushToken } from "../../services/pushTokenRegistration"
 
 export interface MoreProps {
   onProfile: () => void;
+  onMissions: () => void;
   onMedications: () => void;
   onTreatments: () => void;
   onShared: () => void;
@@ -40,7 +41,7 @@ export interface MoreProps {
 
 /**
  * Mockup «Más» (module 9): the title, the profile card, «TU SALUD» and «CUENTA Y AYUDA» groups and
- * «Cerrar sesión». Missions, «Mi plan» and «Ayuda y contacto» wait for the backend or product
+ * «Cerrar sesión». «Misiones» opens the TU SALUD group (DU-37). «Mi plan» and «Ayuda y contacto» wait for the backend or product
  * (#65); «Privacidad y seguridad» leaves the menu, as in the mockup.
  */
 export function More(props: MoreProps) {
@@ -114,6 +115,7 @@ export function More(props: MoreProps) {
         )}
 
         <Group title={managingSomeone ? "Su salud" : "Tu salud"}>
+          <MenuRow icon={<Route size={18} color={t.text.onMuted} />} label="Misiones" onPress={props.onMissions} />
           <MenuRow icon={<Activity size={18} color={t.text.onMuted} />} label="Tratamientos" onPress={props.onTreatments} />
           <MenuRow icon={<Pill size={18} color={t.text.onMuted} />} label="Medicamentos" onPress={props.onMedications} />
           <MenuRow icon={<Share2 size={18} color={t.text.onMuted} />} label="Compartidos" onPress={props.onShared} />

@@ -336,6 +336,8 @@ export const AppointmentSchema = z.object({
     postDocumentIds: z.array(z.string().uuid()).default([]),
     preBackpackIds: z.array(z.string().uuid()).default([]),
     postBackpackIds: z.array(z.string().uuid()).default([]),
+    /** Mission this appointment belongs to (Misiones DA-12), if any. */
+    missionId: z.string().uuid().nullish(),
     createdAt: z.string().nullable().optional(),
 });
 
@@ -371,6 +373,8 @@ export const AppointmentCreateSchema = z.object({
     postDocumentIds: z.array(z.string().uuid()).default([]),
     preBackpackIds: z.array(z.string().uuid()).default([]),
     postBackpackIds: z.array(z.string().uuid()).default([]),
+    /** Link the new appointment to this mission (step «Programar»); ignored on update. */
+    missionId: z.string().uuid().optional(),
 });
 
 // --- Agenda Tasks (Tareas) ---

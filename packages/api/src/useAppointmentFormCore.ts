@@ -113,9 +113,12 @@ export interface AppointmentFormAdapters {
 export function useAppointmentFormCore({
   initial,
   adapters,
+  mission,
 }: {
   initial?: Appointment | null;
   adapters: AppointmentFormAdapters;
+  /** New appointment for a mission step: links it and starts as an exam for exam missions. */
+  mission?: { id: string; isExam: boolean };
 }): AppointmentFormState & AppointmentFormActions {
   const isEdit = !!initial;
 
@@ -135,7 +138,7 @@ export function useAppointmentFormCore({
   const [doctor, setDoctor] = useState(initial?.doctor ?? "");
   const [clinic, setClinic] = useState(initial?.clinic ?? "");
   const [type, setType] = useState<"APPOINTMENT" | "EXAM">(
-    initial?.type ?? "APPOINTMENT",
+    initial?.type ?? (mission?.isExam ? "EXAM" : "APPOINTMENT"),
   );
   const [status, setStatus] = useState(initial?.status ?? "PROGRAMADA");
   const [examType, setExamType] = useState(initial?.examType ?? "");
@@ -234,6 +237,7 @@ export function useAppointmentFormCore({
       postDocumentIds,
       preBackpackIds,
       postBackpackIds,
+      missionId: isEdit ? undefined : mission?.id,
     };
 
     if (isEdit) {

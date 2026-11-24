@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { missionQK } from "@helu/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { MissionDetail } from "../components/missions";
+import { useMissionClosure } from "../lib/missionClosure";
 
 /** Mission details are free-form JSON: only a non-empty string prefills the form. */
 function textDetail(value: unknown): string | undefined {
@@ -53,7 +54,10 @@ export function MissionDetailScreen() {
       }}
       onShare={(target) => navigation.navigate("ShareConfigure", { target, backTitle: "Misión" })}
       onOpenHistory={(missionId) => navigation.navigate("MissionHistory", { id: missionId, backTitle: "Misión" })}
-      onCompleted={(mission) => navigation.navigate("MissionCelebration", { id: mission.id })}
+      onCompleted={(mission) => {
+        useMissionClosure.getState().setCelebrating(mission.id);
+        navigation.navigate("MissionCelebration", { id: mission.id });
+      }}
       onOpenMission={(missionId) => navigation.push("MissionDetail", { id: missionId, backTitle: "Misión" })}
       onOpenDocument={(documentId, title) => navigation.navigate("DocumentDetail", { id: documentId, title })}
       onBack={() => navigation.goBack()}

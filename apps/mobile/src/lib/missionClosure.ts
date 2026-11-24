@@ -12,6 +12,12 @@ export interface PendingFollowUp {
 }
 
 interface MissionClosureState {
+  /**
+   * The mission whose celebration is on screen (set as soon as the server closes it). Level and badge
+   * toasts stay quiet for it: the celebration already shows them (MASTER §8).
+   */
+  celebrating: string | null;
+  setCelebrating: (missionId: string | null) => void;
   followUp: PendingFollowUp | null;
   setFollowUp: (followUp: PendingFollowUp | null) => void;
   /** Read once: the sheet shows a single time for that closure. */
@@ -19,6 +25,8 @@ interface MissionClosureState {
 }
 
 export const useMissionClosure = create<MissionClosureState>((set, get) => ({
+  celebrating: null,
+  setCelebrating: (celebrating) => set({ celebrating }),
   followUp: null,
   setFollowUp: (followUp) => set({ followUp }),
   takeFollowUp: () => {

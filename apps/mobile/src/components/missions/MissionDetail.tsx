@@ -15,6 +15,7 @@ import {
   useCompleteMissionStepMutation,
   useMissionQuery,
   useSkipMissionStepMutation,
+  useUserProgressQuery,
   type Mission,
   type MissionStep,
 } from "@helu/api";
@@ -52,6 +53,7 @@ import { StepTaskSheet } from "./StepTaskSheet";
 import { MissionLink } from "./MissionLink";
 import { MissionTimeline } from "./MissionTimeline";
 import { MissionTypeIcon } from "./MissionTypeIcon";
+import { Flame } from "../home/Flame";
 import { missionGoal, missionTypeLabel, missionTypeTone, nextActionLabel, originPhrase } from "./missionCopy";
 
 export interface MissionDetailProps {
@@ -109,6 +111,9 @@ export function MissionDetail({
   onBack,
 }: MissionDetailProps) {
   const t = useAppTheme();
+  const progressData = useUserProgressQuery().data;
+  // Kit `fchip`: the streak chip of the mission header; hidden with «Mostrar racha y nivel» off (RF-93).
+  const streakDays = progressData?.showProgress ? progressData.streak.current : 0;
   const online = useIsOnline();
   const query = useMissionQuery(missionId);
   const complete = useCompleteMissionStepMutation();
@@ -314,11 +319,18 @@ export function MissionDetail({
         onBack={onBack}
         right={
           mission ? (
-            <IconButton
-              icon={<MoreHorizontal size={20} strokeWidth={2.4} color={t.text.primary} />}
-              accessibilityLabel="Opciones de la misión"
-              onPress={() => setOptionsOpen(true)}
-            />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+              {streakDays > 0 ? (
+                <View accessible accessibilityLabel={`${streakDays} ${streakDays === 1 ? "día" : "días"} de racha`}>
+                  <Chip label={String(streakDays)} tone="streak" icon={<Flame size={15} />} />
+                </View>
+              ) : null}
+              <IconButton
+                icon={<MoreHorizontal size={20} strokeWidth={2.4} color={t.text.primary} />}
+                accessibilityLabel="Opciones de la misión"
+                onPress={() => setOptionsOpen(true)}
+              />
+            </View>
           ) : null
         }
       />

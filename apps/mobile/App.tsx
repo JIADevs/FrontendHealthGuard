@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react
 import NetInfo from "@react-native-community/netinfo";
 import { NavigationContainer } from "@react-navigation/native";
 import { HeluToast } from "./src/components/ToastConfig";
+import { useProgressToasts } from "./src/components/motivation/useProgressToasts";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { navigationRef } from "./src/navigation/navigationRef";
 import { useAuthStore, useNotifStore, useUiStore } from "@helu/stores";
@@ -108,6 +109,7 @@ function AppContent({
   const setUnreadCount = useNotifStore((s) => s.setUnreadCount);
 
   usePushNotifications(token, queryClient, isHydrated);
+  useProgressToasts(!!token && isHydrated);
 
   const { data: notifData } = useNotificationsQuery(1, 50, !!token);
   useEffect(() => {

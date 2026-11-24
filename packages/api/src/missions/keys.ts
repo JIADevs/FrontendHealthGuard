@@ -9,5 +9,7 @@ export const missionQK = {
     events: (id: string) => ["missions", "events", id] as const,
     suggestions: () => ["missions", "suggestions"] as const,
     suggestionSourceDocuments: (suggestionId: string) => ["missions", "suggestions", suggestionId, "documents"] as const,
-    userProgress: () => ["user-progress"] as const,
+    /** Level, streak and badges of the patient in context (DA-4: a manager reads the dependent's). */
+    userProgress: (patientId?: string | null) => ["user-progress", patientId ?? null] as const,
+    userProgressAll: () => ["user-progress"] as const,
 };

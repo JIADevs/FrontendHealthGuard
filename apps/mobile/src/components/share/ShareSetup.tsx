@@ -122,6 +122,7 @@ export function ShareSetup({ target, fromStepOne, onCreated }: ShareSetupProps) 
         void qc.invalidateQueries({ queryKey: ["backpacks"] });
       }
       invalidateShareQueries(qc);
+      void qc.invalidateQueries({ queryKey: ["user-progress"] }); // «Documentos listos»
       onCreated({ ...result, resourceType, title, documentCount: count, expiresIn });
     } catch (err) {
       notify({

@@ -14,6 +14,9 @@ export interface NotificationRoutePayload {
   scheduledTime?: string | null; // ISO-8601 UTC; client derives dayKey + intakeTime
   /** Follow-up push may suggest complete and/or reschedule (comma-separated). */
   actions?: string | null;
+  /** Appointment of a mission (Misiones RF-83): the tap opens that step of the mission. */
+  missionId?: string | null;
+  stepKey?: string | null;
 }
 
 /**
@@ -22,12 +25,15 @@ export interface NotificationRoutePayload {
  * `type` may exist. `*_FOLLOWUP` variants route the same as their base type.
  */
 export function navigateForNotification(payload: NotificationRoutePayload): void {
-  const { type, entityId, medicationId, medicationName, scheduledTime } = payload;
+  const { type, entityId, medicationId, medicationName, scheduledTime, missionId, stepKey } = payload;
 
   switch (type) {
     case "APPOINTMENT":
     case "APPOINTMENT_FOLLOWUP":
-      if (entityId) {
+      if (missionId) {
+        // RF-83: the reminder and «¿Pudiste asistir?» of a mission appointment open its step sheet.
+        navigateTo("MissionDetail", { id: missionId, ...(stepKey ? { openStep: stepKey } : {}) });
+      } else if (entityId) {
         navigateTo("AppointmentDetail", { id: entityId });
       } else {
         navigateTo("Notifications");
@@ -101,6 +107,8 @@ export function buildRoutePayloadFromPushData(
     medicationName: data?.medication_name ?? null,
     scheduledTime: data?.scheduled_time ?? null,
     actions: data?.actions ?? null,
+    missionId: data?.mission_id ?? null,
+    stepKey: data?.step_key ?? null,
   };
 }
 
@@ -137,5 +145,7 @@ export function buildRoutePayloadFromNotification(item: Notification): Notificat
     medicationName: read("medication_name", "medicationName"),
     scheduledTime: read("scheduled_time", "scheduledTime"),
     actions: read("actions", "actions"),
+    missionId: read("mission_id", "missionId"),
+    stepKey: read("step_key", "stepKey"),
   };
 }

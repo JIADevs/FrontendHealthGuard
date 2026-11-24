@@ -811,6 +811,8 @@ export function useRecordIntakeMutation() {
             for (const queryKey of INTAKE_QUERY_FAMILIES) {
                 qc.invalidateQueries({ queryKey });
             }
+            // A dose recorded as taken adds to the level (Motivación §3).
+            qc.invalidateQueries({ queryKey: ["user-progress"] });
         },
     });
 }
@@ -1046,6 +1048,7 @@ export function useCreateDailyCheckInMutation() {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["me"] });
             qc.invalidateQueries({ queryKey: ["treatments"] });
+            qc.invalidateQueries({ queryKey: ["user-progress"] });
         },
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["daily-checkins"] });

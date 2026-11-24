@@ -6,7 +6,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
 import { Activity, Bell, ChevronRight, LogOut, Pill, Route, Settings as SettingsIcon, Share2, Users } from "lucide-react-native";
 import { useAuthStore, useUnreadCount } from "@helu/stores";
-import { isDelegationInbound } from "@helu/api";
+import { isDelegationInbound, useUserProgressQuery } from "@helu/api";
 import { useManagedUsersQuery, useManagersQuery, useProfileQuery } from "@helu/api/hooks";
 import {
   Button,
@@ -27,6 +27,7 @@ import {
 } from "@helu/ui";
 import { initialsOf } from "../dependientes/PersonCard";
 import { unregisterDevicePushToken } from "../../services/pushTokenRegistration";
+import { LevelChip, ProfileStats } from "../motivation/ProfileProgress";
 
 export interface MoreProps {
   onProfile: () => void;
@@ -48,6 +49,7 @@ export function More(props: MoreProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const profile = useProfileQuery();
+  const progress = useUserProgressQuery();
   const storeEmail = useAuthStore((s) => s.user?.email);
   const logout = useAuthStore((s) => s.logout);
   const managingSomeone = useAuthStore((s) => s.isManaging && !!s.activePatientId);
@@ -98,19 +100,24 @@ export function More(props: MoreProps) {
             </View>
           </SkeletonGroup>
         ) : (
-          <PressableScale onPress={props.onProfile} accessibilityRole="button" accessibilityLabel={`Perfil de ${name}`} style={[styles.card, styles.profileRow]}>
-            <View style={[styles.avatar, { backgroundColor: t.brand.solid }]}>
-              <Text style={styles.avatarText}>{initialsOf(profile.data?.name?.trim() || email || "?")}</Text>
+          // Mockup m6 «Más»: the profile card carries the level chip and the three boxes (v2.24).
+          <PressableScale onPress={props.onProfile} accessibilityRole="button" accessibilityLabel={`Perfil de ${name}`} style={[styles.card, { gap: spacing[4] }]}>
+            <View style={styles.profileRow}>
+              <View style={[styles.avatar, { backgroundColor: t.brand.solid }]}>
+                <Text style={styles.avatarText}>{initialsOf(profile.data?.name?.trim() || email || "?")}</Text>
+              </View>
+              <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                <Text style={styles.name} numberOfLines={1}>
+                  {name}
+                </Text>
+                <Text style={styles.meta} numberOfLines={1}>
+                  {email}
+                </Text>
+              </View>
+              <LevelChip progress={progress.data} />
+              <ChevronRight size={18} color={t.text.muted} />
             </View>
-            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-              <Text style={styles.name} numberOfLines={1}>
-                {name}
-              </Text>
-              <Text style={styles.meta} numberOfLines={1}>
-                {email}
-              </Text>
-            </View>
-            <ChevronRight size={18} color={t.text.muted} />
+            {progress.isError ? null : <ProfileStats progress={progress.data} />}
           </PressableScale>
         )}
 

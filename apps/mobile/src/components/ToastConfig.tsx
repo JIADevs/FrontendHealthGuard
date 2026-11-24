@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import { CheckCircle2, XCircle, AlertTriangle, Info, Heart } from "lucide-react-native";
+import { CheckCircle2, XCircle, AlertTriangle, Info, Heart, Trophy } from "lucide-react-native";
 import Toast, { type ToastConfig } from "react-native-toast-message";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, useAppTheme, toneColors, nativeFont, spacing, type Tone } from "@helu/ui";
+import { Mascot } from "./brand/Mascot";
 
 // ─── v2 (MASTER §7, «Toast») ────────────────────────────────────────────────
 // Arriba, 320 px, tarjeta clara con borde y elevación 3, ícono en cuadro con el tinte del tono,
@@ -15,6 +16,9 @@ const VARIANTS = {
   info:    { icon: Info,         tone: "info" },
   // Mockup «Racha sumada»: el check-in que suma a la racha
   streak:  { icon: Heart,        tone: "streak" },
+  // Motivación: «¡Subiste al nivel 5 · Al día!» con la mascota estática; una insignia con el trofeo.
+  level:   { icon: Trophy,       tone: "warning" },
+  badge:   { icon: Trophy,       tone: "warning" },
 } as const satisfies Record<string, { icon: unknown; tone: Tone }>;
 
 type VariantKey = keyof typeof VARIANTS;
@@ -56,7 +60,7 @@ function ToastItem({ text1, text2, type, action }: ToastItemProps) {
       ]}
     >
       <View style={[styles.iconWrap, { backgroundColor: tone.bg }]}>
-        <Icon color={tone.fg} size={17} strokeWidth={2.4} />
+        {type === "level" ? <Mascot pose="joy" size={26} /> : <Icon color={tone.fg} size={17} strokeWidth={2.4} />}
       </View>
 
       <View style={styles.textWrap}>
@@ -91,6 +95,8 @@ export const toastConfig: ToastConfig = {
   warning: item("warning"),
   info: item("info"),
   streak: item("streak"),
+  level: item("level"),
+  badge: item("badge"),
 };
 
 /** Montar dentro de SafeAreaProvider: ubica el toast arriba, debajo de la barra de estado. */

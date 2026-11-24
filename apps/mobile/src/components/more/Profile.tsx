@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native";
 import { MapPin, Phone } from "lucide-react-native";
 import { useProfileQuery } from "@helu/api/hooks";
+import { useUserProgressQuery } from "@helu/api";
 import {
   BOTTOM_ACTION_BAR_HEIGHT,
   BottomActionBar,
@@ -25,6 +26,10 @@ import { ScreenHeader } from "../ScreenHeader";
 import { FormCard, FormLabel } from "../agenda/FormCard";
 import { initialsOf } from "../dependientes/PersonCard";
 import { useProfileForm } from "../../hooks/useProfileForm";
+import { useManagingSomeone } from "../home/useManagingSomeone";
+import { BadgesCard } from "../motivation/BadgesCard";
+import { LevelCard } from "../motivation/LevelCard";
+import { LevelChip, ProfileStats } from "../motivation/ProfileProgress";
 
 const GENDERS = [
   { value: "F", label: "Femenino" },
@@ -52,8 +57,9 @@ const FIELDS = [
 /**
  * Mockup «Perfil» (module 9): the profile card, then «Información personal», «Información
  * médica», «Contacto» and «Contacto de emergencia», every field optional, with a fixed «Guardar
- * cambios». Level, streak and badges are left out until gamification exists (#65). A dirty back
- * asks «¿Descartar los cambios?» (formularios.md §7).
+ * cambios». Data first, then the level card and the badges (v2, DU-35); «Mostrar racha y nivel»
+ * off hides the level chip, the streak box and the level card, never the badges (RF-93). A dirty
+ * back asks «¿Descartar los cambios?» (formularios.md §7).
  */
 export function Profile() {
   const t = useAppTheme();
@@ -61,6 +67,8 @@ export function Profile() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const profile = useProfileQuery();
+  const progress = useUserProgressQuery();
+  const managing = useManagingSomeone();
   const form = useProfileForm();
 
   const saved = profile.data;
@@ -122,18 +130,22 @@ export function Profile() {
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={[styles.content, { paddingBottom: BOTTOM_ACTION_BAR_HEIGHT + insets.bottom + spacing[8] }]}
           >
-            <View style={[styles.card, styles.profileRow]}>
-              <View style={[styles.avatar, { backgroundColor: t.brand.solid }]}>
-                <Text style={styles.avatarText}>{initialsOf(saved?.name?.trim() || email || "?")}</Text>
+            <View style={[styles.card, { gap: spacing[4] }]}>
+              <View style={styles.profileRow}>
+                <View style={[styles.avatar, { backgroundColor: t.brand.solid }]}>
+                  <Text style={styles.avatarText}>{initialsOf(saved?.name?.trim() || email || "?")}</Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {name}
+                  </Text>
+                  <Text style={styles.meta} numberOfLines={1}>
+                    {email}
+                  </Text>
+                </View>
+                <LevelChip progress={progress.data} />
               </View>
-              <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                <Text style={styles.name} numberOfLines={1}>
-                  {name}
-                </Text>
-                <Text style={styles.meta} numberOfLines={1}>
-                  {email}
-                </Text>
-              </View>
+              {progress.isError ? null : <ProfileStats progress={progress.data} />}
             </View>
 
             <FormCard title="Información personal">
@@ -184,6 +196,20 @@ export function Profile() {
                 leadingIcon={<Phone size={18} color={t.text.muted} />}
               />
             </FormCard>
+
+            {progress.data ? (
+              <>
+                {progress.data.showProgress ? (
+                  <LevelCard points={progress.data.points} level={progress.data.level} managedName={managing ? name : null} />
+                ) : null}
+                <BadgesCard badges={progress.data.badges} earned={progress.data.badgesEarned} total={progress.data.badgesTotal} />
+              </>
+            ) : progress.isPending ? (
+              <SkeletonGroup label="Cargando tu progreso" style={{ gap: spacing[4] }}>
+                <Skeleton height={112} radius={radii.card} />
+                <Skeleton height={190} radius={radii.card} />
+              </SkeletonGroup>
+            ) : null}
           </ScrollView>
         </KeyboardAvoidingView>
       )}

@@ -295,18 +295,27 @@ export const UserLevelSchema = z.object({
     nextMinPoints: z.number().int().nullish(),
 });
 
+/**
+ * One of the 8 badges (Motivación PRD §5), in the Perfil grid order. The copy (name, criterion)
+ * lives in mobile (`badgeCatalog`) keyed by `code`; the backend only says whether it is earned.
+ */
 export const UserBadgeSchema = z.object({
     code: z.string(),
-    name: z.string(),
     earned: z.boolean().default(false),
     awardedAt: z.string().nullish(),
+    /** The mission that earned it, so the celebration can say «Nueva insignia». */
+    sourceId: z.string().nullish(),
 });
 
 export const UserProgressSchema = z.object({
-    pointsTotal: z.number().int().default(0),
+    /** Never shown as a loose number (MASTER §8): only as progress inside the level. */
+    points: z.number().int().default(0),
     level: UserLevelSchema,
     streak: z.object({ current: z.number().int().default(0), longest: z.number().int().default(0) }).default({}),
+    missionsCompleted: z.number().int().default(0),
     badges: z.array(UserBadgeSchema).default([]),
+    badgesEarned: z.number().int().default(0),
+    badgesTotal: z.number().int().default(8),
     showProgress: z.boolean().default(true),
     celebrationsEnabled: z.boolean().default(true),
 });

@@ -28,7 +28,7 @@ import {
     useFetchCurrentStreak,
     useTreatmentsQuery,
 } from "@helu/api/hooks";
-import type { DailyCheckIn, MoodEnum, Treatment } from "@helu/api";
+import { useUserProgressQuery, type DailyCheckIn, type MoodEnum, type Treatment } from "@helu/api";
 import { notify } from "../../lib/notify";
 import { useOptimisticStreak } from "../../hooks/useOptimisticStreak";
 
@@ -80,6 +80,8 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
     const deleteMutation = useDeleteDailyCheckInMutation();
     const fetchCurrentStreak = useFetchCurrentStreak();
     const optimisticStreak = useOptimisticStreak();
+    // «Mostrar racha y nivel» off: the confirmation never mentions the count (RF-93).
+    const showProgress = useUserProgressQuery().data?.showProgress ?? true;
     const treatmentsQuery = useTreatmentsQuery(1, 100);
     const treatments = treatmentsQuery.data?.items ?? [];
 
@@ -92,7 +94,9 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
         recordedAt !== initialRecordedAt.current;
 
     const toastStreak = (streak: number) => {
-        if (streak >= 2) {
+        if (!showProgress) {
+            notify({ message: "Check-in registrado" });
+        } else if (streak >= 2) {
             notify({ tone: "streak", message: `¡${streak} días seguidos cuidándote!` });
         } else if (streak === 1) {
             notify({ tone: "streak", message: "Check-in registrado", description: "Es el primer día de tu racha." });

@@ -63,7 +63,10 @@ export function useShareBackpackMutation() {
             }
             return shareBackpackWithOptions(input.backpackId, { expiresIn: input.expiresIn ?? "24h" });
         },
-        onSettled: () => invalidateShareQueries(qc),
+        onSettled: () => {
+            invalidateShareQueries(qc);
+            qc.invalidateQueries({ queryKey: ["user-progress"] }); // «Documentos listos»
+        },
     });
 }
 

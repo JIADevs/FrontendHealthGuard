@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Monitor, Moon, Sun } from "lucide-react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getPreference, isApiError, setPreference } from "@helu/api";
+import { getPreference, isApiError, setPreference, useUpdateMotivationPreferencesMutation, useUserProgressQuery } from "@helu/api";
 import { useUiStore } from "@helu/stores";
 import { SegmentedControl, nativeFont, radii, spacing, useAppTheme, type ThemeContextValue } from "@helu/ui";
 import { ScreenHeader } from "../ScreenHeader";
@@ -40,6 +40,7 @@ async function readNotificationPrefs(): Promise<NotificationPrefs> {
  * Mockup «Configuración» (module 9): «Apariencia» as a segmented control, «Notificaciones» with one
  * toggle per kind of reminder (they are real: the backend reads them before every push) and the
  * hint «Los cambios se guardan al instante.». Toggles save optimistically and roll back on error.
+ * «Motivación» (v2.18, RF-93, DU-32): one «Mostrar racha y nivel» toggle and «Celebraciones».
  */
 export function Settings() {
   const t = useAppTheme();
@@ -62,6 +63,13 @@ export function Settings() {
       notify({ tone: "error", message: "No se pudo guardar", description: "Revisa tu conexión e intenta de nuevo." });
     },
   });
+
+  const progress = useUserProgressQuery();
+  const motivation = useUpdateMotivationPreferencesMutation();
+  const setMotivation = (payload: { showProgress?: boolean; celebrationsEnabled?: boolean }) =>
+    motivation.mutate(payload, {
+      onError: () => notify({ tone: "error", message: "No se pudo guardar", description: "Revisa tu conexión e intenta de nuevo." }),
+    });
 
   const current = prefs.data ?? {};
   const isOn = (types: string[]) => types.every((type) => current[type] !== false);
@@ -112,6 +120,39 @@ export function Settings() {
           ))}
         </View>
 
+        <View style={styles.card}>
+          <Text style={styles.h3} accessibilityRole="header">
+            Motivación
+          </Text>
+          <View style={styles.toggleRow}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={styles.label}>Mostrar racha y nivel</Text>
+              <Text style={styles.hint}>Puedes ocultarlos si prefieres una vista más simple</Text>
+            </View>
+            <Switch
+              value={progress.data?.showProgress ?? true}
+              onValueChange={(on) => setMotivation({ showProgress: on })}
+              disabled={!progress.data}
+              trackColor={{ true: t.brand.solid, false: t.border.medium }}
+              accessibilityLabel="Mostrar racha y nivel"
+            />
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.toggleRow}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={styles.label}>Celebraciones</Text>
+              <Text style={styles.hint}>Animación al completar una misión</Text>
+            </View>
+            <Switch
+              value={progress.data?.celebrationsEnabled ?? true}
+              onValueChange={(on) => setMotivation({ celebrationsEnabled: on })}
+              disabled={!progress.data}
+              trackColor={{ true: t.brand.solid, false: t.border.medium }}
+              accessibilityLabel="Celebraciones"
+            />
+          </View>
+        </View>
+
         <MascotHint pose="happy" text="Los cambios se guardan al instante." />
       </ScrollView>
     </SafeAreaView>
@@ -134,6 +175,7 @@ function makeStyles(t: ThemeContextValue) {
     h3: { fontSize: 17, fontFamily: nativeFont("heading", 800), color: t.text.primary },
     toggleRow: { flexDirection: "row", alignItems: "center", gap: spacing[3], minHeight: 44 },
     label: { flex: 1, fontSize: 15, fontFamily: nativeFont("body", 500), color: t.text.primary },
+    hint: { fontSize: 13, lineHeight: 18, fontFamily: nativeFont("body", 400), color: t.text.secondary },
     divider: { height: 1, backgroundColor: t.border.default },
   });
 }

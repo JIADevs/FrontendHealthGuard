@@ -3,7 +3,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { ScrollView, StatusBar, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMissionsOverviewQuery, type Document } from "@helu/api";
+import { useMissionsOverviewQuery, useUserProgressQuery, type Document } from "@helu/api";
 import {
   PullRefreshIndicator,
   Skeleton,
@@ -70,6 +70,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
   const insets = useSafeAreaInsets();
   const data = useHomeData();
   const missionOverview = useMissionsOverviewQuery();
+  const progress = useUserProgressQuery();
   const nextMissionStep = missionOverview.data?.nextStep ?? null;
   const takeDose = useTakeDose();
   const [doseSheet, setDoseSheet] = useState<MedicationEvent | null>(null);
@@ -164,6 +165,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
                   confirmedToday={data.streak.confirmedToday}
                   onCheckIn={() => setCheckInOpen(true)}
                   celebrateKey={data.celebrateKey}
+                  showProgress={progress.data?.showProgress ?? true}
                 />
               </Animated.View>
             )}

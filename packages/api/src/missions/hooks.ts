@@ -1,4 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@helu/stores";
 import {
     acceptMissionSuggestion,
     cancelMission,
@@ -15,6 +16,8 @@ import {
     getMissionEvents,
     getMissions,
     getMissionsOverview,
+    getUserProgress,
+    updateMotivationPreferences,
     linkMissionDocument,
     pauseMission,
     resumeMission,
@@ -36,6 +39,8 @@ import type {
     MissionSessionCreate,
     MissionStatus,
     MissionStep,
+    MotivationPreferences,
+    UserProgress,
 } from "./schemas";
 
 /** One key per user action, reused on retries of that action (RNF-13). */
@@ -49,6 +54,8 @@ export function invalidateMissionQueries(qc: QueryClient, missionId?: string) {
     if (missionId) qc.invalidateQueries({ queryKey: missionQK.detail(missionId) });
     qc.invalidateQueries({ queryKey: ["appointments"] });
     qc.invalidateQueries({ queryKey: ["calendar"] });
+    // Steps, sessions and closures award points and badges on the server (Motivación §3).
+    qc.invalidateQueries({ queryKey: missionQK.userProgressAll() });
 }
 
 // --- queries ---------------------------------------------------------------------------
@@ -342,5 +349,41 @@ export function useMarkNoticeSeenMutation() {
     return useMutation({
         mutationFn: (missionId: string) => markMissionNoticeSeen(missionId),
         onSettled: () => qc.invalidateQueries({ queryKey: missionQK.overview() }),
+    });
+}
+
+// --- progress (Motivación PRD) ----------------------------------------------------------
+
+/** Level, streak, badges and the two preferences of the patient in context (RF-90–93). */
+export function useUserProgressQuery(enabled = true) {
+    const activePatientId = useAuthStore((s) => s.activePatientId);
+    return useQuery({
+        queryKey: missionQK.userProgress(activePatientId),
+        queryFn: getUserProgress,
+        staleTime: 60_000,
+        enabled,
+    });
+}
+
+/**
+ * «Mostrar racha y nivel» and «Celebraciones»: a toggle changes at once and is saved in the
+ * background; on error it goes back and the caller tells the user (MASTER §10, low-risk action).
+ */
+export function useUpdateMotivationPreferencesMutation() {
+    const qc = useQueryClient();
+    const activePatientId = useAuthStore((s) => s.activePatientId);
+    const key = missionQK.userProgress(activePatientId);
+    return useMutation({
+        mutationFn: (payload: MotivationPreferences) => updateMotivationPreferences(payload),
+        onMutate: async (payload) => {
+            await qc.cancelQueries({ queryKey: key });
+            const previous = qc.getQueryData<UserProgress>(key);
+            if (previous) qc.setQueryData<UserProgress>(key, { ...previous, ...payload });
+            return { previous };
+        },
+        onError: (_err, _payload, ctx) => {
+            if (ctx?.previous) qc.setQueryData(key, ctx.previous);
+        },
+        onSuccess: (progress) => qc.setQueryData(key, progress),
     });
 }

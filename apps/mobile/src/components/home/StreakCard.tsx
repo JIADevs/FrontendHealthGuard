@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Check, CheckCircle2, Heart } from "lucide-react-native";
-import { Button, motion, motionEasing, nativeFont, radii, spacing, useAppTheme } from "@helu/ui";
+import { Button, IconTile, motion, motionEasing, nativeFont, radii, spacing, useAppTheme } from "@helu/ui";
 import { LinearGradient } from "expo-linear-gradient";
 import { Flame } from "./Flame";
 import { useManagingSomeone } from "./useManagingSomeone";
@@ -32,6 +32,8 @@ interface StreakCardProps {
   onCheckIn: () => void;
   /** Cambia cuando el servidor confirmó un check-in de esta sesión: dispara la celebración. */
   celebrateKey: number;
+  /** «Mostrar racha y nivel» (RF-93, DU-32). Apagado, queda «Check-in de hoy» con su botón, sin conteo. */
+  showProgress?: boolean;
 }
 
 /**
@@ -40,7 +42,12 @@ interface StreakCardProps {
  * Al sumar el día, la llama escala 1 → 1,6 → 1 en 600 ms y después el número rebota
  * (movimiento-interacciones.md §6). Con movimiento reducido no se mueve nada.
  */
-export function StreakCard({ current, longest, week, doneToday, confirmedToday, onCheckIn, celebrateKey }: StreakCardProps) {
+export function StreakCard(props: StreakCardProps) {
+  if (props.showProgress === false) return <CheckInCard doneToday={props.doneToday} onCheckIn={props.onCheckIn} />;
+  return <StreakCardFull {...props} />;
+}
+
+function StreakCardFull({ current, longest, week, doneToday, confirmedToday, onCheckIn, celebrateKey }: StreakCardProps) {
   const other = useManagingSomeone();
   const t = useAppTheme();
   const reduced = useReducedMotion();
@@ -212,8 +219,69 @@ export function StreakCard({ current, longest, week, doneToday, confirmedToday, 
             Hacer check-in de hoy
           </Button>
         )}
+        {/* v2.24 (Motivación DU-5): sin «pausas»; el código no las tiene. */}
+        <Text style={{ textAlign: "center", fontSize: 13, fontFamily: nativeFont("body", 400), color: dark ? t.motivation.streakText : t.status.warningFg }}>
+          {other ? "Cada día con check-in suma a su racha." : "Cada día con check-in suma a tu racha."}
+        </Text>
       </LinearGradient>
     </View>
+    </View>
+  );
+}
+
+/**
+ * «Mostrar racha y nivel» apagado (MASTER §8 v2.18): la tarjeta queda como «Check-in de hoy» con su
+ * botón, sin llama, semana ni número. El check-in sigue sumando por detrás (Motivación §2).
+ */
+function CheckInCard({ doneToday, onCheckIn }: { doneToday: boolean; onCheckIn: () => void }) {
+  const other = useManagingSomeone();
+  const t = useAppTheme();
+  const reduced = useReducedMotion();
+  return (
+    <View
+      style={{
+        borderRadius: radii.card,
+        borderWidth: 1,
+        borderBottomWidth: 4,
+        borderColor: t.border.default,
+        backgroundColor: t.surface.bgCard,
+        padding: spacing[4],
+        gap: spacing[4],
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
+        <IconTile tone="brand" icon={<Heart size={20} strokeWidth={2.4} color={t.brand.solid} />} />
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontSize: 17, fontFamily: nativeFont("heading", 800), color: t.text.primary }} accessibilityRole="header">
+            Check-in de hoy
+          </Text>
+          <Text style={{ fontSize: 14, fontFamily: nativeFont("body", 400), color: t.text.secondary }}>
+            {other ? "Registra cómo se siente hoy." : "Cuéntanos cómo te sientes hoy."}
+          </Text>
+        </View>
+      </View>
+      {doneToday ? (
+        <Animated.View
+          entering={reduced ? undefined : FadeIn.duration(motion.fast)}
+          accessibilityRole="text"
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing[3],
+            borderRadius: 16,
+            paddingVertical: 12,
+            paddingHorizontal: 14,
+            backgroundColor: t.status.successBg,
+          }}
+        >
+          <CheckCircle2 size={18} color={t.status.successFg} />
+          <Text style={{ flex: 1, fontSize: 14, fontFamily: nativeFont("heading", 800), color: t.status.successFg }}>Check-in hecho.</Text>
+        </Animated.View>
+      ) : (
+        <Button variant="secondary" fullWidth icon={<Heart size={17} strokeWidth={2.4} color={t.brand.text} />} onPress={onCheckIn}>
+          Hacer check-in de hoy
+        </Button>
+      )}
     </View>
   );
 }

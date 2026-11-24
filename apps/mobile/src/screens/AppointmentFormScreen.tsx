@@ -7,7 +7,7 @@ import { AppointmentForm, type SubscribeBeforeLeave } from "../components/agenda
 /** Screen: reads the route and wires navigation. The form lives in `components/agenda/AppointmentForm`. */
 export function AppointmentFormScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const id = useRoute<RouteProp<RootStackParamList, "AppointmentForm">>().params?.id;
+  const params = useRoute<RouteProp<RootStackParamList, "AppointmentForm">>().params;
 
   // Adapts `beforeRemove` so the form can ask «¿Descartar los cambios?» before leaving (formularios.md §7).
   const subscribeBeforeLeave = useCallback<SubscribeBeforeLeave>(
@@ -17,7 +17,8 @@ export function AppointmentFormScreen() {
 
   return (
     <AppointmentForm
-      id={id}
+      id={params?.id}
+      treatmentId={params?.treatmentId}
       onClose={() => navigation.goBack()}
       subscribeBeforeLeave={subscribeBeforeLeave}
     />

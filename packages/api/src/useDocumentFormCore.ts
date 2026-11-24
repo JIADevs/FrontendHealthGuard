@@ -297,6 +297,7 @@ export function useDocumentFormCore<TFile>(
                 prependCreatedDocument(queryClient, createdDoc);
                 queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
                 queryClient.invalidateQueries({ queryKey: ["treatments"], exact: false });
+                queryClient.invalidateQueries({ queryKey: ["treatment"], exact: false });
 
                 if (!isSilent) {
                     onUploaded?.({ id: createdDoc.id, title: createdDoc.title });
@@ -408,6 +409,7 @@ export function useDocumentFormCore<TFile>(
                 prependCreatedDocument(queryClient, createdDoc);
                 queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
                 queryClient.invalidateQueries({ queryKey: ["treatments"], exact: false });
+                queryClient.invalidateQueries({ queryKey: ["treatment"], exact: false });
 
                 if (!isSilent) {
                     onUploaded?.({ id: createdDoc.id, title: createdDoc.title });

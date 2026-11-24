@@ -38,7 +38,7 @@ Este documento describe el código actual. El diseño objetivo (rediseño B, ver
 - **Tokens y tema (fase 0.1):** valores de la v2 en `tokens/semantic.ts`, copia de `.docs/design/system/tokens.css`; `pnpm --filter @helu/ui check:tokens` verifica que coincidan. `lightTheme` / `darkTheme` conservan las claves de la v1 y suman las de la v2. Web emite las `--color-*` de la v2 con alias de la v1.
 - **Fuentes:** Nunito e Inter en las dos apps. En mobile, cada peso es una familia: usar `nativeFont(rol, peso)`, no `fontWeight`.
 - **Componentes base (fases 0.2 y 2):** `Button` con canto, `Chip`, `IconTile`, `SegmentedControl`, `ChoiceChips`, `BottomSheet`, `BottomActionBar`, `ConfirmModal`, `DiscardChangesDialog`, `notify` y los helpers de `motion/`.
-- **Pantallas móviles (fases 1–14):** migradas, salvo Tratamientos (fase 8, #42). La web sigue en la v1.
+- **Pantallas móviles (fases 1–14):** migradas. Tratamientos (fase 8, #42) usa `hooks/useTreatmentForm.ts` sobre `useTreatmentFormCore` para la validación de `pages/formularios.md` §6–7. La web sigue en la v1.
 
 ### Piezas de la app mobile (no están en `@helu/ui`)
 

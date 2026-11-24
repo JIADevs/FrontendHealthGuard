@@ -12,6 +12,9 @@ interface RecentlySavedState {
   documentId: string | null;
   markDocument: (id: string | undefined) => void;
   clearDocument: () => void;
+  treatmentId: string | null;
+  markTreatment: (id: string | undefined) => void;
+  clearTreatment: () => void;
   backpackId: string | null;
   markBackpack: (id: string | undefined) => void;
   clearBackpack: () => void;
@@ -28,6 +31,9 @@ export const useRecentlySaved = create<RecentlySavedState>((set, get) => ({
   documentId: null,
   markDocument: (id) => set({ documentId: id ?? null }),
   clearDocument: () => set({ documentId: null }),
+  treatmentId: null,
+  markTreatment: (id) => set({ treatmentId: id ?? null }),
+  clearTreatment: () => set({ treatmentId: null }),
   backpackId: null,
   markBackpack: (id) => set({ backpackId: id ?? null }),
   clearBackpack: () => set({ backpackId: null }),

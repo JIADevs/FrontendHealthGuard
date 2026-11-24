@@ -60,7 +60,7 @@ El código se migra por fases siguiendo [`componentes.md`](../../design/system/c
 | Acciones optimistas | **Hecho (fase 1):** toma y check-in optimistas; revocar delegación espera al servidor. Misiones: cuando existan | Toma, check-in y pasos de misión optimistas; revocar delegación espera al servidor |
 | Web: navegación | Barra lateral de 8 entradas con Perfil y Configuraciones; se oculta a 768 px; detalles y formularios en modales sin URL | Barra lateral de 5 destinos + «Más», cuenta en el menú del avatar, cortes a 1280 y 1024 px, URL por detalle y formulario (`pages/web.md`) |
 | Microcopy | **Hecho:** tuteo (#38). En modo gestión, Inicio y Más hablan de la otra persona («No tiene citas próximas», «Su salud») | Tuteo |
-| Estados de carga y error | **Hecho en mobile (fase 14):** esqueletos en cada lista; «Error al cargar» (Helu pensando, causa y «Reintentar») en Inicio, Documentos, Agenda (las cuatro pestañas), Mochilas y Notificaciones; banda «Sin conexión» arriba con NetInfo conectado al `onlineManager` de TanStack Query. Web: pendiente | Mensaje en el lugar del contenido, con la causa y «Reintentar»; nunca una pantalla en blanco ni un «vacío» falso (`pages/movimiento-interacciones.md`, mockup m7) |
+| Estados de carga y error | **Hecho en mobile (fase 14):** esqueletos en cada lista; «Error al cargar» (Helu pensando, causa y «Reintentar») en Inicio, Documentos, Agenda (las cuatro pestañas), Mochilas, Notificaciones y Tratamientos (fase 8); banda «Sin conexión» arriba con NetInfo conectado al `onlineManager` de TanStack Query. Web: pendiente | Mensaje en el lugar del contenido, con la causa y «Reintentar»; nunca una pantalla en blanco ni un «vacío» falso (`pages/movimiento-interacciones.md`, mockup m7) |
 
 **Fase 0.1 (tokens, tema, variables CSS y fuentes):** hecha en el change `design-system-v2-foundation` (issue #35). Los valores viven en `packages/ui/src/tokens/semantic.ts`, copia de `tokens.css`, y `pnpm --filter @helu/ui check:tokens` verifica que coincidan.
 
@@ -72,6 +72,15 @@ El código se migra por fases siguiendo [`componentes.md`](../../design/system/c
 - **ConfirmModal:** opción segura primero con `keepLabel`, `IconTile` redondo y colores del tema. `ConfirmDialog` (mobile) dibuja este componente. La consecuencia va en `message`; no hizo falta una prop `consequence`.
 - **BottomActionBar:** nuevo en `@helu/ui`, con `BOTTOM_ACTION_BAR_HEIGHT` y el área segura en mobile; en web es un pie `sticky`.
 
-**Fases 1–14 (pantallas móviles):** hechas en sub-issues de #35, una rama y un PR por fase (las 10–14 apiladas). Tratamientos (fase 8) sigue en #42. Lo que no se pudo hacer y por qué está en cada sub-issue y en el reporte final de #35.
+**Fases 1–14 (pantallas móviles):** hechas en sub-issues de #35, una rama y un PR por fase (las 10–14 apiladas; la 8 al final, en #88). Lo que no se pudo hacer y por qué está en cada sub-issue y en el reporte final de #35.
+
+**Fase 8 (Tratamientos, móvil, issue #42):**
+
+- Lista, detalle, hoja «Nuevo tratamiento» y pantalla «Editar tratamiento» viven en `apps/mobile/src/components/treatments/`; las pantallas solo leen la ruta. Se borraron `TreatmentFormScreen` y las copias `* 2.tsx` de las tres pantallas.
+- Usa componentes v2 que ya existían (`ScreenHeader`, `SearchField`, `SegmentedControl`, `IconTile` con el acento `treatment`, `BottomSheet`, `BottomActionBar`, `ConfirmModal`, `DangerLink`, `DiscardChangesDialog`, esqueletos, `usePullRefresh`, `useHighlight`) y `LoadError` de la fase 14. No cambia `@helu/ui`.
+- `@helu/api`: `invalidateTreatmentQueries()` refresca el detalle cuando se le vincula o se edita algo; `useTreatmentFormCore` envía `null` para vaciar un campo al editar, entrega el id guardado y el error crudo (`onSaveError`) para poner los 422 bajo cada campo.
+- Lo que el API no tiene se omite (sin cambios de backend): misiones, especialidad en las tarjetas, frecuencia de los medicamentos, y hora, médico y especialidad de las citas. Los conteos de las tarjetas («Metformina», «3 documentos», «4 citas») salen del detalle de cada tratamiento, porque la lista no los trae. La lista de brechas está en el issue #42.
+- «Error al cargar» (m7) en lista, detalle y edición cuando la petición falla por red o servidor; un 4xx sigue siendo «Tratamiento no encontrado».
+- «Editar tratamiento» no tiene mockup: pantalla completa desde la derecha con «Estado» segmentado. Pasar a Completado o Inactivo con ciclos abiertos pide confirmación, porque el servidor los finaliza.
 
 **Siguiente paso:** la web, con las reglas de [`pages/web.md`](../../design/system/pages/web.md), empezando por Inicio y Agenda.

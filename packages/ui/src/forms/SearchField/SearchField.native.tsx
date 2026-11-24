@@ -1,63 +1,45 @@
-import type { ComponentRef } from "react";
-import { useRef } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors, spacing, radii, fontSize } from '../../tokens/tokens';
+import type { ComponentRef } from 'react';
+import { useRef, useState } from 'react';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Search, X } from 'lucide-react-native';
+import { nativeFont, radii } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
-import type { SearchFieldProps } from './SearchField.types';
+import { FIELD_MIN_HEIGHT, FieldFocusRing } from '../fieldKit.native';
 import { Spinner } from '../../primitives/Spinner/Spinner.native';
+import type { SearchFieldProps } from './SearchField.types';
 
-// ── Inline icons (no lucide dependency) ────────────────────────────────────
-
-function SearchIcon({ color }: { color: string }) {
-  return (
-    <View style={[iconStyles.root, { width: 18, height: 18 }]} pointerEvents="none">
-      <View style={[iconStyles.circle, { borderColor: color }]} />
-      <View style={[iconStyles.handle, { backgroundColor: color }]} />
-    </View>
-  );
-}
-
-function ClearIcon({ color }: { color: string }) {
-  return (
-    <View style={[iconStyles.root, { width: 10, height: 10 }]} pointerEvents="none">
-      <View style={[iconStyles.xLine, { backgroundColor: color, transform: [{ rotate: '45deg' }] }]} />
-      <View style={[iconStyles.xLine, { backgroundColor: color, transform: [{ rotate: '-45deg' }] }]} />
-    </View>
-  );
-}
-
-const iconStyles = StyleSheet.create({
-  root:    { position: 'relative', alignItems: 'center', justifyContent: 'center' },
-  circle:  { position: 'absolute', top: 0, left: 0, width: 13, height: 13, borderRadius: 7, borderWidth: 2 },
-  handle:  { position: 'absolute', bottom: 0, right: 0, width: 2, height: 7, borderRadius: 1, transform: [{ rotate: '45deg' }] },
-  xLine:   { position: 'absolute', width: 10, height: 1.5, borderRadius: 1 },
-});
-
-// ── SearchField ─────────────────────────────────────────────────────────────
-
+/**
+ * Buscador v2 (kit `.search`, mockups «Tratamientos», «Documentos», m7 «Búsqueda sin resultados»):
+ * caja blanca de 48 px con borde de 1,5 px y radio 14, lupa de 18 px, texto de 14 px. En foco toma
+ * el anillo de los campos (borde azul + halo, fundido de 150 ms, formularios.md §3). «✕» borra la
+ * búsqueda; mientras llegan resultados, el spinner del sistema la reemplaza (v2.13).
+ */
 export function SearchField({
   value,
   onChange,
-  placeholder = 'Buscar...',
+  placeholder = 'Buscar',
   accessibilityLabel,
   loading = false,
 }: SearchFieldProps) {
   const t = useAppTheme();
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const [focused, setFocused] = useState(false);
 
   return (
-    <TouchableOpacity
-      activeOpacity={1}
+    <Pressable
       onPress={() => inputRef.current?.focus()}
-      style={[styles.container, { backgroundColor: t.border.light }]}
+      style={[styles.container, { borderColor: t.border.default, backgroundColor: t.surface.bgCard }]}
       accessibilityRole="search"
     >
-      <SearchIcon color={t.text.secondary} />
+      <FieldFocusRing t={t} visible={focused} />
+      <Search size={18} strokeWidth={2.2} color={t.text.muted} />
 
       <TextInput
         ref={inputRef}
         value={value}
         onChangeText={onChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         placeholder={placeholder}
         placeholderTextColor={t.text.muted}
         style={[styles.input, { color: t.text.primary }]}
@@ -68,20 +50,22 @@ export function SearchField({
       />
 
       {loading ? (
-        <View style={styles.clearBtn} accessibilityLabel="Buscando" accessibilityLiveRegion="polite">
+        <View style={styles.trailing} accessibilityLabel="Buscando" accessibilityLiveRegion="polite">
           <Spinner size="sm" />
         </View>
-      ) : value.trim().length > 0 && (
-        <TouchableOpacity
+      ) : value.trim().length > 0 ? (
+        <Pressable
           onPress={() => onChange('')}
-          style={[styles.clearBtn, { backgroundColor: t.border.medium }]}
+          // 24 px visible, 44 px to touch (#35).
+          hitSlop={10}
+          style={({ pressed }) => [styles.trailing, pressed && styles.pressed]}
           accessibilityRole="button"
-          accessibilityLabel="Limpiar búsqueda"
+          accessibilityLabel="Borrar la búsqueda"
         >
-          <ClearIcon color={t.text.secondary} />
-        </TouchableOpacity>
-      )}
-    </TouchableOpacity>
+          <X size={16} strokeWidth={2.2} color={t.text.muted} />
+        </Pressable>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -89,21 +73,23 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing[3],
-    paddingVertical: 10,
     gap: 10,
+    minHeight: FIELD_MIN_HEIGHT,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    borderRadius: radii.input,
   },
   input: {
     flex: 1,
-    fontSize: fontSize.sm,
     paddingVertical: 0,
+    fontSize: 14,
+    fontFamily: nativeFont('body', 400),
   },
-  clearBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: radii.full,
+  trailing: {
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  pressed: { opacity: 0.6 },
 });

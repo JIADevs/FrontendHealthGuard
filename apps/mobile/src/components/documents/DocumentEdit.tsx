@@ -203,6 +203,8 @@ export function DocumentEdit({ id, onClose, subscribeBeforeLeave }: DocumentEdit
       void queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
       void queryClient.invalidateQueries({ queryKey: ["document", id] });
       void queryClient.invalidateQueries({ queryKey: ["treatments"], exact: false });
+      // Every treatment detail too: the document may have moved from one treatment to another.
+      void queryClient.invalidateQueries({ queryKey: ["treatment"], exact: false });
       void queryClient.invalidateQueries({ queryKey: ["backpack-docs"], exact: false });
       useRecentlySaved.getState().markDocument(id);
       notify({ message: "Cambios guardados", description: form.title.trim() });

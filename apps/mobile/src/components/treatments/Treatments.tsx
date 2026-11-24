@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, Keyboard, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LayoutAnimationConfig, LinearTransition } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react-native";
 import type { Treatment } from "@helu/api";
 import { useTreatmentDetailsInOrderQuery, useTreatmentsQuery } from "@helu/api/hooks";
@@ -55,7 +56,15 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
   const query = useTreatmentsQuery(1, 100);
   const items = useMemo(() => query.data?.items ?? [], [query.data?.items]);
   const showSkeleton = useSkeletonVisible(query.isLoading);
-  const pull = usePullRefresh(query.refetch, query.dataUpdatedAt);
+  // Pulling refreshes the list and the cards' chips: their details are only marked stale here, and
+  // `useTreatmentDetailsInOrderQuery` brings them back two at a time.
+  const queryClient = useQueryClient();
+  const { refetch } = query;
+  const refresh = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ["treatment"], refetchType: "none" });
+    return refetch();
+  }, [queryClient, refetch]);
+  const pull = usePullRefresh(refresh, query.dataUpdatedAt);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<TreatmentStatus>("ACTIVE");
   // Staggered entry only for the first paint of the list (§2, §6c), not on every refetch or tab.

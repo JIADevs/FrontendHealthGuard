@@ -111,7 +111,7 @@ export function SessionsBody({
   if (phase === "schedule") {
     return (
       <View style={styles.body}>
-        <TextField label="Lugar (opcional)" value={place} onChange={setPlace} placeholder="Ej: Centro Movimiento" />
+        <TextField label="Lugar (opcional)" value={place} onChange={setPlace} placeholder="Ej: Centro Movimiento" autoCorrect={false} />
         {dateFields({ date: "Fecha", time: "Hora" })}
         <Button
           variant="primary"

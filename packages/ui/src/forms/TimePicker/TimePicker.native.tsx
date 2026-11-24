@@ -8,9 +8,14 @@ import { fieldBox, FieldLabel, FieldErrorText, fieldTextStyle } from '../fieldKi
 import { formatClock, formatShortDay } from '../../utils/formatters';
 import type { TimePickerProps } from './TimePicker.types';
 
+/** An empty field opens on the next full hour, not on midnight. */
 function toDate(value: string): Date {
-  const [hours, minutes] = value ? value.split(':').map(Number) : [0, 0];
   const d = new Date();
+  if (!value) {
+    d.setHours(d.getHours() + 1, 0, 0, 0);
+    return d;
+  }
+  const [hours, minutes] = value.split(':').map(Number);
   d.setHours(hours, minutes, 0, 0);
   return d;
 }

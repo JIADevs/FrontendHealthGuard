@@ -99,6 +99,7 @@ export function DoctorSheet({ onSaved, onClose }: DoctorSheetProps) {
           value={form.clinic}
           onChange={form.setClinic}
           placeholder="Ej: Clínica del Country"
+          autoCorrect={false}
         />
         <TextField
           label="Teléfono (opcional)"

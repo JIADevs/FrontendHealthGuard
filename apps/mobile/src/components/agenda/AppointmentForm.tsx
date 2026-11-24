@@ -436,11 +436,12 @@ function AppointmentFormBody({
                 value={form.location}
                 onChange={form.setLocation}
                 placeholder="Ej: Calle 123, Bogotá"
+                autoCorrect={false}
                 leadingIcon={<MapPin size={18} color={t.text.muted} />}
                 error={form.fieldErrors.location}
               />
             )}
-            <TextField label="Clínica / Hospital / IPS (opcional)" value={form.clinic} onChange={form.setClinic} placeholder="Ej: Hospital San José" />
+            <TextField label="Clínica / Hospital / IPS (opcional)" value={form.clinic} onChange={form.setClinic} placeholder="Ej: Hospital San José" autoCorrect={false} />
           </View>
 
           <View style={styles.card}>

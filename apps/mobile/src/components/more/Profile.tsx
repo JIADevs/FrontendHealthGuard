@@ -168,6 +168,7 @@ export function Profile() {
                 value={form.address}
                 onChange={form.setAddress}
                 placeholder="Ej: Bogotá, Calle 93 #15-20"
+                autoCorrect={false}
                 leadingIcon={<MapPin size={18} color={t.text.muted} />}
               />
             </FormCard>

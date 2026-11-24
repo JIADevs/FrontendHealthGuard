@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import Toast from "react-native-toast-message";
+import { notify } from "../lib/notify";
 import { useMedicationByIdQuery } from "@helu/api/hooks";
 import {
   resolveCycleForDay,
@@ -55,10 +55,10 @@ export function useMedicationIntakeIntent(
 
   useEffect(() => {
     if (queryEnabled && query.isError) {
-      Toast.show({
-        type: "error",
-        text1: "No se pudo abrir el recordatorio",
-        text2: "Intenta desde la lista de medicamentos.",
+      notify({
+        tone: "error",
+        message: "No se pudo abrir el recordatorio",
+        description: "Registra la toma desde Agenda › Medicamentos.",
       });
     }
   }, [queryEnabled, query.isError]);

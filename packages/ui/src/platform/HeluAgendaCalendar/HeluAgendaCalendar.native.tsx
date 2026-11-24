@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { ScrollView, Text, View, StyleSheet, Pressable } from "react-native";
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react-native";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react-native";
 import { useCalendarEventsQuery } from "@helu/api/reactQueryHooks";
 import { BottomSheet } from "../../containers/BottomSheet/BottomSheet.native";
 import type { BottomSheetHandle } from "../../containers/BottomSheet/BottomSheet.types";
@@ -90,10 +90,18 @@ export function HeluAgendaCalendar({
                     <SkeletonCard tile={false} edge />
                 </SkeletonGroup>
             ) : calendar.isError ? (
-                <View style={styles.center}>
-                    <Text style={[styles.errorText, { color: t.status.errorFg }]}>
-                        No se pudieron cargar los eventos del calendario. Revisa tu conexión e intenta de nuevo.
+                // m7 «Error al cargar»: what failed, the likely cause and «Reintentar», in place of the day.
+                <View style={[styles.center, styles.errorBox]}>
+                    <Text style={[styles.errorTitle, { color: t.text.primary }]} accessibilityRole="header">
+                        No se pudo cargar tu agenda
                     </Text>
+                    <Text style={[styles.errorText, { color: t.text.secondary }]}>Revisa tu conexión e intenta de nuevo.</Text>
+                    <Button
+                        icon={<RefreshCw size={17} strokeWidth={2.4} color={t.text.onSolid} />}
+                        onPress={() => void calendar.refetch()}
+                    >
+                        Reintentar
+                    </Button>
                 </View>
             ) : (
                 <Animated.View entering={contentEntering} style={styles.list}>
@@ -360,6 +368,15 @@ const styles = StyleSheet.create({
         textAlign: "center",
         paddingHorizontal: spacing[4],
         paddingTop: spacing[4],
+    },
+    errorBox: {
+        gap: spacing[3],
+        paddingHorizontal: spacing[6],
+    },
+    errorTitle: {
+        fontSize: 18,
+        fontFamily: nativeFont("heading", 900),
+        textAlign: "center",
     },
     errorText: {
         fontSize: fontSize.sm,

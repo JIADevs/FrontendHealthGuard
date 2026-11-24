@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import Toast from "react-native-toast-message";
+import { notify } from "../lib/notify";
 import { getDailyCheckIns } from "@helu/api";
 import { QK } from "@helu/api/hooks";
 import { todayLocalDateKey, toUtcIsoFromPickerValue } from "@helu/ui";
@@ -47,7 +47,7 @@ export function useDailyCheckInIntent(enabled: boolean): DailyCheckInIntentResul
       .then((page) => {
         if (cancelled) return;
         if (page.total > 0) {
-          Toast.show({ type: "info", text1: "Ya registraste tu check-in de hoy" });
+          notify({ tone: "info", message: "Ya hiciste tu check-in de hoy", description: "Puedes cambiarlo desde Agenda › Bienestar." });
           setStatus("already-done");
         } else {
           setStatus("form");

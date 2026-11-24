@@ -27,7 +27,7 @@ import type { SubscribeBeforeLeave } from "../agenda/AppointmentForm";
 import { useTreatmentForm } from "../../hooks/useTreatmentForm";
 import { notify } from "../../lib/notify";
 import { TreatmentFields } from "./TreatmentFields";
-import { TreatmentLoadError } from "./TreatmentLoadError";
+import { LoadError } from "../states/LoadError";
 import {
   TREATMENT_STATUS,
   TREATMENT_STATUS_ORDER,
@@ -86,7 +86,7 @@ export function TreatmentEdit({ id, onClose, subscribeBeforeLeave }: TreatmentEd
         </>
       ) : query.isError && isRetryableLoadError(query.error) ? (
         <ScrollView contentContainerStyle={styles.errorContent}>
-          <TreatmentLoadError
+          <LoadError
             title="No se pudo cargar el tratamiento"
             onRetry={() => void query.refetch()}
             retrying={query.isFetching}

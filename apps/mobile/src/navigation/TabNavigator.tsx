@@ -22,10 +22,12 @@ import {
   spacing,
   fontSize,
   fontWeight,
+  nativeFont,
   useAppTheme,
 } from "@helu/ui";
 import { useManagedUsersQuery, useDelegationContextColorsQuery } from "@helu/api/hooks";
-import { resolveDelegationRingColor } from "../components/dependientes";
+import { resolveDelegationRingColor } from "../components/dependientes/colorTokens";
+import { initialsOf } from "../components/dependientes/PersonCard";
 import { usePatientContextGuard } from "../hooks/usePatientContextGuard";
 import { TabSceneFade } from "./TabSceneFade";
 
@@ -86,7 +88,7 @@ function CenterTabIcon({ focused }: { focused: boolean }) {
     }
 
     const name = activeDelegate?.linkedUserName ?? activeDelegate?.linkedUserEmail ?? "";
-    const initials = name.slice(0, 2).toUpperCase() || "?";
+    const initials = name ? initialsOf(name) : "?";
 
     return (
       <View
@@ -155,11 +157,23 @@ export function TabNavigator() {
         tabBarActiveTintColor: t.brand.fg,
         tabBarInactiveTintColor: t.text.muted,
         headerShown: false,
-        tabBarLabelStyle: {
-          fontSize: fontSize.xs,
-          fontWeight: fontWeight.medium,
-          marginTop: 2,
-        },
+        // Kit `.tab`: Inter 500 11 px, never cut. With larger system text «Documentos» showed as
+        // «Document…»: the label shrinks just enough to fit its tab instead of truncating.
+        tabBarLabel: ({ color, children }) => (
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            style={{
+              color,
+              fontSize: fontSize.xs,
+              fontFamily: nativeFont("body", children === "Inicio" ? 600 : 500),
+              marginTop: children === "Inicio" ? spacing[1] : 2,
+            }}
+          >
+            {children}
+          </Text>
+        ),
         tabBarItemStyle: {
           paddingVertical: spacing[1],
           gap: 2,
@@ -204,11 +218,6 @@ export function TabNavigator() {
         options={{
           title: "Inicio",
           tabBarIcon: ({ focused }) => <CenterTabIcon focused={focused} />,
-          tabBarLabelStyle: {
-            fontSize: fontSize.xs,
-            fontWeight: fontWeight.bold,
-            marginTop: spacing[1],
-          },
         }}
       />
       <Tab.Screen

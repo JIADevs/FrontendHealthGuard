@@ -1,265 +1,169 @@
-import { useMemo } from "react";
-import {
-  Modal as RNModal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronLeft } from "lucide-react-native";
+import { useRef, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Filter } from "lucide-react-native";
 import type { Treatment } from "@helu/api";
 import {
-  spacing,
-  fontSize,
-  fontWeight,
-  useAppTheme,
-  Chip,
+  BottomSheet,
   Button,
+  ChoiceChips,
   DatePicker,
+  IconTile,
+  nativeFont,
+  spacing,
   todayISODate,
+  useAppTheme,
+  type BottomSheetHandle,
 } from "@helu/ui";
-import type { ThemeContextValue } from "@helu/ui";
 import { SelectField } from "../SelectField";
 import type { MedicationFilters } from "../../hooks/useMedicationsList";
-import { hasActiveMedicationFilters } from "../../hooks/useMedicationsList";
 
-const STATUS_OPTIONS: { value: "active" | "finished"; label: string }[] = [
-  { value: "active", label: "Activo" },
-  { value: "finished", label: "Finalizado" },
-];
-
-const FREQUENCY_UNIT_OPTIONS: { value: string; label: string }[] = [
-  { value: "HOUR", label: "Cada hora(s)" },
-  { value: "DAY", label: "Cada día(s)" },
-  { value: "WEEK", label: "Cada semana(s)" },
-  { value: "MONTH", label: "Cada mes(es)" },
-  { value: "YEAR", label: "Cada año(s)" },
-];
-
+const ALL = "";
 const TODOS = "Todos";
 
-interface MedicationsFilterSheetProps {
-  visible: boolean;
-  draft: MedicationFilters;
-  onChangeDraft: (filters: MedicationFilters) => void;
-  onClear: () => void;
-  onApply: () => void;
-  onClose: () => void;
+const STATUS_OPTIONS = [
+  { value: ALL, label: TODOS },
+  { value: "active", label: "Activos" },
+  { value: "finished", label: "Finalizados" },
+];
+
+/** Same units as the form's «Frecuencia (cada cuánto)» chips. */
+const FREQUENCY_UNIT_OPTIONS = [
+  { value: ALL, label: TODOS },
+  { value: "HOUR", label: "Horas" },
+  { value: "DAY", label: "Días" },
+  { value: "WEEK", label: "Semanas" },
+  { value: "MONTH", label: "Meses" },
+  { value: "YEAR", label: "Años" },
+];
+
+export interface MedicationsFilterSheetProps {
+  initial: MedicationFilters;
   treatments: Treatment[];
+  onApply: (filters: MedicationFilters) => void;
+  onClose: () => void;
 }
 
+/**
+ * Filters for Medicamentos as a kit BottomSheet (formularios.md §2: filters open in a bottom
+ * sheet), same layout as «DOCUMENTOS · Filtros»: option chips, «Desde» / «Hasta», «Aplicar
+ * filtros» and «Limpiar filtros». Nothing applies until «Aplicar».
+ */
 export function MedicationsFilterSheet({
-  visible,
-  draft,
-  onChangeDraft,
-  onClear,
+  initial,
+  treatments,
   onApply,
   onClose,
-  treatments,
 }: MedicationsFilterSheetProps) {
   const t = useAppTheme();
-  const styles = useMemo(() => makeStyles(t), [t]);
+  const sheetRef = useRef<BottomSheetHandle>(null);
+  const [draft, setDraft] = useState<MedicationFilters>(initial);
+  const patch = (partial: Partial<MedicationFilters>) =>
+    setDraft((d) => ({ ...d, ...partial }));
 
-  const patch = (partial: Partial<MedicationFilters>) => {
-    onChangeDraft({ ...draft, ...partial });
-  };
-
-  const canClear = hasActiveMedicationFilters(draft);
-
-  const selectedTreatmentName =
+  const treatmentName =
     treatments.find((tx) => tx.id === draft.treatmentId)?.name ?? TODOS;
+  const apply = () => sheetRef.current?.close(() => onApply(draft));
 
   return (
-    <RNModal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="fullScreen"
-      onRequestClose={onClose}
+    <BottomSheet
+      ref={sheetRef}
+      eyebrow="MEDICAMENTOS"
+      title="Filtros"
+      icon={
+        <IconTile
+          tone="neutral"
+          size="lg"
+          round
+          icon={<Filter size={22} strokeWidth={2.4} color={t.text.onMuted} />}
+        />
+      }
+      onClose={onClose}
     >
-      <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.headerSide}
-            onPress={onClose}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Volver al listado"
-          >
-            <ChevronLeft size={24} color={t.text.primary} />
-          </TouchableOpacity>
-
-          <Text style={styles.title} numberOfLines={1}>
-            Filtrar medicamentos
-          </Text>
-
-          <TouchableOpacity
-            style={styles.headerSide}
-            onPress={onClear}
-            disabled={!canClear}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Limpiar filtros"
-          >
-            <Text style={[styles.clearText, !canClear && styles.clearTextDisabled]}>
-              Limpiar filtros
-            </Text>
-          </TouchableOpacity>
+      <View style={styles.body}>
+        <View style={styles.group}>
+          <Text style={[styles.lbl, { color: t.text.primary }]}>Estado</Text>
+          <ChoiceChips
+            options={STATUS_OPTIONS}
+            value={draft.status ?? ALL}
+            onChange={(v) =>
+              patch({ status: (v || undefined) as MedicationFilters["status"] })
+            }
+          />
         </View>
 
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Text style={styles.subtitle}>Estado</Text>
-          <View style={styles.chipGrid}>
-            <Chip label={TODOS} selected={!draft.status} onPress={() => patch({ status: undefined })} />
-            {STATUS_OPTIONS.map((opt) => (
-              <Chip
-                key={opt.value}
-                label={opt.label}
-                selected={draft.status === opt.value}
-                onPress={() => patch({ status: opt.value })}
-              />
-            ))}
-          </View>
+        <View style={styles.group}>
+          <Text style={[styles.lbl, { color: t.text.primary }]}>
+            Frecuencia
+          </Text>
+          <ChoiceChips
+            options={FREQUENCY_UNIT_OPTIONS}
+            value={draft.frequencyUnit ?? ALL}
+            onChange={(v) => patch({ frequencyUnit: v || undefined })}
+          />
+        </View>
 
-          <Text style={[styles.subtitle, styles.sectionGap]}>Frecuencia</Text>
-          <View style={styles.chipGrid}>
-            <Chip
-              label={TODOS}
-              selected={!draft.frequencyUnit}
-              onPress={() => patch({ frequencyUnit: undefined })}
-            />
-            {FREQUENCY_UNIT_OPTIONS.map((opt) => (
-              <Chip
-                key={opt.value}
-                label={opt.label}
-                selected={draft.frequencyUnit === opt.value}
-                onPress={() => patch({ frequencyUnit: opt.value })}
-              />
-            ))}
-          </View>
-
-          <Text style={[styles.subtitle, styles.sectionGap]}>Inicio de ciclo</Text>
-          <View style={styles.dateRow}>
-            <View style={styles.dateField}>
+        <View style={styles.group}>
+          <Text style={[styles.lbl, { color: t.text.primary }]}>
+            Inicio del ciclo
+          </Text>
+          <View style={styles.dates}>
+            <View style={styles.date}>
               <DatePicker
                 label="Desde"
                 value={draft.startDateFrom ?? ""}
-                onChange={(startDateFrom) => patch({ startDateFrom })}
+                placeholder="Sin límite"
                 maxDate={draft.startDateTo ?? todayISODate()}
+                onChange={(v) => patch({ startDateFrom: v || undefined })}
               />
             </View>
-            <View style={styles.dateField}>
+            <View style={styles.date}>
               <DatePicker
                 label="Hasta"
                 value={draft.startDateTo ?? ""}
-                onChange={(startDateTo) => patch({ startDateTo })}
+                placeholder="Hoy"
                 minDate={draft.startDateFrom ?? undefined}
                 maxDate={todayISODate()}
+                onChange={(v) => patch({ startDateTo: v || undefined })}
               />
             </View>
           </View>
-
-          <View style={styles.sectionGap}>
-            <SelectField
-              label="Tratamiento"
-              value={selectedTreatmentName}
-              placeholder={TODOS}
-              options={[TODOS, ...treatments.map((tx) => tx.name)]}
-              onChange={(name) =>
-                patch({
-                  treatmentId: name === TODOS ? undefined : treatments.find((tx) => tx.name === name)?.id,
-                })
-              }
-            />
-          </View>
-        </ScrollView>
-
-        <View style={styles.footer}>
-          <Button onPress={onApply}>Aplicar filtros</Button>
         </View>
-      </SafeAreaView>
-    </RNModal>
+
+        {treatments.length > 0 ? (
+          <SelectField
+            label="Tratamiento"
+            value={treatmentName}
+            placeholder={TODOS}
+            options={[TODOS, ...treatments.map((tx) => tx.name)]}
+            onChange={(name) =>
+              patch({
+                treatmentId:
+                  name === TODOS
+                    ? undefined
+                    : treatments.find((tx) => tx.name === name)?.id,
+              })
+            }
+          />
+        ) : null}
+
+        <View style={styles.actions}>
+          <Button size="lg" fullWidth onPress={apply}>
+            Aplicar filtros
+          </Button>
+          <Button variant="ghost" fullWidth onPress={() => setDraft({})}>
+            Limpiar filtros
+          </Button>
+        </View>
+      </View>
+    </BottomSheet>
   );
 }
 
-function makeStyles(t: ThemeContextValue) {
-  return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: t.surface.bg,
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: spacing[4],
-      paddingVertical: spacing[3],
-      borderBottomWidth: 1,
-      borderBottomColor: t.border.light,
-      backgroundColor: t.surface.bgCard,
-    },
-    headerSide: {
-      width: 108,
-      justifyContent: "center",
-    },
-    title: {
-      flex: 1,
-      fontSize: fontSize.lg,
-      fontWeight: fontWeight.bold,
-      color: t.text.primary,
-      textAlign: "center",
-    },
-    clearText: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: t.brand.fg,
-      textAlign: "right",
-    },
-    clearTextDisabled: {
-      color: t.text.muted,
-    },
-    scroll: {
-      flex: 1,
-    },
-    scrollContent: {
-      paddingHorizontal: spacing[5],
-      paddingTop: spacing[5],
-      paddingBottom: spacing[6],
-    },
-    subtitle: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: t.text.secondary,
-      marginBottom: spacing[3],
-    },
-    sectionGap: {
-      marginTop: spacing[5],
-    },
-    chipGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: spacing[2],
-    },
-    dateRow: {
-      flexDirection: "row",
-      gap: spacing[3],
-    },
-    dateField: {
-      flex: 1,
-    },
-    footer: {
-      alignItems: "center",
-      paddingHorizontal: spacing[5],
-      paddingTop: spacing[4],
-      paddingBottom: spacing[4],
-      borderTopWidth: 1,
-      borderTopColor: t.border.light,
-      backgroundColor: t.surface.bgCard,
-    },
-  });
-}
+const styles = StyleSheet.create({
+  body: { gap: spacing[5] },
+  group: { gap: spacing[2] },
+  lbl: { fontSize: 13, fontFamily: nativeFont("heading", 800) },
+  dates: { flexDirection: "row", gap: spacing[3] },
+  date: { flex: 1 },
+  actions: { gap: spacing[2] },
+});

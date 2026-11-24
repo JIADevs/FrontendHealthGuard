@@ -1,7 +1,13 @@
 import type { Medication, MedicationCycle } from "@helu/api";
-import { formatClock, formatShortDay } from "@helu/ui";
+import { findIntakeForSlot, formatClock, formatShortDay, generateIntakeTimesForDay } from "@helu/ui";
 
 const DAY_MS = 86_400_000;
+
+/** «YYYY-MM-DD» of a local date (the calendar's day key). */
+function localDateKey(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 /**
  * Local midnight of a date. A bare «YYYY-MM-DD» is read as a local date; a full timestamp
@@ -30,6 +36,49 @@ export function isMedicationActive(medication: Medication, now = Date.now()): bo
   return (medication.cycles ?? []).some((cycle) => isCycleActive(cycle, now));
 }
 
+const HOUR_MS = 3_600_000;
+const FIXED_UNIT_HOURS: Record<string, number> = { HOUR: 1, DAY: 24, WEEK: 168 };
+
+/** Time between doses for units with a fixed length (hours, days, weeks); null otherwise. */
+function doseIntervalMs(cycle: MedicationCycle): number | null {
+  const hours = FIXED_UNIT_HOURS[cycle.frequencyUnit ?? "HOUR"];
+  return hours && cycle.frequency > 0 ? cycle.frequency * hours * HOUR_MS : null;
+}
+
+/**
+ * The cycle's pending dose on its own schedule: ``firstIntakeTime`` plus whole intervals —
+ * the same slots Agenda and Inicio draw (`generateIntakeTimesForDay`).
+ *
+ * Until 2026-11-21 the API moved ``nextIntakeTime`` to *tap time + interval*, so some cycles
+ * drifted (07:00 / 19:00 became 11:21 / 23:21) and the list contradicted the calendar. When
+ * the stored value is off schedule, the latest answered dose is matched to its nearest slot and
+ * this returns the slot after it — the same value `scripts/realign_next_intake.py` writes on the
+ * server (BackendHealthGuard#23). A cycle without a stored next dose keeps none.
+ * Months and years have no fixed length, so they keep the stored value.
+ */
+export function scheduledNextIntake(cycle: MedicationCycle): string | null | undefined {
+  const interval = doseIntervalMs(cycle);
+  const anchor = new Date(cycle.firstIntakeTime).getTime();
+  if (!interval || !Number.isFinite(anchor)) return cycle.nextIntakeTime;
+  if (!cycle.nextIntakeTime) return cycle.nextIntakeTime;
+  const stored = new Date(cycle.nextIntakeTime).getTime();
+  if (!Number.isFinite(stored)) return cycle.nextIntakeTime;
+  if (stored >= anchor && (stored - anchor) % interval < 1000) return cycle.nextIntakeTime;
+  // The slot an answer belongs to is the nearest one: doses are often tapped early or late.
+  const nearest = (ms: number) => (ms <= anchor ? anchor : anchor + Math.round((ms - anchor) / interval) * interval);
+  const answered = (cycle.intakes ?? [])
+    .map((intake) => new Date(intake.scheduledTime).getTime())
+    .filter(Number.isFinite);
+  const slot = answered.length > 0 ? nearest(Math.max(...answered)) + interval : nearest(stored);
+  return new Date(slot).toISOString();
+}
+
+/** The cycle with ``nextIntakeTime`` on its schedule (see `scheduledNextIntake`). */
+export function withScheduledNext(cycle: MedicationCycle): MedicationCycle {
+  const next = scheduledNextIntake(cycle);
+  return next === cycle.nextIntakeTime ? cycle : { ...cycle, nextIntakeTime: next ?? null };
+}
+
 /**
  * The cycle the list and the detail talk about: the active one with the nearest next dose,
  * or, for a finished medication, the one that ended last.
@@ -38,7 +87,7 @@ export function currentCycleOf(medication: Medication, now = Date.now()): Medica
   const cycles = medication.cycles ?? [];
   const active = cycles.filter((cycle) => isCycleActive(cycle, now));
   if (active.length > 0) {
-    return [...active].sort((a, b) => nextDoseMs(a) - nextDoseMs(b))[0];
+    return [...active].map(withScheduledNext).sort((a, b) => nextDoseMs(a) - nextDoseMs(b))[0];
   }
   return [...cycles].sort((a, b) => endMs(b) - endMs(a))[0];
 }
@@ -76,16 +125,60 @@ export function formatNextDose(iso: string | null | undefined, now = Date.now())
   const when = new Date(iso);
   if (Number.isNaN(when.getTime())) return "";
   const diffDays = Math.round((startOfLocalDay(when) - startOfLocalDay(now)) / DAY_MS);
-  const clock = formatClock(when);
+  // Non-breaking spaces: «11:21 p. m.» must never wrap as «11:21 p.» / «m.» (clinical data, MASTER §1).
+  const clock = formatClock(when).replace(/ /g, "\u00a0");
   if (diffDays === 0) return `hoy ${clock}`;
   if (diffDays === 1) return `mañana ${clock}`;
-  return `${formatShortDay(when)} · ${clock}`;
+  return `${midSentenceDay(when)} · ${clock}`;
 }
 
 /** «Terminó el Jue 3 dic» for a finished cycle. */
 export function formatCycleEnd(cycle: MedicationCycle | undefined): string {
   if (!cycle?.endDate) return "Sin ciclo activo";
-  return `Terminó el ${formatShortDay(cycle.endDate)}`;
+  return `Terminó el ${midSentenceDay(cycle.endDate)}`;
+}
+
+/** «Dom 22 nov» → «dom 22 nov»: these always follow other words, and weekdays are lowercase in Spanish. */
+function midSentenceDay(value: string | Date): string {
+  const day = formatShortDay(value);
+  return day.charAt(0).toLowerCase() + day.slice(1);
+}
+
+export interface RecentAdherence {
+  /** Doses of the window marked «Tomado». */
+  taken: number;
+  /** Doses the schedule asked for in the window, up to now. */
+  due: number;
+  /** Days the window covers (fewer than `days` when the cycle started inside it). */
+  days: number;
+}
+
+/**
+ * For a cycle without an end date there is no «X de N días»: the list shows how many of the doses
+ * scheduled in the last `days` days (today included, only those whose time already came) were
+ * marked as taken. Same slots as the calendar (`generateIntakeTimesForDay`) and the same matching
+ * of a recorded intake to its slot (`findIntakeForSlot`). Null when nothing was due yet.
+ */
+export function recentAdherence(cycle: MedicationCycle, now = Date.now(), days = 7): RecentAdherence | null {
+  const firstMs = new Date(cycle.firstIntakeTime).getTime();
+  const startMs = Math.max(startOfLocalDay(cycle.startDate), Number.isFinite(firstMs) ? firstMs : -Infinity);
+  let taken = 0;
+  let due = 0;
+  let covered = 0;
+  for (let back = days - 1; back >= 0; back -= 1) {
+    const day = new Date(now);
+    day.setDate(day.getDate() - back);
+    const dayKey = localDateKey(day);
+    if (startOfLocalDay(dayKey) + DAY_MS <= startOfLocalDay(startMs)) continue;
+    covered += 1;
+    for (const time of generateIntakeTimesForDay(cycle.firstIntakeTime, cycle.frequency, dayKey, cycle.frequencyUnit)) {
+      const slotMs = new Date(`${dayKey}T${time}`).getTime();
+      if (slotMs < startMs - 60_000 || slotMs > now) continue;
+      due += 1;
+      if (findIntakeForSlot(cycle, dayKey, time)?.status === "TAKEN") taken += 1;
+    }
+  }
+  return due > 0 ? { taken, due, days: covered } : null;
 }
 
 const MONTHS_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];

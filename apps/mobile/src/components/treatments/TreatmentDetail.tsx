@@ -37,7 +37,7 @@ import { haptics } from "../../lib/haptics";
 import { TreatmentCheckIns } from "./TreatmentCheckIns";
 import { TreatmentRow, TreatmentSection } from "./TreatmentSection";
 import { TreatmentStarterCard } from "./TreatmentStarterCard";
-import { TreatmentLoadError } from "./TreatmentLoadError";
+import { LoadError } from "../states/LoadError";
 import { TreatmentSummaryCard, TreatmentSummarySkeleton } from "./TreatmentSummaryCard";
 import {
   dayFromDate,
@@ -115,7 +115,7 @@ export function TreatmentDetail({
       <SafeAreaView style={styles.container} edges={["top"]}>
         <ScreenHeader title="Tratamiento" onBack={onBack} />
         <ScrollView contentContainerStyle={styles.errorContent}>
-          <TreatmentLoadError
+          <LoadError
             title="No se pudo cargar el tratamiento"
             onRetry={() => void query.refetch()}
             retrying={query.isFetching}

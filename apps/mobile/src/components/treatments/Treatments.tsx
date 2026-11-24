@@ -24,7 +24,7 @@ import { ScreenHeader } from "../ScreenHeader";
 import { useRecentlySaved } from "../../lib/recentlySaved";
 import { TreatmentCard, TreatmentCardSkeleton } from "./TreatmentCard";
 import { TreatmentCreateSheet } from "./TreatmentCreateSheet";
-import { TreatmentLoadError } from "./TreatmentLoadError";
+import { LoadError } from "../states/LoadError";
 import { TreatmentsEmpty, TreatmentsSearchEmpty, TreatmentsTabEmpty } from "./TreatmentsEmpty";
 import {
   TREATMENT_STATUS,
@@ -137,7 +137,7 @@ export function Treatments({ onBack, onOpen }: TreatmentsProps) {
               onScroll={pull.onScroll}
               scrollEventThrottle={16}
             >
-              <TreatmentLoadError
+              <LoadError
                 title="No se pudieron cargar tus tratamientos"
                 onRetry={() => void query.refetch()}
                 retrying={query.isFetching}

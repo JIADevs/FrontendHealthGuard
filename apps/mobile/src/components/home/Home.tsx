@@ -31,6 +31,7 @@ import { UpcomingAppointmentsCard } from "./UpcomingAppointmentsCard";
 import { RecentDocumentsCard } from "./RecentDocumentsCard";
 import { SetupChecklist, type SetupStepKey } from "./SetupChecklist";
 import { useHomeData } from "./useHomeData";
+import { LoadError } from "../states/LoadError";
 
 type MedicationEvent = Extract<AgendaEvent, { type: "medication" }>;
 
@@ -98,63 +99,71 @@ export function Home({ nav }: { nav: HomeNavigation }) {
         scrollEventThrottle={16}
       >
         <HomeHeader unread={data.unread} onNotifications={nav.notifications} />
-        <HomeGreeting {...data.greeting} />
-
-        {data.showSetup ? (
-          <Animated.View entering={contentEntering} layout={homeBlockLayout}>
-            <SetupChecklist state={data.setupState} onStep={onSetupStep} onHide={data.hideSetup} />
+        {data.failed ? (
+          <Animated.View entering={contentEntering}>
+            <LoadError title="No se pudo cargar tu día" onRetry={() => void data.refetch()} retrying={data.retrying} />
           </Animated.View>
-        ) : null}
-
-        {medsSkeleton && !data.showSetup ? (
-          <MedsSkeleton />
-        ) : medsSkeleton || (data.showSetup && data.todayMeds.length === 0) ? null : (
-          <Animated.View entering={contentEntering} layout={homeBlockLayout}>
-            <TodayMedsCard
-              events={data.todayMeds}
-              takenCount={data.takenCount}
-              takingCycleId={takeDose.takingCycleId ?? null}
-              takingScheduledTime={takeDose.takingScheduledTime ?? null}
-              onOpenDose={setDoseSheet}
-              onTake={take}
-            />
-          </Animated.View>
-        )}
-
-        {streakSkeleton ? (
-          <StreakSkeleton />
         ) : (
-          <Animated.View entering={contentEntering} layout={homeBlockLayout}>
-            <StreakCard
-              current={data.streak.current}
-              longest={data.streak.longest}
-              week={data.week}
-              doneToday={data.doneToday}
-              confirmedToday={data.streak.confirmedToday}
-              onCheckIn={() => setCheckInOpen(true)}
-              celebrateKey={data.celebrateKey}
-            />
-          </Animated.View>
-        )}
+          <>
+            <HomeGreeting {...data.greeting} />
 
-        <Animated.View layout={homeBlockLayout}>
-          <QuickActions onUpload={nav.upload} onScan={nav.scan} onShare={nav.share} />
-        </Animated.View>
+            {data.showSetup ? (
+              <Animated.View entering={contentEntering} layout={homeBlockLayout}>
+                <SetupChecklist state={data.setupState} onStep={onSetupStep} onHide={data.hideSetup} />
+              </Animated.View>
+            ) : null}
 
-        {apptsSkeleton ? (
-          <ListSkeleton title="Próximas citas" seeAll="Ver todas" label="Cargando próximas citas" />
-        ) : hideEmptyLists && data.upcomingAppointments.length === 0 ? null : (
-          <Animated.View entering={contentEntering} layout={homeBlockLayout}>
-            <UpcomingAppointmentsCard appointments={data.upcomingAppointments} onOpen={nav.openAppointment} onSeeAll={nav.appointments} />
-          </Animated.View>
-        )}
+            {medsSkeleton && !data.showSetup ? (
+              <MedsSkeleton />
+            ) : medsSkeleton || (data.showSetup && data.todayMeds.length === 0) ? null : (
+              <Animated.View entering={contentEntering} layout={homeBlockLayout}>
+                <TodayMedsCard
+                  events={data.todayMeds}
+                  takenCount={data.takenCount}
+                  takingCycleId={takeDose.takingCycleId ?? null}
+                  takingScheduledTime={takeDose.takingScheduledTime ?? null}
+                  onOpenDose={setDoseSheet}
+                  onTake={take}
+                />
+              </Animated.View>
+            )}
 
-        {docsSkeleton ? (
-          <ListSkeleton title="Documentos recientes" seeAll="Ver todos" label="Cargando documentos recientes" />
-        ) : hideEmptyLists && data.recentDocuments.length === 0 ? null : (
-          <Animated.View entering={contentEntering} layout={homeBlockLayout}>
-            <RecentDocumentsCard documents={data.recentDocuments} onOpen={nav.openDocument} onSeeAll={nav.documents} />
-          </Animated.View>
+            {streakSkeleton ? (
+              <StreakSkeleton />
+            ) : (
+              <Animated.View entering={contentEntering} layout={homeBlockLayout}>
+                <StreakCard
+                  current={data.streak.current}
+                  longest={data.streak.longest}
+                  week={data.week}
+                  doneToday={data.doneToday}
+                  confirmedToday={data.streak.confirmedToday}
+                  onCheckIn={() => setCheckInOpen(true)}
+                  celebrateKey={data.celebrateKey}
+                />
+              </Animated.View>
+            )}
+
+            <Animated.View layout={homeBlockLayout}>
+              <QuickActions onUpload={nav.upload} onScan={nav.scan} onShare={nav.share} />
+            </Animated.View>
+
+            {apptsSkeleton ? (
+              <ListSkeleton title="Próximas citas" seeAll="Ver todas" label="Cargando próximas citas" />
+            ) : hideEmptyLists && data.upcomingAppointments.length === 0 ? null : (
+              <Animated.View entering={contentEntering} layout={homeBlockLayout}>
+                <UpcomingAppointmentsCard appointments={data.upcomingAppointments} onOpen={nav.openAppointment} onSeeAll={nav.appointments} />
+              </Animated.View>
+            )}
+
+            {docsSkeleton ? (
+              <ListSkeleton title="Documentos recientes" seeAll="Ver todos" label="Cargando documentos recientes" />
+            ) : hideEmptyLists && data.recentDocuments.length === 0 ? null : (
+              <Animated.View entering={contentEntering} layout={homeBlockLayout}>
+                <RecentDocumentsCard documents={data.recentDocuments} onOpen={nav.openDocument} onSeeAll={nav.documents} />
+              </Animated.View>
+            )}
+          </>
         )}
       </ScrollView>
       <PullRefreshIndicator state={pull} top={insets.top} />

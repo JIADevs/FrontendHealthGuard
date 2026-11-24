@@ -84,17 +84,22 @@ export function useProfileFormCore(adapters: ProfileFormAdapters): ProfileFormSt
   }, [profile.data]);
 
   function handleSave() {
+    const saved = profile.data;
+    // Empty now: `null` clears a value that was saved (the API updates with exclude_unset, so a
+    // missing key changes nothing); a field that was already empty is left out.
+    const value = (current: string, before: string | null | undefined) =>
+      current ? current : before ? null : undefined;
     updateMut.mutate(
       {
-        name: name || undefined,
-        documentId: documentId || undefined,
-        birthDate: birthDate || undefined,
-        gender: gender || undefined,
-        phone: phone || undefined,
-        address: address || undefined,
-        bloodType: bloodType || undefined,
-        emergencyContactName: emergencyContactName || undefined,
-        emergencyContactPhone: emergencyContactPhone || undefined,
+        name: value(name, saved?.name),
+        documentId: value(documentId, saved?.documentId),
+        birthDate: value(birthDate, saved?.birthDate),
+        gender: value(gender, saved?.gender),
+        phone: value(phone, saved?.phone),
+        address: value(address, saved?.address),
+        bloodType: value(bloodType, saved?.bloodType),
+        emergencyContactName: value(emergencyContactName, saved?.emergencyContactName),
+        emergencyContactPhone: value(emergencyContactPhone, saved?.emergencyContactPhone),
       },
       {
         onSuccess: adapters.onSuccess,

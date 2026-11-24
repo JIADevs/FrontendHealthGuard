@@ -21,6 +21,7 @@ import {
 } from "@helu/ui";
 import { Fab } from "../Fab";
 import { useDocumentsList } from "../../hooks/useDocumentsList";
+import { LoadError } from "../states/LoadError";
 import { CATEGORY_FILTER_OPTIONS, type DocumentCategory } from "./documentCategories";
 import { DocumentRow } from "./DocumentRow";
 import { DocumentsAddSheet } from "./DocumentsAddSheet";
@@ -210,7 +211,9 @@ export function Documents(props: DocumentsProps) {
             ListEmptyComponent={
               !list.settled ? undefined : (
                 <Animated.View entering={FadeIn.duration(motion.fast)}>
-                  {searching && list.hasActiveFilter && hiddenByFilter.length > 0 ? (
+                  {list.isError ? (
+                    <LoadError title="No se pudieron cargar tus documentos" onRetry={() => void list.refetch()} retrying={list.isRefetching} />
+                  ) : searching && list.hasActiveFilter && hiddenByFilter.length > 0 ? (
                     <DocumentsSearchFilteredEmpty
                       query={list.debouncedSearch}
                       filters={list.filters}
@@ -247,13 +250,16 @@ export function Documents(props: DocumentsProps) {
         </Animated.View>
       )}
 
-      <Fab
-        onPress={() => {
-          Keyboard.dismiss();
-          setAddOpen(true);
-        }}
-        accessibilityLabel="Agregar documento"
-      />
+      {/* One primary action (MASTER §2): the empty state already offers «Subir documento». */}
+      {list.settled && !list.isError && list.items.length === 0 && !searching && !list.hasActiveFilter ? null : (
+        <Fab
+          onPress={() => {
+            Keyboard.dismiss();
+            setAddOpen(true);
+          }}
+          accessibilityLabel="Agregar documento"
+        />
+      )}
 
       <DocumentsAddSheet
         visible={addOpen}

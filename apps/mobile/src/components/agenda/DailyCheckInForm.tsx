@@ -30,6 +30,10 @@ import {
 } from "@helu/api/hooks";
 import type { DailyCheckIn, MoodEnum, Treatment } from "@helu/api";
 import { notify } from "../../lib/notify";
+import { useOptimisticStreak } from "../../hooks/useOptimisticStreak";
+
+/** Inicio's flame (600 ms) and number bounce end here; the streak toast waits for them (movimiento §6). */
+const CELEBRATION_MS = 700;
 import { MoodPicker } from "./MoodPicker";
 
 interface DailyCheckInFormProps {
@@ -40,8 +44,9 @@ interface DailyCheckInFormProps {
 /**
  * Check-in sheet (mockup «Check-in de hoy»). New: eyebrow «CHECK-IN DE HOY», the question as the
  * title, the five faces, optional treatment and notes, and «Guardar check-in» in the streak color.
- * The streak toast («¡13 días seguidos cuidándote!») waits for the server: it reads the streak from
- * the refreshed profile after the check-in is saved (RF-MOB-AI4, movimiento §8).
+ * v2.15: a check-in for today is optimistic end to end — the sheet closes, the day fills, the flame
+ * and the number animate and the streak toast («¡13 días seguidos cuidándote!») follows, all on tap;
+ * a failed save rolls the streak back and says so (movimiento §6 «Check-in guardado»).
  */
 export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormProps) {
     const t = useAppTheme();
@@ -74,6 +79,7 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
     const updateMutation = useUpdateDailyCheckInMutation();
     const deleteMutation = useDeleteDailyCheckInMutation();
     const fetchCurrentStreak = useFetchCurrentStreak();
+    const optimisticStreak = useOptimisticStreak();
     const treatmentsQuery = useTreatmentsQuery(1, 100);
     const treatments = treatmentsQuery.data?.items ?? [];
 
@@ -85,9 +91,7 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
         treatmentId !== (initialValues?.treatmentId ?? null) ||
         recordedAt !== initialRecordedAt.current;
 
-    const notifyStreak = async () => {
-        // The streak comes from the server; never celebrate something that is not saved.
-        const streak = (await fetchCurrentStreak()) ?? 0;
+    const toastStreak = (streak: number) => {
         if (streak >= 2) {
             notify({ tone: "streak", message: `¡${streak} días seguidos cuidándote!` });
         } else if (streak === 1) {
@@ -96,6 +100,9 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
             notify({ message: "Check-in registrado" });
         }
     };
+
+    /** A check-in for another day does not move today's streak: read it from the server. */
+    const notifyStreak = async () => toastStreak((await fetchCurrentStreak()) ?? 0);
 
     const handleSubmit = () => {
         if (!mood) return;
@@ -123,18 +130,30 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
             return;
         }
 
-        // v2.14: a check-in is low risk and reversible (movimiento §8). The sheet closes on tap and the
-        // day fills at once (optimistic in @helu/api); the streak toast is a celebration, so it still
-        // waits for the server (§7). mutateAsync: the sheet unmounts right away.
+        // v2.15: low risk and reversible (movimiento §8), so everything happens on tap — the sheet
+        // closes, the day fills (optimistic in @helu/api) and the streak counts today here, so Inicio's
+        // flame and number animate at once; the toast follows the animation. mutateAsync: the sheet
+        // unmounts right away.
+        const optimistic = optimisticStreak(recordedAt.slice(0, 10));
+        let failed = false;
         createMutation
             .mutateAsync(payload)
             .then(
-                // Saved: if reading the streak fails, still confirm the check-in.
-                () => notifyStreak().catch(() => notify({ message: "Check-in registrado" })),
+                // Not optimistic (another day): confirm with the server's streak, as before.
                 () => {
+                    if (!optimistic) void notifyStreak().catch(() => notify({ message: "Check-in registrado" }));
+                },
+                () => {
+                    failed = true;
+                    optimistic?.rollback();
                     notify({ tone: "error", message: "No se pudo registrar el check-in", description: "Revisa tu conexión e intenta de nuevo." });
                 },
             );
+        if (optimistic) {
+            setTimeout(() => {
+                if (!failed) toastStreak(optimistic.streak);
+            }, CELEBRATION_MS);
+        }
         onClose();
     };
 
@@ -233,8 +252,9 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
 
             {showDeleteConfirm && (
                 <ConfirmModal
-                    title="¿Eliminar check-in?"
-                    message="Esta acción no se puede deshacer."
+                    title="¿Eliminar este check-in?"
+                    message="Se borra de tu historial de bienestar. No se puede deshacer."
+                    keepLabel="Mantener check-in"
                     confirmLabel="Eliminar"
                     loading={deleteMutation.isPending}
                     onConfirm={handleDelete}

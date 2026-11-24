@@ -20,6 +20,7 @@ import type { SubscribeBeforeLeave } from "../agenda/AppointmentForm";
 import { useDocumentForm, type FileSource } from "../../hooks/useDocumentForm";
 import { DocumentFields, type DocumentFieldValues } from "./DocumentFields";
 import { notify } from "../../lib/notify";
+import { useRecentlySaved } from "../../lib/recentlySaved";
 
 const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 export const MAX_UPLOAD_MB = 25;
@@ -124,7 +125,11 @@ export function DocumentUpload({
 }: DocumentUploadProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const form = useDocumentForm({ backpackId, backpackName, skipNavigateBackOnUpload: true, onUploaded: () => leave() });
+  const form = useDocumentForm({ backpackId, backpackName, skipNavigateBackOnUpload: true, onUploaded: (doc) => {
+    // «Agregar documentos» comes back with this document selected (#46, decision 2).
+    useRecentlySaved.getState().markUploaded(doc.id);
+    leave();
+  } });
   const treatments = useTreatmentsQuery(1, 100).data?.items ?? [];
   const [file, setFile] = useState<FileSource | null>(null);
   const [date, setDate] = useState(todayKey());

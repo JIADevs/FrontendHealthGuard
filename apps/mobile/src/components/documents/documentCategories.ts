@@ -47,3 +47,13 @@ export const CATEGORY_FILTER_OPTIONS: { value: DocumentCategory | "all"; label: 
   { value: "all", label: "Todos" },
   ...DOCUMENT_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_META[c].plural })),
 ];
+
+/**
+ * The server's document type catalog is in Title Case («Otro Documento», «Examen de Laboratorio»);
+ * the app writes in sentence case (MASTER §9): «Otro documento», «Examen de laboratorio».
+ */
+export function documentTypeLabel(name: string | null | undefined): string | undefined {
+  if (!name) return undefined;
+  const lower = name.toLocaleLowerCase("es");
+  return lower.charAt(0).toLocaleUpperCase("es") + lower.slice(1);
+}

@@ -15,7 +15,6 @@ export function useMedicationsList() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<MedicationFilters>(EMPTY_MEDICATION_FILTERS);
-  const [draftFilters, setDraftFilters] = useState<MedicationFilters>(EMPTY_MEDICATION_FILTERS);
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
 
   const debouncedSearch = useDebounceSearch(search);
@@ -25,30 +24,16 @@ export function useMedicationsList() {
 
   const hasActiveFilter = hasActiveMedicationFilters(appliedFilters);
 
-  const openFilterSheet = useCallback(() => {
-    setDraftFilters(appliedFilters);
-    setFilterSheetVisible(true);
-  }, [appliedFilters]);
+  const openFilterSheet = useCallback(() => setFilterSheetVisible(true), []);
+  const closeFilterSheet = useCallback(() => setFilterSheetVisible(false), []);
 
-  const closeFilterSheet = useCallback(() => {
-    setFilterSheetVisible(false);
-  }, []);
-
-  const applyFilters = useCallback(() => {
-    setAppliedFilters(draftFilters);
+  /** The sheet keeps its own draft; nothing applies until «Aplicar filtros». */
+  const applyFilters = useCallback((next: MedicationFilters) => {
+    setAppliedFilters(next);
     setPage(1);
-    setFilterSheetVisible(false);
-  }, [draftFilters]);
-
-  const clearDraftFilters = useCallback(() => {
-    setDraftFilters(EMPTY_MEDICATION_FILTERS);
   }, []);
 
-  useEffect(() => {
-    if (filterSheetVisible) {
-      setDraftFilters(appliedFilters);
-    }
-  }, [filterSheetVisible, appliedFilters]);
+  const clearFilters = useCallback(() => applyFilters(EMPTY_MEDICATION_FILTERS), [applyFilters]);
 
   useEffect(() => {
     setPage(1);
@@ -62,13 +47,13 @@ export function useMedicationsList() {
     items: meds.data?.items ?? [],
     totalPages: meds.data?.totalPages ?? 1,
     isLoading: meds.isLoading,
+    isError: meds.isError && !meds.data,
     isRefetching: meds.isRefetching,
     refetch: meds.refetch,
     updatedAt: meds.dataUpdatedAt || undefined,
     treatments: treatmentsQuery.data?.items ?? [],
-    draftFilters,
-    setDraftFilters,
-    clearDraftFilters,
+    filters: appliedFilters,
+    clearFilters,
     filterSheetVisible,
     openFilterSheet,
     closeFilterSheet,

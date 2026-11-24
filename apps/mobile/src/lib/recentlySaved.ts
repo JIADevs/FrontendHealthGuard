@@ -15,9 +15,16 @@ interface RecentlySavedState {
   treatmentId: string | null;
   markTreatment: (id: string | undefined) => void;
   clearTreatment: () => void;
+  backpackId: string | null;
+  markBackpack: (id: string | undefined) => void;
+  clearBackpack: () => void;
+  /** Last uploaded document, so «Agregar documentos» can come back with it selected (#46). */
+  uploadedDocumentId: string | null;
+  markUploaded: (id: string | undefined) => void;
+  takeUploaded: () => string | null;
 }
 
-export const useRecentlySaved = create<RecentlySavedState>((set) => ({
+export const useRecentlySaved = create<RecentlySavedState>((set, get) => ({
   appointmentId: null,
   markAppointment: (id) => set({ appointmentId: id ?? null }),
   clearAppointment: () => set({ appointmentId: null }),
@@ -27,4 +34,14 @@ export const useRecentlySaved = create<RecentlySavedState>((set) => ({
   treatmentId: null,
   markTreatment: (id) => set({ treatmentId: id ?? null }),
   clearTreatment: () => set({ treatmentId: null }),
+  backpackId: null,
+  markBackpack: (id) => set({ backpackId: id ?? null }),
+  clearBackpack: () => set({ backpackId: null }),
+  uploadedDocumentId: null,
+  markUploaded: (id) => set({ uploadedDocumentId: id ?? null }),
+  takeUploaded: () => {
+    const id = get().uploadedDocumentId;
+    if (id) set({ uploadedDocumentId: null });
+    return id;
+  },
 }));

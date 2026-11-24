@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Device from "expo-device";
 import type * as ExpoNotifications from "expo-notifications";
-import Toast from "react-native-toast-message";
+import { notify } from "../lib/notify";
 import { registerDeviceToken, unregisterDeviceToken, isApiError } from "@helu/api";
 import { palette } from "@helu/ui";
 
@@ -62,14 +62,14 @@ async function obtainNativePushToken(
 
 function notifyRegistrationFailure(stage: "fcm" | "api", message: string) {
   console.warn(`[push] ${stage} failed:`, message);
-  Toast.show({
-    type: "error",
-    text1:
+  // MASTER §8: the person sees what happened and what to do; the technical detail stays in the log.
+  notify({
+    tone: "error",
+    message: "No pudimos activar los recordatorios en este teléfono",
+    description:
       stage === "fcm"
-        ? "No se pudo obtener token FCM"
-        : "No se pudo guardar el token",
-    text2: message,
-    visibilityTime: 8000,
+        ? "Revisa que Helu tenga permiso para enviarte notificaciones."
+        : "Revisa tu conexión; lo intentamos de nuevo la próxima vez que abras Helu.",
   });
 }
 

@@ -18,6 +18,7 @@ export function HomeScreen() {
       scan: () => navigation.navigate("Scanner", { backTitle: "Inicio" }),
       share: () => navigation.navigate("SharedHistory", { backTitle: "Inicio" }),
       newMedication: () => navigation.navigate("MedicationForm"),
+      newMedicationMission: () => navigation.navigate("MissionNew", { initialType: "medication", backTitle: "Inicio" }),
       newAppointment: () => navigation.navigate("AppointmentForm"),
       openMission: (id, openStep) => navigation.navigate("MissionDetail", { id, openStep, backTitle: "Inicio" }),
     }),

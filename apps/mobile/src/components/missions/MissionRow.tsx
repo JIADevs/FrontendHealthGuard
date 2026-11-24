@@ -4,7 +4,7 @@ import type { MissionSummary } from "@helu/api";
 import { Chip, nativeFont, spacing, useAppTheme } from "@helu/ui";
 import { ProgressRing } from "../home/ProgressRing";
 import { MissionTypeIcon } from "./MissionTypeIcon";
-import { missionTypeShort, nextLabel, relativeDay, shortDate } from "./missionCopy";
+import { missionTypeShort, nextActionLabel, relativeDay, shortDate } from "./missionCopy";
 
 /**
  * Fila de misión de la lista H2 (mockup «Misiones», DU-37): anillo, chip de tipo gris, objetivo y
@@ -24,7 +24,7 @@ export function MissionRow({ mission, onPress }: { mission: MissionSummary; onPr
     ? `Terminada el ${shortDate(mission.completedAt)}`
     : paused
       ? "Pausada · toca para reanudar"
-      : `Sigue: ${nextLabel(mission.nextAction?.stepKey)}${pendingTotal ? " · Total pendiente" : ""}`;
+      : `Sigue: ${nextActionLabel(mission.nextAction)}${pendingTotal ? " · Total pendiente" : ""}`;
 
   return (
     <Pressable

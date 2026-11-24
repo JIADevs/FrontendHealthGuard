@@ -1,10 +1,14 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { CalendarDays, Check, FilePlus, FileText, Pill, Stethoscope } from "lucide-react-native";
+import { CalendarDays, Check, FilePlus, FileText, Heart, ListOrdered, Pill, Stethoscope } from "lucide-react-native";
 import type { Mission, MissionStep } from "@helu/api";
 import { BottomSheet, Button, IconTile, nativeFont, spacing, useAppTheme, type BottomSheetHandle } from "@helu/ui";
 import { MascotHint } from "../brand/MascotHint";
-import { relativeDay, shortDate, stepLabel, timeLabel } from "./missionCopy";
+import { notify } from "../../lib/notify";
+import { ReceiptBody } from "./ReceiptBody";
+import { SessionsBody } from "./SessionsBody";
+import { SessionsCountBody } from "./SessionsCountBody";
+import { capitalize, relativeDay, sessionMessage, shortDate, stepLabel, timeLabel } from "./missionCopy";
 
 export interface StepSheetActions {
   complete: (step: MissionStep, data?: Record<string, unknown>) => void;
@@ -35,6 +39,10 @@ export function MissionStepSheet({
 }) {
   const t = useAppTheme();
   const ref = useRef<BottomSheetHandle>(null);
+  // «Me ordenaron más sesiones» swaps the sessions sheet for the count (DU-30).
+  const [countMode, setCountMode] = useState(false);
+  // «Recibí una parte» asks what is pending in the same sheet (mockup «Recepción parcial»).
+  const [receiptPartial, setReceiptPartial] = useState(false);
   const position = mission.steps.filter((s) => s.applies).findIndex((s) => s.key === step.key) + 1;
   const total = mission.steps.filter((s) => s.applies).length;
   const done = step.status === "completed" || step.status === "skipped";
@@ -46,20 +54,49 @@ export function MissionStepSheet({
   /** Quick actions close the sheet first, then the step moves (optimistic). */
   const thenClose = (fn: () => void) => () => ref.current?.close(fn);
 
-  const eyebrow = done ? `PASO ${position} DE ${total} · ${step.status === "skipped" ? "NO APLICA" : "COMPLETADO"}` : `PASO ${position} DE ${total}`;
+  const sessions = mission.sessions;
+  const isSessions = step.key === "sessions" && !done && !countMode;
+  const isCount = step.key === "sessions_count" || (step.key === "sessions" && countMode);
+  const countStep = mission.steps.find((s) => s.key === "sessions_count");
+  const title = isSessions
+    ? sessionMessage(sessions)
+    : isCount
+      ? "¿Cuántas sesiones te ordenaron?"
+      : receiptPartial
+        ? "¿Qué quedó pendiente?"
+        : stepLabel[step.key] ?? step.key;
+  const eyebrow = isSessions && sessions?.total
+    ? `SESIONES · ${sessions.attended} DE ${sessions.total}`
+    : receiptPartial
+      ? "RECEPCIÓN PARCIAL"
+    : done && !isCount
+      ? `PASO ${position} DE ${total} · ${step.status === "skipped" ? "NO APLICA" : "COMPLETADO"}`
+      : `PASO ${position} DE ${total}`;
   const icon = (
     <IconTile
       round
       size="lg"
-      tone={done ? "success" : "brand"}
-      icon={iconFor(step.key, done ? t.status.successFg : t.brand.text)}
+      tone={done && !isCount ? "success" : "brand"}
+      icon={iconFor(isCount ? "sessions_count" : step.key, done && !isCount ? t.status.successFg : t.brand.text)}
     />
   );
 
   return (
-    <BottomSheet ref={ref} title={stepLabel[step.key] ?? step.key} eyebrow={eyebrow} icon={icon} onClose={onClose}>
+    <BottomSheet ref={ref} title={title} eyebrow={eyebrow} icon={icon} onClose={onClose}>
       <View style={styles.body}>
-        {done ? (
+        {isCount && countStep ? (
+          <SessionsCountBody
+            mission={mission}
+            onSave={(value) => ref.current?.close(() => actions.complete(countStep, { total: value }))}
+          />
+        ) : isSessions ? (
+          <SessionsBody
+            mission={mission}
+            onDone={(message) => ref.current?.close(() => notify({ message }))}
+            onFinish={thenClose(() => actions.complete(step, { finished: true }))}
+            onMoreSessions={() => setCountMode(true)}
+          />
+        ) : done ? (
           <>
             <Text style={[styles.text, { color: t.text.primary }]}>
               {step.status === "skipped" ? "Marcaste este paso como «No aplica»." : `Completado el ${shortDate(step.completedAt)}.`}
@@ -124,15 +161,12 @@ export function MissionStepSheet({
             </Button>
           </>
         ) : step.key === "receipt" ? (
-          <>
-            <Text style={[styles.question, { color: t.text.primary }]}>¿Recibiste tu medicamento?</Text>
-            <Button variant="primary" fullWidth onPress={thenClose(() => actions.complete(step, { status: "complete" }))}>
-              Sí, completo
-            </Button>
-            <Button variant="ghost" fullWidth onPress={thenClose(() => actions.complete(step, { status: "partial" }))}>
-              Recibí una parte
-            </Button>
-          </>
+          <ReceiptBody
+            mission={mission}
+            step={step}
+            onPartialChange={setReceiptPartial}
+            onSave={(data) => ref.current?.close(() => actions.complete(step, data))}
+          />
         ) : (
           <>
             <Text style={[styles.text, { color: t.text.primary }]}>
@@ -158,15 +192,13 @@ export function MissionStepSheet({
   );
 }
 
-function capitalize(text: string) {
-  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
-}
-
 function iconFor(key: string, color: string) {
   const p = { size: 22, strokeWidth: 2.2, color };
   if (key === "get_appointment" || key === "schedule") return <CalendarDays {...p} />;
   if (key === "attend") return <Stethoscope {...p} />;
   if (key === "receipt" || key === "claim") return <Pill {...p} />;
+  if (key === "sessions") return <Heart {...p} />;
+  if (key === "sessions_count") return <ListOrdered {...p} />;
   if (key === "final_documents" || key === "results") return <FilePlus {...p} />;
   return <FileText {...p} />;
 }
@@ -174,6 +206,5 @@ function iconFor(key: string, color: string) {
 const styles = StyleSheet.create({
   body: { gap: spacing[3], paddingBottom: spacing[2] },
   text: { fontSize: 15, lineHeight: 22, fontFamily: nativeFont("body", 400) },
-  question: { fontSize: 19, lineHeight: 24, fontFamily: nativeFont("heading", 900) },
   meta: { fontSize: 13, lineHeight: 18, fontFamily: nativeFont("body", 400) },
 });

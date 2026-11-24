@@ -33,6 +33,7 @@ import { SetupChecklist, type SetupStepKey } from "./SetupChecklist";
 import { useHomeData } from "./useHomeData";
 import { LoadError } from "../states/LoadError";
 import { HomeMissionCard } from "../missions/HomeMissionCard";
+import { FirstMedicationSheet } from "../missions/FirstMedicationSheet";
 
 type MedicationEvent = Extract<AgendaEvent, { type: "medication" }>;
 
@@ -47,6 +48,8 @@ export interface HomeNavigation {
   scan: () => void;
   share: () => void;
   newMedication: () => void;
+  /** «Necesito conseguirlo»: new medication mission (RF-36). */
+  newMedicationMission: () => void;
   newAppointment: () => void;
   /** Opens the mission on its next step (bloque 4, «Continuar la misión»). */
   openMission: (missionId: string, stepKey: string) => void;
@@ -67,6 +70,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
   const takeDose = useTakeDose();
   const [doseSheet, setDoseSheet] = useState<MedicationEvent | null>(null);
   const [checkInOpen, setCheckInOpen] = useState(false);
+  const [firstMedication, setFirstMedication] = useState(false);
 
   // Primer uso: hasta saber si va la lista «Empieza en 4 pasos» solo hay un esqueleto, en el primer
   // lugar; las listas que el primer uso oculta no muestran esqueleto para luego desaparecer.
@@ -89,7 +93,7 @@ export function Home({ nav }: { nav: HomeNavigation }) {
   };
 
   const onSetupStep = (step: SetupStepKey) => {
-    if (step === "medication") nav.newMedication();
+    if (step === "medication") setFirstMedication(true); // RF-36: «¿Ya lo tienes?» first
     else if (step === "appointment") nav.newAppointment();
     else nav.upload();
   };
@@ -182,6 +186,13 @@ export function Home({ nav }: { nav: HomeNavigation }) {
 
       {doseSheet ? <MedicationIntakeModal event={doseSheet} onClose={() => setDoseSheet(null)} /> : null}
       {checkInOpen ? <DailyCheckInForm onClose={() => setCheckInOpen(false)} /> : null}
+      {firstMedication ? (
+        <FirstMedicationSheet
+          onHave={nav.newMedication}
+          onNeed={nav.newMedicationMission}
+          onClose={() => setFirstMedication(false)}
+        />
+      ) : null}
     </View>
   );
 }

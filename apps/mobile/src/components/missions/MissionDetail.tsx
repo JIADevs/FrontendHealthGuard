@@ -30,7 +30,7 @@ import { useIsOnline } from "../states/OfflineBanner";
 import { MissionStepSheet } from "./MissionStepSheet";
 import { MissionTimeline } from "./MissionTimeline";
 import { MissionTypeIcon } from "./MissionTypeIcon";
-import { missionGoal, missionTypeLabel, missionTypeTone, nextLabel } from "./missionCopy";
+import { missionGoal, missionTypeLabel, missionTypeTone, nextActionLabel } from "./missionCopy";
 
 export interface MissionDetailProps {
   missionId: string;
@@ -38,6 +38,16 @@ export interface MissionDetailProps {
   openStep?: string;
   onSchedule: (mission: Mission) => void;
   onBack?: () => void;
+}
+
+/** Toast after a saved step. A receipt that is not complete keeps the step: say what was kept (RF-37). */
+function stepToast(key: string, data: Record<string, unknown> | undefined, next: Mission) {
+  if (key === "receipt" && data?.status === "partial") {
+    return { message: "Guardamos lo que falta", description: "Tu misión sigue activa hasta que recibas todo." };
+  }
+  if (key === "receipt" && data?.status === "not_yet") return { message: "Listo, te esperamos" };
+  if (key === "sessions_count" && data?.total == null) return { message: "Listo, puedes registrarlo después" };
+  return { message: `¡Listo! Sigue: ${nextActionLabel(next.nextAction)}` };
 }
 
 const OFFLINE = { tone: "warning" as const, message: "Sin conexión", description: "Revisa tu conexión y vuelve a intentarlo." };
@@ -85,7 +95,7 @@ export function MissionDetail({ missionId, openStep, onSchedule, onBack }: Missi
           setSheetKey(null);
           notify({ message: "¡Misión completada!", description: next.title });
         } else if (!isFinal) {
-          notify({ message: `¡Listo! Sigue: ${nextLabel(next.nextAction?.stepKey)}` });
+          notify(stepToast(step.key, data, next));
         }
       },
       onError: () => onFail(() => runComplete(step, data)),
@@ -99,7 +109,7 @@ export function MissionDetail({ missionId, openStep, onSchedule, onBack }: Missi
     skip.mutate(
       { missionId: mission.id, stepKey: step.key, reason },
       {
-        onSuccess: (next) => notify({ message: `Listo. Sigue: ${nextLabel(next.nextAction?.stepKey)}` }),
+        onSuccess: (next) => notify({ message: `Listo. Sigue: ${nextActionLabel(next.nextAction)}` }),
         onError: () => onFail(() => runSkip(step, reason)),
       },
     );
@@ -176,7 +186,7 @@ export function MissionDetail({ missionId, openStep, onSchedule, onBack }: Missi
                 ? "Cumpliste el objetivo."
                 : mission.status === "paused"
                   ? "Pausada. Tu cita y tus documentos siguen igual."
-                  : `Sigue: ${nextLabel(mission.nextAction?.stepKey)}`}
+                  : `Sigue: ${nextActionLabel(mission.nextAction)}`}
             </Text>
           </Animated.View>
 

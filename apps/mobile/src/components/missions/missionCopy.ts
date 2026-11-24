@@ -1,4 +1,4 @@
-import type { MissionType } from "@helu/api";
+import type { MissionSessions, MissionType } from "@helu/api";
 import type { Tone } from "@helu/ui";
 
 /**
@@ -136,4 +136,39 @@ export function shortDate(iso: string | null | undefined) {
     if (!iso) return "";
     const d = new Date(iso);
     return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
+export function capitalize(text: string) {
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
+
+/** «el jueves», «hoy», «mañana» or «el vie 6 nov» after «es». */
+function onDay(iso: string) {
+    const day = relativeDay(iso);
+    return day === "hoy" || day === "mañana" ? day : `el ${day.charAt(0).toLowerCase()}${day.slice(1)}`;
+}
+
+/**
+ * Message of the sessions step (RF-43, DU-31). The ordinal comes from the backend (`sessions.label`);
+ * for a scheduled session the day is added here: «Tu quinta sesión es el jueves».
+ */
+export function sessionMessage(sessions: MissionSessions | null | undefined) {
+    if (!sessions) return "Sesiones";
+    const label = sessions.label ?? "Sesiones";
+    const next = sessions.next;
+    if (sessions.phase === "upcoming" && next) return `${label} es ${onDay(`${next.date}T${(next.time ?? "00:00").slice(0, 5)}`)}`;
+    return label;
+}
+
+/** «Sesiones · 4 de 10», or just «Sesiones» while the total is pending (RF-40). */
+export function sessionsTitle(sessions: MissionSessions | null | undefined) {
+    if (!sessions?.total) return "Sesiones";
+    return `Sesiones · ${sessions.attended} de ${sessions.total}`;
+}
+
+/** «Sigue: …» from the backend label of the next action (falls back to the step key). */
+export function nextActionLabel(action: { stepKey: string; label?: string | null } | null | undefined) {
+    if (!action) return "¡Todo listo!";
+    const label = action.label || stepLabel[action.stepKey] || action.stepKey;
+    return label.startsWith("¿") ? label : label.charAt(0).toLowerCase() + label.slice(1);
 }

@@ -49,8 +49,9 @@ export function Missions({ onOpen, onCreate, onBack }: MissionsProps) {
 
   const counts = overview.data?.counts;
   const nextStep = overview.data?.nextStep ?? null;
-  // The hero is already the first mission of «En curso»: the list shows the rest («También en curso»).
-  const items = (list.data?.items ?? []).filter((m) => !(tab === "active" && nextStep && m.id === nextStep.missionId));
+  // «En curso · n» lists every active mission, also the one in «Tu próximo paso»: hiding it left the
+  // list empty with a count of 1 when it was the only one. The hero is a shortcut to its next step.
+  const items = list.data?.items ?? [];
   const failed = overview.isError || list.isError;
 
   return (

@@ -30,15 +30,28 @@ export interface TreatmentFormActions {
 }
 
 export interface TreatmentFormAdapters {
-    onSaveSuccess: () => void;
+    /**
+     * Called on successful create or update (e.g. show toast). Receives the saved treatment id
+     * so the list can highlight it or the app can open its detail (movimiento-interacciones.md §6
+     * «Acción guardada»).
+     */
+    onSaveSuccess: (savedId?: string) => void;
     afterSave: () => void;
+    /**
+     * Optional: called with the raw error when create or update fails (`error` is still set). Lets the
+     * app put a 422's `fieldErrors` under each field and tell a network error from a rejected one.
+     */
+    onSaveError?: (error: unknown) => void;
 }
 
 export function useTreatmentFormCore({
     initial,
+    defaultStartDate,
     adapters,
 }: {
     initial?: Treatment | null;
+    /** «Inicio» for a new treatment, e.g. today's local date (`YYYY-MM-DD`). Ignored when editing. */
+    defaultStartDate?: string;
     adapters: TreatmentFormAdapters;
 }): TreatmentFormState & TreatmentFormActions {
     const isEdit = !!initial;
@@ -46,7 +59,7 @@ export function useTreatmentFormCore({
     const [name, setName] = useState(initial?.name ?? "");
     const [description, setDescription] = useState(initial?.description ?? "");
     const [status, setStatus] = useState<TreatmentStatus>(initial?.status ?? "ACTIVE");
-    const [startDate, setStartDate] = useState(initial?.startDate ?? "");
+    const [startDate, setStartDate] = useState(initial ? (initial.startDate ?? "") : (defaultStartDate ?? ""));
     const [endDate, setEndDate] = useState(initial?.endDate ?? "");
     const [error, setError] = useState<string | null>(null);
 
@@ -65,12 +78,15 @@ export function useTreatmentFormCore({
         }
 
         setError(null);
+        // An emptied optional field must reach the PATCH as null: JSON drops undefined and the
+        // backend only updates the fields it receives, so the old value would stay.
+        const empty = isEdit ? null : undefined;
         const payload = {
             name: name.trim(),
-            description: description.trim() || undefined,
+            description: description.trim() || empty,
             status,
-            startDate: startDate || undefined,
-            endDate: endDate || undefined,
+            startDate: startDate || empty,
+            endDate: endDate || empty,
         };
 
         if (isEdit && initial) {
@@ -78,11 +94,12 @@ export function useTreatmentFormCore({
                 { id: initial.id, treatment: payload },
                 {
                     onSuccess: () => {
-                        adapters.onSaveSuccess();
+                        adapters.onSaveSuccess(initial.id);
                         adapters.afterSave();
                     },
                     onError: (err) => {
                         setError(isApiError(err) ? err.message : "Error actualizando el tratamiento.");
+                        adapters.onSaveError?.(err);
                     },
                 },
             );
@@ -90,12 +107,13 @@ export function useTreatmentFormCore({
         }
 
         createMut.mutate(payload, {
-            onSuccess: () => {
-                adapters.onSaveSuccess();
+            onSuccess: (created) => {
+                adapters.onSaveSuccess(created.id);
                 adapters.afterSave();
             },
             onError: (err) => {
                 setError(isApiError(err) ? err.message : "Error guardando el tratamiento.");
+                adapters.onSaveError?.(err);
             },
         });
     }

@@ -98,6 +98,16 @@ export interface AppointmentFormActions {
   handleSave: () => void;
 }
 
+/** A new appointment created from a mission step (Misiones DA-12). */
+export interface AppointmentMissionLink {
+  id: string;
+  isExam: boolean;
+  /** `details.specialty` of an appointment mission. */
+  specialty?: string;
+  /** `details.examName` of an exam mission. */
+  examName?: string;
+}
+
 export interface AppointmentFormAdapters {
   /**
    * Called on successful create or update (e.g. show toast). Receives the saved appointment id
@@ -117,12 +127,15 @@ export function useAppointmentFormCore({
 }: {
   initial?: Appointment | null;
   adapters: AppointmentFormAdapters;
-  /** New appointment for a mission step: links it and starts as an exam for exam missions. */
-  mission?: { id: string; isExam: boolean };
+  /**
+   * New appointment for a mission step: links it, starts as an exam for exam missions and prefills
+   * what the mission already knows (specialty; the exam name as type and name).
+   */
+  mission?: AppointmentMissionLink;
 }): AppointmentFormState & AppointmentFormActions {
   const isEdit = !!initial;
 
-  const [name, setName] = useState(initial?.name ?? "");
+  const [name, setName] = useState(initial?.name ?? mission?.examName ?? "");
   const [date, setDate] = useState(initial?.date ?? "");
   const [time, setTime] = useState(initial?.time?.slice(0, 5) ?? "");
   const [modality, setModality] = useState<"PRESENCIAL" | "VIRTUAL" | "DOMICILIARIA">(
@@ -130,7 +143,7 @@ export function useAppointmentFormCore({
   );
   const [location, setLocation] = useState(initial?.location ?? "");
   const [videoCallLink, setVideoCallLink] = useState(initial?.videoCallLink ?? "");
-  const [specialty, setSpecialty] = useState(initial?.specialty ?? "");
+  const [specialty, setSpecialty] = useState(initial?.specialty ?? mission?.specialty ?? "");
   const [service, setService] = useState(initial?.service ?? "");
   const [consultationType, setConsultationType] = useState(initial?.consultationType ?? "");
   const [duration, setDuration] = useState(initial?.duration?.toString() ?? "");
@@ -141,7 +154,7 @@ export function useAppointmentFormCore({
     initial?.type ?? (mission?.isExam ? "EXAM" : "APPOINTMENT"),
   );
   const [status, setStatus] = useState(initial?.status ?? "PROGRAMADA");
-  const [examType, setExamType] = useState(initial?.examType ?? "");
+  const [examType, setExamType] = useState(initial?.examType ?? mission?.examName ?? "");
   const [cost, setCost] = useState(initial?.cost?.toString() ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [customReminder, setCustomReminder] = useState(initial?.customReminder ?? "");

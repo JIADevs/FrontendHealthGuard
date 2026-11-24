@@ -75,7 +75,16 @@ export type RootStackParamList = {
   AgendaTaskDetail: { id: string; intent?: "complete" | "reschedule" };
   AgendaTaskForm: { id?: string } | undefined;
   /** `missionId`: the appointment (or exam) is created linked to that mission (step «Programar»). */
-  AppointmentForm: { id?: string; missionId?: string; missionType?: MissionType } | undefined;
+  AppointmentForm:
+    | {
+        id?: string;
+        missionId?: string;
+        missionType?: MissionType;
+        /** What the mission already knows, to prefill the new appointment. */
+        missionSpecialty?: string;
+        missionExamName?: string;
+      }
+    | undefined;
   MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string } | undefined;
   MedicationDetail: { id: string };
   CycleDetail: { cycleId: string; medicationId: string; medicationName: string };

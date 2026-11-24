@@ -6,6 +6,11 @@ import { missionQK } from "@helu/api";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { MissionDetail } from "../components/missions";
 
+/** Mission details are free-form JSON: only a non-empty string prefills the form. */
+function textDetail(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
 /** Screen: reads the route and wires navigation. The detail lives in `components/missions/MissionDetail`. */
 export function MissionDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -26,7 +31,14 @@ export function MissionDetailScreen() {
     <MissionDetail
       missionId={id}
       openStep={openStep}
-      onSchedule={(mission) => navigation.navigate("AppointmentForm", { missionId: mission.id, missionType: mission.type })}
+      onSchedule={(mission) =>
+        navigation.navigate("AppointmentForm", {
+          missionId: mission.id,
+          missionType: mission.type,
+          missionSpecialty: textDetail(mission.details.specialty),
+          missionExamName: textDetail(mission.details.examName),
+        })
+      }
       onBack={() => navigation.goBack()}
     />
   );

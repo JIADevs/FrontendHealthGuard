@@ -11,8 +11,16 @@ export function AppointmentFormScreen() {
   const id = params?.id;
   const missionId = params?.missionId;
   const mission = useMemo(
-    () => (missionId ? { id: missionId, isExam: params?.missionType === "medical_exam" } : undefined),
-    [missionId, params?.missionType],
+    () =>
+      missionId
+        ? {
+            id: missionId,
+            isExam: params?.missionType === "medical_exam",
+            specialty: params?.missionSpecialty,
+            examName: params?.missionExamName,
+          }
+        : undefined,
+    [missionId, params?.missionType, params?.missionSpecialty, params?.missionExamName],
   );
 
   // Adapts `beforeRemove` so the form can ask «¿Descartar los cambios?» before leaving (formularios.md §7).

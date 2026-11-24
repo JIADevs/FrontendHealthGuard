@@ -28,6 +28,7 @@ import {
   nativeFont,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
+import type { AppointmentMissionLink } from "@helu/api/hooks";
 import { useAppointmentForm } from "../../hooks/useAppointmentForm";
 import {
   useDoctorsQuery,
@@ -79,7 +80,7 @@ export interface AppointmentFormProps extends AppointmentFormNav {
   /** Set to edit an existing appointment */
   id?: string;
   /** New appointment from a mission step: created linked to it (Misiones DA-12). */
-  mission?: { id: string; isExam: boolean };
+  mission?: AppointmentMissionLink;
 }
 
 export function AppointmentForm({ id, mission, ...nav }: AppointmentFormProps) {
@@ -195,13 +196,14 @@ function AppointmentFormBody({
 }: {
   appointment: any;
   nav: AppointmentFormNav;
-  mission?: { id: string; isExam: boolean };
+  mission?: AppointmentMissionLink;
 }) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const allowLeave = useRef(false);
   const baseline = useRef<string | null>(null);
-  const nameTouched = useRef(Boolean(appointment?.name));
+  // A name that came from the mission (the exam name) counts as chosen: the suggestion does not replace it.
+  const nameTouched = useRef(Boolean(appointment?.name || mission?.examName));
   const [askDiscard, setAskDiscard] = useState(false);
   const [addingDoctor, setAddingDoctor] = useState(false);
 

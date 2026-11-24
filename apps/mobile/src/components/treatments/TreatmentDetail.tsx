@@ -5,6 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { Activity, CalendarDays, FileText, Heart, Pencil, Pill, Trash2 } from "lucide-react-native";
 import type {
+  Appointment,
+  MedicationCycle,
   Treatment,
   TreatmentAppointmentRef,
   TreatmentDetail as TreatmentDetailData,
@@ -12,7 +14,12 @@ import type {
   TreatmentMedicationCycleRef,
   TreatmentPage,
 } from "@helu/api";
-import { useDeleteTreatmentMutation, useTreatmentByIdQuery } from "@helu/api/hooks";
+import {
+  useAppointmentsQuery,
+  useDeleteTreatmentMutation,
+  useMedicationsQuery,
+  useTreatmentByIdQuery,
+} from "@helu/api/hooks";
 import {
   Button,
   ConfirmModal,
@@ -23,6 +30,7 @@ import {
   SkeletonGroup,
   appointmentStatusLabel,
   contentEntering,
+  formatClock,
   nativeFont,
   spacing,
   useAppTheme,
@@ -31,6 +39,8 @@ import {
   type ThemeContextValue,
 } from "@helu/ui";
 import { ScreenHeader } from "../ScreenHeader";
+import { DailyCheckInForm } from "../agenda/DailyCheckInForm";
+import { cycleFrequencyText } from "../agenda/medicationFormat";
 import { SkeletonHeaderAction } from "../SkeletonPieces";
 import { notify } from "../../lib/notify";
 import { haptics } from "../../lib/haptics";
@@ -46,6 +56,7 @@ import {
   isRetryableLoadError,
   isToday,
   metaLine,
+  severityWord,
   shortDay,
 } from "./treatmentFormat";
 
@@ -109,6 +120,26 @@ export function TreatmentDetail({
   // screen is real from the first frame and nothing fades in (§6c «con datos en caché»).
   const [openedWithData] = useState(() => query.data !== undefined);
   const summary: Treatment | undefined = detail ?? cached;
+
+  // Mockup rows say what the detail's refs lack (#35: no backend changes). The frequency comes from
+  // the medications list, and the time, specialty and doctor from this treatment's appointments
+  // (`GET /appointments/?treatmentId=`). One request each; until they arrive the rows show what
+  // the detail brings.
+  const medicationsQuery = useMedicationsQuery("", 1, 100);
+  const cyclesById = useMemo(() => {
+    const map = new Map<string, MedicationCycle>();
+    for (const medication of medicationsQuery.data?.items ?? []) {
+      for (const cycle of medication.cycles) map.set(cycle.id, cycle);
+    }
+    return map;
+  }, [medicationsQuery.data]);
+  const appointmentsQuery = useAppointmentsQuery("", 1, 100, undefined, undefined, { treatmentId: id });
+  const appointmentsById = useMemo(
+    () => new Map<string, Appointment>((appointmentsQuery.data?.items ?? []).map((a) => [a.id, a])),
+    [appointmentsQuery.data],
+  );
+  // «+ Agregar» in Check-ins: the daily check-in sheet, with this treatment selected.
+  const [checkingIn, setCheckingIn] = useState(false);
 
   if (!showSkeleton && !detail && query.isError && isRetryableLoadError(query.error)) {
     return (
@@ -217,8 +248,8 @@ export function TreatmentDetail({
                       <TreatmentRow
                         key={cycle.id}
                         icon={Pill}
-                        title={cycle.medicationName}
-                        meta={cycleMeta(cycle)}
+                        title={[cycle.medicationName, cycle.dosage].filter(Boolean).join(" ")}
+                        meta={cycleMeta(cycle, cyclesById.get(cycle.id))}
                         onPress={() => onOpenCycle(cycle)}
                       />
                     ))}
@@ -229,8 +260,8 @@ export function TreatmentDetail({
                       <TreatmentRow
                         key={appointment.id}
                         icon={CalendarDays}
-                        title={appointment.name?.trim() || (appointment.type === "EXAM" ? "Examen" : "Cita médica")}
-                        meta={appointmentMeta(appointment)}
+                        title={appointmentTitle(appointment, appointmentsById.get(appointment.id))}
+                        meta={appointmentMeta(appointment, appointmentsById.get(appointment.id))}
                         onPress={() => onOpenAppointment(appointment)}
                       />
                     ))}
@@ -248,12 +279,11 @@ export function TreatmentDetail({
                     ))}
                   </TreatmentSection>
 
-                  {/* No «Agregar»: the check-in is the daily one, and the app has no screen to log symptoms (decision 7). */}
-                  {detail.dailyCheckins.length > 0 ? (
-                    <TreatmentSection title="Check-ins" icon={Heart}>
-                      <TreatmentCheckIns checkIns={detail.dailyCheckins} />
-                    </TreatmentSection>
-                  ) : null}
+                  <TreatmentSection title="Check-ins" icon={Heart} addLabel="Agregar check-in" onAdd={() => setCheckingIn(true)}>
+                    {detail.dailyCheckins.length > 0 ? <TreatmentCheckIns checkIns={detail.dailyCheckins} /> : null}
+                  </TreatmentSection>
+
+                  {/* No «Agregar»: the app has no form to log a symptom yet (no mockup; follow-up issue). */}
 
                   {detail.symptoms.length > 0 ? (
                     <TreatmentSection title="Síntomas" icon={Activity}>
@@ -263,11 +293,10 @@ export function TreatmentDetail({
                           <TreatmentRow
                             key={symptom.id}
                             icon={Activity}
-                            title={symptom.name}
-                            meta={metaLine([
-                              day ? shortDay(day) : null,
-                              symptom.severity != null ? `Intensidad ${symptom.severity} de 10` : null,
-                            ])}
+                            title={
+                              symptom.severity != null ? `${symptom.name} · ${severityWord(symptom.severity)}` : symptom.name
+                            }
+                            meta={day ? shortDay(day) : undefined}
                           />
                         );
                       })}
@@ -289,6 +318,8 @@ export function TreatmentDetail({
         <PullRefreshIndicator state={pull} />
       </View>
 
+      {checkingIn ? <DailyCheckInForm treatmentId={id} onClose={() => setCheckingIn(false)} /> : null}
+
       {confirmDelete && detail ? (
         <ConfirmModal
           title="¿Eliminar tratamiento?"
@@ -309,17 +340,35 @@ export function TreatmentDetail({
   );
 }
 
-/** «400 mg · hasta 15 nov» (the API has no frequency for these rows, #35). */
-function cycleMeta(cycle: TreatmentMedicationCycleRef): string {
+/** «Cada 8 horas · hasta 15 nov». The frequency comes from the medications list: the ref has none. */
+function cycleMeta(cycle: TreatmentMedicationCycleRef, full: MedicationCycle | undefined): string {
   const end = dayFromDate(cycle.endDate);
   const start = dayFromDate(cycle.startDate);
-  return metaLine([cycle.dosage, end ? `hasta ${shortDay(end)}` : start ? `desde ${shortDay(start)}` : null]);
+  return metaLine([
+    full ? cycleFrequencyText(full) : null,
+    end ? `hasta ${shortDay(end)}` : start ? `desde ${shortDay(start)}` : null,
+  ]);
 }
 
-/** «12 nov · Programada» (the API has no time, doctor or specialty for these rows, #35). */
-function appointmentMeta(appointment: TreatmentAppointmentRef): string {
+/** The name, as in Agenda; without one, «Ortopedia · Dr. Mejía» (mockup), from the full appointment. */
+function appointmentTitle(appointment: TreatmentAppointmentRef, full: Appointment | undefined): string {
+  return (
+    appointment.name?.trim() ||
+    [full?.specialty, full?.doctor].filter(Boolean).join(" · ") ||
+    (appointment.type === "EXAM" ? "Examen" : "Cita médica")
+  );
+}
+
+/** «12 nov · 9:00 a. m.»; the status only when it is not the usual «Programada» («Cancelada», «Asistí»). */
+function appointmentMeta(appointment: TreatmentAppointmentRef, full: Appointment | undefined): string {
   const day = dayFromDate(appointment.date);
-  return metaLine([day ? shortDay(day) : null, appointment.status ? appointmentStatusLabel(appointment.status) : null]);
+  const time = full?.time ? formatClock(full.time.slice(0, 5)) : null;
+  const scheduled = appointment.status === "PROGRAMADA" || appointment.status === "PENDING";
+  return metaLine([
+    day ? shortDay(day) : null,
+    time,
+    appointment.status && !scheduled ? appointmentStatusLabel(appointment.status) : null,
+  ]);
 }
 
 /** «28 oct»: the document's own date, or the day it was uploaded. */

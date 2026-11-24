@@ -39,6 +39,8 @@ import { MoodPicker } from "./MoodPicker";
 interface DailyCheckInFormProps {
     onClose: () => void;
     initialValues?: DailyCheckIn;
+    /** New check-in only: starts linked to this treatment («+ Agregar» in a treatment's detail). */
+    treatmentId?: string;
 }
 
 /**
@@ -48,14 +50,15 @@ interface DailyCheckInFormProps {
  * and the number animate and the streak toast («¡13 días seguidos cuidándote!») follows, all on tap;
  * a failed save rolls the streak back and says so (movimiento §6 «Check-in guardado»).
  */
-export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormProps) {
+export function DailyCheckInForm({ onClose, initialValues, treatmentId: defaultTreatmentId }: DailyCheckInFormProps) {
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
     const isEdit = Boolean(initialValues);
 
     const [mood, setMood] = useState<MoodEnum | null>(initialValues?.mood ?? null);
     const [notes, setNotes] = useState(initialValues?.notes ?? "");
-    const [treatmentId, setTreatmentId] = useState<string | null>(initialValues?.treatmentId ?? null);
+    const startTreatmentId = initialValues ? (initialValues.treatmentId ?? null) : (defaultTreatmentId ?? null);
+    const [treatmentId, setTreatmentId] = useState<string | null>(startTreatmentId);
     const [recordedAt, setRecordedAt] = useState(() => {
         const initial = initialValues?.recordedAt
             ? pickerValueFromUtcIso(initialValues.recordedAt)
@@ -88,7 +91,7 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
     const dirty =
         mood !== (initialValues?.mood ?? null) ||
         notes !== (initialValues?.notes ?? "") ||
-        treatmentId !== (initialValues?.treatmentId ?? null) ||
+        treatmentId !== startTreatmentId ||
         recordedAt !== initialRecordedAt.current;
 
     const toastStreak = (streak: number) => {

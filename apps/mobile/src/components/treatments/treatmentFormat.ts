@@ -99,6 +99,18 @@ export function isRetryableLoadError(error: unknown): boolean {
   return !(isApiError(error) && error.status >= 400 && error.status < 500);
 }
 
+// ─── Symptoms ────────────────────────────────────────────────────────────────
+
+/**
+ * A symptom's severity (backend `Symptom.severity`, 1 to 10) in words, as the mockup row «Dolor de
+ * rodilla · leve»: 1–3 leve, 4–6 moderado, 7–10 intenso (the usual bands of a 0–10 pain scale).
+ */
+export function severityWord(severity: number): string {
+  if (severity <= 3) return "leve";
+  if (severity <= 6) return "moderado";
+  return "intenso";
+}
+
 // ─── Search ──────────────────────────────────────────────────────────────────
 
 /** Accents and case ignored: «migrana» finds «Migraña». */

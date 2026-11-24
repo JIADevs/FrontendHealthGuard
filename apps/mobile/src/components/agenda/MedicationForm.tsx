@@ -140,6 +140,10 @@ export interface MedicationFormProps {
   /** With no `cycleId`: a new cycle for this medication */
   medicationId?: string;
   medicationName?: string;
+  /** New medication from a mission step: the name the mission already knows (RF-25). */
+  prefillName?: string;
+  /** After saving, with the medication's id (a mission links it to «Agregarlo a tus medicamentos»). */
+  onSaved?: (medicationId: string) => void;
   /** Leaves the form (after saving, or after confirming «Descartar») */
   onClose: () => void;
   subscribeBeforeLeave: SubscribeBeforeLeave;
@@ -192,14 +196,15 @@ function EditGate(props: MedicationFormProps & { cycleId: string; medicationId: 
 
 // ─── Create (new medication or new cycle) ────────────────────────────────────
 
-function CreateForm({ medicationId, medicationName, onClose, subscribeBeforeLeave }: MedicationFormProps) {
+function CreateForm({ medicationId, medicationName, prefillName, onSaved, onClose, subscribeBeforeLeave }: MedicationFormProps) {
   const leave = useRef<() => void>(() => {});
   const savedName = useRef("");
   const form = useMedicationFormCore({
     adapters: {
-      onSaveSuccess: () => {
+      onSaveSuccess: (savedId) => {
         haptics.success();
         notify({ message: medicationId ? "Ciclo guardado" : "Medicamento guardado", description: savedName.current });
+        if (savedId) onSaved?.(savedId);
       },
       afterSave: () => leave.current(),
     },
@@ -212,6 +217,9 @@ function CreateForm({ medicationId, medicationName, onClose, subscribeBeforeLeav
   useEffect(() => {
     if (medicationId && medicationName) {
       form.selectExistingMedication(medicationId, medicationName);
+      setPrefilled(true);
+    } else if (prefillName?.trim()) {
+      form.setName(prefillName.trim());
       setPrefilled(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

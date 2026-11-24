@@ -87,6 +87,26 @@ export const stepPendingHint: Record<string, string> = {
     receipt: "Confírmalo cuando lo tengas",
 };
 
+/**
+ * Título de un paso en esta misión. El examen v2 separa la autorización (DU-41): su paso
+ * `schedule` ya no autoriza, solo programa.
+ */
+export function stepTitle(mission: { type: string; steps: { key: string }[] }, key: string): string {
+    if (key === "schedule" && mission.type === "medical_exam" && mission.steps.some((s) => s.key === "authorization")) {
+        return "Programar el examen";
+    }
+    return stepLabel[key] ?? key;
+}
+
+/** Texto de un paso pendiente en esta misión (ver `stepTitle`). */
+export function stepHint(mission: { type: string; steps: { key: string }[] }, key: string): string | undefined {
+    if (key === "schedule" && mission.type === "medical_exam" && mission.steps.some((s) => s.key === "authorization")) {
+        return "Registra dónde y cuándo te harás el examen";
+    }
+    if (key === "authorization") return "Sube la autorización · opcional";
+    return stepPendingHint[key];
+}
+
 /** «Sigue: …» en minúscula, para la lista y el encabezado. */
 export function nextLabel(stepKey: string | undefined | null) {
     if (!stepKey) return "¡Todo listo!";

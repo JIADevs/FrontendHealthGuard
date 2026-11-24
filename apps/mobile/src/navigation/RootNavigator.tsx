@@ -35,6 +35,7 @@ import { TreatmentDetailScreen } from "../screens/TreatmentDetailScreen";
 import { TreatmentFormScreen } from "../screens/TreatmentFormScreen";
 import { MissionsScreen } from "../screens/MissionsScreen";
 import { MissionDetailScreen } from "../screens/MissionDetailScreen";
+import { MissionAddDocumentsScreen } from "../screens/MissionAddDocumentsScreen";
 import { MissionNewScreen } from "../screens/MissionNewScreen";
 
 import { SettingsScreen } from "../screens/SettingsScreen";
@@ -85,7 +86,16 @@ export type RootStackParamList = {
         missionExamName?: string;
       }
     | undefined;
-  MedicationForm: { medicationId?: string; medicationName?: string; cycleId?: string } | undefined;
+  MedicationForm:
+    | {
+        medicationId?: string;
+        medicationName?: string;
+        cycleId?: string;
+        /** From «Agregarlo a tus medicamentos»: the step completes with the saved medication (RF-25). */
+        missionId?: string;
+        prefillName?: string;
+      }
+    | undefined;
   MedicationDetail: { id: string };
   CycleDetail: { cycleId: string; medicationId: string; medicationName: string };
   Treatments: WithBackTitle | undefined;
@@ -94,6 +104,8 @@ export type RootStackParamList = {
   Missions: WithBackTitle | undefined;
   /** `openStep`: open that step's sheet on arrival (from «Tu próximo paso»). */
   MissionDetail: WithBackTitle & { id: string; openStep?: string };
+  /** «Vincular un documento que ya subí» to a mission (RF-61), from a step or the documents card. */
+  MissionAddDocuments: WithBackTitle & { missionId: string; stepKey?: string };
   /** `initialType`: preselected type, e.g. «Necesito conseguirlo» from the first medication (RF-36). */
   MissionNew: (WithBackTitle & { initialType?: MissionType }) | undefined;
   Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
@@ -296,6 +308,7 @@ export function RootNavigator() {
           />
           <Stack.Screen name="Missions" component={MissionsScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
           <Stack.Screen name="MissionDetail" component={MissionDetailScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
+          <Stack.Screen name="MissionAddDocuments" component={MissionAddDocumentsScreen} options={FORM_SCREEN_OPTIONS} />
           <Stack.Screen name="MissionNew" component={MissionNewScreen} options={FORM_SCREEN_OPTIONS} />
           <Stack.Screen name="Dependientes" component={DependientesScreen} options={{ headerShown: false, animation: "slide_from_right" }} />
         </>

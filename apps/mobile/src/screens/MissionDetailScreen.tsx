@@ -39,7 +39,20 @@ export function MissionDetailScreen() {
           missionExamName: textDetail(mission.details.examName),
         })
       }
+      onAddMedication={(mission) =>
+        navigation.navigate("MedicationForm", {
+          missionId: mission.id,
+          prefillName: textDetail(mission.details.medicationName),
+        })
+      }
       onOpenAppointment={(appointmentId) => navigation.navigate("AppointmentDetail", { id: appointmentId })}
+      onAttach={(mode, missionId, stepKey) => {
+        if (mode === "pick") navigation.navigate("MissionAddDocuments", { missionId, stepKey });
+        else if (mode === "scan") navigation.navigate("Scanner");
+        else navigation.navigate("DocumentUpload", { initialKind: "FILE" });
+      }}
+      onShare={(target) => navigation.navigate("ShareConfigure", { target, backTitle: "Misión" })}
+      onOpenDocument={(documentId, title) => navigation.navigate("DocumentDetail", { id: documentId, title })}
       onBack={() => navigation.goBack()}
     />
   );

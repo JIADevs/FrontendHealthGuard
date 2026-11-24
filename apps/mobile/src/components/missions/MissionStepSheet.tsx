@@ -1,14 +1,15 @@
 import { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { CalendarDays, Check, FilePlus, FileText, Heart, ListOrdered, Pill, Stethoscope } from "lucide-react-native";
+import { CalendarDays, Check, FilePlus, FileText, Heart, ListOrdered, Pill, Plus, Stethoscope } from "lucide-react-native";
 import type { Mission, MissionStep } from "@helu/api";
 import { BottomSheet, Button, IconTile, nativeFont, spacing, useAppTheme, type BottomSheetHandle } from "@helu/ui";
 import { MascotHint } from "../brand/MascotHint";
+import { MissionLink } from "./MissionLink";
 import { notify } from "../../lib/notify";
 import { ReceiptBody } from "./ReceiptBody";
 import { SessionsBody } from "./SessionsBody";
 import { SessionsCountBody } from "./SessionsCountBody";
-import { capitalize, relativeDay, sessionMessage, shortDate, stepLabel, timeLabel } from "./missionCopy";
+import { capitalize, relativeDay, sessionMessage, shortDate, stepTitle, timeLabel } from "./missionCopy";
 
 export interface StepSheetActions {
   complete: (step: MissionStep, data?: Record<string, unknown>) => void;
@@ -17,7 +18,19 @@ export interface StepSheetActions {
   schedule: () => void;
   /** Open an appointment of the mission (a session from «Tus sesiones»). */
   openAppointment: (appointmentId: string) => void;
+  /** «Agregarlo a tus medicamentos»: open the medication form; saving completes the step (RF-25). */
+  addMedication: () => void;
+  /** «Adjuntar documento» from this step (RF-60); the sheet comes back after attaching. */
+  attach: (step: MissionStep) => void;
 }
+
+/** What each type usually keeps in its final step (RF-42). */
+const FINAL_COPY: Record<Mission["type"], string> = {
+  medical_appointment: "Guarda la fórmula, las órdenes o el resumen de tu consulta. Quedan en tu cita y en Documentos.",
+  medical_exam: "La misión termina cuando confirmas que tienes los resultados. Subirlos es opcional.",
+  medication: "Guarda la fórmula o el comprobante de entrega. Es opcional.",
+  therapy: "Guarda el informe de cierre de tu terapia. Es opcional.",
+};
 
 /**
  * Hoja del paso (v2.16: el paso se toca y abre su hoja; mockups «Paso 1–4», «Cita · ¿Pudiste asistir?»,
@@ -31,6 +44,7 @@ export function MissionStepSheet({
   onClose,
   actions,
   closing,
+  stepDocuments = [],
 }: {
   mission: Mission;
   step: MissionStep;
@@ -38,6 +52,8 @@ export function MissionStepSheet({
   actions: StepSheetActions;
   /** The final step is waiting for the server. */
   closing?: boolean;
+  /** Documents attached from this step, shown in the step. */
+  stepDocuments?: { id: string; title: string }[];
 }) {
   const t = useAppTheme();
   const ref = useRef<BottomSheetHandle>(null);
@@ -66,7 +82,7 @@ export function MissionStepSheet({
       ? "¿Cuántas sesiones te ordenaron?"
       : receiptPartial
         ? "¿Qué quedó pendiente?"
-        : stepLabel[step.key] ?? step.key;
+        : stepTitle(mission, step.key);
   const eyebrow = isSessions && sessions?.total
     ? `SESIONES · ${sessions.attended} DE ${sessions.total}`
     : receiptPartial
@@ -147,20 +163,103 @@ export function MissionStepSheet({
           </>
         ) : isFinal ? (
           <>
+            {/* RF-42 / DU-16: save or skip the final documents; closing waits for the server. */}
+            <Text style={[styles.text, { color: t.text.primary }]}>{FINAL_COPY[mission.type]}</Text>
+            <StepDocuments docs={stepDocuments} />
+            {stepDocuments.length > 0 ? (
+              <>
+                <Button
+                  variant="success"
+                  fullWidth
+                  loading={closing}
+                  loadingLabel="Terminando…"
+                  icon={<Check size={17} strokeWidth={3} color={t.text.onSolid} />}
+                  onPress={() => actions.complete(step)}
+                >
+                  Guardar y terminar
+                </Button>
+                <Button variant="ghost" fullWidth disabled={closing} onPress={thenClose(() => actions.attach(step))}>
+                  Adjuntar otro documento
+                </Button>
+              </>
+            ) : step.key === "results" ? (
+              <>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  disabled={closing}
+                  icon={<FilePlus size={17} strokeWidth={2.4} color={t.text.onSolid} />}
+                  onPress={thenClose(() => actions.attach(step))}
+                >
+                  Subir resultados
+                </Button>
+                {/* DU-20: «Ya tengo los resultados» closes without uploading. */}
+                <Button variant="ghost" fullWidth loading={closing} loadingLabel="Terminando…" onPress={() => actions.complete(step)}>
+                  Ya tengo los resultados
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="primary"
+                  fullWidth
+                  disabled={closing}
+                  icon={<FilePlus size={17} strokeWidth={2.4} color={t.text.onSolid} />}
+                  onPress={thenClose(() => actions.attach(step))}
+                >
+                  Adjuntar documentos
+                </Button>
+                <Button
+                  variant="ghost"
+                  fullWidth
+                  loading={closing}
+                  loadingLabel="Terminando…"
+                  onPress={() => actions.skip(step, "nothing_to_save")}
+                >
+                  Omitir, no me dieron nada
+                </Button>
+              </>
+            )}
+          </>
+        ) : step.key === "authorization" ? (
+          <>
+            {/* DU-41: the authorization document goes in this step; skipping is «No necesito autorización». */}
             <Text style={[styles.text, { color: t.text.primary }]}>
-              {step.key === "results"
-                ? "La misión termina cuando confirmas que tienes los resultados. Subirlos es opcional."
-                : "Ya cumpliste el objetivo. Los documentos de tu consulta siguen en Documentos."}
+              Si tu EPS te dio una autorización, súbela aquí para tenerla a mano. Es opcional.
+            </Text>
+            <StepDocuments docs={stepDocuments} />
+            <MissionLink
+              center
+              icon={<Plus size={15} strokeWidth={2.6} color={t.brand.text} />}
+              label={stepDocuments.length > 0 ? "Adjuntar otro documento" : "Subir la autorización"}
+              onPress={thenClose(() => actions.attach(step))}
+            />
+            <Button
+              variant="primary"
+              fullWidth
+              onPress={thenClose(() => actions.complete(step, { status: "authorized" }))}
+            >
+              {stepDocuments.length > 0 ? "Guardar autorización" : "Ya tengo la autorización"}
+            </Button>
+            <Button variant="ghost" fullWidth onPress={thenClose(() => actions.skip(step, "no_authorization_needed"))}>
+              No necesito autorización
+            </Button>
+          </>
+        ) : step.key === "add_to_app" ? (
+          <>
+            <Text style={[styles.text, { color: t.text.primary }]}>
+              Agrégalo a tus medicamentos y te avisamos en cada toma. El paso queda listo al guardarlo.
             </Text>
             <Button
-              variant="success"
+              variant="primary"
               fullWidth
-              loading={closing}
-              loadingLabel="Terminando…"
-              icon={<Check size={17} strokeWidth={3} color={t.text.onSolid} />}
-              onPress={() => actions.complete(step)}
+              icon={<Pill size={17} strokeWidth={2.4} color={t.text.onSolid} />}
+              onPress={thenClose(actions.addMedication)}
             >
-              {step.key === "results" ? "Ya tengo los resultados" : "Terminar la misión"}
+              Agregar medicamento
+            </Button>
+            <Button variant="ghost" fullWidth onPress={thenClose(() => actions.skip(step, "not_applicable"))}>
+              No aplica
             </Button>
           </>
         ) : step.key === "receipt" ? (
@@ -180,6 +279,18 @@ export function MissionStepSheet({
             {step.key === "prepare" && mission.type === "medical_exam" ? (
               <Text style={[styles.meta, { color: t.text.secondary }]}>Sin indicaciones de preparación registradas para este examen.</Text>
             ) : null}
+            {step.key === "prepare" ? (
+              <>
+                <StepDocuments docs={stepDocuments} />
+                {/* «Adjuntar documento» is a permanent secondary action (misiones.md, RF-60). */}
+                <MissionLink
+                  center
+                  icon={<Plus size={15} strokeWidth={2.6} color={t.brand.text} />}
+                  label="Adjuntar documento"
+                  onPress={thenClose(() => actions.attach(step))}
+                />
+              </>
+            ) : null}
             <Button variant="primary" fullWidth onPress={thenClose(() => actions.complete(step))}>
               {step.key === "prepare" ? "Ya estoy listo" : "Listo"}
             </Button>
@@ -192,6 +303,24 @@ export function MissionStepSheet({
         )}
       </View>
     </BottomSheet>
+  );
+}
+
+/** Documents already attached from this step: a quiet list, the card in the detail has the actions. */
+function StepDocuments({ docs }: { docs: { id: string; title: string }[] }) {
+  const t = useAppTheme();
+  if (docs.length === 0) return null;
+  return (
+    <View style={[styles.docs, { backgroundColor: t.surface.muted }]}>
+      {docs.map((d) => (
+        <View key={d.id} style={styles.docRow}>
+          <FileText size={15} strokeWidth={2.2} color={t.accent.docFg} />
+          <Text style={[styles.meta, { color: t.text.primary, flex: 1 }]} numberOfLines={1}>
+            {d.title}
+          </Text>
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -210,4 +339,6 @@ const styles = StyleSheet.create({
   body: { gap: spacing[3], paddingBottom: spacing[2] },
   text: { fontSize: 15, lineHeight: 22, fontFamily: nativeFont("body", 400) },
   meta: { fontSize: 13, lineHeight: 18, fontFamily: nativeFont("body", 400) },
+  docs: { gap: 6, padding: spacing[3], borderRadius: 12 },
+  docRow: { flexDirection: "row", alignItems: "center", gap: spacing[2] },
 });

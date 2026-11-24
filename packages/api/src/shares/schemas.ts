@@ -50,3 +50,20 @@ export const SharedSignedUrlSchema = z.object({
     contentDisposition: z.string(),
 });
 export type SharedSignedUrl = z.infer<typeof SharedSignedUrlSchema>;
+
+/** Public view of a shared backpack (`/share/backpack`, RF-67): metadata only, files via signed URL. */
+export const SharedBackpackSchema = z.object({
+    name: z.string(),
+    sharedByName: z.string().nullish(),
+    expiresAt: z.string().nullish(),
+    documents: z.array(
+        z.object({
+            id: z.string().uuid(),
+            title: z.string(),
+            kind: z.string().default("FILE"),
+            format: z.string().nullish(),
+            uploadedAt: z.string().nullish(),
+        }),
+    ),
+});
+export type SharedBackpack = z.infer<typeof SharedBackpackSchema>;

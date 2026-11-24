@@ -318,9 +318,10 @@ function makeStyles(t: ThemeContextValue) {
     body: {
       flexGrow: 0,
     },
+    // Kit `.sheet`: 34 px below the content, home indicator included. The safe-area padding of the
+    // sheet is that margin; another 16 px here left ~70 px under the last button.
     bodyContent: {
       paddingHorizontal: spacing[5],
-      paddingBottom: spacing[4],
     },
   });
 }

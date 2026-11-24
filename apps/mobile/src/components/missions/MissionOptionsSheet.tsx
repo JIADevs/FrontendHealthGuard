@@ -77,7 +77,7 @@ export function MissionOptionsSheet({
 }
 
 const styles = StyleSheet.create({
-  body: { gap: spacing[3], paddingBottom: spacing[2] },
+  body: { gap: spacing[3] },
   card: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 18, borderWidth: 1, borderBottomWidth: 4 },
   row: { flexDirection: "row", alignItems: "center", gap: spacing[3], paddingVertical: 10, minHeight: 56 },
   copy: { flex: 1, gap: 2 },

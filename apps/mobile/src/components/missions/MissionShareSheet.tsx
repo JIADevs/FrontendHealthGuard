@@ -75,7 +75,7 @@ export function MissionShareSheet({
 }
 
 const styles = StyleSheet.create({
-  body: { gap: spacing[3], paddingBottom: spacing[2] },
+  body: { gap: spacing[3] },
   text: { fontSize: 15, lineHeight: 22, fontFamily: nativeFont("body", 400) },
   row: { flexDirection: "row", alignItems: "center", gap: spacing[3], paddingVertical: 6 },
   copy: { flex: 1, minWidth: 0, gap: 2 },

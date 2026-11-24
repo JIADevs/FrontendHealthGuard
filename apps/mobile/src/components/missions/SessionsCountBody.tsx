@@ -70,7 +70,7 @@ export function SessionsCountBody({
 }
 
 const styles = StyleSheet.create({
-  body: { gap: spacing[3], paddingBottom: spacing[2] },
+  body: { gap: spacing[3] },
   stepper: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing[6], paddingVertical: spacing[2] },
   stepBtn: { width: 52, height: 52, borderRadius: 26, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
   value: { fontSize: 40, minWidth: 72, textAlign: "center", fontFamily: nativeFont("heading", 900) },

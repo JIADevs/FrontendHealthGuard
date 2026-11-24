@@ -93,6 +93,6 @@ export function ReceiptBody({
 }
 
 const styles = StyleSheet.create({
-  body: { gap: spacing[3], paddingBottom: spacing[2] },
+  body: { gap: spacing[3] },
   text: { fontSize: 15, lineHeight: 22, fontFamily: nativeFont("body", 400) },
 });

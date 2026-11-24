@@ -11,6 +11,7 @@ import { Button, DatePicker, TextField, TimePicker, nativeFont, spacing, useAppT
 import { notify } from "../../lib/notify";
 import { MascotHint } from "../brand/MascotHint";
 import { useIsOnline } from "../states/OfflineBanner";
+import { SessionsList } from "./SessionsList";
 import { capitalize, relativeDay, timeLabel } from "./missionCopy";
 
 const OFFLINE = { tone: "warning" as const, message: "Sin conexión", description: "Revisa tu conexión y vuelve a intentarlo." };
@@ -26,6 +27,7 @@ export function SessionsBody({
   onDone,
   onFinish,
   onMoreSessions,
+  onOpenAppointment,
 }: {
   mission: Mission;
   /** Close the sheet after a saved change. */
@@ -34,6 +36,8 @@ export function SessionsBody({
   onFinish: () => void;
   /** «Me ordenaron más sesiones»: opens the sessions count. */
   onMoreSessions: () => void;
+  /** A row of «Tus sesiones» opens its appointment. */
+  onOpenAppointment: (appointmentId: string) => void;
 }) {
   const t = useAppTheme();
   const online = useIsOnline();
@@ -48,6 +52,15 @@ export function SessionsBody({
   const [timeKey, setTimeKey] = useState("");
   const [place, setPlace] = useState("");
   const [submitted, setSubmitted] = useState(false);
+
+  // «Tus sesiones» under the phase's action (mockup v2.29 · A). The upcoming one is already shown above.
+  const list = (
+    <SessionsList
+      items={sessions?.items ?? []}
+      nextId={phase === "upcoming" || phase === "confirm_attendance" ? next?.appointmentId : null}
+      onOpen={onOpenAppointment}
+    />
+  );
 
   const fail = () => notify({ tone: "error", message: "No se pudo guardar", description: "Inténtalo de nuevo." });
   const whenIso = next ? `${next.date}T${(next.time ?? "00:00").slice(0, 5)}` : null;
@@ -116,6 +129,7 @@ export function SessionsBody({
           Programar sesión
         </Button>
         <Text style={[styles.meta, { color: t.text.secondary }]}>Queda en tu Agenda.</Text>
+        {list}
       </View>
     );
   }
@@ -137,6 +151,7 @@ export function SessionsBody({
         <Button variant="ghost" fullWidth onPress={onMoreSessions}>
           Me ordenaron más sesiones
         </Button>
+        {list}
       </View>
     );
   }
@@ -185,6 +200,7 @@ export function SessionsBody({
           No pude, reprogramar
         </Button>
         <MascotHint pose="happy" text="Solo cuenta si nos confirmas que fuiste." />
+        {list}
       </View>
     );
   }
@@ -206,6 +222,7 @@ export function SessionsBody({
       >
         Reprogramar
       </Button>
+      {list}
     </View>
   );
 }

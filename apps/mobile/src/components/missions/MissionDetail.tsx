@@ -37,6 +37,8 @@ export interface MissionDetailProps {
   /** Open this step's sheet on arrival (from «Tu próximo paso» or a push). */
   openStep?: string;
   onSchedule: (mission: Mission) => void;
+  /** A session in «Tus sesiones» opens its appointment. */
+  onOpenAppointment: (appointmentId: string) => void;
   onBack?: () => void;
 }
 
@@ -57,7 +59,7 @@ const OFFLINE = { tone: "warning" as const, message: "Sin conexión", descriptio
  * línea de tiempo v2.16. Los pasos se guardan al tocar y vuelven atrás con «Reintentar» si fallan
  * (DU-6, RNF-10); el paso final espera al servidor porque cierra la misión. Sin red, nada cambia (DU-7).
  */
-export function MissionDetail({ missionId, openStep, onSchedule, onBack }: MissionDetailProps) {
+export function MissionDetail({ missionId, openStep, onSchedule, onOpenAppointment, onBack }: MissionDetailProps) {
   const t = useAppTheme();
   const online = useIsOnline();
   const query = useMissionQuery(missionId);
@@ -206,6 +208,7 @@ export function MissionDetail({ missionId, openStep, onSchedule, onBack }: Missi
             complete: runComplete,
             skip: runSkip,
             schedule: () => onSchedule(mission),
+            openAppointment: onOpenAppointment,
           }}
         />
       ) : null}

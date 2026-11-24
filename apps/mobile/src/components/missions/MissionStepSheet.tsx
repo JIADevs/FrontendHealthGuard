@@ -15,6 +15,8 @@ export interface StepSheetActions {
   skip: (step: MissionStep, reason: "not_applicable" | "no_authorization_needed" | "nothing_to_save") => void;
   /** Open the appointment form linked to this mission. */
   schedule: () => void;
+  /** Open an appointment of the mission (a session from «Tus sesiones»). */
+  openAppointment: (appointmentId: string) => void;
 }
 
 /**
@@ -95,6 +97,7 @@ export function MissionStepSheet({
             onDone={(message) => ref.current?.close(() => notify({ message }))}
             onFinish={thenClose(() => actions.complete(step, { finished: true }))}
             onMoreSessions={() => setCountMode(true)}
+            onOpenAppointment={(id) => ref.current?.close(() => actions.openAppointment(id))}
           />
         ) : done ? (
           <>

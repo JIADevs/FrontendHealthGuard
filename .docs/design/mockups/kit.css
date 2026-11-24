@@ -95,6 +95,8 @@ svg{flex:none;display:block}
 .btn.danger{background:var(--card-bg);color:var(--color-danger-fg);border:1.5px solid var(--color-danger-border);--edge:var(--color-danger-border)}
 .btn.ghost{background:transparent;border:0;box-shadow:none;color:var(--b7);padding:8px 6px}
 .btn.sm{padding:8px 14px;font-size:14px;border-radius:12px;box-shadow:0 2px 0 var(--edge);min-height:44px}
+/* v2.26 · el fantasma no tiene canto, tampoco en tamaño sm (antes heredaba la sombra azul de .sm) */
+.btn.ghost.sm{box-shadow:none}
 .btn.block{width:100%}
 .field{display:flex;flex-direction:column;gap:6px}
 .inp{display:flex;align-items:center;gap:10px;background:#F8FAFC;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;font-size:15px;color:var(--tx3);min-height:48px}

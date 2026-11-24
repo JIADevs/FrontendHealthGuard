@@ -646,9 +646,15 @@ export function useDeleteTreatmentMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: (id: string) => deleteTreatment(id),
-        onSettled: (_data, _err, id) => {
-            qc.invalidateQueries({ queryKey: ["treatments"] });
-            qc.removeQueries({ queryKey: QK.treatment(id) });
+        onSuccess: (_data, id) => {
+            // Drop the detail only once the lists no longer show the treatment. List cards observe
+            // `QK.treatment(id)` (useTreatmentDetailsInOrderQuery): removing it while its card is still
+            // mounted recreates the query and fetches the deleted treatment (a 404).
+            void qc
+                .invalidateQueries({ queryKey: ["treatments"] })
+                .then(() => qc.removeQueries({ queryKey: QK.treatment(id) }));
+        },
+        onSettled: () => {
             qc.invalidateQueries({ queryKey: ["medications"] });
             qc.invalidateQueries({ queryKey: ["appointments"] });
             qc.invalidateQueries({ queryKey: ["documents"] });
@@ -673,9 +679,12 @@ export function useTreatmentsByIdsQuery(ids: string[]) {
  * the order given and at most `concurrency` at a time. The list API has no counts, and the hosted
  * database allows few connections: firing every detail at once exhausted its pool.
  * - Shares `QK.treatment(id)` with the detail screen, so opening a treatment is instant.
- * - A detail already in the cache is shown as is when the cards mount again (no refetch burst);
- *   writes that touch treatments still refresh it through `invalidateTreatmentQueries`.
- * - A failed detail is not retried: the card simply shows without its summary.
+ * - A card whose detail is cached keeps a disabled observer: it shows the cached data and is not
+ *   «active», so `invalidateTreatmentQueries` refetches only the detail that is open (its screen's
+ *   observer is enabled). The invalidated ones then wait for a slot here, like missing ones, instead
+ *   of all refetching at once.
+ * - A failed detail is not retried: the card simply shows without its summary, until a write
+ *   invalidates it again.
  */
 export function useTreatmentDetailsInOrderQuery(ids: string[], concurrency = 2) {
     const qc = useQueryClient();
@@ -683,10 +692,15 @@ export function useTreatmentDetailsInOrderQuery(ids: string[], concurrency = 2) 
     return useQueries({
         queries: ids.map((id) => {
             const state = qc.getQueryState(QK.treatment(id));
-            let enabled = true;
+            let enabled: boolean;
             if (state?.fetchStatus === "fetching") {
+                enabled = true;
                 busy += 1;
-            } else if (state?.data === undefined && state?.status !== "error") {
+            } else if (state && !state.isInvalidated && (state.data !== undefined || state.status === "error")) {
+                // Cached (or failed): shown as is, without an active observer.
+                enabled = false;
+            } else {
+                // Missing or invalidated: waits for a slot.
                 enabled = busy < concurrency;
                 if (enabled) busy += 1;
             }
@@ -695,7 +709,6 @@ export function useTreatmentDetailsInOrderQuery(ids: string[], concurrency = 2) 
                 queryFn: () => getTreatmentById(id),
                 staleTime: 30_000,
                 retry: false,
-                refetchOnMount: false,
                 enabled,
             };
         }),

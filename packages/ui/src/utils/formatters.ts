@@ -22,7 +22,10 @@ export function formatDate(d: string | null | undefined): string {
  */
 export function formatDateLocal(d: string | null | undefined): string {
   if (!d) return "—";
-  return new Date(d + "T00:00:00").toLocaleDateString("es-CO", DATE_OPTS);
+  // A date-only string is a calendar day; a full timestamp (e.g. `uploadedAt`) is shown on the
+  // user's local day. Appending «T00:00:00» to a timestamp gave «Invalid Date».
+  const date = d.length > 10 ? new Date(d) : new Date(d + "T00:00:00");
+  return date.toLocaleDateString("es-CO", DATE_OPTS);
 }
 
 /** Formatea la parte de hora de un datetime (hh:mm). */
@@ -36,7 +39,10 @@ export function formatTime(d: string | null | undefined): string {
  * Útil para valores de inputs `type="date"` y filtros de API con startDate.
  */
 export function todayISODate(): string {
-  return new Date().toISOString().split("T")[0]!;
+  // The user's calendar day, not the UTC one: appointments store local dates, and after 7 p. m. in
+  // Colombia the UTC date is already tomorrow.
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /**

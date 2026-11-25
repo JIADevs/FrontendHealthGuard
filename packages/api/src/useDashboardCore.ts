@@ -17,7 +17,10 @@ import { useAuthStore } from "@helu/stores";
 import type { Appointment, Medication, Document } from "./schemas";
 
 function todayISODate(): string {
-  return new Date().toISOString().split("T")[0]!;
+  // The user's calendar day, not the UTC one: appointments store local dates, and after 7 p. m. in
+  // Colombia the UTC date is already tomorrow.
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -73,13 +76,17 @@ export interface DashboardData {
 
 // ─── Core hook ───────────────────────────────────────────────────────────────
 
+/** Appointment statuses that are still to happen (both vocabularies, `agenda/prd.md`). */
+const OPEN_APPOINTMENT_STATUSES = new Set(["PROGRAMADA", "PENDING", "RESCHEDULED"]);
+
 export function useDashboardCore(): DashboardData {
   const setUser = useAuthStore((s) => s.setUser);
   const isManaging = useAuthStore((s) => s.isManaging);
 
   const profile = useProfileQuery();
   const docs = useDocumentsQuery("", 1, 3);
-  const appts = useAppointmentsQuery("", 1, 3, todayISODate());
+  // A few more than the 3 shown, so canceled or attended ones do not leave the card short (#119).
+  const appts = useAppointmentsQuery("", 1, 10, todayISODate());
   const meds = useMedicationsQuery("", 1, 3);
 
   // Keep auth store user aligned with self profile only — not while impersonating.
@@ -94,10 +101,13 @@ export function useDashboardCore(): DashboardData {
   }, [profile.data, isManaging, setUser]);
 
   const today = todayISODate();
-  const todayApptCount =
-    appts.data?.items.filter((a) => a.date === today && a.status === "PENDING").length ?? 0;
+  // Still to happen: the app saves PROGRAMADA, the web PENDING; canceled or attended ones are out (#119).
+  const upcoming = (appts.data?.items ?? [])
+    .filter((a) => OPEN_APPOINTMENT_STATUSES.has(a.status))
+    .sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`));
+  const todayApptCount = upcoming.filter((a) => a.date === today).length;
 
-  const totalUpcoming = appts.data?.items.filter((a) => a.status === "PENDING").length ?? 0;
+  const totalUpcoming = upcoming.length;
 
   const apptSubtitle =
     todayApptCount > 0
@@ -126,12 +136,8 @@ export function useDashboardCore(): DashboardData {
     apptTotal: appts.isLoading ? "—" : (appts.data?.total ?? "—"),
     medTotal: meds.isLoading ? "—" : (meds.data?.total ?? "—"),
 
-    upcomingAppts: [...(appts.data?.items ?? [])].sort(
-      (a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`),
-    ),
-    nextAppt: [...(appts.data?.items ?? [])].sort(
-      (a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`),
-    )[0] ?? null,
+    upcomingAppts: upcoming.slice(0, 3),
+    nextAppt: upcoming[0] ?? null,
     activeMeds: meds.data?.items ?? [],
     recentDocs: docs.data?.items ?? [],
 

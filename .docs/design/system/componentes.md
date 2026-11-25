@@ -64,12 +64,12 @@
 | **TextArea** | Extender (hoy `multiline`) | 3 líneas que crecen hasta 6, con contador | `maxLength`, `minRows`, `maxRows` | Notas, descripción | P2 |
 | **NumberField** | Nuevo | Número con unidad y stepper − / + opcional | `unit`, `min`, `max`, `step`, `stepper` | Dosis, frecuencia, duración | P1 |
 | **CurrencyField** | Nuevo | Prefijo «$», separador de miles es-CO | `currency='COP'` | Costo de cita | P3 |
-| **Select** | Extender | Hoja con búsqueda en móvil, desplegable en web; opción vacía clara | + `searchable`, `helper`, `leadingIcon` | Especialidad, tratamiento, tipo | P1 |
-| **CreatableSelect** | Nuevo | Select + fila «+ Agregar nuevo …» que abre un formulario anidado | `onCreate`, `createLabel` | Profesional de salud | P2 |
+| **Select** | Extender | Hoja en móvil, desplegable en web; opción vacía clara. **v2.32:** la búsqueda aparece con más de 8 opciones; si las opciones traen ícono, cada fila es ícono gris + nombre + ayuda corta + radio («1B»); título de hoja propio (`sheetTitle`) | + `searchable`, `helper`, `leadingIcon`, `sheetTitle`; opciones `{ value, label, icon?, description? }` | Especialidad, tratamiento, tipo de documento | P1 |
+| **CreatableSelect** | Nuevo | Select + fila «+ Agregar nuevo …» que abre un formulario anidado. **v2.32:** esa fila va primera dentro de la hoja (no como enlace suelto en el formulario); las opciones de persona llevan iniciales y un dato («Odontología»), y las relacionadas con lo ya elegido van arriba («3C») | `onCreate`, `createLabel` | Profesional de salud | P2 |
 | **DatePicker / TimePicker / DateTimePicker** | Extender | Estilo de campo B, formato es-CO, `min` y `max`, ícono | + `minDate`, `helper` | Citas, ciclos, check-in, pasos | P1 |
 | **DateRangeField** | Nuevo | «Desde / Hasta» con validación de orden | `start`, `end`, `onChange` | Filtros, periodo | P2 |
 | **SegmentedControl** | Nuevo | 2 o 3 opciones excluyentes, `radiogroup` | `options`, `value`, `onChange` | Tipo de consulta, modalidad, tema, estado, pestañas de Agenda | P1 |
-| **ChoiceChips** | Nuevo | Chips de opción única o múltiple con borde y canto | `options`, `value`, `multiple`, `onChange`, `icon?` | Forma farmacéutica, recordatorios, síntomas, expiración, motivo de no toma, tipo de sangre | P1 |
+| **ChoiceChips** | Nuevo | Chips de opción única o múltiple con borde y canto. **v2.32:** el ícono de cada chip va en gris y el elegido lo cambia por ✓; en un campo opcional, tocar el elegido lo desmarca; si el dato decide algo después, ayuda persistente debajo («2C») | `options`, `value`, `multiple`, `onChange`, `icon?` | Forma farmacéutica, recordatorios, síntomas, expiración, motivo de no toma, tipo de sangre, subtipo de orden o autorización | P1 |
 | **OptionCard** | Nuevo | Tarjeta de opción con ícono, título, descripción y chip («Recomendado») | `icon`, `feature`, `title`, `description`, `selected` | Nueva misión, invitar, agregar a agenda | P1 |
 | **SwitchRow** | Nuevo | Fila con título, descripción e interruptor (`role=switch`) | `title`, `description`, `value`, `onChange`, `icon?` | Permisos, avisar al cuidador, notificaciones, motivación | P1 |
 | **Checkbox** | Extender | Casilla de 24 px con radio 8, estilo B | — | Base de `SelectableRow` | P2 |
@@ -111,6 +111,7 @@
 | Componente | Módulo | Qué es | Prioridad |
 |---|---|---|---|
 | `CheckInSheet` | agenda | `BottomSheet` + `MoodPicker` + `ChoiceChips` (síntomas) + tratamiento + notas | P1 |
+| `SpecialtySheet` | agenda | **v2.32 «3B3»:** hoja de especialidad de la cita con «Repetir una cita» arriba (parejas especialidad + profesional ya usadas, con iniciales y «Con Dra. Ruiz · última el 3 dic»; un toque llena los dos campos) y «Todas las especialidades» con búsqueda abajo | P2 |
 | `IntakeSheet` | agenda | «¿Tomaste esta dosis?» Sí / No + hora + motivo (chips) + detalles | P1 |
 | `WeekStrip` / `MonthGrid` | agenda | Calendario semanal (móvil) y mensual (web) con puntos por tipo | P1 |
 | `MissionStepSheet` | missions | Hoja del paso: plantilla por tipo de paso (carga, fecha y hora, recordatorios, confirmación) | P1 |

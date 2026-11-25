@@ -49,11 +49,12 @@ Texto de ayuda o error                    ← Inter 12; el error con ícono ⓘ 
 | Dato | Control | Ejemplos en Helu |
 |---|---|---|
 | 2 o 3 opciones excluyentes, siempre visibles | **Control segmentado** | Tipo de consulta (cita médica / examen), modalidad, tema, estado del tratamiento |
-| 3 a 8 opciones conocidas, una sola | **Chips de opción** (radio) | Forma farmacéutica, expiración del enlace, tipo de sangre, recordatorio de autorización |
+| 3 a 8 opciones conocidas, una sola | **Chips de opción** (radio) | Forma farmacéutica, expiración del enlace, tipo de sangre, recordatorio de autorización; subtipo de una orden o autorización, con el ícono de la misión (v2.32) |
 | Varias opciones conocidas | **Chips múltiples** (checkbox) | Recordatorios antes de la cita, síntomas, categorías del filtro |
 | Elección con explicación | **Tarjeta de opción** (radio grande con ícono y descripción) | Nueva misión (subir orden / manual), invitar cuidador o dependiente, agregar a agenda |
-| Muchas opciones o lista del servidor | **Selector** (hoja con búsqueda en móvil, desplegable en web) | Especialidad, tratamiento, tipo de documento |
-| Elegir de una lista o crear uno nuevo | **Selector con creación** | Profesional de salud («+ Agregar nuevo profesional») |
+| Hasta 8 opciones del servidor que conviene reconocer (v2.32) | **Selector con íconos y ayuda** (hoja sin búsqueda: ícono gris, nombre, ayuda corta, radio) | Tipo de documento |
+| Muchas opciones o lista del servidor | **Selector** (hoja con búsqueda en móvil, desplegable en web; la búsqueda aparece con más de 8 opciones) | Especialidad, tratamiento |
+| Elegir de una lista o crear uno nuevo | **Selector con creación** («+ Agregar nuevo …» como primera fila de la hoja, v2.32) | Profesional de salud |
 | Encendido o apagado con efecto inmediato | **Interruptor en fila** | Permisos del enlace, avisar al cuidador, notificaciones |
 | Seleccionar elementos de una lista | **Fila seleccionable** con casilla | Documentos para una mochila o para compartir |
 | Fecha / hora | **Selector de fecha y hora** nativo | Cita, ciclo, check-in |

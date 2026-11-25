@@ -49,6 +49,7 @@ Orden fijo de bloques (móvil). En web se reparten en 3 columnas.
 - En una cita futura no se ofrece «Marcar como completada». Desde la hora de la cita se pregunta «¿Pudiste asistir?» con «Sí, asistí» y «No pude, reprogramar».
 - «Cancelar cita» la marca como cancelada (no la borra), va como enlace rojo al final del detalle y su confirmación ofrece «Mantener cita».
 - Formulario: primero «Fecha y hora», luego «Profesional» y «Modalidad y lugar» (títulos sustantivos, `formularios.md` §5); el resto, plegado en «Más detalles (opcional)». El nombre de la cita se completa solo.
+- **v2.32 · Especialidad y profesional:** la hoja de especialidad empieza con «Repetir una cita», las parejas especialidad + profesional ya usadas (iniciales, «Con Dra. Ruiz · última el 3 dic»); un toque llena los dos campos. Debajo, «Todas las especialidades» con búsqueda. La hoja de profesional es un selector con creación: «+ Agregar nuevo profesional» va primera, y cada profesional lleva iniciales y especialidad, con los de la especialidad elegida arriba. Ya no hay enlace «+ Agregar nuevo profesional» suelto en el formulario (`formularios.md` §4 v2.32; mockups 13 «3B3» y «3C»).
 
 ## Medicamentos (v2)
 - Lista separada en «Activos» y «Finalizados». El progreso del ciclo va en verde.

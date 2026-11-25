@@ -507,7 +507,7 @@ export function AppointmentDetail({ id, onEdit, onAddDocument, onOpenMission }: 
             {date && time ? (
               <Text style={[styles.meta, styles.center, { color: t.text.secondary }]}>
                 Podrás marcarla como completada desde el{" "}
-                {WEEKDAY_LONG[new Date(`${date}T12:00:00`).getDay()]} a las {formatClock(time)}.
+                {WEEKDAY_LONG[new Date(`${date}T12:00:00`).getDay()]} a las {formatClock(time).replace(/\.$/, "")}.
               </Text>
             ) : null}
           </>

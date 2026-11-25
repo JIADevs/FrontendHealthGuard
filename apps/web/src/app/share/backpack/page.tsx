@@ -60,6 +60,14 @@ const PAGE_CSS = `
 @media (prefers-reduced-motion: reduce) { .sb-skel, .sb-enter { animation: none; } }
 `;
 
+
+/** «application/pdf» → «PDF», «image/jpeg» → «JPG», «pdf» → «PDF». */
+function formatLabel(format?: string | null): string | null {
+  if (!format) return null;
+  const kind = format.includes("/") ? format.split("/").pop()! : format;
+  return (kind === "jpeg" ? "jpg" : kind).toUpperCase();
+}
+
 function dayLabel(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
@@ -137,7 +145,7 @@ function DocumentRow({ token, doc }: { token: string; doc: SharedBackpack["docum
     }
   };
 
-  const meta = [doc.uploadedAt ? dayLabel(doc.uploadedAt) : null, isLink ? "Portal del laboratorio" : doc.format?.toUpperCase()]
+  const meta = [doc.uploadedAt ? dayLabel(doc.uploadedAt) : null, isLink ? "Portal del laboratorio" : formatLabel(doc.format)]
     .filter(Boolean)
     .join(" · ");
 

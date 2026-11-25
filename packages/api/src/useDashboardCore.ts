@@ -17,7 +17,10 @@ import { useAuthStore } from "@helu/stores";
 import type { Appointment, Medication, Document } from "./schemas";
 
 function todayISODate(): string {
-  return new Date().toISOString().split("T")[0]!;
+  // The user's calendar day, not the UTC one: appointments store local dates, and after 7 p. m. in
+  // Colombia the UTC date is already tomorrow.
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

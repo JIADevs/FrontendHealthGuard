@@ -10,7 +10,8 @@ import { documentTypeLabel } from "../documents/documentCategories";
 
 /** «28 oct · Orden» (mockup «Documentos recientes»): fecha sin día de la semana y el tipo. */
 function documentMeta(d: Document): string {
-  const date = formatShortDay(d.uploadedAt).split(" ").slice(1).join(" ");
+  // `uploadedAt` is a UTC timestamp: show the user's local day, not its UTC date.
+  const date = formatShortDay(new Date(d.uploadedAt)).split(" ").slice(1).join(" ");
   return [date, documentTypeLabel(d.documentType?.name)].filter(Boolean).join(" · ");
 }
 

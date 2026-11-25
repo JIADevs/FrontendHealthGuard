@@ -8,6 +8,7 @@ import {
     getSharedDocumentSignedUrlViewOnly,
 } from "./shares/endpoints";
 import type { ShareCreateOptions } from "./shares/schemas";
+import { DocumentCreatedSchema } from "./missions/schemas";
 import {
     TokenResponseSchema,
     UserProfileSchema,
@@ -127,9 +128,15 @@ export async function getDocumentById(id: string) {
     return data;
 }
 
-export async function createDocument(doc: DocumentCreate) {
-    const { data } = await apiClient.post("/documents/", doc);
-    return DocumentSchema.parse(data);
+/**
+ * `suggestMission`: only Documentos → subir o escanear send it. An «Orden médica» or «Autorización EPS»
+ * then comes back with its `missionSuggestion` (Misiones RF-68, DA-14).
+ */
+export async function createDocument(doc: DocumentCreate, options?: { suggestMission?: boolean }) {
+    const { data } = await apiClient.post("/documents/", doc, {
+        params: options?.suggestMission ? { suggest_mission: true } : undefined,
+    });
+    return DocumentCreatedSchema.parse(data);
 }
 
 export async function updateDocument(id: string, doc: DocumentCreate) {

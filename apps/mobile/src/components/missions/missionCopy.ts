@@ -95,24 +95,29 @@ export const stepPendingHint: Record<string, string> = {
     receipt: "Confírmalo cuando lo tengas",
 };
 
+type StepsOf = { type: string; steps: { key: string; label?: string | null; hint?: string | null }[] };
+
 /**
  * Título de un paso en esta misión. El examen v2 separa la autorización (DU-41): su paso
- * `schedule` ya no autoriza, solo programa.
+ * `schedule` ya no autoriza, solo programa. Una clave que la app no conoce usa la etiqueta del
+ * backend (RF-100); `fromBackend` la prefiere siempre (hojas `attach` y `yes_no`).
  */
-export function stepTitle(mission: { type: string; steps: { key: string }[] }, key: string): string {
+export function stepTitle(mission: StepsOf, key: string, fromBackend = false): string {
+    const step = mission.steps.find((s) => s.key === key);
+    if (fromBackend && step?.label) return step.label;
     if (key === "schedule" && mission.type === "medical_exam" && mission.steps.some((s) => s.key === "authorization")) {
         return "Programar el examen";
     }
-    return stepLabel[key] ?? key;
+    return stepLabel[key] ?? step?.label ?? key;
 }
 
 /** Texto de un paso pendiente en esta misión (ver `stepTitle`). */
-export function stepHint(mission: { type: string; steps: { key: string }[] }, key: string): string | undefined {
+export function stepHint(mission: StepsOf, key: string): string | undefined {
     if (key === "schedule" && mission.type === "medical_exam" && mission.steps.some((s) => s.key === "authorization")) {
         return "Registra dónde y cuándo te harás el examen";
     }
     if (key === "authorization") return "Sube la autorización · opcional";
-    return stepPendingHint[key];
+    return stepPendingHint[key] ?? mission.steps.find((s) => s.key === key)?.hint ?? undefined;
 }
 
 /** «Sigue: …» en minúscula, para la lista y el encabezado. */
@@ -282,4 +287,63 @@ export function suggestionGroupLabel(source: { type: MissionType; title: string 
     const sameAsNoun = title.toLowerCase().startsWith(noun);
     const parts = [`De tu ${noun}`, sameAsNoun ? title.slice(noun.length).replace(/^\s*de\s+/i, "") : title, shortDate(createdAt)];
     return parts.filter(Boolean).join(" · ").toUpperCase();
+}
+
+// --- M6b · misiones desde documentos (RF-68, RF-69, mockups 4c) ---------------------------
+
+/** «tu orden médica» · «tu autorización»: the origin of a document suggestion. */
+export function documentOriginPhrase(typeCode: string | null | undefined): string {
+    if (typeCode === "medical_order") return "tu orden médica";
+    if (typeCode === "eps_authorization") return "tu autorización";
+    return "tu documento";
+}
+
+/** In the document sheet the therapy starts with the order (DU-48); elsewhere it stays «Terminar una terapia». */
+export const documentSheetTypeLabels: Partial<Record<MissionType, string>> = { therapy: "Empezar una terapia" };
+
+/** Copy of the type sheet after saving an order or an authorization (mockups 4c «D2», «D4»). */
+export function documentSheetCopy(typeCode: string | null | undefined) {
+    const authorization = typeCode === "eps_authorization";
+    return {
+        eyebrow: authorization ? "AUTORIZACIÓN GUARDADA" : "ORDEN MÉDICA GUARDADA",
+        title: "¿Te acompañamos con esto?",
+        body: authorization
+            ? "Elige para qué es la autorización y la guardamos en el paso «Autorización» de tu misión."
+            : "Elige qué quieres conseguir y creamos una misión con tu orden.",
+        preselected: authorization ? "Lo elegimos por el tipo de autorización" : "Lo elegimos por el tipo de orden",
+    };
+}
+
+/** «Examen», «medicamento»… for «¿Es para tu examen en curso?» and «¿Para cuál de tus exámenes es?». */
+const MATCH_NOUN: Record<MissionType, { one: string; many: string }> = {
+    medical_appointment: { one: "cita", many: "citas" },
+    medical_exam: { one: "examen", many: "exámenes" },
+    medication: { one: "medicamento", many: "medicamentos" },
+    therapy: { one: "terapia", many: "terapias" },
+};
+
+/** Titles of the similar-mission sheets (RF-69, mockups «D5», «D5b»). */
+export function matchCopy(type: MissionType, count: number) {
+    const noun = MATCH_NOUN[type];
+    return count > 1
+        ? { title: `¿Para cuál de tus ${noun.many} es?`, sub: `Tienes ${count} ${noun.many} esperando autorización.` }
+        : { title: `¿Es para tu ${noun.one} en curso?`, sub: null };
+}
+
+/** «Paso 1 de 5 · creada hoy» for each similar mission. */
+export function matchMeta(stepPosition: number, stepTotal: number, createdAt: string) {
+    const day = relativeDay(createdAt);
+    const when = day === "hoy" || day === "mañana" ? day : `el ${shortDate(createdAt)}`;
+    return `Paso ${stepPosition} de ${stepTotal} · creada ${when}`;
+}
+
+/** Group heading of a document suggestion in «Sugeridas»: «DE TU ORDEN MÉDICA · HOY» (mockup «D7»). */
+export function documentGroupLabel(typeCode: string | null | undefined, createdAt: string): string {
+    const day = relativeDay(createdAt);
+    return `De ${documentOriginPhrase(typeCode)} · ${day === "hoy" ? "hoy" : shortDate(createdAt)}`.toUpperCase();
+}
+
+/** Title of a document suggestion without type (DU-52): «Crear una misión con tu autorización». */
+export function untypedSuggestionTitle(typeCode: string | null | undefined): string {
+    return `Crear una misión con ${documentOriginPhrase(typeCode)}`;
 }

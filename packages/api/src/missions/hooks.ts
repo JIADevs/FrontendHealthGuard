@@ -39,6 +39,7 @@ import type {
     MissionSessionCreate,
     MissionStatus,
     MissionStep,
+    MissionStepSkip,
     MotivationPreferences,
     UserProgress,
 } from "./schemas";
@@ -98,7 +99,7 @@ export function useMissionEventsQuery(id: string | undefined) {
 
 // --- optimistic step mutations (DU-6, RNF-10) ------------------------------------------
 
-type StepVars = { missionId: string; stepKey: string; data?: Record<string, unknown>; reason?: "not_applicable" | "no_authorization_needed" | "nothing_to_save" };
+type StepVars = { missionId: string; stepKey: string; data?: Record<string, unknown>; reason?: MissionStepSkip["reason"] };
 
 /**
  * Patches the cached mission as if the server had accepted the step, so the timeline moves at

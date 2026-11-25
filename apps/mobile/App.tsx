@@ -5,6 +5,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { NavigationContainer } from "@react-navigation/native";
 import { HeluToast } from "./src/components/ToastConfig";
 import { useProgressToasts } from "./src/components/motivation/useProgressToasts";
+import { DocumentSuggestionHost } from "./src/components/missions/DocumentSuggestionHost";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { navigationRef } from "./src/navigation/navigationRef";
 import { useAuthStore, useNotifStore, useUiStore } from "@helu/stores";
@@ -123,6 +124,8 @@ function AppContent({
       <NavigationContainer ref={navigationRef}>
         <RootNavigator />
       </NavigationContainer>
+      {/* «¿Te acompañamos con esto?» after saving an order or an authorization (Misiones RF-68). */}
+      {token ? <DocumentSuggestionHost /> : null}
       <HeluToast />
       <StatusBar style="auto" />
     </SafeAreaProvider>

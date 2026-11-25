@@ -2,21 +2,12 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCreateMissionMutation, type Mission, type MissionType } from "@helu/api";
-import {
-  BOTTOM_ACTION_BAR_HEIGHT,
-  BottomActionBar,
-  IconTile,
-  TextField,
-  nativeFont,
-  spacing,
-  useAppTheme, PressableScale } from "@helu/ui";
+import { BOTTOM_ACTION_BAR_HEIGHT, BottomActionBar, TextField, nativeFont, spacing, useAppTheme } from "@helu/ui";
 import { notify } from "../../lib/notify";
 import { ScreenHeader } from "../ScreenHeader";
 import { useIsOnline } from "../states/OfflineBanner";
-import { MissionTypeIcon } from "./MissionTypeIcon";
-import { missionField, missionTypeHint, missionTypeLabel, missionTypeTone } from "./missionCopy";
-
-const TYPES: MissionType[] = ["medical_appointment", "medication", "medical_exam", "therapy"];
+import { MissionTypePicker } from "./MissionTypePicker";
+import { missionField } from "./missionCopy";
 
 /**
  * «Nueva misión · MVP» (v2.17): los cuatro tipos como tarjetas con radio, el dato mínimo y la barra fija
@@ -65,36 +56,14 @@ export function MissionNew({
         <ScrollView contentContainerStyle={[styles.content, { paddingBottom: BOTTOM_ACTION_BAR_HEIGHT + spacing[8] }]} keyboardShouldPersistTaps="handled">
           <View style={[styles.card, { backgroundColor: t.surface.bgCard, borderColor: t.border.default }]}>
             <Text style={[styles.h3, { color: t.text.primary }]}>¿Qué quieres conseguir?</Text>
-            <View accessibilityRole="radiogroup" style={{ gap: spacing[2] }}>
-              {TYPES.map((ty) => {
-                const selected = ty === type;
-                return (
-                  <PressableScale
-                    key={ty}
-                    onPress={() => {
-                      setType(ty);
-                      setValue("");
-                      setTouched(false);
-                    }}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected }}
-                    style={[
-                      styles.option,
-                      { borderColor: selected ? t.brand.solid : t.border.default, backgroundColor: selected ? t.brand.tint : t.surface.bgCard },
-                    ]}
-                  >
-                    <IconTile tone={missionTypeTone[ty]} icon={<MissionTypeIcon type={ty} size={19} color={t.text.secondary} />} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.optionTitle, { color: t.text.primary }]}>{missionTypeLabel[ty]}</Text>
-                      <Text style={[styles.optionHint, { color: t.text.secondary }]}>{missionTypeHint[ty]}</Text>
-                    </View>
-                    <View style={[styles.radio, { borderColor: selected ? t.brand.solid : t.border.default }]}>
-                      {selected ? <View style={[styles.radioDot, { backgroundColor: t.brand.solid }]} /> : null}
-                    </View>
-                  </PressableScale>
-                );
-              })}
-            </View>
+            <MissionTypePicker
+              selected={type}
+              onSelect={(ty) => {
+                setType(ty);
+                setValue("");
+                setTouched(false);
+              }}
+            />
           </View>
           <View style={[styles.card, { backgroundColor: t.surface.bgCard, borderColor: t.border.default }]}>
             <TextField
@@ -119,9 +88,4 @@ const styles = StyleSheet.create({
   content: { gap: spacing[3], paddingHorizontal: spacing[4], paddingTop: spacing[2] },
   card: { gap: spacing[3], padding: spacing[4], borderRadius: 18, borderWidth: 1, borderBottomWidth: 4 },
   h3: { fontSize: 16, fontFamily: nativeFont("heading", 800) },
-  option: { flexDirection: "row", alignItems: "center", gap: spacing[3], padding: 12, borderRadius: 16, borderWidth: 1.5 },
-  optionTitle: { fontSize: 15, fontFamily: nativeFont("body", 600) },
-  optionHint: { fontSize: 13, fontFamily: nativeFont("body", 400) },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  radioDot: { width: 12, height: 12, borderRadius: 6 },
 });

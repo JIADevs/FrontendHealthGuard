@@ -12,7 +12,9 @@ import { missionTypeShort, nextActionLabel, relativeDay, shortDate } from "./mis
  */
 export function MissionRow({ mission, onPress }: { mission: MissionSummary; onPress: () => void }) {
   const t = useAppTheme();
-  const paused = mission.status === "paused";
+  // Canceled shows only from an appointment detail (its appointment was canceled, DU-51): gray, like paused.
+  const canceled = mission.status === "canceled";
+  const paused = mission.status === "paused" || canceled;
   const completed = mission.status === "completed";
   const { completed: done, total } = mission.progress;
   const ratio = total ? done / total : 0;
@@ -22,7 +24,9 @@ export function MissionRow({ mission, onPress }: { mission: MissionSummary; onPr
 
   const detail = completed
     ? `Terminada el ${shortDate(mission.completedAt)}`
-    : paused
+    : canceled
+      ? "Se canceló con la cita"
+      : paused
       ? "Pausada · toca para reanudar"
       : `Sigue: ${nextActionLabel(mission.nextAction)}${pendingTotal ? " · Total pendiente" : ""}`;
 
@@ -45,7 +49,11 @@ export function MissionRow({ mission, onPress }: { mission: MissionSummary; onPr
             tone="neutral"
             icon={<MissionTypeIcon type={mission.type} size={12} color={t.text.onMuted} />}
           />
-          {paused ? <Chip label="Pausada" tone="neutral" icon={<Pause size={12} color={t.text.onMuted} />} /> : null}
+          {canceled ? (
+            <Chip label="Cancelada" tone="neutral" />
+          ) : paused ? (
+            <Chip label="Pausada" tone="neutral" icon={<Pause size={12} color={t.text.onMuted} />} />
+          ) : null}
         </View>
         <Text style={[styles.title, { color: paused ? t.text.secondary : t.text.primary }]} numberOfLines={2}>
           {mission.title}

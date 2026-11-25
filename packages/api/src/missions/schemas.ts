@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createPageSchema } from "../schemas";
+import { createPageSchema, DocumentSchema } from "../schemas";
 
 /**
  * Missions contract (Misiones PRD §10.5). Mirrors BackendHealthGuard `app/schemas/mission.py`
@@ -10,11 +10,13 @@ import { createPageSchema } from "../schemas";
 
 export const MissionTypeSchema = z.enum(["medical_appointment", "medical_exam", "medication", "therapy"]);
 export const MissionStatusSchema = z.enum(["active", "paused", "completed", "canceled"]);
-export const MissionOriginSchema = z.enum(["manual", "appointment_created", "follow_up", "onboarding"]);
+export const MissionOriginSchema = z.enum(["manual", "appointment_created", "follow_up", "onboarding", "document"]);
 export const MissionStepStatusSchema = z.enum(["pending", "in_progress", "completed", "skipped"]);
 export const MissionStepKindSchema = z.enum(["confirm", "schedule", "documents", "receipt", "sessions"]);
-export const MissionSkipReasonSchema = z.enum(["not_applicable", "no_authorization_needed", "nothing_to_save"]);
-export const MissionCancelReasonSchema = z.enum(["not_attended", "user_canceled"]);
+export const MissionSkipReasonSchema = z.enum(["not_applicable", "no_authorization_needed", "nothing_to_save", "past_appointment"]);
+export const MissionCancelReasonSchema = z.enum(["not_attended", "user_canceled", "appointment_canceled"]);
+export const MissionStepSheetTypeSchema = z.enum(["attach", "yes_no", "custom"]);
+export const MissionStepSecondaryActionSchema = z.enum(["skip", "complete", "answer_no"]);
 export const MissionProgressUnitSchema = z.enum(["steps", "sessions"]);
 export const MissionSessionsPhaseSchema = z.enum(["schedule", "upcoming", "confirm_attendance", "finish"]);
 export const MissionSuggestionStatusSchema = z.enum(["pending", "accepted", "dismissed"]);
@@ -45,9 +47,41 @@ export const MissionRefSchema = z.object({
     title: z.string(),
 });
 
+/**
+ * How to draw a step (RF-100, DU-53). `attach` and `yes_no` sheets are drawn only from these fields,
+ * so a step the app does not know still works; `custom` sheets keep their own design in the app.
+ */
+export const MissionStepSheetSchema = z.object({
+    type: MissionStepSheetTypeSchema.default("custom"),
+    body: z.string().nullish(),
+    /** attach: the button that adds a document. */
+    attachLabel: z.string().nullish(),
+    /** attach: completes the step · yes_no: «Sí». */
+    primaryLabel: z.string().nullish(),
+    /** attach: without a document, attaching takes the primary place. */
+    primaryNeedsDocument: z.boolean().default(false),
+    /** Sent as `data` when completing with the primary action. */
+    completeData: z.record(z.unknown()).nullish(),
+    secondaryLabel: z.string().nullish(),
+    secondaryAction: MissionStepSecondaryActionSchema.nullish(),
+    skipReason: MissionSkipReasonSchema.nullish(),
+    /** yes_no: the data key that carries the answer (true · false). */
+    answerKey: z.string().nullish(),
+    /** Mascot hint under the buttons. */
+    note: z.string().nullish(),
+});
+
 export const MissionStepSchema = z.object({
     key: z.string(),
     kind: MissionStepKindSchema,
+    /** Template copy (RF-100): what the app shows for a key it does not know. */
+    label: z.string().nullish(),
+    hint: z.string().nullish(),
+    /** «No aplica» / «Omitir este paso» allowed. */
+    canSkip: z.boolean().default(false),
+    /** Completing it completes the mission (DU-17). */
+    final: z.boolean().default(false),
+    sheet: MissionStepSheetSchema.default({}),
     position: z.number().int(),
     status: MissionStepStatusSchema,
     applies: z.boolean().default(true),
@@ -208,14 +242,47 @@ export const MissionOverviewSchema = z.object({
 
 // --- suggestions and events ----------------------------------------------------------
 
+export const SourceDocumentRefSchema = z.object({
+    id: z.string().uuid(),
+    title: z.string(),
+    /** `medical_order` · `eps_authorization`. */
+    typeCode: z.string().nullish(),
+});
+
 export const MissionSuggestionSchema = z.object({
     id: z.string().uuid(),
-    type: MissionTypeSchema,
+    /** null: a document without subtype; the type sheet opens first (DU-52). */
+    type: MissionTypeSchema.nullish(),
     status: MissionSuggestionStatusSchema,
-    sourceMission: MissionRefSchema,
+    /** Exactly one origin: a mission's follow-up (M5) or a document (RF-68). */
+    sourceMission: MissionRefSchema.nullish(),
+    sourceDocument: SourceDocumentRefSchema.nullish(),
     acceptedMissionId: z.string().uuid().nullish(),
     createdAt: z.string(),
     resolvedAt: z.string().nullish(),
+});
+
+/** A mission in progress waiting for its authorization (RF-69, D5, D5b). */
+export const MatchingMissionSchema = z.object({
+    id: z.string().uuid(),
+    type: MissionTypeSchema,
+    title: z.string(),
+    status: MissionStatusSchema,
+    stepPosition: z.number().int(),
+    stepTotal: z.number().int(),
+    createdAt: z.string(),
+});
+
+/** `missionSuggestion` of `POST /documents/?suggest_mission=true` (DA-14, DU-54). */
+export const DocumentMissionSuggestionSchema = z.object({
+    id: z.string().uuid(),
+    type: MissionTypeSchema.nullish(),
+    /** Every type, newest first; only authorizations bring matches. */
+    matchingMissions: z.array(MatchingMissionSchema).default([]),
+});
+
+export const DocumentCreatedSchema = DocumentSchema.extend({
+    missionSuggestion: DocumentMissionSuggestionSchema.nullish(),
 });
 
 export const MissionEventSchema = z.object({
@@ -260,6 +327,8 @@ export const MissionFollowUpSchema = z.object({
 });
 
 export const MissionSuggestionAcceptSchema = z.object({
+    /** Only for a document suggestion: the type picked in the sheet (required when it has none). */
+    type: MissionTypeSchema.optional(),
     title: z.string().max(200).optional(),
     details: z.record(z.unknown()).default({}),
     documentIds: z.array(z.string().uuid()).max(50).default([]),
@@ -330,6 +399,10 @@ export const MotivationPreferencesSchema = z.object({
 export type MissionType = z.infer<typeof MissionTypeSchema>;
 export type MissionStatus = z.infer<typeof MissionStatusSchema>;
 export type MissionStep = z.infer<typeof MissionStepSchema>;
+export type MissionStepSheet = z.infer<typeof MissionStepSheetSchema>;
+export type MatchingMission = z.infer<typeof MatchingMissionSchema>;
+export type DocumentMissionSuggestion = z.infer<typeof DocumentMissionSuggestionSchema>;
+export type DocumentCreated = z.infer<typeof DocumentCreatedSchema>;
 export type MissionNextAction = z.infer<typeof MissionNextActionSchema>;
 export type MissionProgress = z.infer<typeof MissionProgressSchema>;
 export type MissionSessions = z.infer<typeof MissionSessionsSchema>;

@@ -9,6 +9,7 @@ export function MissionSuggestionsScreen() {
   return (
     <MissionSuggestions
       onOpenMission={(mission) => navigation.navigate("MissionDetail", { id: mission.id, backTitle: "Sugeridas" })}
+      onOpenMissionId={(id) => navigation.navigate("MissionDetail", { id, backTitle: "Sugeridas" })}
       onBack={() => navigation.goBack()}
     />
   );

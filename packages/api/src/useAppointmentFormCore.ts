@@ -113,7 +113,8 @@ export interface AppointmentFormAdapters {
    * Called on successful create or update (e.g. show toast). Receives the saved appointment id
    * so the list can highlight it (movimiento-interacciones.md §6 «Acción guardada»).
    */
-  onSaveSuccess: (savedId?: string) => void;
+  /** `saved`: the appointment the server returned (its `missionId` says whether a mission came with it, RF-23). */
+  onSaveSuccess: (savedId?: string, saved?: Appointment) => void;
   /** Called after success, typically to close the modal/screen. */
   afterSave: () => void;
 }
@@ -264,7 +265,7 @@ export function useAppointmentFormCore({
     } else {
       createMut.mutate(payload, {
         onSuccess: (created) => {
-          adapters.onSaveSuccess((created as { id?: string } | undefined)?.id);
+          adapters.onSaveSuccess((created as { id?: string } | undefined)?.id, created as Appointment | undefined);
           adapters.afterSave();
         },
         onError: (err) => setError(isApiError(err) ? err.message : "Error guardando la cita."),

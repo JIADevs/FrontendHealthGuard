@@ -20,6 +20,8 @@ export type DocumentCategoryKey =
   | "formula"
   | "history"
   | "vaccine"
+  | "order"
+  | "authorization"
   | "default";
 
 export type DocumentCategoryTheme = DocTypeVariant & {
@@ -106,6 +108,23 @@ const CATEGORY_THEMES: Record<DocumentCategoryKey, DocumentCategoryTheme> = {
     tagBg: palette.accent.document[50],
     tagText: palette.accent.document[700],
   },
+  // Misiones DU-45: the two types that suggest a mission, sky like the rest of Documentos.
+  order: {
+    key: "order",
+    label: "Orden médica",
+    bg: palette.brand[50],
+    iconColor: palette.brand[600],
+    tagBg: palette.brand[50],
+    tagText: palette.brand[700],
+  },
+  authorization: {
+    key: "authorization",
+    label: "Autorización",
+    bg: palette.brand[50],
+    iconColor: palette.brand[600],
+    tagBg: palette.brand[50],
+    tagText: palette.brand[700],
+  },
   default: {
     key: "default",
     label: "Documento",
@@ -152,6 +171,11 @@ export function inferDocumentCategoryKey(input: DocumentCategoryInput): Document
   const specialties = (input.specialtyNames ?? []).join(" ");
   const subtypes = (input.subtypeNames ?? []).join(" ");
   const combined = `${typeName} ${specialties} ${subtypes}`.toLowerCase();
+
+  // The type decides first: an authorization for a medication is still an authorization.
+  const type = typeName.toLowerCase();
+  if (type.startsWith("orden médica")) return "order";
+  if (type.startsWith("autorización")) return "authorization";
 
   if (includesAny(combined, ["cardiolog", "ecocardiograma", "electrocardiograma"])) {
     return "cardiology";

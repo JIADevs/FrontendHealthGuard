@@ -14,8 +14,8 @@ export function HomeScreen() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       documents: () => navigation.navigate("MainTabs", { screen: "Documents" } as any),
       openDocument: (doc) => navigation.navigate("DocumentDetail", { id: doc.id, title: doc.title, backTitle: "Inicio" }),
-      upload: () => navigation.navigate("DocumentUpload", { backTitle: "Inicio" }),
-      scan: () => navigation.navigate("Scanner", { backTitle: "Inicio" }),
+      upload: () => navigation.navigate("DocumentUpload", { backTitle: "Inicio", suggestMission: true }),
+      scan: () => navigation.navigate("Scanner", { backTitle: "Inicio", suggestMission: true }),
       share: () => navigation.navigate("SharedHistory", { backTitle: "Inicio" }),
       newMedication: () => navigation.navigate("MedicationForm"),
       newMedicationMission: () => navigation.navigate("MissionNew", { initialType: "medication", backTitle: "Inicio" }),

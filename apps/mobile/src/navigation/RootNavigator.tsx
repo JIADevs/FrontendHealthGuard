@@ -117,7 +117,7 @@ export type RootStackParamList = {
   MissionCelebration: { id: string };
   /** «Misiones sugeridas» (v2.28), from the row at the end of «En curso». */
   MissionSuggestions: WithBackTitle | undefined;
-  Scanner: WithBackTitle & { backpackId?: string; backpackName?: string } | undefined;
+  Scanner: WithBackTitle & { backpackId?: string; backpackName?: string; suggestMission?: boolean } | undefined;
   DocumentUpload:
     | (WithBackTitle & {
         backpackId?: string;
@@ -126,6 +126,8 @@ export type RootStackParamList = {
         initialKind?: "FILE" | "LINK";
         /** Pages from the scanner, already joined into one image or PDF. */
         scannedFile?: { uri: string; name: string; mimeType: string; size?: number };
+        /** Documentos → subir o escanear: an order or authorization suggests a mission (RF-68). */
+        suggestMission?: boolean;
       })
     | undefined;
   DocumentDetail: WithBackTitle & { id: string; title?: string } | undefined;

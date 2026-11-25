@@ -80,6 +80,8 @@ export const UserUpdateSchema = z.object({
 export const DocumentTypeOutSchema = z.object({
     id: z.string().uuid(),
     name: z.string(),
+    /** `medical_order` · `eps_authorization`: the types that suggest a mission (Misiones DA-14). */
+    code: z.string().nullish(),
     subtypes: z.array(z.object({ id: z.string().uuid(), name: z.string() })),
     specialties: z.array(z.object({ id: z.string().uuid(), name: z.string() })),
 });

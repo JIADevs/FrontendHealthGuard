@@ -12,6 +12,7 @@ export function AppointmentDetailScreen() {
       id={id}
       onEdit={(appointmentId) => navigation.navigate("AppointmentForm", { id: appointmentId })}
       onAddDocument={() => navigation.navigate("DocumentUpload", { initialKind: "FILE" })}
+      onOpenMission={(missionId) => navigation.navigate("MissionDetail", { id: missionId, backTitle: "Cita" })}
     />
   );
 }

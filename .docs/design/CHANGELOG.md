@@ -543,3 +543,12 @@ Decisión de producto del 2026-11-24 (PRD de Misiones `DU-37`, RF-03). Las suger
 | Estados: completadas, paso desde la lista, sin fecha, muchas sugerencias, con pausada, sin misiones en curso | `mockups/m3-misiones.js` |
 | Regla de la lista | `system/pages/misiones.md` |
 
+## 37. v2.32 · Selectores de formulario
+
+Decisión de producto del 2026-11-24. Las listas de los formularios (tipo y subtipo del documento, especialidad y profesional de la cita) eran filas de solo texto o chips sin contexto. Se compararon tres alternativas por caso en el módulo 13 («Selectores de formulario»); quedan 1B, 2C, 3B3 y 3C. El tipo del documento pasa a ser obligatorio.
+
+| Cambio | Dónde |
+|---|---|
+| Módulo 13 con las alternativas y las elegidas marcadas | `mockups/m10-selectores.js` |
+| Reglas de cada selector | `system/pages/formularios.md` §4 «v2.32» |
+| «Tipo» sin «(opcional)» en subir y editar documento | `mockups/m4-documentos.js`, `mockups/m3-misiones.js` «D1» |

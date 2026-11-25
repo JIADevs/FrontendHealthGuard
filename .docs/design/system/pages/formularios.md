@@ -68,6 +68,15 @@ Texto de ayuda o error                    ← Inter 12; el error con ícono ⓘ 
 
 **Regla:** no usar un desplegable para menos de 6 opciones fijas. Usar chips o segmentado.
 
+### v2.32 · Cómo se ven los selectores
+
+Decisión del 2026-11-24 entre las alternativas del módulo 13 de los mockups («Selectores de formulario»).
+
+- **Selector de hasta 8 opciones (tipo de documento, «1B»):** la hoja muestra todas las opciones, sin búsqueda. Cada fila lleva un ícono gris (MASTER v2.1: en selectores, gris o azul), el nombre, una ayuda corta («Para un examen, terapia o cita») y un radio. «Otro documento» va al final. Con más de 8 opciones, la hoja suma la búsqueda.
+- **Chips que deciden algo después (subtipo «Orden de» / «Autorización para», «2C»):** los chips llevan el ícono de lo que van a producir (el tipo de misión), en gris; el elegido cambia el ícono por ✓. Debajo, una ayuda persistente: «Con esto te sugerimos la misión correcta.» Tocar el elegido lo desmarca, porque el campo es opcional.
+- **Especialidad de la cita («3B3»):** arriba de la lista, «Repetir una cita» con las parejas especialidad + profesional ya usadas (iniciales, «Con Dra. Ruiz · última el 3 dic»). Un toque llena los dos campos. Abajo, «Todas las especialidades» con búsqueda y filas con ícono y radio.
+- **Profesional (selector con creación, «3C»):** «+ Agregar nuevo profesional» es la primera fila de la hoja, no un enlace suelto en el formulario. Cada profesional con sus iniciales y su especialidad; los de la especialidad elegida, arriba.
+
 ## 5. Estructura y layout
 
 | Tamaño del formulario | Contenedor | Ejemplos |

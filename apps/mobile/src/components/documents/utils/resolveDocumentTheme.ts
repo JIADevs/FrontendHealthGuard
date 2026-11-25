@@ -50,6 +50,18 @@ function adaptCategoryThemeForDark(
       tagBg: t.accent.docBg,
       tagText: t.accent.docFg,
     },
+    order: {
+      bg: t.accent.docBg,
+      iconColor: t.accent.docFg,
+      tagBg: t.accent.docBg,
+      tagText: t.accent.docFg,
+    },
+    authorization: {
+      bg: t.accent.docBg,
+      iconColor: t.accent.docFg,
+      tagBg: t.accent.docBg,
+      tagText: t.accent.docFg,
+    },
     default: {
       bg: t.border.light,
       iconColor: t.text.secondary,

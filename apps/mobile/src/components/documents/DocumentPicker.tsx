@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -66,10 +66,16 @@ export function DocumentPicker({
   const [adding, setAdding] = useState(false);
   const showSkeleton = useSkeletonVisible(docs.isLoading || loadingExisting);
 
-  // Back from «Subir documento»: the new document comes selected (#46, decision 2).
+  // Back from «Subir documento»: the new document comes selected (#46, decision 2). The first focus
+  // only drops an upload saved earlier from anywhere else, so it is not preselected here.
+  const focusedOnce = useRef(false);
   useFocusEffect(
     useCallback(() => {
       const uploaded = useRecentlySaved.getState().takeUploaded();
+      if (!focusedOnce.current) {
+        focusedOnce.current = true;
+        return;
+      }
       if (uploaded) setSelected((ids) => (ids.includes(uploaded) ? ids : [...ids, uploaded]));
     }, []),
   );

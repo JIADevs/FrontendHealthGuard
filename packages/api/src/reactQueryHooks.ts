@@ -15,6 +15,7 @@ import {
     useQueryClient,
 } from "@tanstack/react-query";
 import { useAuthStore } from "@helu/stores";
+import { missionQK } from "./missions/keys";
 import { ZodError } from "zod";
 import {
     // Documents
@@ -117,6 +118,7 @@ import type {
     DelegationContextColors,
     DailyCheckInCreate,
     DailyCheckInUpdate,
+    Appointment,
 } from "./schemas";
 import type { ShareStatusFilter } from "./shares/schemas";
 import { invalidateBackpackQueries } from "./backpackQueryUtils";
@@ -469,6 +471,24 @@ export function useUpdateAppointmentStatusMutation() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ id, status }: { id: string; status: string }) => updateAppointmentStatus(id, status),
+        onSuccess: (_saved, { id, status }) => {
+            // Lists, the detail and its mission change at once; the refetch below confirms them.
+            const withStatus = <T extends { id: string; status?: unknown }>(a: T): T =>
+                a.id === id ? { ...a, status } : a;
+            qc.setQueriesData<{ items: Appointment[] }>({ queryKey: ["appointments"] }, (prev) =>
+                prev && Array.isArray(prev.items) ? { ...prev, items: prev.items.map(withStatus) } : prev,
+            );
+            qc.setQueryData<Appointment>(["appointment", id], (prev) => (prev ? withStatus(prev) : prev));
+            // Canceling cancels its appointment or exam mission, never a therapy (Misiones RF-29).
+            const missionId = qc.getQueryData<Appointment>(["appointment", id])?.missionId;
+            if (status === "CANCELADA" && missionId) {
+                qc.setQueryData<{ status: string; type: string }>(missionQK.detail(missionId), (prev) =>
+                    prev && prev.type !== "therapy" && (prev.status === "active" || prev.status === "paused")
+                        ? { ...prev, status: "canceled" }
+                        : prev,
+                );
+            }
+        },
         onSettled: () => {
             qc.invalidateQueries({ queryKey: ["appointments"] });
             // The mission's derived steps follow the appointment (Misiones DA-12).

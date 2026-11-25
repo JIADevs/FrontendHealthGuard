@@ -22,6 +22,7 @@ export function DocumentUploadScreen() {
       backpackId={params?.backpackId}
       backpackName={params?.backpackName}
       initialFile={params?.scannedFile}
+      suggestMission={params?.suggestMission}
     />
   );
 }

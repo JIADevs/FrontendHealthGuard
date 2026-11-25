@@ -95,6 +95,8 @@ export function DocumentEdit({ id, onClose, subscribeBeforeLeave }: DocumentEdit
     form.setTitle(doc.title);
     form.setDescription(doc.description ?? "");
     form.setSelectedType(doc.documentType?.id);
+    // «Orden de» / «Autorización para»: the subtype that belongs to the document's type (DU-45).
+    form.setSelectedSubtype(doc.subtypes.find((s) => doc.documentType?.subtypes.some((ts) => ts.id === s.id))?.id);
     form.setSelectedSpecialty(doc.specialties?.[0]?.id);
     form.setSelectedTags(doc.customTags.map((tag) => tag.id));
     setDate(dayKey(doc));
@@ -160,6 +162,8 @@ export function DocumentEdit({ id, onClose, subscribeBeforeLeave }: DocumentEdit
   };
 
   const titleError = submitted && !form.title.trim() ? "Escribe un título para el documento." : undefined;
+  // The type is required (Misiones DU-45); portal links are saved without one, so they keep it optional.
+  const typeError = submitted && !isLink && !form.selectedType ? "Elige el tipo del documento." : undefined;
   const urlError = isLink && submitted && !validUrl(portalUrl) ? "Revisa la dirección: debe empezar por https://" : undefined;
   const uploading = replacement !== null && form.preUpload != null && !form.preUpload.done && !form.preUpload.failed;
 
@@ -171,6 +175,7 @@ export function DocumentEdit({ id, onClose, subscribeBeforeLeave }: DocumentEdit
       return;
     }
     if (isLink && !validUrl(portalUrl)) return;
+    if (typeError || (!isLink && !form.selectedType)) return;
     setSaving(true);
     try {
       let fileUrl = doc.fileUrl ?? undefined;
@@ -182,6 +187,7 @@ export function DocumentEdit({ id, onClose, subscribeBeforeLeave }: DocumentEdit
         format = replacement.mimeType;
         size = replacement.size;
       }
+      const editsSubtype = !!form.catalogs.types.find((tp) => tp.id === form.selectedType)?.code;
       const payload: DocumentCreate = {
         title: form.title.trim(),
         description: form.description.trim() || undefined,
@@ -189,7 +195,8 @@ export function DocumentEdit({ id, onClose, subscribeBeforeLeave }: DocumentEdit
         documentDate: `${date}T00:00:00`,
         treatmentId,
         typeId: form.selectedType,
-        subtypeIds: doc.subtypes.map((s) => s.id),
+        // Types that suggest a mission edit their subtype here; the others keep what the AI set.
+        subtypeIds: editsSubtype ? (form.selectedSubtype ? [form.selectedSubtype] : []) : doc.subtypes.map((s) => s.id),
         specialtyIds: form.selectedSpecialty ? [form.selectedSpecialty] : [],
         tagValueIds: form.selectedTags,
         fileUrl,
@@ -222,6 +229,7 @@ export function DocumentEdit({ id, onClose, subscribeBeforeLeave }: DocumentEdit
   const values: DocumentFieldValues = {
     title: form.title,
     typeId: form.selectedType,
+    subtypeId: form.selectedSubtype,
     specialtyId: form.selectedSpecialty,
     date,
     treatmentId,
@@ -231,6 +239,7 @@ export function DocumentEdit({ id, onClose, subscribeBeforeLeave }: DocumentEdit
   const change = (patch: Partial<DocumentFieldValues>) => {
     if (patch.title !== undefined) form.setTitle(patch.title);
     if ("typeId" in patch) form.setSelectedType(patch.typeId);
+    if ("subtypeId" in patch) form.setSelectedSubtype(patch.subtypeId);
     if ("specialtyId" in patch) form.setSelectedSpecialty(patch.specialtyId);
     if (patch.date !== undefined) setDate(patch.date);
     if ("treatmentId" in patch) setTreatmentId(patch.treatmentId ?? null);
@@ -319,6 +328,7 @@ export function DocumentEdit({ id, onClose, subscribeBeforeLeave }: DocumentEdit
                 onAddTagValue={(categoryId, value) => form.handleAddCustomTag(categoryId, value)}
                 addingTagCategoryId={form.addingTag}
                 titleError={titleError}
+                typeError={typeError}
                 titleRef={titleRef}
                 loading={form.catalogsLoading}
               />

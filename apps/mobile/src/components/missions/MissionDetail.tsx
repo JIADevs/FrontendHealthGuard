@@ -54,7 +54,7 @@ import { MissionLink } from "./MissionLink";
 import { MissionTimeline } from "./MissionTimeline";
 import { MissionTypeIcon } from "./MissionTypeIcon";
 import { Flame } from "../home/Flame";
-import { missionGoal, missionTypeLabel, missionTypeTone, nextActionLabel, originPhrase } from "./missionCopy";
+import { documentOriginPhrase, missionGoal, missionTypeLabel, missionTypeTone, nextActionLabel, originPhrase } from "./missionCopy";
 
 export interface MissionDetailProps {
   missionId: string;
@@ -128,6 +128,11 @@ export function MissionDetail({
   const link = useLinkMissionDocumentMutation();
   const unlink = useUnlinkMissionDocumentMutation();
   const documents = useMissionDocuments(mission);
+  // A mission born from an order or an authorization (origin «document»): its first document is that one.
+  const originDocument =
+    mission?.origin === "document"
+      ? [...(mission.documents ?? [])].sort((a, b) => (a.addedAt ?? "").localeCompare(b.addedAt ?? ""))[0]
+      : undefined;
   /** «Adjuntar documento» sheet; `stepKey` when it came from a step. */
   const [attachFor, setAttachFor] = useState<{ stepKey?: string } | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -197,6 +202,8 @@ export function MissionDetail({
   const startAttach = (mode: AttachMode, stepKey?: string) => {
     if (!online) return notify(OFFLINE);
     resume.current = { stepKey, reopen: !!stepKey && mission?.status === "active" };
+    // Drop an upload saved earlier from anywhere else: only one made from here gets linked.
+    useRecentlySaved.getState().takeUploaded();
     onAttach(mode, missionId, stepKey);
   };
 
@@ -257,7 +264,7 @@ export function MissionDetail({
     });
   };
 
-  const runSkip = (step: MissionStep, reason: "not_applicable" | "no_authorization_needed" | "nothing_to_save") => {
+  const runSkip = (step: MissionStep, reason: NonNullable<MissionStep["skipReason"]>) => {
     if (!mission) return;
     if (!online) return notify(OFFLINE);
     // «Omitir» on the final step closes the mission: it waits for the server (DU-17).
@@ -421,6 +428,13 @@ export function MissionDetail({
                 icon={<Route size={14} strokeWidth={2.4} color={t.brand.text} />}
                 label={`Surgió de ${originPhrase(mission.parentMission)}`}
                 onPress={() => onOpenMission(mission.parentMission!.id)}
+              />
+            ) : originDocument ? (
+              // Mockup 4c «D6»: «Surgió de tu orden médica ›» opens the document (RF-68).
+              <MissionLink
+                icon={<Route size={14} strokeWidth={2.4} color={t.brand.text} />}
+                label={`Surgió de ${documentOriginPhrase(originDocument.stepKey === "authorization" ? "eps_authorization" : "medical_order")}`}
+                onPress={() => onOpenDocument(originDocument.id, originDocument.title)}
               />
             ) : null}
           </Animated.View>

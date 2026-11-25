@@ -6,6 +6,7 @@ import {
   useDocumentFormCore,
   type DocumentFormState,
   type DocumentFormActions,
+  type UploadedDocument,
 } from "@helu/api/hooks";
 import type { RootStackParamList } from "../navigation/RootNavigator";
 import { notify } from "../lib/notify";
@@ -24,8 +25,10 @@ type UseDocumentFormOptions = {
   backpackId?: string;
   backpackName?: string;
   /** Si se define, no hace goBack automático al terminar la subida. */
-  onUploaded?: (doc: { id: string; title: string }) => void;
+  onUploaded?: (doc: UploadedDocument) => void;
   skipNavigateBackOnUpload?: boolean;
+  /** Documentos → subir o escanear: ask the backend for a mission suggestion (Misiones RF-68). */
+  suggestMission?: boolean;
 };
 
 type Upload = { storagePath: string };
@@ -109,6 +112,7 @@ export function useDocumentForm(
     },
     backpackId: options?.backpackId,
     backpackName: options?.backpackName,
+    suggestMission: options?.suggestMission,
   });
 
   const { handleAIClassify } = core;

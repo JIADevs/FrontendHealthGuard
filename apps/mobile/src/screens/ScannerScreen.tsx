@@ -7,7 +7,7 @@ import { Scanner } from "../components/documents/Scanner";
 export function ScannerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const params = useRoute<RouteProp<RootStackParamList, "Scanner">>().params;
-  const backpack = { backpackId: params?.backpackId, backpackName: params?.backpackName };
+  const backpack = { backpackId: params?.backpackId, backpackName: params?.backpackName, suggestMission: params?.suggestMission };
 
   return (
     <Scanner

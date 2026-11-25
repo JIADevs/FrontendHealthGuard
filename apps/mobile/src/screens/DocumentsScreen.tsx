@@ -17,8 +17,8 @@ export function DocumentsScreen() {
       onEdit={actions.handleEdit}
       onShare={(doc) => shareFlow.openConfigureDocument(doc, "Documentos")}
       onDelete={(doc) => actions.handleDelete(doc)}
-      onScan={() => navigation.navigate("Scanner")}
-      onUpload={() => navigation.navigate("DocumentUpload", { initialKind: "FILE" })}
+      onScan={() => navigation.navigate("Scanner", { suggestMission: true })}
+      onUpload={() => navigation.navigate("DocumentUpload", { initialKind: "FILE", suggestMission: true })}
     />
   );
 }

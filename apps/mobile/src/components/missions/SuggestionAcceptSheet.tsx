@@ -15,25 +15,46 @@ import {
   useSkeletonVisible,
   type BottomSheetHandle,
 } from "@helu/ui";
-import { useAcceptSuggestionMutation, useSuggestionSourceDocumentsQuery, type Mission, type MissionSuggestion } from "@helu/api";
+import {
+  useAcceptSuggestionMutation,
+  useSuggestionSourceDocumentsQuery,
+  type Mission,
+  type MissionSuggestion,
+  type MissionType,
+} from "@helu/api";
 import { notify } from "../../lib/notify";
 import { haptics } from "../../lib/haptics";
 import { useIsOnline } from "../states/OfflineBanner";
 import { MissionTypeIcon } from "./MissionTypeIcon";
-import { missionField, missionTypeLabel, missionTypeShort, missionTypeTone, originPhrase, shortDate } from "./missionCopy";
+import {
+  documentOriginPhrase,
+  missionField,
+  missionTypeLabel,
+  missionTypeShort,
+  missionTypeTone,
+  originPhrase,
+  shortDate,
+} from "./missionCopy";
 
 /**
  * «Crear misión desde una sugerencia» (DU-25, RF-57, DA-11): the type is fixed, the minimum datum, and
  * the documents of the source final step preselected («¿Usamos estos documentos de tu cita?»). The
  * confirmed ones are linked, never copied. Creating waits for the server; on error the sheet stays
  * open with «Reintentar».
+ *
+ * From a document (mockup 4c «D3», RF-68): the type comes from the type sheet, the minimum datum starts
+ * as the document title (DU-47) and there is no documents section: the document is the origin and the
+ * backend links it (DU-46).
  */
 export function SuggestionAcceptSheet({
   suggestion,
+  type: typeOverride,
   onCreated,
   onClose,
 }: {
   suggestion: MissionSuggestion;
+  /** The type picked in the document sheet; required when the suggestion has none (DU-52). */
+  type?: MissionType;
   onCreated: (mission: Mission) => void;
   onClose: () => void;
 }) {
@@ -41,10 +62,13 @@ export function SuggestionAcceptSheet({
   const online = useIsOnline();
   const ref = useRef<BottomSheetHandle>(null);
   const accept = useAcceptSuggestionMutation();
-  const docs = useSuggestionSourceDocumentsQuery(suggestion.id);
-  const docsSkeleton = useSkeletonVisible(docs.isLoading);
-  const field = missionField[suggestion.type];
-  const [value, setValue] = useState("");
+  const document = suggestion.sourceDocument ?? null;
+  const type = (typeOverride ?? suggestion.type)!;
+  // A document suggestion has no documents to choose: its document is the origin (DU-46).
+  const docs = useSuggestionSourceDocumentsQuery(document ? undefined : suggestion.id);
+  const docsSkeleton = useSkeletonVisible(docs.isLoading && !document);
+  const field = missionField[type];
+  const [value, setValue] = useState(document?.title ?? "");
   const [touched, setTouched] = useState(false);
   const [selected, setSelected] = useState<Set<string> | null>(null);
 
@@ -54,7 +78,8 @@ export function SuggestionAcceptSheet({
   }, [docs.data, selected]);
 
   const source = suggestion.sourceMission;
-  const sourceNoun = missionTypeShort[source.type].toLowerCase();
+  const sourceNoun = source ? missionTypeShort[source.type].toLowerCase() : "";
+  const origin = document ? documentOriginPhrase(document.typeCode) : source ? originPhrase(source) : "";
   const error = touched && field.required && !value.trim() ? "Escribe cuál es para poder crear la misión." : undefined;
 
   const toggle = (id: string) =>
@@ -70,8 +95,12 @@ export function SuggestionAcceptSheet({
     if (field.required && !value.trim()) return;
     if (!online) return notify({ tone: "warning", message: "Sin conexión", description: "Revisa tu conexión y vuelve a intentarlo." });
     const documentIds = (docs.data ?? []).map((d) => d.id).filter((id) => selected?.has(id));
+    const details = value.trim() ? { [field.key]: value.trim() } : {};
     accept.mutate(
-      { suggestionId: suggestion.id, payload: { details: value.trim() ? { [field.key]: value.trim() } : {}, documentIds } },
+      {
+        suggestionId: suggestion.id,
+        payload: document ? { type, details } : { details, documentIds },
+      },
       {
         onSuccess: (mission) => {
           haptics.success();
@@ -88,13 +117,13 @@ export function SuggestionAcceptSheet({
     <BottomSheet
       ref={ref}
       eyebrow="NUEVA MISIÓN"
-      title={missionTypeLabel[suggestion.type]}
+      title={missionTypeLabel[type]}
       icon={
         <IconTile
           round
           size="lg"
-          tone={missionTypeTone[suggestion.type]}
-          icon={<MissionTypeIcon type={suggestion.type} size={22} color={t.text.secondary} />}
+          tone={missionTypeTone[type]}
+          icon={<MissionTypeIcon type={type} size={22} color={t.text.secondary} />}
         />
       }
       onClose={onClose}
@@ -103,7 +132,7 @@ export function SuggestionAcceptSheet({
         <View style={styles.origin}>
           <Route size={14} strokeWidth={2.2} color={t.text.muted} />
           <Text style={[styles.originText, { color: t.text.secondary }]}>
-            Surgió de <Text style={{ color: t.text.primary, fontFamily: nativeFont("body", 600) }}>{originPhrase(source)}</Text>
+            Surgió de <Text style={{ color: t.text.primary, fontFamily: nativeFont("body", 600) }}>{origin}</Text>
           </Text>
         </View>
         <TextField
@@ -111,6 +140,7 @@ export function SuggestionAcceptSheet({
           value={value}
           onChange={setValue}
           placeholder={field.placeholder}
+          helper={document ? "Es el título del documento. Puedes cambiarlo." : undefined}
           error={error}
           autoCapitalize="sentences"
           returnKeyType="done"

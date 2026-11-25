@@ -14,7 +14,7 @@ import { capitalize, relativeDay, sessionMessage, shortDate, stepTitle, timeLabe
 
 export interface StepSheetActions {
   complete: (step: MissionStep, data?: Record<string, unknown>) => void;
-  skip: (step: MissionStep, reason: "not_applicable" | "no_authorization_needed" | "nothing_to_save") => void;
+  skip: (step: MissionStep, reason: NonNullable<MissionStep["skipReason"]>) => void;
   /** Open the appointment form linked to this mission. */
   schedule: () => void;
   /** Open an appointment of the mission (a session from «Tus sesiones»). */
@@ -28,14 +28,6 @@ export interface StepSheetActions {
   /** «Cambiar»: attach another document; it takes the place of `documentId` in this step. */
   replace: (step: MissionStep, documentId: string) => void;
 }
-
-/** What each type usually keeps in its final step (RF-42). */
-const FINAL_COPY: Record<Mission["type"], string> = {
-  medical_appointment: "Guarda la fórmula, las órdenes o el resumen de tu consulta. Quedan en tu cita y en Documentos.",
-  medical_exam: "La misión termina cuando confirmas que tienes los resultados. Subirlos es opcional.",
-  medication: "Guarda la fórmula o el comprobante de entrega. Es opcional.",
-  therapy: "Guarda el informe de cierre de tu terapia. Es opcional.",
-};
 
 /**
  * Hoja del paso (v2.16: el paso se toca y abre su hoja; mockups «Paso 1–4», «Cita · ¿Pudiste asistir?»,
@@ -69,7 +61,6 @@ export function MissionStepSheet({
   const position = mission.steps.filter((s) => s.applies).findIndex((s) => s.key === step.key) + 1;
   const total = mission.steps.filter((s) => s.applies).length;
   const done = step.status === "completed" || step.status === "skipped";
-  const isFinal = position === total;
   const appt = mission.appointment;
   const when = appt ? `${capitalize(relativeDay(`${appt.date}T${appt.time}`))} · ${timeLabel(`${appt.date}T${appt.time}`)}` : null;
   const place = appt ? [appt.clinic, appt.location].filter(Boolean).join(" · ") : "";
@@ -87,7 +78,7 @@ export function MissionStepSheet({
       ? "¿Cuántas sesiones te ordenaron?"
       : receiptPartial
         ? "¿Qué quedó pendiente?"
-        : stepTitle(mission, step.key);
+        : stepTitle(mission, step.key, step.sheet.type !== "custom");
   const eyebrow = isSessions && sessions?.total
     ? `SESIONES · ${sessions.attended} DE ${sessions.total}`
     : receiptPartial
@@ -149,116 +140,13 @@ export function MissionStepSheet({
               }
             />
           </>
-        ) : step.key === "attend" || step.key === "perform" ? (
-          <>
-            {/* The sheet title already asks the question; the body says when and where. */}
-            {when ? <Text style={[styles.text, { color: t.text.secondary }]}>{[when, place].filter(Boolean).join(" · ")}</Text> : null}
-            <Button
-              variant="primary"
-              fullWidth
-              icon={<Check size={17} strokeWidth={3} color={t.text.onSolid} />}
-              onPress={thenClose(() => actions.complete(step, { attended: true }))}
-            >
-              {step.key === "attend" ? "Sí, asistí" : "Sí, me lo hice"}
-            </Button>
-            <Button variant="ghost" fullWidth onPress={thenClose(() => actions.complete(step, { attended: false }))}>
-              {step.key === "attend" ? "No pude asistir" : "No pude, reprogramar"}
-            </Button>
-            <MascotHint pose="happy" text="No lo marcamos solos aunque haya pasado la hora." />
-          </>
-        ) : isFinal ? (
-          <>
-            {/* RF-42 / DU-16: save or skip the final documents; closing waits for the server. */}
-            <Text style={[styles.text, { color: t.text.primary }]}>{FINAL_COPY[mission.type]}</Text>
-            <StepDocuments docs={stepDocuments} />
-            {stepDocuments.length > 0 ? (
-              <>
-                <Button
-                  variant="success"
-                  fullWidth
-                  loading={closing}
-                  loadingLabel="Terminando…"
-                  icon={<Check size={17} strokeWidth={3} color={t.text.onSolid} />}
-                  onPress={() => actions.complete(step)}
-                >
-                  Guardar y terminar
-                </Button>
-                <Button variant="ghost" fullWidth disabled={closing} onPress={thenClose(() => actions.attach(step))}>
-                  Adjuntar otro documento
-                </Button>
-              </>
-            ) : step.key === "results" ? (
-              <>
-                <Button
-                  variant="primary"
-                  fullWidth
-                  disabled={closing}
-                  icon={<FilePlus size={17} strokeWidth={2.4} color={t.text.onSolid} />}
-                  onPress={thenClose(() => actions.attach(step))}
-                >
-                  Subir resultados
-                </Button>
-                {/* DU-20: «Ya tengo los resultados» closes without uploading. */}
-                <Button variant="ghost" fullWidth loading={closing} loadingLabel="Terminando…" onPress={() => actions.complete(step)}>
-                  Ya tengo los resultados
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="primary"
-                  fullWidth
-                  disabled={closing}
-                  icon={<FilePlus size={17} strokeWidth={2.4} color={t.text.onSolid} />}
-                  onPress={thenClose(() => actions.attach(step))}
-                >
-                  Adjuntar documentos
-                </Button>
-                <Button
-                  variant="ghost"
-                  fullWidth
-                  loading={closing}
-                  loadingLabel="Terminando…"
-                  onPress={() => actions.skip(step, "nothing_to_save")}
-                >
-                  Omitir, no me dieron nada
-                </Button>
-              </>
-            )}
-          </>
-        ) : step.key === "authorization" ? (
-          <>
-            {/*
-              B2 (mockups «4b · Hoja de paso · opciones», misiones.md v2.30): two actions only. Without a
-              document the primary attaches it; with one, it saves. «Omitir este paso» covers «la tengo en
-              papel» and «no la necesito» and leaves the step as «No aplica» (DU-41).
-            */}
-            <Text style={[styles.text, { color: t.text.primary }]}>Si tu EPS te la dio, guárdala aquí para tenerla a mano.</Text>
-            {stepDocuments.map((d) => (
-              <AttachedDocument key={d.id} doc={d} onChange={thenClose(() => actions.replace(step, d.id))} />
-            ))}
-            {stepDocuments.length > 0 ? (
-              <Button
-                variant="primary"
-                fullWidth
-                onPress={thenClose(() => actions.complete(step, { status: "authorized" }))}
-              >
-                Guardar autorización
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                fullWidth
-                icon={<Upload size={17} strokeWidth={2.4} color={t.text.onSolid} />}
-                onPress={thenClose(() => actions.attach(step))}
-              >
-                Adjuntar la autorización
-              </Button>
-            )}
-            <Button variant="ghost" fullWidth onPress={thenClose(() => actions.skip(step, "no_authorization_needed"))}>
-              Omitir este paso
-            </Button>
-          </>
+        ) : step.sheet.type === "yes_no" ? (
+          // RF-100: «¿Pudiste…?» drawn only from the step data (attend, perform or a new step).
+          <YesNoBody step={step} detail={when ? [when, place].filter(Boolean).join(" · ") : null} actions={actions} thenClose={thenClose} />
+        ) : step.sheet.type === "attach" ? (
+          // RF-100: «adjuntar documento» drawn only from the step data (authorization, prepare, results,
+          // final documents or a new step such as an order).
+          <AttachBody mission={mission} step={step} docs={stepDocuments} closing={closing} actions={actions} thenClose={thenClose} />
         ) : step.key === "add_to_app" ? (
           <>
             <Text style={[styles.text, { color: t.text.primary }]}>
@@ -284,43 +172,181 @@ export function MissionStepSheet({
             onSave={(data) => ref.current?.close(() => actions.complete(step, data))}
           />
         ) : (
+          // A `custom` step this app does not know (RF-100): its backend label and hint, «Listo», and
+          // «No aplica» when it can be skipped. Never the raw key.
           <>
-            <Text style={[styles.text, { color: t.text.primary }]}>
-              {step.key === "prepare"
-                ? "Adjunta lo que necesites llevar. Los documentos no son obligatorios."
-                : "Márcalo cuando lo hayas hecho."}
-            </Text>
-            {step.key === "prepare" && mission.type === "medical_exam" ? (
-              <Text style={[styles.meta, { color: t.text.secondary }]}>Sin indicaciones de preparación registradas para este examen.</Text>
-            ) : null}
-            {step.key === "prepare" ? (
-              <>
-                <StepDocuments docs={stepDocuments} />
-                {/* «Adjuntar documento» is a permanent secondary action (misiones.md, RF-60). */}
-                <MissionLink
-                  center
-                  icon={<Plus size={15} strokeWidth={2.6} color={t.brand.text} />}
-                  label="Adjuntar documento"
-                  onPress={thenClose(() => actions.attach(step))}
-                />
-              </>
-            ) : null}
-            {/* RF-27 / DA-10: support tasks live in «Prepararte», as in the mockup «Paso con tarea de apoyo». */}
-            {step.key === "prepare" ? (
-              <StepReminders mission={mission} step={step} onCreate={thenClose(() => actions.addReminder(step))} />
-            ) : null}
-            <Button variant="primary" fullWidth onPress={thenClose(() => actions.complete(step))}>
-              {step.key === "prepare" ? "Ya estoy listo" : "Listo"}
-            </Button>
-            {step.required ? null : (
-              <Button variant="ghost" fullWidth onPress={thenClose(() => actions.skip(step, "not_applicable"))}>
-                No aplica
+            <Text style={[styles.text, { color: t.text.primary }]}>{step.hint ?? "Márcalo cuando lo hayas hecho."}</Text>
+            {step.final ? (
+              <Button variant="success" fullWidth loading={closing} loadingLabel="Terminando…" onPress={() => actions.complete(step)}>
+                Listo
+              </Button>
+            ) : (
+              <Button variant="primary" fullWidth onPress={thenClose(() => actions.complete(step))}>
+                Listo
               </Button>
             )}
+            {step.canSkip || !step.required ? (
+              <Button variant="ghost" fullWidth disabled={closing} onPress={thenClose(() => actions.skip(step, "not_applicable"))}>
+                No aplica
+              </Button>
+            ) : null}
           </>
         )}
       </View>
     </BottomSheet>
+  );
+}
+
+type ThenClose = (fn: () => void) => () => void;
+
+/**
+ * «¿Pudiste…?» (RF-100, `yes_no`): the title asks; the body says when and where. «Sí» and «No» send
+ * the answer under `answerKey`; the backend decides what each does (DA-12).
+ */
+function YesNoBody({
+  step,
+  detail,
+  actions,
+  thenClose,
+}: {
+  step: MissionStep;
+  detail: string | null;
+  actions: StepSheetActions;
+  thenClose: ThenClose;
+}) {
+  const t = useAppTheme();
+  const sheet = step.sheet;
+  const key = sheet.answerKey ?? "answer";
+  return (
+    <>
+      {detail ? <Text style={[styles.text, { color: t.text.secondary }]}>{detail}</Text> : null}
+      {sheet.body ? <Text style={[styles.text, { color: t.text.primary }]}>{sheet.body}</Text> : null}
+      <Button
+        variant="primary"
+        fullWidth
+        icon={<Check size={17} strokeWidth={3} color={t.text.onSolid} />}
+        onPress={thenClose(() => actions.complete(step, { [key]: true }))}
+      >
+        {sheet.primaryLabel ?? "Sí"}
+      </Button>
+      <Button variant="ghost" fullWidth onPress={thenClose(() => actions.complete(step, { [key]: false }))}>
+        {sheet.secondaryLabel ?? "No"}
+      </Button>
+      {sheet.note ? <MascotHint pose="happy" text={sheet.note} /> : null}
+    </>
+  );
+}
+
+/**
+ * «Adjuntar documento» (RF-100, `attach`; mockups «Paso 2 · Prepararte», «4b · Autorización», «Paso
+ * final»). One primary and at most one secondary:
+ * - without a document and `primaryNeedsDocument`, attaching is the primary (B2);
+ * - otherwise the primary completes the step (`completeData`); a final step waits for the server,
+ *   because it closes the mission (DU-17);
+ * - the secondary skips (`skipReason`) or completes without a document («Ya tengo los resultados»,
+ *   DU-20); a final step with documents offers «Adjuntar otro documento» instead.
+ * A step that completes without a document keeps «Adjuntar documento» as a permanent link and its
+ * support reminders (RF-60, RF-27).
+ */
+function AttachBody({
+  mission,
+  step,
+  docs,
+  closing,
+  actions,
+  thenClose,
+}: {
+  mission: Mission;
+  step: MissionStep;
+  docs: { id: string; title: string; uploadedAt?: string | null }[];
+  closing?: boolean;
+  actions: StepSheetActions;
+  thenClose: ThenClose;
+}) {
+  const t = useAppTheme();
+  const sheet = step.sheet;
+  const hasDocs = docs.length > 0;
+  const attachFirst = sheet.primaryNeedsDocument && !hasDocs;
+  const optionalDocument = !sheet.primaryNeedsDocument;
+  const data = sheet.completeData ?? undefined;
+  // The final step waits for the server (it closes the mission); the others close the sheet first.
+  const complete = step.final ? () => actions.complete(step, data) : thenClose(() => actions.complete(step, data));
+  const attach = thenClose(() => actions.attach(step));
+  const secondary =
+    step.final && hasDocs
+      ? { label: "Adjuntar otro documento", onPress: attach, waits: false }
+      : sheet.secondaryAction === "skip" && sheet.secondaryLabel
+        ? {
+            label: sheet.secondaryLabel,
+            onPress: step.final
+              ? () => actions.skip(step, sheet.skipReason ?? "not_applicable")
+              : thenClose(() => actions.skip(step, sheet.skipReason ?? "not_applicable")),
+            waits: step.final,
+          }
+        : sheet.secondaryAction === "complete" && sheet.secondaryLabel && !hasDocs
+          ? { label: sheet.secondaryLabel, onPress: complete, waits: step.final }
+          : null;
+
+  return (
+    <>
+      {sheet.body ? <Text style={[styles.text, { color: t.text.primary }]}>{sheet.body}</Text> : null}
+      {sheet.primaryNeedsDocument && !step.final ? (
+        docs.map((d) => <AttachedDocument key={d.id} doc={d} onChange={thenClose(() => actions.replace(step, d.id))} />)
+      ) : (
+        <StepDocuments docs={docs} />
+      )}
+      {optionalDocument && !step.final ? (
+        <>
+          {/* «Adjuntar documento» is a permanent secondary action (misiones.md, RF-60). */}
+          <MissionLink
+            center
+            icon={<Plus size={15} strokeWidth={2.6} color={t.brand.text} />}
+            label={sheet.attachLabel ?? "Adjuntar documento"}
+            onPress={attach}
+          />
+          {/* RF-27 / DA-10: support tasks, as in the mockup «Paso con tarea de apoyo». */}
+          <StepReminders mission={mission} step={step} onCreate={thenClose(() => actions.addReminder(step))} />
+        </>
+      ) : null}
+      {attachFirst ? (
+        <Button
+          variant="primary"
+          fullWidth
+          disabled={closing}
+          icon={<Upload size={17} strokeWidth={2.4} color={t.text.onSolid} />}
+          onPress={attach}
+        >
+          {sheet.attachLabel ?? "Adjuntar documento"}
+        </Button>
+      ) : step.final ? (
+        <Button
+          variant="success"
+          fullWidth
+          loading={closing}
+          loadingLabel="Terminando…"
+          icon={<Check size={17} strokeWidth={3} color={t.text.onSolid} />}
+          onPress={complete}
+        >
+          {sheet.primaryLabel ?? "Guardar y terminar"}
+        </Button>
+      ) : (
+        <Button variant="primary" fullWidth onPress={complete}>
+          {sheet.primaryLabel ?? "Listo"}
+        </Button>
+      )}
+      {secondary ? (
+        <Button
+          variant="ghost"
+          fullWidth
+          loading={secondary.waits ? closing : undefined}
+          loadingLabel="Terminando…"
+          disabled={!secondary.waits && closing}
+          onPress={secondary.onPress}
+        >
+          {secondary.label}
+        </Button>
+      ) : null}
+    </>
   );
 }
 

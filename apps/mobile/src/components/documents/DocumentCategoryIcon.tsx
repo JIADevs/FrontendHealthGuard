@@ -6,6 +6,8 @@ import {
   Pill,
   Syringe,
   FlaskConical,
+  ShieldCheck,
+  ClipboardList,
 } from "lucide-react-native";
 import type { DocumentCategoryKey } from "@helu/ui";
 import { resolveDocFormat } from "@helu/ui";
@@ -49,6 +51,10 @@ function pickIcon(key: DocumentCategoryKey, format?: string | null) {
       return Syringe;
     case "laboratory":
       return FlaskConical;
+    case "order":
+      return ClipboardList;
+    case "authorization":
+      return ShieldCheck;
     case "imaging":
       return resolveDocFormat(format) === "image" ? FileImage : FileText;
     default:

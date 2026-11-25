@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Route } from "lucide-react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -30,7 +31,16 @@ import { notify } from "../../lib/notify";
 import { haptics } from "../../lib/haptics";
 import { MissionTypeIcon } from "./MissionTypeIcon";
 import { SuggestionAcceptSheet } from "./SuggestionAcceptSheet";
-import { missionTypeTone, suggestionGroupLabel, suggestionOrigin, suggestionTitle } from "./missionCopy";
+import { DocumentMissionSheet } from "./DocumentMissionSheet";
+import {
+  documentGroupLabel,
+  missionTypeLabel,
+  missionTypeTone,
+  suggestionGroupLabel,
+  suggestionOrigin,
+  suggestionTitle,
+  untypedSuggestionTitle,
+} from "./missionCopy";
 
 interface Group {
   sourceId: string;
@@ -38,15 +48,34 @@ interface Group {
   items: MissionSuggestion[];
 }
 
-/** Grouped by origin, the most recent first (RF-55); the API already sends them newest first. */
+/**
+ * Grouped by origin, the most recent first (RF-55); the API already sends them newest first. The
+ * origin is a mission (M5) or a document (RF-68, mockup «D7»: «DE TU ORDEN MÉDICA · HOY»).
+ */
 function groupBySource(suggestions: MissionSuggestion[]): Group[] {
   const groups = new Map<string, Group>();
   for (const s of suggestions) {
-    const g = groups.get(s.sourceMission.id);
+    const sourceId = s.sourceMission?.id ?? s.sourceDocument?.id;
+    if (!sourceId) continue;
+    const g = groups.get(sourceId);
     if (g) g.items.push(s);
-    else groups.set(s.sourceMission.id, { sourceId: s.sourceMission.id, label: suggestionGroupLabel(s.sourceMission, s.createdAt), items: [s] });
+    else {
+      const label = s.sourceMission
+        ? suggestionGroupLabel(s.sourceMission, s.createdAt)
+        : documentGroupLabel(s.sourceDocument?.typeCode, s.createdAt);
+      groups.set(sourceId, { sourceId, label, items: [s] });
+    }
   }
   return [...groups.values()];
+}
+
+/** Title and line under it: what it proposes and where it comes from. */
+function suggestionLines(s: MissionSuggestion): { title: string; hint: string } {
+  if (s.sourceDocument) {
+    if (!s.type) return { title: untypedSuggestionTitle(s.sourceDocument.typeCode), hint: `${s.sourceDocument.title} · sin tipo elegido` };
+    return { title: missionTypeLabel[s.type], hint: s.sourceDocument.title };
+  }
+  return { title: suggestionTitle(s.type!, s.sourceMission!.type), hint: suggestionOrigin(s.sourceMission!.type) };
 }
 
 /**
@@ -54,7 +83,16 @@ function groupBySource(suggestions: MissionSuggestion[]): Group[] {
  * primary button on the screen: each suggestion decides on its own with «Crear misión» or «Ahora no»
  * (recoverable: toast with «Deshacer», no modal, MASTER §7).
  */
-export function MissionSuggestions({ onOpenMission, onBack }: { onOpenMission: (mission: Mission) => void; onBack?: () => void }) {
+export function MissionSuggestions({
+  onOpenMission,
+  onOpenMissionId,
+  onBack,
+}: {
+  onOpenMission: (mission: Mission) => void;
+  /** After the document type sheet: open the new mission (mockup «D6»). */
+  onOpenMissionId: (missionId: string) => void;
+  onBack?: () => void;
+}) {
   const t = useAppTheme();
   const online = useIsOnline();
   const query = useMissionSuggestionsQuery();
@@ -125,12 +163,14 @@ export function MissionSuggestions({ onOpenMission, onBack }: { onOpenMission: (
             ) : (
               <>
                 <Text style={[styles.sub, { color: t.text.secondary }]}>
-                  Necesidades que detectamos después de tus misiones. Ninguna es obligatoria.
+                  Necesidades que detectamos en tus documentos y misiones. Ninguna es obligatoria.
                 </Text>
                 {groups.map((g) => (
                   <Animated.View key={g.sourceId} layout={LinearTransition.duration(motion.base)} style={{ gap: spacing[2] }}>
                     <Text style={[styles.eyebrow, { color: t.text.secondary }]}>{g.label}</Text>
-                    {g.items.map((s) => (
+                    {g.items.map((s) => {
+                      const lines = suggestionLines(s);
+                      return (
                       <Animated.View
                         key={s.id}
                         exiting={FadeOut.duration(motion.fast)}
@@ -139,10 +179,16 @@ export function MissionSuggestions({ onOpenMission, onBack }: { onOpenMission: (
                         style={[styles.card, { backgroundColor: t.brand.tint, borderColor: t.brand.tintBorder }]}
                       >
                         <View style={styles.row}>
-                          <IconTile tone={missionTypeTone[s.type]} icon={<MissionTypeIcon type={s.type} size={19} color={t.text.secondary} />} />
+                          {s.type ? (
+                            <IconTile tone={missionTypeTone[s.type]} icon={<MissionTypeIcon type={s.type} size={19} color={t.text.secondary} />} />
+                          ) : (
+                            <IconTile tone="neutral" icon={<Route size={19} strokeWidth={2.2} color={t.text.secondary} />} />
+                          )}
                           <View style={{ flex: 1, gap: 2 }}>
-                            <Text style={[styles.title, { color: t.text.primary }]}>{suggestionTitle(s.type, s.sourceMission.type)}</Text>
-                            <Text style={[styles.hint, { color: t.text.secondary }]}>{suggestionOrigin(s.sourceMission.type)}</Text>
+                            <Text style={[styles.title, { color: t.text.primary }]}>{lines.title}</Text>
+                            <Text style={[styles.hint, { color: t.text.secondary }]} numberOfLines={2}>
+                              {lines.hint}
+                            </Text>
                           </View>
                         </View>
                         <View style={styles.actions}>
@@ -154,7 +200,8 @@ export function MissionSuggestions({ onOpenMission, onBack }: { onOpenMission: (
                           </Button>
                         </View>
                       </Animated.View>
-                    ))}
+                      );
+                    })}
                   </Animated.View>
                 ))}
               </>
@@ -163,7 +210,17 @@ export function MissionSuggestions({ onOpenMission, onBack }: { onOpenMission: (
           <PullRefreshIndicator state={pull} />
         </View>
       )}
-      {accepting ? (
+      {accepting && accepting.sourceDocument && !accepting.type ? (
+        // No type yet (DU-52): the type sheet first, then «Crear misión» (mockup «D7» → «D2b»).
+        <DocumentMissionSheet
+          suggestion={accepting}
+          onClose={() => setAccepting(null)}
+          onDone={(missionId) => {
+            setAccepting(null);
+            onOpenMissionId(missionId);
+          }}
+        />
+      ) : accepting ? (
         <SuggestionAcceptSheet
           suggestion={accepting}
           onClose={() => setAccepting(null)}

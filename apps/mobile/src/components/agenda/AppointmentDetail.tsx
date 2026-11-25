@@ -22,7 +22,7 @@ import {
   type ThemeContextValue,
   type Tone,
 } from "@helu/ui";
-import type { Appointment } from "@helu/api";
+import { useCreateMissionMutation, useMissionQuery, type Appointment } from "@helu/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { notify } from "../../lib/notify";
 import {
@@ -44,11 +44,14 @@ import {
   Edit,
   Check,
   Plus,
+  Route,
   XCircle,
 } from "lucide-react-native";
 
 import { ScreenHeader } from "../ScreenHeader";
 import { SkeletonHeaderAction } from "../SkeletonPieces";
+import { MissionRow } from "../missions/MissionRow";
+import { useIsOnline } from "../states/OfflineBanner";
 
 
 const MODALITY_LABELS: Record<string, string> = {
@@ -131,10 +134,14 @@ export interface AppointmentDetailProps {
   onEdit: (id: string) => void;
   /** «+ Agregar documento» */
   onAddDocument: () => void;
+  /** The mission of this appointment (mockups 4c «C2», «C4»). */
+  onOpenMission: (missionId: string) => void;
 }
 
-export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDetailProps) {
+export function AppointmentDetail({ id, onEdit, onAddDocument, onOpenMission }: AppointmentDetailProps) {
   const t = useAppTheme();
+  const online = useIsOnline();
+  const createMission = useCreateMissionMutation();
 
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
@@ -148,6 +155,9 @@ export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDeta
   const postDocResults = useDocumentsByIdsQuery(appointment?.postDocumentIds ?? []);
   const prePackResults = useBackpacksByIdsQuery(appointment?.preBackpackIds ?? []);
   const postPackResults = useBackpacksByIdsQuery(appointment?.postBackpackIds ?? []);
+
+  const missionQuery = useMissionQuery(appointment?.missionId ?? undefined);
+  const mission = missionQuery.data;
 
   const statusMut = useUpdateAppointmentStatusMutation();
   const qc = useQueryClient();
@@ -189,6 +199,29 @@ export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDeta
   };
 
   const handleEdit = () => onEdit(id);
+
+  // «Seguir como misión» (RF-22, DA-8, mockup «C4»): appointments saved before M6b got none on their own.
+  const followAsMission = () => {
+    if (!appointment) return;
+    if (!online) return notify({ tone: "warning", message: "Sin conexión", description: "Revisa tu conexión y vuelve a intentarlo." });
+    const exam = appointment.type === "EXAM";
+    const examName = appointment.examType || appointment.name || "Examen";
+    createMission.mutate(
+      {
+        type: exam ? "medical_exam" : "medical_appointment",
+        details: exam ? { exam_name: examName } : appointment.specialty ? { specialty: appointment.specialty } : {},
+        appointmentId: appointment.id,
+      },
+      {
+        onSuccess: (created) => {
+          qc.invalidateQueries({ queryKey: ["appointment", id] });
+          notify({ message: "Misión creada", description: created.title });
+          onOpenMission(created.id);
+        },
+        onError: () => notify({ tone: "error", message: "No se pudo crear la misión", action: { label: "Reintentar", onPress: followAsMission } }),
+      },
+    );
+  };
 
   if (showSkeleton) {
     // §6c «Detalle de cita»: la barra con volver se ve real; encabezado, datos y acciones son esqueleto.
@@ -281,6 +314,8 @@ export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDeta
     );
 
   const grayIcon = (Icon: typeof Clock) => <Icon size={19} strokeWidth={2.2} color={t.text.muted} />;
+  // A completed mission stays as it is (DU-51); only one in progress goes with the appointment.
+  const cancelsMission = !!mission && (mission.status === "active" || mission.status === "paused");
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: t.surface.bg }]} edges={["top", "bottom"]}>
@@ -315,6 +350,36 @@ export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDeta
             <Chip label={isExam ? "Examen" : "Cita médica"} tone="neutral" />
           </View>
         </View>
+
+        {/* «C2»: the mission tells the same story as the appointment (§5.4); the row opens it. */}
+        {appointment.missionId ? (
+          mission ? (
+            <MissionRow mission={mission} onPress={() => onOpenMission(mission.id)} />
+          ) : missionQuery.isLoading ? (
+            <Skeleton height={84} radius={18} />
+          ) : null
+        ) : !cancelled && !answered && !hasStarted ? (
+          // «C4»: an appointment without mission offers it as the main action of the screen.
+          <View style={[styles.card, cardColors(t)]}>
+            <View style={styles.row}>
+              <IconTile tone="appointment" icon={<Route size={19} strokeWidth={2.2} color={t.accent.calFg} />} />
+              <View style={styles.rowCopy}>
+                <Text style={[styles.rowTitle, { color: t.text.primary }]}>Sigue esta cita paso a paso</Text>
+                <Text style={[styles.rowMeta, { color: t.text.secondary }]}>Te recordamos qué llevar y guardamos lo que te den.</Text>
+              </View>
+            </View>
+            <Button
+              variant="primary"
+              fullWidth
+              icon={<Route size={16} strokeWidth={2.4} color={t.text.onSolid} />}
+              loading={createMission.isPending}
+              loadingLabel="Creando…"
+              onPress={followAsMission}
+            >
+              Seguir como misión
+            </Button>
+          </View>
+        ) : null}
 
         {/* Desde la hora de la cita, la acción principal es confirmar la asistencia. */}
         {hasStarted && !cancelled && !answered ? (
@@ -460,16 +525,34 @@ export function AppointmentDetail({ id, onEdit, onAddDocument }: AppointmentDeta
       </Animated.ScrollView>
 
       {showCancelDialog ? (
-        <ConfirmModal
-          title="¿Cancelar cita?"
-          message="La cita queda cancelada en tu historial. No se borra."
-          keepLabel="Mantener cita"
-          confirmLabel="Cancelar cita"
-          confirmVariant="danger"
-          loading={statusMut.isPending}
-          onCancel={() => setShowCancelDialog(false)}
-          onConfirm={() => setStatus("CANCELADA", "Cita cancelada")}
-        />
+        // «C5» (RF-29, DU-51): canceling the appointment cancels its mission too, and the dialog says so.
+        cancelsMission ? (
+          <ConfirmModal
+            title="¿Cancelar la cita?"
+            message={`Quedará como cancelada y dejaremos de recordártela. Su misión «${mission!.title}» también se cancela.`}
+            keepLabel="Mantener cita"
+            confirmLabel="Cancelar cita y misión"
+            confirmVariant="danger"
+            // Mockup «C5»: red tile, centered copy and the two actions stacked («Mantener cita» first).
+            icon={<XCircle size={24} strokeWidth={2.2} color={t.status.errorFg} />}
+            iconTone="danger"
+            actionsLayout="stacked"
+            loading={statusMut.isPending}
+            onCancel={() => setShowCancelDialog(false)}
+            onConfirm={() => setStatus("CANCELADA", "Cita y misión canceladas")}
+          />
+        ) : (
+          <ConfirmModal
+            title="¿Cancelar cita?"
+            message="La cita queda cancelada en tu historial. No se borra."
+            keepLabel="Mantener cita"
+            confirmLabel="Cancelar cita"
+            confirmVariant="danger"
+            loading={statusMut.isPending}
+            onCancel={() => setShowCancelDialog(false)}
+            onConfirm={() => setStatus("CANCELADA", "Cita cancelada")}
+          />
+        )
       ) : null}
     </SafeAreaView>
   );

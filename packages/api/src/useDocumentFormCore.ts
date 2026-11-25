@@ -24,6 +24,8 @@ import {
 import { isApiError } from "./errors";
 import { prependCreatedDocument } from "./optimisticCache";
 import type { DocumentTypeOut, TagCategoryOut, ClassificationSuggestion } from "./schemas";
+import type { DocumentMissionSuggestion } from "./missions/schemas";
+import { missionQK } from "./missions/keys";
 import { DocumentCreateSchema } from "./schemas";
 import { retryAsync, RETRY_MAX_ATTEMPTS, RETRY_BASE_DELAY_MS, UPLOAD_MAX_FILE_SIZE_BYTES } from "./utils";
 import type { DocumentUploadOverrides } from "./documentUploadOverrides";
@@ -35,6 +37,8 @@ export interface DocumentFormState {
     catalogs: { types: DocumentTypeOut[]; tags: TagCategoryOut[] };
     catalogsLoading: boolean;
     selectedType: string | undefined;
+    /** «Orden de» / «Autorización para» (Misiones DU-45): only for the two types that suggest a mission. */
+    selectedSubtype: string | undefined;
     selectedSpecialty: string | undefined;
     selectedTags: string[];
     title: string;
@@ -53,6 +57,7 @@ export interface DocumentFormState {
 
 export interface DocumentFormActions<TFile> {
     setSelectedType: (id: string | undefined) => void;
+    setSelectedSubtype: (id: string | undefined) => void;
     setSelectedSpecialty: (id: string | undefined) => void;
     toggleTag: (tagId: string) => void;
     setSelectedTags: (tagIds: string[]) => void;
@@ -109,17 +114,28 @@ export type UseDocumentFormCoreOptions<TFile> = {
     /** Si cambia (p. ej. token tras login), se vuelven a cargar tipos y etiquetas. */
     catalogFetchDeps?: unknown;
     /** Llamado tras crear el documento en el servidor (antes de onUploadComplete). */
-    onUploaded?: (doc: { id: string; title: string }) => void;
+    onUploaded?: (doc: UploadedDocument) => void;
+    /**
+     * Documentos → subir o escanear: an «Orden médica» or «Autorización EPS» comes back with its mission
+     * suggestion (Misiones RF-68). Never from a mission, an appointment or a backpack.
+     */
+    suggestMission?: boolean;
     /** Llamado al terminar un lote de subidas (documentos separados). */
     onBatchUploaded?: (docs: { id: string; title: string }[]) => void;
 };
+
+export interface UploadedDocument {
+    id: string;
+    title: string;
+    missionSuggestion?: DocumentMissionSuggestion | null;
+}
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useDocumentFormCore<TFile>(
     options: UseDocumentFormCoreOptions<TFile>,
 ): DocumentFormState & DocumentFormActions<TFile> {
-    const { adapters, backpackId, backpackName, catalogFetchDeps, onUploaded, onBatchUploaded } = options;
+    const { adapters, backpackId, backpackName, catalogFetchDeps, onUploaded, onBatchUploaded, suggestMission } = options;
     const queryClient = useQueryClient();
 
     const [catalogs, setCatalogs] = useState<{ types: DocumentTypeOut[]; tags: TagCategoryOut[] }>({
@@ -127,7 +143,13 @@ export function useDocumentFormCore<TFile>(
         tags: [],
     });
     const [catalogsLoading, setCatalogsLoading] = useState(true);
-    const [selectedType, setSelectedType] = useState<string | undefined>(undefined);
+    const [selectedType, setSelectedTypeState] = useState<string | undefined>(undefined);
+    const [selectedSubtype, setSelectedSubtype] = useState<string | undefined>(undefined);
+    // A subtype belongs to its type: choosing a type clears it.
+    const setSelectedType = useCallback((id: string | undefined) => {
+        setSelectedTypeState(id);
+        setSelectedSubtype(undefined);
+    }, []);
     const [selectedSpecialty, setSelectedSpecialty] = useState<string | undefined>(undefined);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [title, setTitle] = useState("");
@@ -209,6 +231,14 @@ export function useDocumentFormCore<TFile>(
                 setClassificationResult(result);
                 if (result.title) setTitle(result.title);
                 if (result.type?.id) setSelectedType(result.type.id);
+                // The AI may propose «Orden de» / «Autorización para» (D1): only a subtype of that type.
+                const proposed = result.type?.id
+                    ? catalogs.types.find((tp) => tp.id === result.type!.id)
+                    : undefined;
+                const subtype = proposed?.code
+                    ? (result.subtypes ?? []).find((s) => proposed.subtypes.some((ps) => ps.id === s.id))
+                    : undefined;
+                if (subtype) setSelectedSubtype(subtype.id);
                 if (result.specialties?.length) setSelectedSpecialty(result.specialties[0]!.id);
 
                 await applyClassificationTags(result);
@@ -231,7 +261,7 @@ export function useDocumentFormCore<TFile>(
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [classifying, applyClassificationTags, adapters.classify, adapters.onError],
+        [classifying, applyClassificationTags, catalogs.types, setSelectedType, adapters.classify, adapters.onError],
     );
 
     const handleUpload = useCallback(
@@ -257,6 +287,7 @@ export function useDocumentFormCore<TFile>(
                 const docTitle =
                     overrides?.title ?? (title || `Documento ${today.toLocaleDateString()}`);
                 const typeId = overrides?.typeId ?? selectedType;
+                const subtypeIds = overrides?.subtypeIds ?? (selectedSubtype ? [selectedSubtype] : []);
                 const specialtyIds =
                     overrides?.specialtyIds ??
                     (selectedSpecialty ? [selectedSpecialty] : []);
@@ -282,10 +313,10 @@ export function useDocumentFormCore<TFile>(
                     documentDate: docDate ?? today.toISOString(),
                     treatmentId: overrides?.treatmentId ?? undefined,
                     typeId,
-                    subtypeIds: [],
+                    subtypeIds,
                     specialtyIds,
                     tagValueIds,
-                });
+                }, { suggestMission: suggestMission && !backpackId });
 
                 if (backpackId) {
                     await addDocToBackpack(backpackId, createdDoc.id);
@@ -297,10 +328,15 @@ export function useDocumentFormCore<TFile>(
                 prependCreatedDocument(queryClient, createdDoc);
                 queryClient.invalidateQueries({ queryKey: ["documents"], exact: false });
                 queryClient.invalidateQueries({ queryKey: ["treatments"], exact: false });
+                if (createdDoc.missionSuggestion) {
+                    // It waits in «Sugeridas» until the person decides (DU-49).
+                    queryClient.invalidateQueries({ queryKey: missionQK.all() });
+                }
 
                 if (!isSilent) {
-                    onUploaded?.({ id: createdDoc.id, title: createdDoc.title });
-                    if (!overrides?.skipSuccessToast) {
+                    onUploaded?.({ id: createdDoc.id, title: createdDoc.title, missionSuggestion: createdDoc.missionSuggestion });
+                    // The mission sheet already confirms the save (mockup D2: no toast).
+                    if (!overrides?.skipSuccessToast && !createdDoc.missionSuggestion) {
                         adapters.onUploadSuccess(
                             backpackId ? "Documento subido y agregado a la mochila" : "Documento creado",
                             backpackName ?? docTitle,
@@ -329,7 +365,8 @@ export function useDocumentFormCore<TFile>(
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [uploading, title, description, selectedType, selectedSpecialty, selectedTags, queryClient, backpackId, backpackName,
+        [uploading, title, description, selectedType, selectedSubtype, selectedSpecialty, selectedTags, queryClient, backpackId,
+            backpackName, suggestMission, onUploaded,
             adapters.upload, adapters.getMimeType, adapters.getFileSize, adapters.onError,
             adapters.onUploadSuccess, adapters.onUploadComplete],
     );
@@ -497,6 +534,7 @@ export function useDocumentFormCore<TFile>(
         catalogs,
         catalogsLoading,
         selectedType,
+        selectedSubtype,
         selectedSpecialty,
         selectedTags,
         title,
@@ -512,6 +550,7 @@ export function useDocumentFormCore<TFile>(
         uploadProgress,
 
         setSelectedType,
+        setSelectedSubtype,
         setSelectedSpecialty,
         toggleTag,
         setSelectedTags,

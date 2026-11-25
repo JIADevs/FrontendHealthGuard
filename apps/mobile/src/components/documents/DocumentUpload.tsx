@@ -21,6 +21,7 @@ import { useDocumentForm, type FileSource } from "../../hooks/useDocumentForm";
 import { DocumentFields, type DocumentFieldValues } from "./DocumentFields";
 import { notify } from "../../lib/notify";
 import { useRecentlySaved } from "../../lib/recentlySaved";
+import { useDocumentSuggestion } from "../../lib/documentSuggestion";
 
 const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 export const MAX_UPLOAD_MB = 25;
@@ -106,6 +107,12 @@ export interface DocumentUploadProps {
   backpackName?: string;
   /** Pages from the scanner: skip the system picker and start with this file. */
   initialFile?: FileSource;
+  /**
+   * Opened from Documentos (or Inicio): an «Orden médica» or «Autorización EPS» gets a mission
+   * suggestion and its sheet opens over the list (Misiones RF-68, DA-14). Never from a mission,
+   * an appointment or a backpack.
+   */
+  suggestMission?: boolean;
 }
 
 /**
@@ -113,12 +120,20 @@ export interface DocumentUploadProps {
  * and the AI reads it, the fields wait as a skeleton, then come back prefilled and marked. One column
  * and a fixed «Guardar documento» bar.
  */
-export function DocumentUpload({ onClose, subscribeBeforeLeave, backpackId, backpackName, initialFile }: DocumentUploadProps) {
+export function DocumentUpload({ onClose, subscribeBeforeLeave, backpackId, backpackName, initialFile, suggestMission }: DocumentUploadProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
-  const form = useDocumentForm({ backpackId, backpackName, skipNavigateBackOnUpload: true, onUploaded: (doc) => {
+  const form = useDocumentForm({ backpackId, backpackName, suggestMission, skipNavigateBackOnUpload: true, onUploaded: (doc) => {
     // «Agregar documentos» comes back with this document selected (#46, decision 2).
     useRecentlySaved.getState().markUploaded(doc.id);
+    if (doc.missionSuggestion) {
+      // The sheet opens over the screen underneath once this one is gone (mockup 4c «D2»–«D5b»).
+      const docType = form.catalogs.types.find((tp) => tp.id === form.selectedType);
+      useDocumentSuggestion.getState().offer({
+        document: { id: doc.id, title: doc.title, typeCode: docType?.code ?? null },
+        suggestion: doc.missionSuggestion,
+      });
+    }
     leave();
   } });
   const treatments = useTreatmentsQuery(1, 100).data?.items ?? [];
@@ -208,10 +223,13 @@ export function DocumentUpload({ onClose, subscribeBeforeLeave, backpackId, back
   const typeName = form.catalogs.types.find((tp) => tp.id === form.selectedType)?.name;
 
   const titleError = (submitted || titleTouched) && !form.title.trim() ? "Escribe un título para el documento." : undefined;
+  // The type is required: it decides whether a mission is suggested (Misiones DU-45).
+  const typeError = submitted && !form.selectedType ? "Elige el tipo del documento." : undefined;
 
   const values: DocumentFieldValues = {
     title: form.title,
     typeId: form.selectedType,
+    subtypeId: form.selectedSubtype,
     specialtyId: form.selectedSpecialty,
     date,
     treatmentId,
@@ -221,6 +239,7 @@ export function DocumentUpload({ onClose, subscribeBeforeLeave, backpackId, back
   const change = (patch: Partial<DocumentFieldValues>) => {
     if (patch.title !== undefined) form.setTitle(patch.title);
     if ("typeId" in patch) form.setSelectedType(patch.typeId);
+    if ("subtypeId" in patch) form.setSelectedSubtype(patch.subtypeId);
     if ("specialtyId" in patch) form.setSelectedSpecialty(patch.specialtyId);
     if (patch.date !== undefined) setDate(patch.date);
     if ("treatmentId" in patch) setTreatmentId(patch.treatmentId ?? null);
@@ -235,6 +254,7 @@ export function DocumentUpload({ onClose, subscribeBeforeLeave, backpackId, back
       titleRef.current?.focus();
       return;
     }
+    if (!form.selectedType) return;
     void form.handleUpload(file, `${date}T00:00:00`, { treatmentId });
   };
 
@@ -291,9 +311,11 @@ export function DocumentUpload({ onClose, subscribeBeforeLeave, backpackId, back
                 aiFilled={{
                   title: !!result?.title && result.title === form.title,
                   type: !!result?.type && result.type.id === form.selectedType,
+                  subtype: !!form.selectedSubtype && !!result?.subtypes?.some((s) => s.id === form.selectedSubtype),
                   specialty: !!result?.specialties?.[0] && result.specialties[0].id === form.selectedSpecialty,
                 }}
                 titleError={titleError}
+                typeError={typeError}
                 onTitleBlur={() => setTitleTouched(true)}
                 titleRef={titleRef}
                 loading={uploading || reading}

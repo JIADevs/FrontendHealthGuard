@@ -166,8 +166,9 @@ export function TreatmentsScreen() {
 
       {deleteTarget && (
         <ConfirmModal
-          title="Eliminar tratamiento"
-          message="Se quitara de medicamentos, citas, documentos y check-ins relacionados. Esta accion no se puede deshacer."
+          title="¿Eliminar tratamiento?"
+          message="Se quitará de medicamentos, citas, documentos y check-ins relacionados. No se puede deshacer."
+          keepLabel="Mantener tratamiento"
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
           onConfirm={confirmDelete}

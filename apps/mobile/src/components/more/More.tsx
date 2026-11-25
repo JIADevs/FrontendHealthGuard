@@ -162,7 +162,9 @@ export function More(props: MoreProps) {
           message="Tus datos quedan guardados. Vuelves a entrar con tu correo y contraseña."
           keepLabel="Seguir aquí"
           confirmLabel="Cerrar sesión"
-          confirmVariant="danger"
+          confirmVariant="primary"
+          icon={<LogOut />}
+          iconTone="neutral"
           onConfirm={() => {
             setConfirmLogout(false);
             doLogout();

@@ -141,7 +141,7 @@ Cada componente nuevo sigue el patrón del repo: `Nombre.types.ts` + `Nombre.nat
 | **Legend** | primitives | Nuevo | Fila de puntos o caras con etiqueta, para calendario y gráfico de ánimo | P1 |
 | **MoreDetailsRow** | forms | Nuevo | Fila plegable «Más detalles (opcional)» que dice qué contiene | P1 |
 | **Toast** | containers | **Hecho (0.2b)**: `notify()` sobre `sileo` y `react-native-toast-message` | Acción opcional («Deshacer»); 4 s sin acción y 5 s con acción | P1 |
-| **ConfirmModal** | composed | **Hecho (0.2b)** | Opción segura primero, con etiqueta propia (`keepLabel`: «Mantener cita»); solo para lo irreversible | P1 |
+| **ConfirmModal** | composed | **Hecho (0.2b)** · **Ajustar a v2.33** | Opción segura primero, con etiqueta propia (`keepLabel`: «Mantener cita»); solo para lo irreversible. **v2.33:** en móvil siempre centrado con ícono circular y botones apilados (`MASTER.md` §7); toda confirmación pasa `icon` (salvo `DiscardChangesDialog`) y desaparece el diseño sin ícono basado en `Modal`; nuevo tono `neutral` para lo que no es destructivo ni de aviso («¿Cerrar sesión?») | P1 |
 | **DangerLink** | primitives | **Hecho (0.2a)** | Enlace rojo con ícono para acciones destructivas al final del contenido | P1 |
 | **OptionCard** | forms | Extender | Indicador de radio visible además del borde seleccionado | P2 |
 | **ChoiceChips** | forms | Extender | 44 px de alto; el seleccionado lleva ✓ | P1 |

@@ -18,7 +18,6 @@ import {
     fontSize,
     nativeFont,
     useAppTheme,
-    palette,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import {
@@ -252,21 +251,22 @@ export function DailyCheckInForm({ onClose, initialValues }: DailyCheckInFormPro
                         <Text style={styles.hint}>Tu check-in ayuda a ver cómo evolucionas entre citas.</Text>
                     )}
                 </View>
-            </BottomSheet>
 
-            {showDeleteConfirm && (
-                <ConfirmModal
-                    title="¿Eliminar este check-in?"
-                    message="Se borra de tu historial de bienestar. No se puede deshacer."
-                    keepLabel="Mantener check-in"
-                    confirmLabel="Eliminar"
-                    loading={deleteMutation.isPending}
-                    onConfirm={handleDelete}
-                    onCancel={() => setShowDeleteConfirm(false)}
-                    icon={<Trash2 size={26} color={palette.status.error[700]} strokeWidth={2.25} />}
-                    iconTone="danger"
-                />
-            )}
+                {/* Rendered inside the sheet: iOS can't present a second Modal next to an open one. */}
+                {showDeleteConfirm && (
+                    <ConfirmModal
+                        title="¿Eliminar este check-in?"
+                        message="Se borra de tu historial de bienestar. No se puede deshacer."
+                        keepLabel="Mantener check-in"
+                        confirmLabel="Eliminar"
+                        loading={deleteMutation.isPending}
+                        onConfirm={handleDelete}
+                        onCancel={() => setShowDeleteConfirm(false)}
+                        icon={<Trash2 />}
+                        iconTone="danger"
+                    />
+                )}
+            </BottomSheet>
         </>
     );
 }

@@ -256,6 +256,9 @@ function CreateForm({ medicationId, medicationName, prefillName, onSaved, onClos
           message={`Ya tienes «${fuzzy.name}», parecido a «${form.name.trim()}». ¿Quieres usarlo?`}
           confirmLabel={`Usar «${fuzzy.name}»`}
           keepLabel="Crear nuevo"
+          confirmVariant="primary"
+          icon={<Pill />}
+          iconTone="info"
           onConfirm={() => {
             form.selectExistingMedication(fuzzy.id, fuzzy.name);
             setFuzzy(null);

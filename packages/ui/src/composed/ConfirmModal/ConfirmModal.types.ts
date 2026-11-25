@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export type ConfirmModalIconTone = 'danger' | 'warning' | 'primary' | 'info';
+export type ConfirmModalIconTone = 'danger' | 'warning' | 'primary' | 'info' | 'neutral';
 
 export interface ConfirmModalProps {
   /** Modal title */
@@ -28,13 +28,13 @@ export interface ConfirmModalProps {
   /** Called when user cancels or closes the modal */
   onCancel: () => void;
   /**
-   * Optional icon to render at the top. When provided, the modal renders in
-   * a compact centered layout (no close button, title/message centered,
-   * equal-width buttons).
+   * Icon shown in a round tile at the top (MASTER §7, v2.33). Every confirmation passes one;
+   * only «¿Descartar los cambios?» goes without. On mobile the icon takes the tone's color and
+   * 24 px size, so a bare `<Trash2 />` is enough.
    */
   icon?: ReactNode;
-  /** Tinted background color for the icon container. Defaults to 'danger'. */
+  /** Tone of the icon tile: `danger` for delete, cancel or revoke; `warning` / `neutral` otherwise. Defaults to 'danger'. */
   iconTone?: ConfirmModalIconTone;
-  /** Side-by-side (default) or full-width stacked buttons — use stacked for longer labels. */
+  /** Web only: side-by-side (default) or stacked buttons. On mobile the buttons are always stacked (v2.33). */
   actionsLayout?: 'row' | 'stacked';
 }

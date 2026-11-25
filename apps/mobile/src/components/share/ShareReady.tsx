@@ -153,8 +153,10 @@ export function ShareReady({ shareUrl, title, resourceType, expiresAt, documentC
         <ConfirmModal
           title="¿Revocar el enlace?"
           message="Quien lo tenga ya no podrá abrir los documentos. Puedes crear uno nuevo cuando quieras."
-          keepLabel="Mantener"
+          keepLabel="Mantener enlace"
           confirmLabel="Revocar"
+          icon={<Link2 />}
+          iconTone="warning"
           confirmVariant="danger"
           loading={revoke.isPending}
           onConfirm={doRevoke}

@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Check, Edit, Trash2, X } from "lucide-react-native";
+import { Check, Edit, Pill, Trash2, X } from "lucide-react-native";
 import {
   Chip,
   ConfirmModal,
@@ -293,7 +293,9 @@ export function CycleDetail({ cycleId, medicationId, medicationName, onEdit, onB
           message="El ciclo termina hoy y dejamos de recordarte las tomas. Seguirás viéndolo en «Anteriores»."
           keepLabel="Mantener ciclo"
           confirmLabel="Finalizar ciclo"
-          confirmVariant="danger"
+          confirmVariant="primary"
+          icon={<Pill />}
+          iconTone="warning"
           loading={updateMut.isPending}
           onCancel={() => setConfirm(null)}
           onConfirm={finish}
@@ -306,6 +308,7 @@ export function CycleDetail({ cycleId, medicationId, medicationName, onEdit, onB
           keepLabel="Mantener ciclo"
           confirmLabel="Eliminar ciclo"
           confirmVariant="danger"
+          icon={<Trash2 />}
           loading={deleteMut.isPending}
           onCancel={() => setConfirm(null)}
           onConfirm={remove}

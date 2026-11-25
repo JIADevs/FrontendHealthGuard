@@ -228,8 +228,9 @@ export function TreatmentDetailScreen() {
 
       {showDelete && (
         <ConfirmModal
-          title="Eliminar tratamiento"
-          message="Se quitara de todos los elementos asociados. Esta accion no se puede deshacer."
+          title="¿Eliminar tratamiento?"
+          message="Se quitará de todos los elementos asociados. No se puede deshacer."
+          keepLabel="Mantener tratamiento"
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
           onConfirm={confirmDelete}

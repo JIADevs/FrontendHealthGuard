@@ -20,7 +20,7 @@ import {
   usePullRefresh,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { CalendarDays } from "lucide-react-native";
+import { CalendarDays, Trash2 } from "lucide-react-native";
 
 import { useAppointmentsList } from "../../hooks/useAppointmentsList";
 import { AgendaFAB } from "./AgendaFAB";
@@ -166,6 +166,7 @@ export function AppointmentsTab() {
           message={`Se borra la cita del ${formatApptDate(deleteTarget.date)} con sus recordatorios. No queda en tu historial y no se puede deshacer.`}
           keepLabel="Mantener cita"
           confirmLabel="Eliminar"
+          icon={<Trash2 />}
           loading={deleteMut.isPending}
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}

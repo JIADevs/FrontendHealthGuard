@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { MoreHorizontal, Route } from "lucide-react-native";
+import { MoreHorizontal, Route, X } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
@@ -544,6 +544,7 @@ export function MissionDetail({
           title="¿Cancelar la misión?"
           message="Queda en tu historial como cancelada. Tu cita, tus documentos y tus tareas no se borran."
           keepLabel="Mantener misión"
+          icon={<X />}
           confirmLabel="Cancelar misión"
           confirmVariant="danger"
           loading={cancelMission.isPending}

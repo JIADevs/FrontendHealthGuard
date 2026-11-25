@@ -556,3 +556,13 @@ Decisión de producto del 2026-11-24. Las listas de los formularios (tipo y subt
 | `Select`, `CreatableSelect` y `ChoiceChips` con las reglas v2.32; `SpecialtySheet` («Repetir una cita») como componente de Agenda | `system/componentes.md` |
 | Tipo obligatorio y subtipo en Documentos; especialidad y profesional en el formulario de cita | `system/pages/documentos-compartir-delegacion.md`, `system/pages/inicio-agenda.md` |
 | Ejemplos «1B» (hoja abierta con íconos y ayuda) y «2C» (chips con ícono y ayuda) | `system/formularios.html` |
+
+## 38. v2.33 · Estilo del diálogo de confirmación
+
+Decisión de producto del 2026-11-25. MASTER §7 solo decía qué texto lleva el diálogo, no cómo se ve, y la app móvil se fue separando del mockup `dlg()`: botones en fila, fondo negro y, en 8 pantallas, el modal genérico sin ícono (alineado a la izquierda y con «×»). Queda escrito el estilo del mockup como regla.
+
+| Cambio | Dónde |
+|---|---|
+| Estilo móvil completo: fondo, tarjeta de 350 px, ícono circular de 52 px siempre presente, título 19, mensaje 14, botones siempre apilados (segura arriba), sin «×»; y el diálogo web de 440 px | `system/MASTER.md` §7 «Diálogo de confirmación» |
+| `ConfirmModal`: `icon` obligatorio, sin variante basada en `Modal`; diferencias del código actual | `system/componentes.md` §4 |
+| Ejemplo de «Feedback» con el estilo nuevo («¿Cancelar la cita?» / «Mantener cita»); antes mostraba «¿Eliminar documento?» con «Cancelar», que ya no usa modal | `system/preview.html` |

@@ -1,10 +1,11 @@
+import { cloneElement, isValidElement } from 'react';
+import type { ReactElement } from 'react';
 import { Modal as RNModal, View, Text, StyleSheet } from 'react-native';
 import { Button } from '../../primitives/Button/Button.native';
-import { Modal } from '../../containers/Modal/Modal.native';
-import { Typography } from '../../primitives/Typography/Typography.native';
 import { IconTile } from '../../primitives/IconTile/IconTile.native';
+import { toneColors } from '../../tokens/tones';
 import type { Tone } from '../../tokens/tones';
-import { radii, spacing, fontSize, fontWeight, nativeFont } from '../../tokens/tokens';
+import { radii, spacing, nativeFont } from '../../tokens/tokens';
 import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { ThemeContextValue } from '../../tokens/ThemeProvider';
 import type { ConfirmModalIconTone, ConfirmModalProps } from './ConfirmModal.types';
@@ -14,8 +15,15 @@ const ICON_TONE: Record<ConfirmModalIconTone, Tone> = {
   warning: 'warning',
   primary: 'brand',
   info:    'info',
+  neutral: 'neutral',
 };
 
+/**
+ * Confirmation dialog, mobile style v2.33 (MASTER §7 «Diálogo de confirmación», mockup `dlg()`):
+ * centered 350 px card, round icon tile, question + consequence, and the two actions always
+ * stacked — the safe option first, then the action with its exact verb. No close button: it
+ * closes with the safe option or the system back button. `actionsLayout` only applies on web.
+ */
 export function ConfirmModal({
   title,
   message,
@@ -28,78 +36,18 @@ export function ConfirmModal({
   onCancel,
   icon,
   iconTone = 'danger',
-  actionsLayout = 'row',
 }: ConfirmModalProps) {
-  if (icon) {
-    return (
-      <CenteredConfirmModal
-        title={title}
-        message={message}
-        confirmLabel={confirmLabel}
-        keepLabel={keepLabel}
-        keepVariant={keepVariant}
-        confirmVariant={confirmVariant}
-        loading={loading}
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-        icon={icon}
-        iconTone={iconTone}
-        actionsLayout={actionsLayout}
-      />
-    );
-  }
-
-  return (
-    <Modal
-      title={title}
-      onClose={onCancel}
-      footer={
-        actionsLayout === 'stacked' ? (
-          // Long labels: full-width buttons, the safe option first (same as the centered variant).
-          <View style={{ flex: 1, gap: spacing[3] }}>
-            <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>{keepLabel}</Button>
-            <Button variant={confirmVariant} fullWidth onPress={onConfirm} disabled={loading} loading={loading}>
-              {confirmLabel}
-            </Button>
-          </View>
-        ) : (
-          <>
-            {/* Both options fill the row (no empty gap on the right) and never shrink below their label. */}
-            <View style={{ flexGrow: 1 }}>
-              <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>{keepLabel}</Button>
-            </View>
-            <View style={{ flexGrow: 1 }}>
-              <Button variant={confirmVariant} fullWidth onPress={onConfirm} disabled={loading} loading={loading}>
-                {confirmLabel}
-              </Button>
-            </View>
-          </>
-        )
-      }
-    >
-      <Typography variant="body" color="secondary">{message}</Typography>
-    </Modal>
-  );
-}
-
-function CenteredConfirmModal({
-  title,
-  message,
-  confirmLabel,
-  keepLabel,
-  keepVariant = 'secondary',
-  confirmVariant,
-  loading,
-  onConfirm,
-  onCancel,
-  icon,
-  iconTone,
-  actionsLayout,
-}: Required<Pick<ConfirmModalProps, 'title' | 'message' | 'confirmLabel' | 'confirmVariant' | 'loading' | 'onConfirm' | 'onCancel' | 'icon' | 'iconTone'>> &
-  Pick<ConfirmModalProps, 'actionsLayout' | 'keepLabel' | 'keepVariant'>) {
   const t = useAppTheme();
   const styles = makeStyles(t);
-  const stacked = actionsLayout === 'stacked';
+  const tone = ICON_TONE[iconTone];
+  // The icon takes the tone's color and the spec size (24 px, stroke 2.2), whatever the caller passed.
+  const toneIcon = isValidElement(icon)
+    ? cloneElement(icon as ReactElement<{ color?: string; size?: number; strokeWidth?: number }>, {
+        color: toneColors(tone, t.mode).fg,
+        size: 24,
+        strokeWidth: 2.2,
+      })
+    : icon;
 
   return (
     <RNModal
@@ -107,52 +55,20 @@ function CenteredConfirmModal({
       visible
       animationType="fade"
       statusBarTranslucent
-      onRequestClose={onCancel}
+      onRequestClose={loading ? () => {} : onCancel}
     >
       <View style={styles.backdrop}>
-        <View style={styles.card}>
-          <View style={styles.iconWrap}>
-            <IconTile icon={icon} tone={ICON_TONE[iconTone]} size="lg" round />
-          </View>
-          <Text style={styles.title}>{title}</Text>
+        <View style={styles.card} accessibilityViewIsModal accessibilityRole="alert">
+          {toneIcon ? <IconTile icon={toneIcon} tone={tone} size="lg" round /> : null}
+          <Text style={styles.title} accessibilityRole="header">{title}</Text>
           <Text style={styles.message}>{message}</Text>
-          <View style={[styles.actions, stacked && styles.actionsStacked]}>
-            {stacked ? (
-              <>
-                {/* v2: la opción segura va primero */}
-                <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>
-                  {keepLabel}
-                </Button>
-                <Button
-                  variant={confirmVariant}
-                  fullWidth
-                  onPress={onConfirm}
-                  disabled={loading}
-                  loading={loading}
-                >
-                  {confirmLabel}
-                </Button>
-              </>
-            ) : (
-              <>
-                <View style={styles.actionFlex}>
-                  <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>
-                    {keepLabel}
-                  </Button>
-                </View>
-                <View style={styles.actionFlex}>
-                  <Button
-                    variant={confirmVariant}
-                    fullWidth
-                    onPress={onConfirm}
-                    disabled={loading}
-                    loading={loading}
-                  >
-                    {confirmLabel}
-                  </Button>
-                </View>
-              </>
-            )}
+          <View style={styles.actions}>
+            <Button variant={keepVariant} fullWidth onPress={onCancel} disabled={loading}>
+              {keepLabel}
+            </Button>
+            <Button variant={confirmVariant} fullWidth onPress={onConfirm} disabled={loading} loading={loading}>
+              {confirmLabel}
+            </Button>
           </View>
         </View>
       </View>
@@ -164,49 +80,40 @@ function makeStyles(t: ThemeContextValue) {
   return StyleSheet.create({
     backdrop: {
       flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.45)',
+      backgroundColor: 'rgba(15,23,42,0.5)',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: spacing[5],
+      paddingHorizontal: spacing[5],
     },
     card: {
       width: '100%',
-      maxWidth: 360,
+      maxWidth: 350,
       backgroundColor: t.surface.bgCard,
       borderRadius: radii.modal,
       borderWidth: 1,
+      borderBottomWidth: 4,
       borderColor: t.border.default,
-      paddingHorizontal: spacing[6],
-      paddingTop: spacing[6],
-      paddingBottom: spacing[5],
+      padding: spacing[6],
       alignItems: 'center',
-    },
-    iconWrap: {
-      marginBottom: spacing[4],
+      gap: spacing[4],
     },
     title: {
-      fontSize: fontSize.lg,
+      fontSize: 19,
+      lineHeight: 23,
       fontFamily: nativeFont('heading', 900),
       color: t.text.primary,
       textAlign: 'center',
-      marginBottom: spacing[2],
     },
     message: {
-      fontSize: fontSize.sm,
+      fontSize: 14,
+      lineHeight: 21,
       color: t.text.secondary,
       textAlign: 'center',
-      marginBottom: spacing[5],
     },
     actions: {
-      flexDirection: 'row',
-      gap: spacing[3],
       width: '100%',
-    },
-    actionFlex: {
-      flex: 1,
-    },
-    actionsStacked: {
-      flexDirection: 'column',
+      gap: 10,
+      marginTop: spacing[1],
     },
   });
 }

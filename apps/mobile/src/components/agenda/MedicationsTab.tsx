@@ -17,7 +17,7 @@ import {
   usePullRefresh,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { Pill } from "lucide-react-native";
+import { Pill, Trash2 } from "lucide-react-native";
 
 import { useMedicationsList } from "../../hooks/useMedicationsList";
 import { AgendaEmpty } from "./AgendaEmpty";
@@ -183,6 +183,7 @@ export function MedicationsTab() {
           title="¿Eliminar este medicamento?"
           message={`Se borran «${deleteTarget.name}», sus ciclos, las tomas registradas y los recordatorios. No se puede deshacer.`}
           keepLabel="Mantener medicamento"
+          icon={<Trash2 />}
           confirmLabel="Eliminar"
           loading={deleteMut.isPending}
           onConfirm={handleDelete}

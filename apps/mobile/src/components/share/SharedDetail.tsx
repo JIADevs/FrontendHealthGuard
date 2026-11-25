@@ -253,8 +253,10 @@ export function SharedDetail({ linkId, resourceType, onClose, onShowQr, onOpenDo
         <ConfirmModal
           title="¿Revocar el acceso?"
           message="Quien tenga el enlace ya no podrá abrir los documentos. Puedes crear uno nuevo cuando quieras."
-          keepLabel="Mantener"
+          keepLabel="Mantener enlace"
           confirmLabel="Revocar"
+          icon={<Link2 />}
+          iconTone="warning"
           confirmVariant="danger"
           loading={revoke.isPending}
           onConfirm={doRevoke}

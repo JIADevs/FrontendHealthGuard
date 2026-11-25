@@ -12,6 +12,7 @@ const ICON_TONE: Record<ConfirmModalIconTone, Tone> = {
   warning: 'warning',
   primary: 'brand',
   info:    'info',
+  neutral: 'neutral',
 };
 
 export function ConfirmModal({

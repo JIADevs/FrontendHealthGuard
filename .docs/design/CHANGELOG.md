@@ -552,3 +552,7 @@ Decisión de producto del 2026-11-24. Las listas de los formularios (tipo y subt
 | Módulo 13 con las alternativas y las elegidas marcadas | `mockups/m10-selectores.js` |
 | Reglas de cada selector | `system/pages/formularios.md` §4 «v2.32» |
 | «Tipo» sin «(opcional)» en subir y editar documento | `mockups/m4-documentos.js`, `mockups/m3-misiones.js` «D1» |
+| Tabla «Qué control usar» alineada: selector con íconos y ayuda (tipo de documento), búsqueda con más de 8 opciones, chips con ícono para el subtipo, «+ Agregar nuevo …» primera en la hoja | `system/pages/formularios.md` §4 |
+| `Select`, `CreatableSelect` y `ChoiceChips` con las reglas v2.32; `SpecialtySheet` («Repetir una cita») como componente de Agenda | `system/componentes.md` |
+| Tipo obligatorio y subtipo en Documentos; especialidad y profesional en el formulario de cita | `system/pages/documentos-compartir-delegacion.md`, `system/pages/inicio-agenda.md` |
+| Ejemplos «1B» (hoja abierta con íconos y ayuda) y «2C» (chips con ícono y ayuda) | `system/formularios.html` |

@@ -208,10 +208,16 @@ export function nextActionLabel(action: { stepKey: string; label?: string | null
 
 // --- M5 · cierre, seguimiento y sugerencias ---------------------------------------------
 
-/** Qué se logró, para la celebración (mockup «Celebración»: «Te realizaste la resonancia…»). */
-export function celebrationSummary(type: MissionType, managing: boolean): string {
+/**
+ * Qué se logró, para la celebración (mockup «Celebración»: «Te realizaste la resonancia…»).
+ * `finalSkipped`: the final step was «Omitir, no me dieron nada», so nothing was saved and the text
+ * must not say it was (M7 · scenario 22).
+ */
+export function celebrationSummary(type: MissionType, managing: boolean, finalSkipped = false): string {
     const you = {
-        medical_appointment: "Asististe a tu cita y guardaste lo que te dieron.",
+        medical_appointment: finalSkipped
+            ? "Asististe a tu cita."
+            : "Asististe a tu cita y guardaste lo que te dieron.",
         medical_exam: "Te realizaste el examen y ya tienes los resultados.",
         medication: "Ya tienes tu medicamento.",
         therapy: "Terminaste todas tus sesiones.",

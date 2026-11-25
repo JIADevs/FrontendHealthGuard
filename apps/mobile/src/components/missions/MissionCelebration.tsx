@@ -70,6 +70,7 @@ export function MissionCelebration({
   }, []);
 
   const steps = mission.steps.filter((s) => s.applies);
+  const finalSkipped = mission.steps.some((s) => s.final && s.status === "skipped");
   const done = steps.filter((s) => s.status === "completed" || s.status === "skipped").length;
   const sessions = mission.sessions?.total ? `${mission.sessions.attended} de ${mission.sessions.total}` : null;
   const showProgress = progress?.showProgress ?? false;
@@ -91,7 +92,7 @@ export function MissionCelebration({
           <Text style={[styles.title, { color: t.text.primary }]} accessibilityRole="header">
             {title}
           </Text>
-          <Text style={[styles.summary, { color: t.text.secondary }]}>{celebrationSummary(mission.type, managing)}</Text>
+          <Text style={[styles.summary, { color: t.text.secondary }]}>{celebrationSummary(mission.type, managing, finalSkipped)}</Text>
           <Animated.View entering={FadeIn.duration(reduced ? motion.fast : motion.base).delay(reduced ? 0 : motion.slow)} style={styles.stats}>
             <StatBox
               icon={<Route size={20} strokeWidth={2.4} color={t.status.successGraphic} />}

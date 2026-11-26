@@ -18,6 +18,9 @@ const M1 = medC('Metformina 850 mg', 'Tableta · cada 12 horas', .4, 'Próxima t
 const M2 = medC('Losartán 50 mg', 'Tableta · cada 24 horas', .47, 'Próxima toma: mañana 7:00 a. m.', chip('Tomado', 'gr', ic('check', 12, 'currentColor', 3)));
 const M3 = medC('Ibuprofeno 400 mg', 'Tableta · cada 8 horas', .2, 'Próxima toma: hoy 3:00 p. m.');
 
+/* «Más» se dibuja como «⋯» horizontal (el ícono del kit es vertical) */
+const icx = (n, z, c, w) => n === 'more' ? `<span style="display:inline-grid;transform:rotate(90deg)">${ic(n, z, c, w)}</span>` : ic(n, z, c, w);
+
 /* ── Acciones reveladas: [tono, ícono, texto] ── */
 const BRAND = ['var(--color-brand-solid)', 'var(--color-brand-edge)'];
 const MORE = ['var(--primitive-color-slate-500)', 'var(--primitive-color-slate-600)'];
@@ -29,16 +32,16 @@ const more = [MORE, 'more', 'Más'];
 const swipe = (cardHtml, actions, side, off) => `<div style="position:relative">${actions(side)}<div style="position:relative;z-index:1;transform:translateX(${side === 'right' ? -off : off}px)">${cardHtml}</div></div>`;
 
 /* 1 · Paneles de color a toda la altura, pegados al borde (como iOS). La principal queda en el extremo. */
-const panels = (items, off) => side => `<div style="position:absolute;top:0;bottom:3px;${side}:0;width:${off + 20}px;display:flex;flex-direction:${side === 'right' ? 'row' : 'row-reverse'};border-radius:${side === 'right' ? '0 18px 18px 0' : '18px 0 0 18px'};overflow:hidden">${items.map(([[bg], n, t], i) => `<div style="flex:${i === 0 ? `0 0 ${off / items.length + 20}px` : 1};${i === 0 ? `padding-${side === 'right' ? 'left' : 'right'}:20px;` : ''}background:${bg};color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font:800 12.5px Nunito">${ic(n, 22, '#fff', 2.4)}${t}</div>`).join('')}</div>`;
+const panels = (items, off) => side => `<div style="position:absolute;top:0;bottom:3px;${side}:0;width:${off + 20}px;display:flex;flex-direction:${side === 'right' ? 'row' : 'row-reverse'};border-radius:${side === 'right' ? '0 18px 18px 0' : '18px 0 0 18px'};overflow:hidden">${items.map(([[bg], n, t], i) => `<div style="flex:${i === 0 ? `0 0 ${off / items.length + 20}px` : 1};${i === 0 ? `padding-${side === 'right' ? 'left' : 'right'}:20px;` : ''}background:${bg};color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font:800 12.5px Nunito">${icx(n, 22, '#fff', 2.4)}${t}</div>`).join('')}</div>`;
 
 /* 2 · Botones del kit: radio 14 y canto; la principal sólida y «Más» secundario. */
 const kitBtns = items => side => `<div style="position:absolute;top:0;bottom:3px;${side}:0;display:flex;flex-direction:${side === 'right' ? 'row' : 'row-reverse'};gap:8px">${items.map(([[bg, edge], n, t]) => {
   const sec = bg === MORE[0];
-  return `<div style="width:88px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font:800 12.5px Nunito;${sec ? 'background:var(--card-bg);color:var(--color-brand-text);border:1.5px solid var(--line);box-shadow:0 3px 0 var(--line)' : `background:${bg};color:#fff;box-shadow:0 3px 0 ${edge}`}">${ic(n, 22, sec ? 'var(--color-brand-text)' : '#fff', 2.4)}${t}</div>`;
+  return `<div style="width:88px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font:800 12.5px Nunito;${sec ? 'background:var(--card-bg);color:var(--color-brand-text);border:1.5px solid var(--line);box-shadow:0 3px 0 var(--line)' : `background:${bg};color:#fff;box-shadow:0 3px 0 ${edge}`}">${icx(n, 22, sec ? 'var(--color-brand-text)' : '#fff', 2.4)}${t}</div>`;
 }).join('')}</div>`;
 
 /* 3 · Íconos redondos de 48 px con la etiqueta debajo, sobre el fondo de la pantalla. */
-const rounds = items => side => `<div style="position:absolute;top:0;bottom:3px;${side}:0;display:flex;flex-direction:${side === 'right' ? 'row' : 'row-reverse'};align-items:center;gap:4px">${items.map(([[bg, edge], n, t]) => `<div style="width:84px;display:flex;flex-direction:column;align-items:center;gap:6px;font:800 12.5px Nunito;color:var(--color-text-secondary)"><div style="width:48px;height:48px;border-radius:50%;background:${bg};box-shadow:0 3px 0 ${edge};display:grid;place-items:center">${ic(n, 22, '#fff', 2.4)}</div>${t}</div>`).join('')}</div>`;
+const rounds = items => side => `<div style="position:absolute;top:0;bottom:3px;${side}:0;display:flex;flex-direction:${side === 'right' ? 'row' : 'row-reverse'};align-items:center;gap:4px">${items.map(([[bg, edge], n, t]) => `<div style="width:84px;display:flex;flex-direction:column;align-items:center;gap:6px;font:800 12.5px Nunito;color:var(--color-text-secondary)"><div style="width:48px;height:48px;border-radius:50%;background:${bg};box-shadow:0 3px 0 ${edge};display:grid;place-items:center">${icx(n, 22, '#fff', 2.4)}</div>${t}</div>`).join('')}</div>`;
 
 const STY = {
   1: { name: 'Paneles', L: items => panels(items, 192), offL: 192, R: items => panels(items, 96), offR: 96 },
@@ -76,6 +79,30 @@ for (const k of [1, 2, 3]) {
   SW.m(`${k} · ${s.name} · deslizar a la derecha`, meds(swipe(M1, s.R([[OK, 'check', 'Tomar']]), 'left', s.offR)),
     'Una sola acción positiva, en verde (MASTER §4.3: el verde es «completado»). Abre la misma confirmación de la toma.');
 }
+
+/* ── Variantes de la 2 ──
+   Lo que no cuadra en la 2: botones a toda la altura (pilares de 88 × 110 en una cita), tres bloques sueltos
+   (tarjeta, principal y «Más», cada uno con borde y canto), «Más» pesa igual que la principal, y la tarjeta
+   se corre 192 px y pierde el título. */
+const solidB = ([bg, edge], n, t, h = 64) => `<div style="width:84px;height:${h}px;flex:none;border-radius:14px;background:${bg};box-shadow:0 3px 0 ${edge};color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font:800 12.5px Nunito">${ic(n, 20, '#fff', 2.4)}${t}</div>`;
+const secB = (h = 64) => `<div style="width:84px;height:${h}px;flex:none;border-radius:14px;background:var(--card-bg);border:1.5px solid var(--line);box-shadow:0 3px 0 var(--line);color:var(--color-brand-text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font:800 12.5px Nunito">${icx('more', 20, 'var(--color-brand-text)', 2.4)}Más</div>`;
+const dotB = `<div aria-label="Más acciones" style="width:44px;height:44px;flex:none;border-radius:50%;background:var(--card-bg);border:1.5px solid var(--line);box-shadow:0 2px 0 var(--line);display:grid;place-items:center">${icx('more', 18, 'var(--color-text-secondary)', 2.4)}</div>`;
+// Acciones a la vista, centradas en la altura de la tarjeta; tray = carril gris que nace debajo de la tarjeta
+const reveal = (inner, off, tray = false) => side => `<div style="position:absolute;top:0;bottom:3px;${side}:0;width:${off + (tray ? 24 : 0)}px;display:flex;align-items:center;justify-content:${side === 'right' ? 'flex-end' : 'flex-start'};flex-direction:${side === 'right' ? 'row' : 'row-reverse'};gap:6px;${tray ? `padding:0 8px;background:var(--color-surface-muted);border-radius:18px;box-shadow:inset 0 2px 4px rgba(15,23,42,.08);` : 'padding:0 0 0 8px;'}">${inner}</div>`;
+
+const V2 = [
+  ['2b · Carril', reveal(secB(80) + solidB(BRAND, 'calendar', 'Reprogramar', 80), 182, true), 182,
+    'Un carril gris (surface-muted, radio 18) nace debajo de la tarjeta: los botones se leen como parte de ella y no como tres bloques sueltos. Sigue el problema de altura y de cuánto se corre.'],
+  ['2c · Compactos', reveal(secB() + solidB(BRAND, 'calendar', 'Reprogramar'), 184), 184,
+    'Botones de 84 × 64 centrados, sin importar la altura de la tarjeta: ya no son pilares. Se corre igual que la 2.'],
+  ['2d · Principal + «⋯»', reveal(dotB + solidB(BRAND, 'calendar', 'Reprogramar'), 144), 144,
+    '«Más» pasa a ser un «⋯» redondo de 44 px (con etiqueta para VoiceOver): la principal manda. La tarjeta se corre 144 px en vez de 192 y pierde menos del título.'],
+  ['2e · Carril + principal + «⋯» (recomendada)', reveal(dotB + solidB(BRAND, 'calendar', 'Reprogramar'), 150, true), 150,
+    'Junta las tres mejoras: carril que une la tarjeta con sus acciones, botón compacto y «⋯» secundario. Se corre 150 px en vez de 192.'],
+];
+for (const [name, act, off, note] of V2) SW.m(`${name} · izquierda`, citas(swipe(A1, act, 'right', off)), note);
+SW.m('2e · Carril + principal + «⋯» · derecha', meds(swipe(M1, reveal(solidB(OK, 'check', 'Tomar'), 92, true), 'left', 92)), 'A la derecha, el mismo carril con una sola acción.');
+SW.m('2e · Documento y mochila', phone(`${mtitle('Documentos')}${swipe(docC('Orden resonancia de rodilla', 'Orden médica', '24 nov'), reveal(dotB + solidB(BRAND, 'share', 'Compartir', 56), 150, true), 'right', 150)}${docC('Resultado hemograma', 'Laboratorio', '20 nov')}<div class="h1" style="margin-top:12px">Mochilas</div>${swipe(bpC('Cita de ortopedia', 'Para el viernes con el Dr. Mejía', '4 documentos'), reveal(dotB + solidB(BRAND, 'share', 'Compartir'), 150, true), 'right', 150)}`, { tab: 'docs' }), 'En tarjetas bajas el botón baja a 56 px para dejar aire arriba y abajo.');
 
 /* Documento y mochila en el estilo 2, para ver las otras tarjetas */
 SW.m('2 · Documento · izquierda', phone(`${mtitle('Documentos')}${search('Buscar documentos')}${swipe(docC('Orden resonancia de rodilla', 'Orden médica', '24 nov'), kitBtns([more, [BRAND, 'share', 'Compartir']]), 'right', 192)}${docC('Resultado hemograma', 'Laboratorio', '20 nov')}${docC('Fórmula Losartán', 'Fórmula médica', '18 nov')}`, { tab: 'docs', fab: 'upload' }), 'Con el estilo 2. A la derecha iría «A mochila» en verde azulado (color de Mochilas).');

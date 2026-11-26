@@ -2,9 +2,10 @@
    Reemplaza el «⋮» de las tarjetas de lista en móvil: deslizar a la izquierda muestra la acción principal y «Más»;
    «Más» abre una hoja con todas las acciones (lo destructivo al final, como enlace rojo, MASTER §7).
    Deslizar a la derecha solo donde hay una acción positiva clara. Web conserva el «⋮».
-   Estilo elegido: paneles de color a toda la altura (como la lista de chats de iOS). Aquí van sus variantes. */
+   Estilo elegido: 1A, paneles sólidos a toda la altura como la lista de chats de iOS. Animación y háptica en
+   ../system/movimiento.html, sección «Acciones al deslizar». */
 {
-const SW = mod('deslizar', '14 · Acciones al deslizar (propuesta)', 'Issue #127. Las tarjetas de lista en móvil (cita, medicamento, documento, mochila) dejan el «⋮» y muestran sus acciones al deslizar, con paneles de color a toda la altura como en la lista de chats de iOS: a la izquierda, la acción principal y «Más»; «Más» abre una hoja con todas las acciones y lo destructivo al final, como enlace rojo. A la derecha, solo una acción positiva clara. Se comparan cinco variantes de los paneles (1A a 1E), las hojas «Más» de cada tarjeta y dos formas de descubrir el gesto. Accesibilidad: las mismas acciones como acciones de VoiceOver de la tarjeta. Web conserva el «⋮».');
+const SW = mod('deslizar', '14 · Acciones al deslizar (propuesta)', 'Issue #127. Las tarjetas de lista en móvil (cita, medicamento, documento, mochila) dejan el «⋮» y muestran sus acciones al deslizar, con paneles de color a toda la altura como en la lista de chats de iOS: a la izquierda, la acción principal y «Más»; «Más» abre una hoja con todas las acciones y lo destructivo al final, como enlace rojo. A la derecha, solo una acción positiva clara. Estilo elegido: 1A, paneles sólidos como en iOS. Si se sigue deslizando, se aplica la acción del extremo (con háptica al mostrar las acciones y al pasar el umbral; ver movimiento.html). Se muestran las hojas «Más» de cada tarjeta y dos formas de descubrir el gesto. Accesibilidad: las mismas acciones como acciones de VoiceOver de la tarjeta. Web conserva el «⋮».');
 
 /* Al abrirse, en las variantes «de una pieza» la tarjeta pierde las esquinas del lado de los paneles */
 document.head.insertAdjacentHTML('beforeend', '<style>.swp-r>.card{border-top-right-radius:0;border-bottom-right-radius:0;border-right:0}.swp-l>.card{border-top-left-radius:0;border-bottom-left-radius:0;border-left:0}</style>');
@@ -32,15 +33,6 @@ const C = {
   brand: { bg: 'var(--color-brand-solid)', fg: '#fff', edge: 'var(--color-brand-edge)' },
   more: { bg: 'var(--primitive-color-slate-500)', fg: '#fff', edge: 'var(--primitive-color-slate-600)' },
   ok: { bg: 'var(--button-success-bg)', fg: '#fff', edge: 'var(--button-success-edge)' },
-  // tonos suaves (1C)
-  brandT: { bg: 'var(--color-brand-tint)', fg: 'var(--color-brand-text)', edge: 'var(--color-brand-tint-border)', line: true },
-  moreT: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-on-muted)', edge: 'var(--line)', line: true },
-  okT: { bg: 'var(--color-success-bg)', fg: 'var(--color-success-fg)', edge: 'var(--color-success-edge)', line: true },
-  // color del módulo (1D): el tono oscuro de cada módulo, que da ≥ 4,5:1 con blanco
-  pk: { bg: 'var(--color-feature-appointment-fg)', fg: '#fff', edge: '#9D174D' },
-  sky: { bg: 'var(--color-feature-document-fg)', fg: '#fff', edge: '#075985' },
-  teal: { bg: 'var(--color-feature-backpack-fg)', fg: '#fff', edge: '#115E59' },
-  am: { bg: 'var(--color-feature-medication-fg)', fg: '#fff', edge: '#92400E' },
 };
 const act = (c, n, t, w = 88) => ({ ...C[c], n, t, w });
 const MORE = (c = 'more', w = 88) => act(c, 'more', 'Más', w);
@@ -80,8 +72,8 @@ ${mapRow('pk', 'calendar', 'Cita', pill('calendar', 'Reprogramar'), `${pill('che
 ${mapRow('am', 'pill', 'Medicamento', pill('edit', 'Editar'), `${pill('check', 'Tomar', 'gr')}<div class="s" style="margin-top:6px">Atajo del botón «Tomar» de la tarjeta.</div>`, `Registrar toma, editar, nuevo ciclo, historial de tomas, finalizar ciclo · ${red('Eliminar medicamento')}`)}
 ${mapRow('sky', 'fileText', 'Documento', pill('share', 'Compartir'), pill('backpack', 'A mochila', 'teal'), `Ver, compartir, agregar a una mochila, editar, descargar · ${red('Eliminar documento')} (con «Deshacer»)`)}
 ${mapRow('teal', 'backpack', 'Mochila', pill('share', 'Compartir'), '<span class="s">—</span>', `Ver, compartir con QR, agregar documentos, editar · ${red('Eliminar mochila')}`, true)}
-</tbody></table><div class="hint" style="margin-top:8px">${mas(32, 'point')}<span class="grow">Sin deslizamiento completo: ninguna acción se ejecuta solo con deslizar, siempre pide un toque. Evita tomas o citas marcadas por error.</span></div></div>`;
-SW.m('Mapa de acciones', MAP, 'Propuesta de acciones por tarjeta para elegir junto con la variante.');
+</tbody></table><div class="hint" style="margin-top:8px">${mas(32, 'point')}<span class="grow">Deslizamiento completo: si se sigue deslizando, se aplica la acción del extremo (la principal o la de la derecha). Nunca es destructiva, y «Tomar» y «Asistí» muestran un toast con «Deshacer».</span></div></div>`;
+SW.m('Mapa de acciones', MAP, 'Acciones por tarjeta.');
 
 /* ── Hoy ── */
 const kebabC = c => c.replace(/<\/div><\/div><div class="row g8 wrap">/, `</div>${kebab('Opciones de la cita')}</div><div class="row g8 wrap">`);
@@ -90,34 +82,10 @@ SW.m('Hoy (con «⋮»)', phone(`${agHead(1)}${search('Buscar por nombre, especi
 /* ── Variantes de los paneles ── */
 const VAR = [
   {
-    k: '1A · Clásico', shape: 'classic',
+    k: '1A · Paneles', shape: 'classic',
     L: [MORE(), act('brand', 'calendar', 'Reprogramar')], R: [act('ok', 'check', 'Tomar', 96)],
     D: [MORE(), act('brand', 'share', 'Compartir')], B: [MORE(), act('brand', 'share', 'Compartir')],
     note: 'Como la lista de chats de iOS: paneles sólidos a toda la altura, pegados al borde; la tarjeta conserva sus esquinas y pasa por encima. La principal queda en el extremo. Blanco sobre azul 5,2:1 y sobre gris pizarra 4,8:1.',
-  },
-  {
-    k: '1B · Una sola pieza', shape: 'piece',
-    L: [MORE(), act('brand', 'calendar', 'Reprogramar')], R: [act('ok', 'check', 'Tomar', 96)],
-    D: [MORE(), act('brand', 'share', 'Compartir')], B: [MORE(), act('brand', 'share', 'Compartir')],
-    note: 'Al abrirse, la tarjeta pierde las esquinas de ese lado y los paneles siguen su forma, con el mismo canto inferior de 3 px en el tono oscuro de cada panel. Se lee como un solo objeto, igual que las tarjetas del sistema.',
-  },
-  {
-    k: '1C · Tonos suaves', shape: 'piece',
-    L: [MORE('moreT'), act('brandT', 'calendar', 'Reprogramar')], R: [act('okT', 'check', 'Tomar', 96)],
-    D: [MORE('moreT'), act('brandT', 'share', 'Compartir')], B: [MORE('moreT'), act('brandT', 'share', 'Compartir')],
-    note: 'La forma de 1B con los tintes de los chips: azul claro con texto azul y gris claro con texto gris. Más tranquilo; la acción se ve menos, pero no grita en listas largas.',
-  },
-  {
-    k: '1D · Color del módulo', shape: 'piece',
-    L: [MORE(), act('pk', 'calendar', 'Reprogramar')], R: [act('ok', 'check', 'Tomar', 96)],
-    D: [MORE(), act('sky', 'share', 'Compartir')], B: [MORE(), act('teal', 'share', 'Compartir')],
-    note: 'La principal toma el tono oscuro del módulo (rosa en citas, celeste en documentos, verde azulado en mochilas), el mismo de su ícono. «Tomar» sigue en verde porque el verde es «completado» (MASTER §4.3).',
-  },
-  {
-    k: '1E · Principal ancha', shape: 'piece',
-    L: [MORE('more', 68), act('brand', 'calendar', 'Reprogramar', 116)], R: [act('ok', 'check', 'Tomar', 112)],
-    D: [MORE('more', 68), act('brand', 'share', 'Compartir', 116)], B: [MORE('more', 68), act('brand', 'share', 'Compartir', 116)],
-    note: 'La forma de 1B, pero la principal es más ancha (116 px) y «Más» más angosta (68 px): la jerarquía se ve sin leer. El total es casi igual (184 px).',
   },
 ];
 for (const v of VAR) {

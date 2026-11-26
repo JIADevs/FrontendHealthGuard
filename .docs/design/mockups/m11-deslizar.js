@@ -70,7 +70,7 @@ SW.m('Mapa de acciones', MAP, 'Acciones por tarjeta.');
 
 /* ── Propuesta ── */
 SW.m('Propuesta · cita, deslizar a la izquierda', citas(swipe(A1, [MORE(), act('brand', 'calendar', 'Reprogramar')], 'right')), 'Paneles sólidos a toda la altura, pegados al borde; la tarjeta conserva sus esquinas y pasa por encima. «Más» en gris pizarra y la principal en el extremo, 96 px cada uno. Blanco sobre azul 5,2:1 y sobre gris pizarra 4,8:1.');
-SW.m('Propuesta · medicamento, deslizar a la derecha', meds(swipe(M1, [act('ok', 'check', 'Tomar', 96)], 'left')), 'Una sola acción positiva, en verde. Abre la misma confirmación de la toma.');
+SW.m('Propuesta · medicamento, deslizar a la derecha', meds(swipe(M1, [act('ok', 'check', 'Tomar', 96)], 'left')), 'Una sola acción positiva, en verde. Registra la toma como el botón «Tomar» de la tarjeta, con toast y «Deshacer».');
 SW.m('Propuesta · documento y mochila', docsBps(swipe(D1c, [MORE(), act('brand', 'share', 'Compartir')], 'right'), swipe(B1c, [MORE(), act('brand', 'share', 'Compartir')], 'right')), 'En tarjetas bajas los paneles se ajustan a la altura de la tarjeta.');
 
 /* ── Hojas «Más» (iguales en todas las variantes) ── */

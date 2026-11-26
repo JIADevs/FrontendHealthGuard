@@ -160,7 +160,7 @@ Las tarjetas de lista en móvil (cita, medicamento, documento, mochila) no lleva
 | Carga larga (> 1 s) | Esqueleto; a los 10 s, texto «Esto está tardando más de lo normal» + «Reintentar» | — | — |
 | Cambio de contexto (cuidador) | El banner de color entra desde arriba; el lector de pantalla anuncia | «Ahora gestionas a Juan Pérez» | Ligera |
 
-\* **Háptica:** requiere `expo-haptics` (no está instalado). Usarla solo en confirmaciones y errores, nunca en cada toque, y respetar la vibración del sistema. La única excepción son los dos umbrales del deslizamiento de tarjetas (§4b), que avisan qué va a pasar al soltar.
+\* **Háptica:** con `expo-haptics` (instalado; `apps/mobile/src/lib/haptics.ts`). Usarla solo en confirmaciones y errores, nunca en cada toque, y respetar la vibración del sistema. La única excepción son los dos umbrales del deslizamiento de tarjetas (§4b), que avisan qué va a pasar al soltar.
 
 ## 6b. Mascota: celebración al completar una misión
 

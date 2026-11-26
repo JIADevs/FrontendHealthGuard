@@ -47,6 +47,7 @@ import {
   formatNextDose,
   withScheduledNext,
   isCycleActive,
+  localTodayKey,
 } from "./medicationCycles";
 
 export interface CycleDetailProps {
@@ -57,11 +58,6 @@ export interface CycleDetailProps {
   onEdit: () => void;
   /** Leaves the detail (back, or after the cycle is deleted) */
   onBack: () => void;
-}
-
-function localTodayKey(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /** «Hoy 7:02 a. m.», «Ayer 7:10 p. m.», «Dom 1 nov 7:05 p. m.» */

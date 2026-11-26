@@ -215,3 +215,9 @@ export const CYCLE_STATUS_CHIP: Record<CycleStatus, { label: string; tone: "bran
   "ends-today": { label: "Termina hoy", tone: "warning" },
   finished: { label: "Finalizado", tone: "neutral" },
 };
+
+/** Today as `YYYY-MM-DD` in the device's time zone (the end date of a cycle finished today). */
+export function localTodayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}

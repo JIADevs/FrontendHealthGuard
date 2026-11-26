@@ -29,7 +29,7 @@ const panelBg = (t: ThemeContextValue): Record<SwipeActionTone, string> => ({
  * actions are visible; past 60 % of the card a medium impact says releasing applies the outer
  * action, which stretches over «Más». Velocity only opens, never applies.
  */
-export function SwipeRow({ id, children, endActions = [], startAction, onLongPress, onHaptic }: SwipeRowProps) {
+export function SwipeRow({ id, children, endActions = [], startAction, onLongPress, onHaptic, accessibilityLabel, onPress }: SwipeRowProps) {
   const t = useAppTheme();
   const reduced = useReducedMotion();
   const group = useSwipeRowGroup();
@@ -155,6 +155,7 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
     [endActions, startAction],
   );
   const onA11y = (e: AccessibilityActionEvent) => {
+    if (e.nativeEvent.actionName === 'activate') return onPress?.();
     const all: SwipeAction[] = [...endActions, ...(startAction ? [startAction] : [])];
     all.find((a) => a.key === e.nativeEvent.actionName)?.onPress();
   };
@@ -193,7 +194,10 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
       <GestureDetector gesture={gesture}>
         <Animated.View
           style={[styles.card, cardStyle]}
-          accessibilityActions={a11yActions}
+          accessible={!!onPress}
+          accessibilityRole={onPress ? 'button' : undefined}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityActions={onPress ? [{ name: 'activate' }, ...a11yActions] : a11yActions}
           onAccessibilityAction={onA11y}
         >
           {children}

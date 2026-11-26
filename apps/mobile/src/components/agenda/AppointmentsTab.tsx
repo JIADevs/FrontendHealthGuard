@@ -1,9 +1,11 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, SectionList } from "react-native";
 import {
   useDeleteAppointmentMutation,
+  useUpdateAppointmentStatusMutation,
 } from "@helu/api/hooks";
-import type { Appointment } from "@helu/api";
+import { useMissionQuery, type Appointment } from "@helu/api";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   spacing,
   nativeFont,
@@ -18,8 +20,9 @@ import {
   ConfirmModal,
   PullRefreshIndicator,
   usePullRefresh,
+  SwipeRowGroup,
 } from "@helu/ui";
-import type { ThemeContextValue } from "@helu/ui";
+import type { SwipeRowGroupHandle, ThemeContextValue } from "@helu/ui";
 import { CalendarDays, Trash2 } from "lucide-react-native";
 
 import { useAppointmentsList } from "../../hooks/useAppointmentsList";
@@ -32,6 +35,7 @@ import { LoadError } from "../states/LoadError";
 import { notify } from "../../lib/notify";
 import { AgendaListToolbar } from "./AgendaListToolbar";
 import { AgendaFilterEmpty } from "./AgendaFilterEmpty";
+import { CancelAppointmentModal } from "./CancelAppointmentModal";
 
 export function AppointmentsTab() {
   const t = useAppTheme();
@@ -39,6 +43,8 @@ export function AppointmentsTab() {
   const nav = useAgendaNavigation();
 
   const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
+  const rows = useRef<SwipeRowGroupHandle>(null);
 
   const {
     page,
@@ -77,6 +83,57 @@ export function AppointmentsTab() {
     });
   }, [deleteTarget, deleteMut]);
 
+  const qc = useQueryClient();
+  const statusMut = useUpdateAppointmentStatusMutation();
+  const showStatusError = () =>
+    notify({ tone: "error", message: "No se pudo actualizar la cita", description: "Revisa tu conexión e intenta de nuevo." });
+
+  // Canceling also cancels a live mission (RF-29), and the dialog has to say so.
+  const cancelMission = useMissionQuery(cancelTarget?.missionId ?? undefined).data;
+  const cancelsMission = !!cancelMission && (cancelMission.status === "active" || cancelMission.status === "paused");
+
+  /** Shows `status` on the card at once; the server confirms in the background (movimiento §8). */
+  const putStatus = useCallback(
+    (a: Appointment, status: Appointment["status"]) => {
+      const withStatus = (prev: { items: Appointment[] } | undefined) =>
+        prev && Array.isArray(prev.items) ? { ...prev, items: prev.items.map((x) => (x.id === a.id ? { ...x, status } : x)) } : prev;
+      void qc.cancelQueries({ queryKey: ["appointments"] });
+      qc.setQueriesData<{ items: Appointment[] }>({ queryKey: ["appointments"] }, withStatus);
+      return statusMut.mutateAsync({ id: a.id, status });
+    },
+    [qc, statusMut],
+  );
+
+  // «Asistí» from the swipe: low risk, so it applies on release with «Deshacer» (#127), like «Tomar».
+  const handleAttended = useCallback(
+    (a: Appointment) => {
+      const previous: Appointment["status"] = a.status || "PROGRAMADA";
+      putStatus(a, "ASISTI").catch(() => {
+        putStatus(a, previous).catch(() => undefined);
+        showStatusError();
+      });
+      notify({
+        message: "Asistencia registrada",
+        action: { label: "Deshacer", onPress: () => void putStatus(a, previous).catch(showStatusError) },
+      });
+    },
+    [putStatus],
+  );
+
+  const handleCancel = useCallback(() => {
+    if (!cancelTarget) return;
+    statusMut.mutate(
+      { id: cancelTarget.id, status: "CANCELADA" },
+      {
+        onSuccess: () => {
+          setCancelTarget(null);
+          notify({ message: cancelsMission ? "Cita y misión canceladas" : "Cita cancelada" });
+        },
+        onError: () => showStatusError(),
+      },
+    );
+  }, [cancelTarget, cancelsMission, statusMut]);
+
   const items = appts.data?.items ?? [];
   const showSkeleton = useSkeletonVisible(appts.isLoading);
   const sections = useMemo(() => splitAppointments(items), [items]);
@@ -101,63 +158,77 @@ export function AppointmentsTab() {
           <SkeletonCard lines={2} />
         </SkeletonGroup>
       ) : (
-        <View style={{ flex: 1 }}>
-          <SectionList
-            sections={sections}
-            keyExtractor={(a) => a.id}
-            contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
-            stickySectionHeadersEnabled={false}
-            refreshControl={pull.refreshControl}
-            onScroll={pull.onScroll}
-            scrollEventThrottle={16}
-            renderSectionHeader={({ section }) => (
-              <Text style={[styles.sectionTitle, { color: t.text.secondary }]}>{section.title}</Text>
-            )}
-            renderItem={({ item: a }) => (
-              <AppointmentCard
-                appointment={a}
-                onPress={() => nav.openAppointment(a.id)}
-                onEdit={() => nav.editAppointment(a.id)}
-                onDelete={() => setDeleteTarget(a)}
-              />
-            )}
-            ListEmptyComponent={
-              appts.isError && !appts.data ? (
-                <LoadError title="No se pudieron cargar tus citas" onRetry={() => void appts.refetch()} retrying={appts.isRefetching} />
-              ) : hasActiveFilter || search ? (
-                <AgendaFilterEmpty
-                  noun="citas"
-                  allYour="todas tus"
-                  search={search}
-                  hasActiveFilter={hasActiveFilter}
-                  onClearFilters={clearFilters}
-                  onClearSearch={() => setSearch("")}
+        <SwipeRowGroup ref={rows}>
+          <View style={{ flex: 1 }}>
+            <SectionList
+              sections={sections}
+              keyExtractor={(a) => a.id}
+              contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
+              stickySectionHeadersEnabled={false}
+              refreshControl={pull.refreshControl}
+              onScroll={pull.onScroll}
+              onScrollBeginDrag={() => rows.current?.closeAll()}
+              scrollEventThrottle={16}
+              renderSectionHeader={({ section }) => (
+                <Text style={[styles.sectionTitle, { color: t.text.secondary }]}>{section.title}</Text>
+              )}
+              renderItem={({ item: a }) => (
+                <AppointmentCard
+                  appointment={a}
+                  onPress={() => nav.openAppointment(a.id)}
+                  onEdit={() => nav.editAppointment(a.id)}
+                  onAttended={() => handleAttended(a)}
+                  onCancel={() => setCancelTarget(a)}
+                  onDelete={() => setDeleteTarget(a)}
                 />
-              ) : (
-                <AgendaEmpty
-                  pose="happy"
-                  title="Aún no tienes citas"
-                  description="Agrega tu próxima cita y te la recordamos antes de que llegue."
-                  actionLabel="Agregar cita"
-                  onAction={nav.newAppointment}
-                  example={{
-                    tone: "appointment",
-                    icon: <CalendarDays size={19} strokeWidth={2.2} color={t.accent.calFg} />,
-                    title: "Control de odontología",
-                    meta: "Jue 5 nov · 10:00 a. m. · Consultorio 204",
-                  }}
-                />
-              )
-            }
-            ListFooterComponent={
-              items.length > 0 ? (
-                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-              ) : undefined
-            }
-          />
-          <PullRefreshIndicator state={pull} />
-        </View>
+              )}
+              ListEmptyComponent={
+                appts.isError && !appts.data ? (
+                  <LoadError title="No se pudieron cargar tus citas" onRetry={() => void appts.refetch()} retrying={appts.isRefetching} />
+                ) : hasActiveFilter || search ? (
+                  <AgendaFilterEmpty
+                    noun="citas"
+                    allYour="todas tus"
+                    search={search}
+                    hasActiveFilter={hasActiveFilter}
+                    onClearFilters={clearFilters}
+                    onClearSearch={() => setSearch("")}
+                  />
+                ) : (
+                  <AgendaEmpty
+                    pose="happy"
+                    title="Aún no tienes citas"
+                    description="Agrega tu próxima cita y te la recordamos antes de que llegue."
+                    actionLabel="Agregar cita"
+                    onAction={nav.newAppointment}
+                    example={{
+                      tone: "appointment",
+                      icon: <CalendarDays size={19} strokeWidth={2.2} color={t.accent.calFg} />,
+                      title: "Control de odontología",
+                      meta: "Jue 5 nov · 10:00 a. m. · Consultorio 204",
+                    }}
+                  />
+                )
+              }
+              ListFooterComponent={
+                items.length > 0 ? (
+                  <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+                ) : undefined
+              }
+            />
+            <PullRefreshIndicator state={pull} />
+          </View>
+        </SwipeRowGroup>
       )}
+
+      {cancelTarget ? (
+        <CancelAppointmentModal
+          missionTitle={cancelsMission ? cancelMission!.title : undefined}
+          loading={statusMut.isPending}
+          onCancel={() => setCancelTarget(null)}
+          onConfirm={handleCancel}
+        />
+      ) : null}
 
       {deleteTarget && (
         // MASTER §7: question + consequence; «Eliminar» borra la cita (≠ «Cancelar cita», que la conserva).

@@ -45,6 +45,13 @@ export interface SwipeRowProps {
   onLongPress?: () => void;
   /** Mobile only: lets the app play `expo-haptics` without @helu/ui depending on it */
   onHaptic?: (kind: SwipeHaptic) => void;
+  /**
+   * With `onPress`, the row is the one accessible element (role button): VoiceOver reads this
+   * label, double tap runs `onPress` and the swipe actions are its custom actions. The card inside
+   * should then set `accessible={false}`.
+   */
+  accessibilityLabel?: string;
+  onPress?: () => void;
 }
 
 /** Keeps a single row open and closes it when the list scrolls. */

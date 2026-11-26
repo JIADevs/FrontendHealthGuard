@@ -24,3 +24,9 @@ export const haptics = {
   /** Deslizar una tarjeta: al soltar se aplicará la acción del extremo */
   medium: () => safe(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)),
 };
+
+/** `onHaptic` of `SwipeRow` (§4b): reveal and disarm tick, arm and long press bump. */
+export function swipeHaptic(kind: "reveal" | "arm" | "disarm" | "longPress") {
+  if (kind === "arm" || kind === "longPress") haptics.medium();
+  else haptics.selection();
+}

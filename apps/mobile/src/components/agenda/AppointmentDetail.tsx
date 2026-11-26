@@ -14,7 +14,6 @@ import {
   Button,
   Chip,
   DangerLink,
-  ConfirmModal,
   IconButton,
   IconTile,
   formatClock,
@@ -51,6 +50,7 @@ import {
 import { ScreenHeader } from "../ScreenHeader";
 import { SkeletonHeaderAction } from "../SkeletonPieces";
 import { MissionRow } from "../missions/MissionRow";
+import { CancelAppointmentModal } from "./CancelAppointmentModal";
 import { useIsOnline } from "../states/OfflineBanner";
 
 
@@ -526,33 +526,12 @@ export function AppointmentDetail({ id, onEdit, onAddDocument, onOpenMission }: 
 
       {showCancelDialog ? (
         // «C5» (RF-29, DU-51): canceling the appointment cancels its mission too, and the dialog says so.
-        cancelsMission ? (
-          <ConfirmModal
-            title="¿Cancelar la cita?"
-            message={`Quedará como cancelada y dejaremos de recordártela. Su misión «${mission!.title}» también se cancela.`}
-            keepLabel="Mantener cita"
-            confirmLabel="Cancelar cita y misión"
-            confirmVariant="danger"
-            // Mockup «C5»: red tile, centered copy and the two actions stacked («Mantener cita» first).
-            icon={<XCircle size={24} strokeWidth={2.2} color={t.status.errorFg} />}
-            iconTone="danger"
-            actionsLayout="stacked"
-            loading={statusMut.isPending}
-            onCancel={() => setShowCancelDialog(false)}
-            onConfirm={() => setStatus("CANCELADA", "Cita y misión canceladas")}
-          />
-        ) : (
-          <ConfirmModal
-            title="¿Cancelar cita?"
-            message="La cita queda cancelada en tu historial. No se borra."
-            keepLabel="Mantener cita"
-            confirmLabel="Cancelar cita"
-            confirmVariant="danger"
-            loading={statusMut.isPending}
-            onCancel={() => setShowCancelDialog(false)}
-            onConfirm={() => setStatus("CANCELADA", "Cita cancelada")}
-          />
-        )
+        <CancelAppointmentModal
+          missionTitle={cancelsMission ? mission!.title : undefined}
+          loading={statusMut.isPending}
+          onCancel={() => setShowCancelDialog(false)}
+          onConfirm={() => setStatus("CANCELADA", cancelsMission ? "Cita y misión canceladas" : "Cita cancelada")}
+        />
       ) : null}
     </SafeAreaView>
   );

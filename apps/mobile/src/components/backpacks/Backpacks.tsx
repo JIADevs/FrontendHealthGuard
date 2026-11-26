@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { FlatList, Keyboard, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,12 +8,14 @@ import {
   SearchField,
   Skeleton,
   SkeletonGroup,
+  SwipeRowGroup,
   motion,
   nativeFont,
   spacing,
   useAppTheme,
   usePullRefresh,
   useSkeletonVisible,
+  type SwipeRowGroupHandle,
   type ThemeContextValue,
 } from "@helu/ui";
 import { Fab } from "../Fab";
@@ -28,6 +30,7 @@ export interface BackpacksProps {
   onOpen: (backpack: Backpack) => void;
   onEdit: (backpack: Backpack) => void;
   onShare: (backpack: Backpack) => void;
+  onAddDocuments: (backpack: Backpack) => void;
   /** «Nueva mochila», optionally from a template of the empty state. */
   onCreate: (preset?: BackpackTemplate) => void;
 }
@@ -49,6 +52,7 @@ export function Backpacks(props: BackpacksProps) {
   const [toDelete, setToDelete] = useState<Backpack | null>(null);
   // Staggered entry only for the first paint of the list (§2, §6c), not on every refetch.
   const [entered, setEntered] = useState(false);
+  const rows = useRef<SwipeRowGroupHandle>(null);
 
   // Leaving the list with the search focused would bring the keyboard back on return (phase 9).
   const away = <A extends unknown[]>(fn: (...args: A) => void) => (...args: A) => {
@@ -58,6 +62,7 @@ export function Backpacks(props: BackpacksProps) {
   const onOpen = away(props.onOpen);
   const onEdit = away(props.onEdit);
   const onShare = away(props.onShare);
+  const onAddDocuments = away(props.onAddDocuments);
   const onCreate = away(props.onCreate);
 
   const searching = list.debouncedSearch.trim().length > 0;
@@ -94,59 +99,63 @@ export function Backpacks(props: BackpacksProps) {
         </View>
       ) : (
         <Animated.View style={[{ flex: 1 }, dim]} aria-busy={busy}>
-          <FlatList
-            data={list.items}
-            keyExtractor={(bp) => bp.id}
-            contentContainerStyle={list.items.length === 0 ? styles.emptyContent : styles.content}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            onLayout={() => setEntered(true)}
-            refreshControl={pull.refreshControl}
-            onScroll={pull.onScroll}
-            scrollEventThrottle={16}
-            renderItem={({ item, index }) => (
-              <Animated.View
-                entering={
-                  entered
-                    ? FadeIn.duration(motion.fast)
-                    : FadeIn.duration(motion.base).delay(Math.min(index, STAGGER_MAX) * STAGGER_MS)
-                }
-                // Deleting: the card fades out (250 ms) and the rest slide up into its place.
-                exiting={FadeOut.duration(motion.base)}
-                layout={LinearTransition.duration(motion.base)}
-                style={styles.rowWrap}
-              >
-                <BackpackCard
-                  backpack={item}
-                  onPress={() => onOpen(item)}
-                  actions={{
-                    onView: () => onOpen(item),
-                    onShare: () => onShare(item),
-                    onEdit: () => onEdit(item),
-                    onDelete: () => setToDelete(item),
-                  }}
-                />
-              </Animated.View>
-            )}
-            ListFooterComponent={
-              list.items.length > 0 && !searching ? (
-                <Animated.View entering={FadeIn.duration(motion.base)} layout={LinearTransition.duration(motion.base)}>
-                  <MascotHint pose="happy" text="Arma una mochila antes de cada cita y compártela con un QR." />
+          <SwipeRowGroup ref={rows}>
+            <FlatList
+              data={list.items}
+              keyExtractor={(bp) => bp.id}
+              contentContainerStyle={list.items.length === 0 ? styles.emptyContent : styles.content}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              onLayout={() => setEntered(true)}
+              refreshControl={pull.refreshControl}
+              onScroll={pull.onScroll}
+              onScrollBeginDrag={() => rows.current?.closeAll()}
+              scrollEventThrottle={16}
+              renderItem={({ item, index }) => (
+                <Animated.View
+                  entering={
+                    entered
+                      ? FadeIn.duration(motion.fast)
+                      : FadeIn.duration(motion.base).delay(Math.min(index, STAGGER_MAX) * STAGGER_MS)
+                  }
+                  // Deleting: the card fades out (250 ms) and the rest slide up into its place.
+                  exiting={FadeOut.duration(motion.base)}
+                  layout={LinearTransition.duration(motion.base)}
+                  style={styles.rowWrap}
+                >
+                  <BackpackCard
+                    backpack={item}
+                    onPress={() => onOpen(item)}
+                    actions={{
+                      onView: () => onOpen(item),
+                      onShare: () => onShare(item),
+                      onEdit: () => onEdit(item),
+                      onAddDocuments: () => onAddDocuments(item),
+                      onDelete: () => setToDelete(item),
+                    }}
+                  />
                 </Animated.View>
-              ) : undefined
-            }
-            ListEmptyComponent={
-              !list.settled ? undefined : (
-                <Animated.View entering={FadeIn.duration(motion.fast)}>
-                  {searching ? (
-                    <BackpacksSearchEmpty query={list.debouncedSearch} onClear={() => list.setSearch("")} />
-                  ) : (
-                    <BackpacksEmpty onCreate={onCreate} />
-                  )}
-                </Animated.View>
-              )
-            }
-          />
+              )}
+              ListFooterComponent={
+                list.items.length > 0 && !searching ? (
+                  <Animated.View entering={FadeIn.duration(motion.base)} layout={LinearTransition.duration(motion.base)}>
+                    <MascotHint pose="happy" text="Arma una mochila antes de cada cita y compártela con un QR." />
+                  </Animated.View>
+                ) : undefined
+              }
+              ListEmptyComponent={
+                !list.settled ? undefined : (
+                  <Animated.View entering={FadeIn.duration(motion.fast)}>
+                    {searching ? (
+                      <BackpacksSearchEmpty query={list.debouncedSearch} onClear={() => list.setSearch("")} />
+                    ) : (
+                      <BackpacksEmpty onCreate={onCreate} />
+                    )}
+                  </Animated.View>
+                )
+              }
+            />
+          </SwipeRowGroup>
           <PullRefreshIndicator state={pull} />
         </Animated.View>
       )}
@@ -183,7 +192,7 @@ function makeStyles(t: ThemeContextValue) {
   });
 }
 
-/** A `BackpackCard` while it loads: tile, name, description, «⋯» and one chip. */
+/** A `BackpackCard` while it loads: tile, name, description and one chip. */
 function BackpackCardSkeleton() {
   const t = useAppTheme();
   return (
@@ -203,9 +212,6 @@ function BackpackCardSkeleton() {
         <View style={{ flex: 1, gap: 6 }}>
           <Skeleton width="55%" height={15} />
           <Skeleton width="75%" height={12} />
-        </View>
-        <View style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
-          <Skeleton width={4} height={16} radius={2} />
         </View>
       </View>
       <Skeleton width={110} height={26} radius={13} />

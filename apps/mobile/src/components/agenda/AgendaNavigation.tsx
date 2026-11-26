@@ -11,6 +11,12 @@ export interface AgendaNavigation {
   editAppointment: (id: string) => void;
   openMedication: (id: string) => void;
   newMedication: () => void;
+  /** Edit a cycle of a medication (the form opens on that cycle) */
+  editMedicationCycle: (medicationId: string, medicationName: string, cycleId: string) => void;
+  /** «Nuevo ciclo» of a medication */
+  newMedicationCycle: (medicationId: string, medicationName: string) => void;
+  /** A cycle's detail, with its «Historial de tomas» */
+  openMedicationCycle: (medicationId: string, medicationName: string, cycleId: string) => void;
   newTask: () => void;
   openTask: (id: string, intent?: "complete" | "reschedule") => void;
 }

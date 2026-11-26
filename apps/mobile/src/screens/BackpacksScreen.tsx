@@ -14,6 +14,7 @@ export function BackpacksScreen() {
       onOpen={(bp) => navigation.navigate("BackpackDetail", { id: bp.id })}
       onEdit={(bp) => navigation.navigate("BackpackEdit", { id: bp.id })}
       onShare={(bp) => shareFlow.openConfigureBackpack(bp, "Mochilas")}
+      onAddDocuments={(bp) => navigation.navigate("BackpackAddDocuments", { id: bp.id })}
       onCreate={(preset) => navigation.navigate("BackpackEdit", { preset })}
     />
   );

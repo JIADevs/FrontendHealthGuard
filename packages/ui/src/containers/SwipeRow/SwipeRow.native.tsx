@@ -16,7 +16,7 @@ import { useAppTheme } from '../../tokens/ThemeProvider';
 import type { ThemeContextValue } from '../../tokens/ThemeProvider';
 import { motionEasing } from '../../motion/motion.native';
 import { SWIPE, applyThreshold, resist } from './swipe';
-import { useSwipeRowGroup } from './SwipeRowGroup.native';
+import { useOpenSwipeRow, useSwipeRowGroup } from './SwipeRowGroup.native';
 import type { SwipeAction, SwipeActionTone, SwipeHaptic, SwipeRowProps } from './SwipeRow.types';
 
 const panelBg = (t: ThemeContextValue): Record<SwipeActionTone, string> => ({
@@ -35,6 +35,7 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
   const t = useAppTheme();
   const reduced = useReducedMotion();
   const group = useSwipeRowGroup();
+  const openRow = useOpenSwipeRow();
   const bg = panelBg(t);
 
   const endW = endActions.length * SWIPE.panel;
@@ -56,7 +57,8 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
     revealed.value = false;
     armed.value = false;
     setOpen(false);
-  }, [armed, dur, revealed, stretch, x]);
+    group?.closed(id);
+  }, [armed, dur, group, id, revealed, stretch, x]);
 
   // Register with the group so opening another row (or scrolling) closes this one.
   const closeRef = useRef(close);
@@ -221,6 +223,10 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
           {children}
           {/* While open, a tap on the card closes it instead of opening the detail. */}
           {open ? <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Cerrar acciones" /> : null}
+          {/* Another row is open: this tap only closes it (§4b «Una a la vez»). */}
+          {!open && openRow !== null && openRow !== id ? (
+            <Pressable style={StyleSheet.absoluteFill} onPress={group?.closeAll} accessibilityLabel="Cerrar acciones" />
+          ) : null}
         </Animated.View>
       </GestureDetector>
     </View>

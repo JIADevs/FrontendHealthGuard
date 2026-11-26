@@ -97,7 +97,7 @@ Salen de leyes de UX conocidas; la ley va entre paréntesis para que se pueda bu
 
 ## 4b. Acciones al deslizar (v2.34)
 
-Las tarjetas de lista en móvil (cita, medicamento, documento, mochila) no llevan «⋮»: sus acciones aparecen al deslizar, con paneles de color a toda la altura (estilo 1A, como la lista de chats de iOS). Demo interactiva: [`../movimiento.html#deslizar`](../movimiento.html#deslizar). Qué acción va en cada tarjeta: [`componentes.md`](../componentes.md) («SwipeRow») y el módulo 14 de los mockups.
+Las tarjetas de lista en móvil (cita, medicamento, documento, mochila) no llevan «⋮»: sus acciones aparecen al deslizar, con paneles de color a toda la altura (como la lista de chats de iOS). Demo interactiva: [`../movimiento.html#deslizar`](../movimiento.html#deslizar). Qué acción va en cada tarjeta: [`componentes.md`](../componentes.md) («SwipeRow») y el módulo 14 de los mockups.
 
 | Momento | Regla |
 |---|---|

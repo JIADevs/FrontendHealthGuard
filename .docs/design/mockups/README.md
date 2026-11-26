@@ -25,7 +25,7 @@ El lienzo es muy grande. Para verlo entero, usa los botones **Zoom 25 % · 40 % 
 | `m8-carga.js` | 11 · Estados de carga: esqueletos generados desde las pantallas reales (`skel()`), con las clases `.skel`, `.skt` y `.skb` de `kit.css` |
 | `m9-vacios.js` | 12 · Estados vacíos (propuesta): primer uso, ejemplos, plantillas, «sin resultados» útil y «todo al día». Viene de la v1 sin adaptar; pendiente unificarlo con los vacíos del módulo 10 |
 | `m10-selectores.js` | 13 · Selectores de formulario (propuesta v2.32): alternativas de tipo y subtipo del documento y de especialidad y profesional de la cita, con las elegidas marcadas |
-| `m11-deslizar.js` | 14 · Acciones al deslizar (propuesta, #127): las tarjetas de lista dejan el «⋮»; paneles al deslizar (estilo 1A), las hojas «Más» de cada tarjeta y cómo se descubre el gesto |
+| `m11-deslizar.js` | 14 · Acciones al deslizar (propuesta, #127): las tarjetas de lista dejan el «⋮»; paneles al deslizar como en iOS, las hojas «Más» de cada tarjeta y cómo se descubre el gesto |
 
 ## Ver
 

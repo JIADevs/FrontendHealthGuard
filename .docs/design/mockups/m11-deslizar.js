@@ -2,13 +2,11 @@
    Reemplaza el «⋮» de las tarjetas de lista en móvil: deslizar a la izquierda muestra la acción principal y «Más»;
    «Más» abre una hoja con todas las acciones (lo destructivo al final, como enlace rojo, MASTER §7).
    Deslizar a la derecha solo donde hay una acción positiva clara. Web conserva el «⋮».
-   Estilo elegido: 1A, paneles sólidos a toda la altura como la lista de chats de iOS. Animación y háptica en
+   Propuesta: paneles sólidos a toda la altura como la lista de chats de iOS. Animación y háptica en
    ../system/movimiento.html, sección «Acciones al deslizar». */
 {
-const SW = mod('deslizar', '14 · Acciones al deslizar (propuesta)', 'Issue #127. Las tarjetas de lista en móvil (cita, medicamento, documento, mochila) dejan el «⋮» y muestran sus acciones al deslizar, con paneles de color a toda la altura como en la lista de chats de iOS: a la izquierda, la acción principal y «Más»; «Más» abre una hoja con todas las acciones y lo destructivo al final, como enlace rojo. A la derecha, solo una acción positiva clara. Estilo elegido: 1A, paneles sólidos como en iOS. Si se sigue deslizando, se aplica la acción del extremo (con háptica al mostrar las acciones y al pasar el umbral; ver movimiento.html). Se muestran las hojas «Más» de cada tarjeta y dos formas de descubrir el gesto. Accesibilidad: las mismas acciones como acciones de VoiceOver de la tarjeta. Web conserva el «⋮».');
+const SW = mod('deslizar', '14 · Acciones al deslizar (propuesta)', 'Issue #127. Las tarjetas de lista en móvil (cita, medicamento, documento, mochila) dejan el «⋮» y muestran sus acciones al deslizar, con paneles de color a toda la altura como en la lista de chats de iOS: a la izquierda, la acción principal y «Más»; «Más» abre una hoja con todas las acciones y lo destructivo aparte, en su propia tarjeta de filas rojas. A la derecha, solo una acción positiva clara. Si se sigue deslizando, se aplica la acción del extremo (con háptica al mostrar las acciones y al pasar el umbral; ver movimiento.html). Se muestran las hojas «Más» de cada tarjeta y dos formas de descubrir el gesto. Accesibilidad: las mismas acciones como acciones de VoiceOver de la tarjeta. Web conserva el «⋮».');
 
-/* Al abrirse, en las variantes «de una pieza» la tarjeta pierde las esquinas del lado de los paneles */
-document.head.insertAdjacentHTML('beforeend', '<style>.swp-r>.card{border-top-right-radius:0;border-bottom-right-radius:0;border-right:0}.swp-l>.card{border-top-left-radius:0;border-bottom-left-radius:0;border-left:0}</style>');
 
 /* ── Contenido de las tarjetas (sin «⋮») ── */
 const apptC = (n, s, d, m = 'Presencial') => card(`<div class="row">${tile('pk', 'calendar')}<div class="grow"><div class="t">${n}</div><div class="s">${s}</div></div></div><div class="row g8 wrap">${chip(d, 'gray', ic('clock', 12))}${chip(m, 'gray')}</div>`, 'tight');
@@ -37,23 +35,17 @@ const C = {
 const act = (c, n, t, w = 88) => ({ ...C[c], n, t, w });
 const MORE = (c = 'more', w = 88) => act(c, 'more', 'Más', w);
 
-/* La tarjeta desplazada sobre sus paneles.
-   side 'right' = se desliza a la izquierda (paneles a la derecha); 'left' = a la derecha.
-   shape 'classic': la tarjeta conserva sus esquinas y pasa por encima de los paneles (iOS).
-   shape 'piece': la tarjeta y los paneles forman una sola pieza con el mismo canto. */
-const swipe = (cardHtml, items, side, shape = 'classic') => {
-  const off = items.reduce((a, x) => a + x.w, 0);
-  const R = side === 'right';
-  const piece = shape === 'piece';
-  const under = piece ? 0 : 20;
+/* La tarjeta desplazada sobre sus paneles (como la lista de chats de iOS): la tarjeta conserva sus esquinas y pasa
+   por encima; los paneles nacen 20 px debajo de ella. side 'right' = se desliza a la izquierda; 'left' = a la derecha. */
+const swipe = (cardHtml, items, side) => {
+  const off = items.reduce((a, x) => a + x.w, 0), R = side === 'right', under = 20;
   const list = R ? items : [...items].reverse();
   const panels = list.map((x, i) => {
-    const pad = !piece && ((R && i === 0) || (!R && i === list.length - 1)) ? `padding-${R ? 'left' : 'right'}:${under}px;` : '';
-    const sep = piece && i > 0 ? 'box-shadow:inset 1px 0 0 rgba(255,255,255,.22);' : '';
-    return `<div style="flex:0 0 ${x.w + (pad ? under : 0)}px;${pad}${sep}background:${x.bg};color:${x.fg};${piece ? `border-bottom:3px solid ${x.edge};` : ''}${x.line ? `border-top:1px solid ${x.edge};` : ''}display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font:800 12.5px Nunito">${icx(x.n, 22, x.fg, 2.4)}${x.t}</div>`;
+    const first = (R && i === 0) || (!R && i === list.length - 1);
+    return `<div style="flex:0 0 ${x.w + (first ? under : 0)}px;${first ? `padding-${R ? 'left' : 'right'}:${under}px;` : ''}background:${x.bg};color:${x.fg};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font:800 12.5px Nunito">${icx(x.n, 22, x.fg, 2.4)}${x.t}</div>`;
   }).join('');
-  const box = `<div style="position:absolute;top:0;bottom:${piece ? '-3px' : '3px'};${side}:0;width:${off + under}px;display:flex;border-radius:${R ? '0 18px 18px 0' : '18px 0 0 18px'};overflow:hidden">${panels}</div>`;
-  return `<div style="position:relative">${box}<div class="${piece ? (R ? 'swp-r' : 'swp-l') : ''}" style="position:relative;z-index:1;transform:translateX(${R ? -off : off}px)">${cardHtml}</div></div>`;
+  const box = `<div style="position:absolute;top:0;bottom:3px;${side}:0;width:${off + under}px;display:flex;border-radius:${R ? '0 18px 18px 0' : '18px 0 0 18px'};overflow:hidden">${panels}</div>`;
+  return `<div style="position:relative">${box}<div style="position:relative;z-index:1;transform:translateX(${R ? -off : off}px)">${cardHtml}</div></div>`;
 };
 
 /* ── Pantallas base ── */
@@ -67,7 +59,7 @@ const docsBps = (d, b) => phone(`${mtitle('Documentos')}${d}${docC('Resultado he
 const mapRow = (tone, n, t, left, right, inMore, last = false) => `<tr style="${last ? '' : 'border-bottom:1px solid var(--line)'}"><td style="padding:14px 12px 14px 0;vertical-align:top"><div class="row g10">${tile(tone, n)}<b style="font:800 15px Nunito">${t}</b></div></td><td style="padding:14px 12px;vertical-align:top">${left}</td><td style="padding:14px 12px;vertical-align:top">${right}</td><td style="padding:14px 0 14px 12px;vertical-align:top" class="s">${inMore}</td></tr>`;
 const pill = (n, t, k = 'b') => chip(t, k, ic(n, 12, 'currentColor', 2.6));
 const red = t => `<span style="color:var(--color-danger-fg);font-weight:600">${t}</span>`;
-const MAP = `<div class="card" style="width:900px;gap:6px"><div class="h2">Qué muestra cada tarjeta</div><div class="sub">Opciones para decidir. «Más» siempre va junto a la principal; lo rojo solo vive dentro de «Más».</div><table style="width:100%;border-collapse:collapse;margin-top:6px"><thead><tr style="text-align:left;font:800 12px Nunito;letter-spacing:.06em;color:var(--color-text-secondary)"><th style="padding:8px 12px 8px 0">TARJETA</th><th style="padding:8px 12px">← IZQUIERDA (PRINCIPAL)</th><th style="padding:8px 12px">DERECHA →</th><th style="padding:8px 0 8px 12px">EN «MÁS»</th></tr></thead><tbody>
+const MAP = `<div class="card" style="width:900px;gap:6px"><div class="h2">Qué muestra cada tarjeta</div><div class="sub">«Más» siempre va junto a la principal; lo rojo solo vive dentro de «Más».</div><table style="width:100%;border-collapse:collapse;margin-top:6px"><thead><tr style="text-align:left;font:800 12px Nunito;letter-spacing:.06em;color:var(--color-text-secondary)"><th style="padding:8px 12px 8px 0">TARJETA</th><th style="padding:8px 12px">← IZQUIERDA (PRINCIPAL)</th><th style="padding:8px 12px">DERECHA →</th><th style="padding:8px 0 8px 12px">EN «MÁS»</th></tr></thead><tbody>
 ${mapRow('pk', 'calendar', 'Cita', pill('calendar', 'Reprogramar'), `${pill('check', 'Asistí', 'gr')}<div class="s" style="margin-top:6px">Solo desde la hora de la cita, como «¿Pudiste asistir?».</div>`, `Ver detalle, reprogramar, editar, agregar a una mochila, compartir · ${red('Cancelar cita, Eliminar cita')} (resuelve #120)`)}
 ${mapRow('am', 'pill', 'Medicamento', pill('edit', 'Editar'), `${pill('check', 'Tomar', 'gr')}<div class="s" style="margin-top:6px">Atajo del botón «Tomar» de la tarjeta.</div>`, `Registrar toma, editar, nuevo ciclo, historial de tomas, finalizar ciclo · ${red('Eliminar medicamento')}`)}
 ${mapRow('sky', 'fileText', 'Documento', pill('share', 'Compartir'), pill('backpack', 'A mochila', 'teal'), `Ver, compartir, agregar a una mochila, editar, descargar · ${red('Eliminar documento')} (con «Deshacer»)`)}
@@ -75,24 +67,11 @@ ${mapRow('teal', 'backpack', 'Mochila', pill('share', 'Compartir'), '<span class
 </tbody></table><div class="hint" style="margin-top:8px">${mas(32, 'point')}<span class="grow">Deslizamiento completo: si se sigue deslizando, se aplica la acción del extremo (la principal o la de la derecha). Nunca es destructiva, y «Tomar» y «Asistí» muestran un toast con «Deshacer».</span></div></div>`;
 SW.m('Mapa de acciones', MAP, 'Acciones por tarjeta.');
 
-/* ── Hoy ── */
-const kebabC = c => c.replace(/<\/div><\/div><div class="row g8 wrap">/, `</div>${kebab('Opciones de la cita')}</div><div class="row g8 wrap">`);
-SW.m('Hoy (con «⋮»)', phone(`${agHead(1)}${search('Buscar por nombre, especialidad o doctor')}<div class="ey" style="color:var(--color-text-secondary)">PRÓXIMAS</div>${kebabC(A1)}${kebabC(A2)}${kebabC(A3)}`, { tab: 'agenda', fab: 'plus' }), 'Como está en la app: «⋮» con un menú flotante («Editar», «Eliminar»).');
 
-/* ── Variantes de los paneles ── */
-const VAR = [
-  {
-    k: '1A · Paneles', shape: 'classic',
-    L: [MORE(), act('brand', 'calendar', 'Reprogramar')], R: [act('ok', 'check', 'Tomar', 96)],
-    D: [MORE(), act('brand', 'share', 'Compartir')], B: [MORE(), act('brand', 'share', 'Compartir')],
-    note: 'Como la lista de chats de iOS: paneles sólidos a toda la altura, pegados al borde; la tarjeta conserva sus esquinas y pasa por encima. La principal queda en el extremo. Blanco sobre azul 5,2:1 y sobre gris pizarra 4,8:1.',
-  },
-];
-for (const v of VAR) {
-  SW.m(`${v.k} · cita a la izquierda`, citas(swipe(A1, v.L, 'right', v.shape)), v.note);
-  SW.m(`${v.k} · medicamento a la derecha`, meds(swipe(M1, v.R, 'left', v.shape)), 'Una sola acción positiva. Abre la misma confirmación de la toma.');
-  SW.m(`${v.k} · documento y mochila`, docsBps(swipe(D1c, v.D, 'right', v.shape), swipe(B1c, v.B, 'right', v.shape)), 'En tarjetas bajas los paneles se ajustan a la altura de la tarjeta.');
-}
+/* ── Propuesta ── */
+SW.m('Propuesta · cita, deslizar a la izquierda', citas(swipe(A1, [MORE(), act('brand', 'calendar', 'Reprogramar')], 'right')), 'Paneles sólidos a toda la altura, pegados al borde; la tarjeta conserva sus esquinas y pasa por encima. «Más» en gris pizarra y la principal en el extremo, 96 px cada uno. Blanco sobre azul 5,2:1 y sobre gris pizarra 4,8:1.');
+SW.m('Propuesta · medicamento, deslizar a la derecha', meds(swipe(M1, [act('ok', 'check', 'Tomar', 96)], 'left')), 'Una sola acción positiva, en verde. Abre la misma confirmación de la toma.');
+SW.m('Propuesta · documento y mochila', docsBps(swipe(D1c, [MORE(), act('brand', 'share', 'Compartir')], 'right'), swipe(B1c, [MORE(), act('brand', 'share', 'Compartir')], 'right')), 'En tarjetas bajas los paneles se ajustan a la altura de la tarjeta.');
 
 /* ── Hojas «Más» (iguales en todas las variantes) ── */
 const optRow = (n, t, s = '') => row('gray', n, t, s, ic('chevR', 18, 'var(--color-text-muted)'));

@@ -577,5 +577,5 @@ Decisión de producto del 2026-11-26 (issue #127). Las tarjetas de lista en móv
 | Umbrales (96 px por panel, 60 % de la tarjeta), háptica, resorte, resistencia, movimiento reducido y accesibilidad | `system/pages/movimiento-interacciones.md` §4b, checklist y nota de háptica |
 | Demo interactiva con arrastre, umbrales, háptica y «deslizar hasta aplicar» | `system/movimiento.html` «Acciones al deslizar» |
 | `SwipeRow` y la hoja «Más» (`ActionSheet`), con las acciones de cada tarjeta | `system/componentes.md` |
-| Módulo 14 con el mapa de acciones, la variante 1A, las hojas «Más» y cómo se descubre el gesto | `mockups/m11-deslizar.js` |
+| Módulo 14 con el mapa de acciones, la propuesta de paneles, las hojas «Más» y cómo se descubre el gesto | `mockups/m11-deslizar.js` |
 | Hoja «Más»: lo destructivo va aparte, en su propia tarjeta de filas rojas con subtítulo (se compararon enlaces rojos, filas al final de la lista, solo la que aplica y botones de peligro; queda «A · grupo aparte»). La de la cita trae «Cancelar cita» y «Eliminar cita» (resuelve #120 cuando se implemente) | `mockups/m11-deslizar.js`, `system/MASTER.md` §7, `system/componentes.md` |

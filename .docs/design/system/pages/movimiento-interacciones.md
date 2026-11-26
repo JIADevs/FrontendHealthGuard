@@ -110,7 +110,7 @@ Las tarjetas de lista en móvil (cita, medicamento, documento, mochila) no lleva
 | Al aplicar | La tarjeta vuelve a su lugar y se ejecuta la acción del extremo. «Tomar» y «Asistí» responden al tocar (§8) con toast y «Deshacer» (5 s); las demás abren su pantalla u hoja |
 | Lado sin acción | La tarjeta se resiste: avanza a un cuarto de la velocidad del dedo, hasta 24 px, y vuelve. Sin háptica |
 | Una a la vez | Abrir otra tarjeta, tocar fuera o hacer scroll cierra la abierta (150 ms). Tocar la tarjeta abierta la cierra; no abre el detalle |
-| Nunca | Una acción destructiva en los paneles: «Eliminar» y «Cancelar cita» viven solo en la hoja «Más», al final y en rojo (MASTER §7) |
+| Nunca | Una acción destructiva en los paneles: «Eliminar» y «Cancelar cita» viven solo en la hoja «Más», en su propio grupo de filas rojas (MASTER §7) |
 | Sin gesto | Las mismas acciones están en la hoja «Más» (también al mantener presionada la tarjeta 500 ms), en el detalle y como acciones de VoiceOver (`accessibilityActions`). Ninguna acción depende solo del gesto |
 | Descubrir | La primera vez que se abre una lista, la primera tarjeta se corre 44 px y vuelve (350 ms) con el aviso de la mascota «Desliza una tarjeta a la izquierda para ver sus acciones». No se repite |
 | Movimiento reducido | La tarjeta sigue al dedo igual (es manipulación directa); abrir, cerrar, estirar y aplicar son inmediatos, sin rebote. La háptica se mantiene |

@@ -11,13 +11,17 @@
         "react": "*",
         "react-native": "*",
         "react-native-safe-area-context": "*",
-        "react-native-reanimated": "*"
+        "react-native-reanimated": "*",
+        "react-native-gesture-handler": "*"
     },
     "peerDependenciesMeta": {
         "react-native-safe-area-context": {
             "optional": true
         },
         "react-native-reanimated": {
+            "optional": true
+        },
+        "react-native-gesture-handler": {
             "optional": true
         }
     },

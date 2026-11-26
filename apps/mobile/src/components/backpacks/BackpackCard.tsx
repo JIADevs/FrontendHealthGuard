@@ -35,7 +35,18 @@ export interface BackpackCardActions {
  * («Agregar documentos» while it is empty, since an empty backpack has nothing to share); nothing
  * to the right.
  */
-export function BackpackCard({ backpack, onPress, actions }: { backpack: Backpack; onPress: () => void; actions: BackpackCardActions }) {
+export function BackpackCard({
+  backpack,
+  onPress,
+  actions,
+  peek,
+}: {
+  backpack: Backpack;
+  onPress: () => void;
+  actions: BackpackCardActions;
+  /** First-time discovery of the swipe (§4b «Descubrir») */
+  peek?: boolean;
+}) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const count = backpack.documentCount ?? 0;
@@ -73,6 +84,7 @@ export function BackpackCard({ backpack, onPress, actions }: { backpack: Backpac
         ]}
         onLongPress={openSheet}
         onHaptic={swipeHaptic}
+        peek={peek}
       >
         <PressableScale onPress={onPress} accessible={false} style={styles.card}>
           <View style={styles.row}>

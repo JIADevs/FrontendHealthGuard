@@ -11,9 +11,11 @@ interface GroupApi {
 const GroupContext = createContext<GroupApi | null>(null);
 
 /** Only one `SwipeRow` open at a time (movimiento-interacciones.md §4b «Una a la vez»). */
-export function SwipeRowGroup({ children, ref }: SwipeRowGroupProps & { ref?: Ref<SwipeRowGroupHandle> }) {
+export function SwipeRowGroup({ children, onRowOpen, ref }: SwipeRowGroupProps & { ref?: Ref<SwipeRowGroupHandle> }) {
   const rows = useRef(new Map<string, Closer>());
   const openId = useRef<string | null>(null);
+  const onRowOpenRef = useRef(onRowOpen);
+  onRowOpenRef.current = onRowOpen;
 
   const closeAll = useCallback(() => {
     if (openId.current) rows.current.get(openId.current)?.();
@@ -24,6 +26,7 @@ export function SwipeRowGroup({ children, ref }: SwipeRowGroupProps & { ref?: Re
     opened: (id) => {
       if (openId.current && openId.current !== id) rows.current.get(openId.current)?.();
       openId.current = id;
+      onRowOpenRef.current?.();
     },
     register: (id, close) => {
       rows.current.set(id, close);

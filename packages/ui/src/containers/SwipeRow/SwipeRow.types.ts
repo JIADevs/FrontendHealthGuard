@@ -52,11 +52,15 @@ export interface SwipeRowProps {
    */
   accessibilityLabel?: string;
   onPress?: () => void;
+  /** First-time discovery: the card moves 44 px to the left and comes back (350 ms), once */
+  peek?: boolean;
 }
 
 /** Keeps a single row open and closes it when the list scrolls. */
 export interface SwipeRowGroupProps {
   children: ReactNode;
+  /** A row opened (by swiping): e.g. hides the first-time hint */
+  onRowOpen?: () => void;
 }
 
 export interface SwipeRowGroupHandle {

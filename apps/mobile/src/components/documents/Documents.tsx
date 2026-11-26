@@ -36,6 +36,7 @@ import {
 } from "./DocumentsEmpty";
 import { DocumentsFilterSheet } from "./DocumentsFilterSheet";
 import { PortalLinkSheet } from "./PortalLinkSheet";
+import { useSwipeDiscovery } from "../../lib/swipeDiscovery";
 
 export interface DocumentsProps {
   onOpen: (doc: Document) => void;
@@ -77,6 +78,8 @@ export function Documents(props: DocumentsProps) {
   const list = useDocumentsList();
   const pull = usePullRefresh(list.refetch, list.updatedAt);
   const showSkeleton = useSkeletonVisible(list.isLoading);
+  const discovery = useSwipeDiscovery("documents", !showSkeleton && list.items.length > 0);
+  const firstId = list.sections[0]?.data[0]?.id;
   const [portalOpen, setPortalOpen] = useState(false);
   // Staggered entry only for the first paint of the list (§2, §6c), not on every refetch.
   const [entered, setEntered] = useState(false);
@@ -169,11 +172,12 @@ export function Documents(props: DocumentsProps) {
         </SkeletonGroup>
       ) : (
         <Animated.View style={[{ flex: 1 }, dim]} aria-busy={busy}>
-          <SwipeRowGroup ref={rows}>
+          <SwipeRowGroup ref={rows} onRowOpen={discovery.dismiss}>
             <SectionList
               sections={list.sections}
               keyExtractor={(d) => d.id}
               stickySectionHeadersEnabled={false}
+              ListHeaderComponent={discovery.hint}
               contentContainerStyle={list.items.length === 0 ? styles.emptyContent : styles.content}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
@@ -209,6 +213,7 @@ export function Documents(props: DocumentsProps) {
                         onShare: () => onShare(item),
                         onDelete: () => onDelete(item),
                       }}
+                      peek={discovery.peek && item.id === firstId}
                     />
                   </Animated.View>
                 );

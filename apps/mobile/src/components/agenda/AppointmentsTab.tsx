@@ -36,6 +36,7 @@ import { notify } from "../../lib/notify";
 import { AgendaListToolbar } from "./AgendaListToolbar";
 import { AgendaFilterEmpty } from "./AgendaFilterEmpty";
 import { CancelAppointmentModal } from "./CancelAppointmentModal";
+import { useSwipeDiscovery } from "../../lib/swipeDiscovery";
 
 export function AppointmentsTab() {
   const t = useAppTheme();
@@ -137,6 +138,8 @@ export function AppointmentsTab() {
   const items = appts.data?.items ?? [];
   const showSkeleton = useSkeletonVisible(appts.isLoading);
   const sections = useMemo(() => splitAppointments(items), [items]);
+  const discovery = useSwipeDiscovery("appointments", !showSkeleton && items.length > 0);
+  const firstId = sections[0]?.data[0]?.id;
 
   return (
     <View style={styles.tabContent}>
@@ -158,13 +161,14 @@ export function AppointmentsTab() {
           <SkeletonCard lines={2} />
         </SkeletonGroup>
       ) : (
-        <SwipeRowGroup ref={rows}>
+        <SwipeRowGroup ref={rows} onRowOpen={discovery.dismiss}>
           <View style={{ flex: 1 }}>
             <SectionList
               sections={sections}
               keyExtractor={(a) => a.id}
               contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
               stickySectionHeadersEnabled={false}
+              ListHeaderComponent={discovery.hint}
               refreshControl={pull.refreshControl}
               onScroll={pull.onScroll}
               onScrollBeginDrag={() => rows.current?.closeAll()}
@@ -180,6 +184,7 @@ export function AppointmentsTab() {
                   onAttended={() => handleAttended(a)}
                   onCancel={() => setCancelTarget(a)}
                   onDelete={() => setDeleteTarget(a)}
+                  peek={discovery.peek && a.id === firstId}
                 />
               )}
               ListEmptyComponent={

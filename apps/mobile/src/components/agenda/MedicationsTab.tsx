@@ -29,6 +29,7 @@ import { MedicationsFilterSheet } from "./MedicationsFilterSheet";
 import { useTakeDose } from "./useTakeDose";
 import { currentCycleOf, isMedicationActive, localTodayKey } from "./medicationCycles";
 import { haptics } from "../../lib/haptics";
+import { useSwipeDiscovery } from "../../lib/swipeDiscovery";
 import { LoadError } from "../states/LoadError";
 import { notify } from "../../lib/notify";
 import { AgendaListToolbar } from "./AgendaListToolbar";
@@ -78,6 +79,8 @@ export function MedicationsTab() {
   const pull = usePullRefresh(refetch, updatedAt);
   const showSkeleton = useSkeletonVisible(isLoading);
   const sections = useMemo(() => splitMedications(items), [items]);
+  const discovery = useSwipeDiscovery("medications", !showSkeleton && items.length > 0);
+  const firstId = sections[0]?.data[0]?.id;
 
   const deleteMut = useDeleteMedicationMutation();
   const takeDose = useTakeDose();
@@ -140,13 +143,14 @@ export function MedicationsTab() {
           <MedicationCardSkeleton active={false} />
         </SkeletonGroup>
       ) : (
-        <SwipeRowGroup ref={rows}>
+        <SwipeRowGroup ref={rows} onRowOpen={discovery.dismiss}>
           <View style={{ flex: 1 }}>
             <SectionList
               sections={sections}
               keyExtractor={(m) => m.id}
               contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
               stickySectionHeadersEnabled={false}
+              ListHeaderComponent={discovery.hint}
               refreshControl={pull.refreshControl}
               onScroll={pull.onScroll}
               onScrollBeginDrag={() => rows.current?.closeAll()}
@@ -167,6 +171,7 @@ export function MedicationsTab() {
                   onNewCycle={() => nav.newMedicationCycle(m.id, m.name)}
                   onOpenCycle={(cycleId) => nav.openMedicationCycle(m.id, m.name, cycleId)}
                   onFinishCycle={(cycleId) => setFinishTarget({ medication: m, cycleId })}
+                  peek={discovery.peek && m.id === firstId}
                 />
               )}
               ListEmptyComponent={

@@ -35,7 +35,18 @@ export interface DocumentRowActions {
  * «28 oct · Resultado» and, below, the document's tags as grey chips. Its actions go in the swipe
  * (MASTER §7, #127): «Más» + «Compartir» to the left, «A mochila» to the right.
  */
-export function DocumentRow({ document, onPress, actions }: { document: Document; onPress: () => void; actions: DocumentRowActions }) {
+export function DocumentRow({
+  document,
+  onPress,
+  actions,
+  peek,
+}: {
+  document: Document;
+  onPress: () => void;
+  actions: DocumentRowActions;
+  /** First-time discovery of the swipe (§4b «Descubrir») */
+  peek?: boolean;
+}) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const category = CATEGORY_META[categoryOf(document)];
@@ -75,6 +86,7 @@ export function DocumentRow({ document, onPress, actions }: { document: Document
         startAction={{ key: "backpack", tone: "positive", label: "A mochila", icon: <Backpack {...WHITE} />, onPress: () => setBackpack(true) }}
         onLongPress={openSheet}
         onHaptic={swipeHaptic}
+        peek={peek}
       >
         <PressableScale onPress={onPress} accessible={false} style={styles.card}>
           <View style={styles.row}>

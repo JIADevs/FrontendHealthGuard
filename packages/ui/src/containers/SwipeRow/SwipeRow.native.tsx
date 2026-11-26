@@ -6,6 +6,8 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withDelay,
+  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -29,7 +31,7 @@ const panelBg = (t: ThemeContextValue): Record<SwipeActionTone, string> => ({
  * actions are visible; past 60 % of the card a medium impact says releasing applies the outer
  * action, which stretches over «Más». Velocity only opens, never applies.
  */
-export function SwipeRow({ id, children, endActions = [], startAction, onLongPress, onHaptic, accessibilityLabel, onPress }: SwipeRowProps) {
+export function SwipeRow({ id, children, endActions = [], startAction, onLongPress, onHaptic, accessibilityLabel, onPress, peek = false }: SwipeRowProps) {
   const t = useAppTheme();
   const reduced = useReducedMotion();
   const group = useSwipeRowGroup();
@@ -60,6 +62,22 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
   const closeRef = useRef(close);
   closeRef.current = close;
   useEffect(() => group?.register(id, () => closeRef.current()), [group, id]);
+
+  // «Descubrir» (§4b): once, the card shows there is something under it. Reduced motion skips the
+  // movement; the mascot's hint above the list still explains the gesture.
+  useEffect(() => {
+    if (!peek || reduced || endActions.length === 0) return;
+    const half = SWIPE.peekDuration / 2;
+    x.value = withDelay(
+      SWIPE.peekDelay,
+      withSequence(
+        withTiming(-SWIPE.peek, { duration: half, easing: motionEasing.out }),
+        withTiming(0, { duration: half, easing: motionEasing.out }),
+      ),
+    );
+    // Only when `peek` turns on; the actions can change without peeking again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [peek, reduced]);
 
   const haptic = useCallback((k: SwipeHaptic) => onHaptic?.(k), [onHaptic]);
   const didOpen = useCallback(() => {

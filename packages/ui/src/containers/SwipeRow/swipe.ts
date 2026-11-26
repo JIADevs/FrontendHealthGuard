@@ -29,6 +29,10 @@ export const SWIPE = {
   apply: 250,
   stretch: 150,
   longPress: 500,
+  /** First-time discovery: the first card moves this far and back, after the list settles */
+  peek: 44,
+  peekDuration: 350,
+  peekDelay: 450,
 } as const;
 
 /** Where releasing applies the outer action, for a card of `cardWidth` and panels of `panels` px. */

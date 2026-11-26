@@ -38,6 +38,8 @@ export interface MedicationCardProps {
   onOpenCycle: (cycleId: string) => void;
   /** Asks to end the current cycle today (its own `ConfirmModal`) */
   onFinishCycle: (cycleId: string) => void;
+  /** First-time discovery of the swipe (§4b «Descubrir») */
+  peek?: boolean;
 }
 
 /**
@@ -55,6 +57,7 @@ export function MedicationCard({
   onNewCycle,
   onOpenCycle,
   onFinishCycle,
+  peek,
 }: MedicationCardProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -107,6 +110,7 @@ export function MedicationCard({
         startAction={canTake ? { key: "take", tone: "positive", label: "Tomar", icon: <Check {...WHITE} strokeWidth={3} />, onPress: take } : undefined}
         onLongPress={() => setSheet(true)}
         onHaptic={swipeHaptic}
+        peek={peek}
       >
         <PressableScale onPress={onPress} accessible={false}>
           <Card

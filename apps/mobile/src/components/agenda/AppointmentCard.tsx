@@ -30,6 +30,8 @@ export interface AppointmentCardProps {
   onAttended: () => void;
   onCancel: () => void;
   onDelete: () => void;
+  /** First-time discovery of the swipe (§4b «Descubrir») */
+  peek?: boolean;
 }
 
 export function AppointmentCard({
@@ -39,6 +41,7 @@ export function AppointmentCard({
   onAttended,
   onCancel,
   onDelete,
+  peek,
 }: AppointmentCardProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -85,6 +88,7 @@ export function AppointmentCard({
         startAction={canAttend ? { key: "attended", tone: "positive", label: "Asistí", icon: <Check {...WHITE} strokeWidth={3} />, onPress: onAttended } : undefined}
         onLongPress={() => setSheet(true)}
         onHaptic={swipeHaptic}
+        peek={peek}
       >
         <PressableScale
           onPress={onPress}

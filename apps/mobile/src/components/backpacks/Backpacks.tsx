@@ -23,6 +23,7 @@ import { MascotHint } from "../brand/MascotHint";
 import { useBackpacksList } from "../../hooks/useBackpacksList";
 import { useBackpackDeleteWithUndo } from "../../hooks/useBackpackUndo";
 import { BackpackCard } from "./BackpackCard";
+import { useSwipeDiscovery } from "../../lib/swipeDiscovery";
 import { BackpackDeleteConfirm } from "./BackpackDeleteConfirm";
 import { BackpacksEmpty, BackpacksError, BackpacksSearchEmpty, type BackpackTemplate } from "./BackpacksEmpty";
 
@@ -48,6 +49,7 @@ export function Backpacks(props: BackpacksProps) {
   const list = useBackpacksList();
   const pull = usePullRefresh(list.refetch, list.updatedAt);
   const showSkeleton = useSkeletonVisible(list.isLoading);
+  const discovery = useSwipeDiscovery("backpacks", !showSkeleton && list.items.length > 0);
   const deleteWithUndo = useBackpackDeleteWithUndo();
   const [toDelete, setToDelete] = useState<Backpack | null>(null);
   // Staggered entry only for the first paint of the list (§2, §6c), not on every refetch.
@@ -99,12 +101,13 @@ export function Backpacks(props: BackpacksProps) {
         </View>
       ) : (
         <Animated.View style={[{ flex: 1 }, dim]} aria-busy={busy}>
-          <SwipeRowGroup ref={rows}>
+          <SwipeRowGroup ref={rows} onRowOpen={discovery.dismiss}>
             <FlatList
               data={list.items}
               keyExtractor={(bp) => bp.id}
               contentContainerStyle={list.items.length === 0 ? styles.emptyContent : styles.content}
               keyboardShouldPersistTaps="handled"
+              ListHeaderComponent={discovery.hint}
               keyboardDismissMode="on-drag"
               onLayout={() => setEntered(true)}
               refreshControl={pull.refreshControl}
@@ -133,6 +136,7 @@ export function Backpacks(props: BackpacksProps) {
                       onAddDocuments: () => onAddDocuments(item),
                       onDelete: () => setToDelete(item),
                     }}
+                    peek={discovery.peek && item.id === list.items[0]?.id}
                   />
                 </Animated.View>
               )}

@@ -586,6 +586,6 @@ Decisión de producto del 2026-11-26 (issue #127). v2.34 dejó el gesto solo en 
 
 | Cambio | Dónde |
 |---|---|
-| Fila del día: cita = «Reprogramar» · «Asistí» (la misma hoja «Más» de Citas); toma = «Más tarde» · «Tomar», hoja sin grupo rojo («No la tomé» es un registro que se corrige, no un borrado); tarea = «Reprogramar» · «Completar», con «Eliminar tarea» en rojo | `mockups/m11-deslizar.js` (mapa «Calendario y Compartidos», pantallas y hojas), `system/componentes.md` |
-| Enlace activo de Compartidos: «Copiar enlace» como principal; «Más» con ver detalle, QR, copiar, compartir y «Revocar acceso» en rojo | ídem |
+| Fila del día: cita = «Reprogramar» · «Asistí» (la misma hoja «Más» de Citas); toma = «No la tomé» · «Tomar», con «Más» = las opciones de «¿Tomaste esta dosis?» y sin grupo rojo («No la tomé» es un registro, no un borrado); tarea = «Reprogramar» · «Completar», con las acciones de «Detalle de tarea» y sin grupo rojo (una tarea no se elimina) | `mockups/m11-deslizar.js` (mapa «Calendario y Compartidos», pantallas sobre el Calendario del módulo 3 y hojas), `system/componentes.md` |
+| Enlace activo de Compartidos: «Copiar enlace» como principal; «Más» con las acciones de «Detalle compartido» (ver detalle, mostrar QR, copiar enlace, extender plazo) y «Revocar acceso» en rojo | ídem, sobre la lista del módulo 13 |
 | No se desliza una fila con una sola acción: check-in, paso de misión, enlace vencido o revocado | `system/MASTER.md` §7, `system/pages/movimiento-interacciones.md` §4b |

@@ -15,6 +15,9 @@ import { useTakeDose } from "./useTakeDose";
 import { eventSlotIso } from "./doseRowState";
 import { EmptyDayCard } from "./AgendaEmpty";
 import { useAgendaNavigation } from "./AgendaNavigation";
+import { useCalendarSwipe } from "./useCalendarSwipe";
+import { useSwipeDiscovery } from "../../lib/swipeDiscovery";
+import { swipeHaptic } from "../../lib/haptics";
 
 import {
   colors,
@@ -224,8 +227,27 @@ function CalendarTab({
   const styles = useMemo(() => makeStyles(t), [t]);
   const nav = useAgendaNavigation();
   const [intakeEvent, setIntakeEvent] = useState<Extract<AgendaEvent, { type: "medication" }> | null>(null);
+  const [intakeStep, setIntakeStep] = useState<"missed" | "time" | undefined>(undefined);
   const [checkInEvent, setCheckInEvent] = useState<Extract<AgendaEvent, { type: "checkin" }> | null>(null);
   const takeDose = useTakeDose();
+
+  const take = (event: Extract<AgendaEvent, { type: "medication" }>) => {
+    const cycle = resolveCycleForDay(event.data, event.dayKey);
+    if (!cycle) {
+      notify({ tone: "error", message: "No encontramos el ciclo de esta toma" });
+      return;
+    }
+    takeDose.take(cycle.id, eventSlotIso(event));
+  };
+  const openIntake = (event: Extract<AgendaEvent, { type: "medication" }>, step?: "missed" | "time") => {
+    setIntakeStep(step);
+    setIntakeEvent(event);
+  };
+  // Swipe actions of the day rows (module 14, v2.35) and the first-time hint.
+  const swipe = useCalendarSwipe({ onTake: take, onIntake: openIntake });
+  // The hint shows only on a day with a row that swipes; that row peeks.
+  const [firstSwipeKey, setFirstSwipeKey] = useState<string | null>(null);
+  const discovery = useSwipeDiscovery("calendar", firstSwipeKey !== null);
 
   useEffect(() => {
     if (intentIntakeEvent) {
@@ -237,25 +259,30 @@ function CalendarTab({
   return (
     <View style={styles.tabContent}>
       <HeluAgendaCalendar
-        onMedicationPress={setIntakeEvent}
+        onMedicationPress={(event) => openIntake(event)}
         onAppointmentPress={(event) => nav.openAppointment(event.data.id)}
         onCheckInPress={setCheckInEvent}
         onTaskPress={(event) => nav.openTask(event.data.id)}
-        onMedicationTake={(event) => {
-          const cycle = resolveCycleForDay(event.data, event.dayKey);
-          if (!cycle) {
-            notify({ tone: "error", message: "No encontramos el ciclo de esta toma" });
-            return;
-          }
-          takeDose.take(cycle.id, eventSlotIso(event));
-        }}
+        onMedicationTake={take}
         onTaskComplete={(event) => nav.openTask(event.data.id, "complete")}
         takingCycleId={takeDose.takingCycleId}
         renderEmptyDay={(dateKey) => <EmptyDayCard weekday={weekdayOf(dateKey)} onAdd={onAdd} />}
+        eventSwipe={(event) => {
+          const config = swipe.eventSwipe(event);
+          return config && discovery.peek && swipeKey(event) === firstSwipeKey ? { ...config, peek: true } : config;
+        }}
+        onDayEventsChange={(events) => {
+          const first = events.find((e) => swipe.eventSwipe(e));
+          setFirstSwipeKey(first ? swipeKey(first) : null);
+        }}
+        onSwipeHaptic={swipeHaptic}
+        onSwipeRowOpen={discovery.dismiss}
+        dayListHeader={discovery.hint ? <View style={styles.hint}>{discovery.hint}</View> : null}
       />
+      {swipe.overlays}
 
       {intakeEvent ? (
-        <MedicationIntakeModal event={intakeEvent} onClose={() => setIntakeEvent(null)} />
+        <MedicationIntakeModal event={intakeEvent} initialStep={intakeStep} onClose={() => setIntakeEvent(null)} />
       ) : null}
 
       {checkInEvent ? (
@@ -266,6 +293,12 @@ function CalendarTab({
       ) : null}
     </View>
   );
+}
+
+/** Stable key of a day row for the first-time peek (an index would move with the list). */
+function swipeKey(event: AgendaEvent): string {
+  if (event.type === "medication") return `medication-${event.data.id}-${event.dayKey}-${event.intakeTime}`;
+  return `${event.type}-${event.data.id}`;
 }
 
 // ─── styles ───────────────────────────────────────────────────────────────────
@@ -283,6 +316,7 @@ function makeStyles(t: ThemeContextValue) {
     },
     title:              { fontSize: 26, lineHeight: 30, fontFamily: nativeFont("heading", 900), color: t.text.primary },
     tabContent:         { flex: 1 },
+    hint:               { paddingHorizontal: spacing[4] },
     skeletonList:       { gap: spacing[3], paddingHorizontal: spacing[4], paddingTop: spacing[3] },
     center:{ flex: 1, alignItems: "center", justifyContent: "center", gap: spacing[3], padding: spacing[6] },
     iconBtn:            { width: 34, height: 34, borderRadius: radii.sm, alignItems: "center", justifyContent: "center", backgroundColor: t.surface.bg },

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Keyboard, Pressable, ScrollView, SectionList, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -10,6 +10,7 @@ import {
   SearchField,
   Skeleton,
   SkeletonGroup,
+  SwipeRowGroup,
   motion,
   nativeFont,
   radii,
@@ -17,6 +18,7 @@ import {
   useAppTheme,
   usePullRefresh,
   useSkeletonVisible,
+  type SwipeRowGroupHandle,
   type ThemeContextValue,
 } from "@helu/ui";
 import { Fab } from "../Fab";
@@ -34,6 +36,7 @@ import {
 } from "./DocumentsEmpty";
 import { DocumentsFilterSheet } from "./DocumentsFilterSheet";
 import { PortalLinkSheet } from "./PortalLinkSheet";
+import { useSwipeDiscovery } from "../../lib/swipeDiscovery";
 
 export interface DocumentsProps {
   onOpen: (doc: Document) => void;
@@ -75,9 +78,12 @@ export function Documents(props: DocumentsProps) {
   const list = useDocumentsList();
   const pull = usePullRefresh(list.refetch, list.updatedAt);
   const showSkeleton = useSkeletonVisible(list.isLoading);
+  const discovery = useSwipeDiscovery("documents", !showSkeleton && list.items.length > 0);
+  const firstId = list.sections[0]?.data[0]?.id;
   const [portalOpen, setPortalOpen] = useState(false);
   // Staggered entry only for the first paint of the list (§2, §6c), not on every refetch.
   const [entered, setEntered] = useState(false);
+  const rows = useRef<SwipeRowGroupHandle>(null);
 
   const pickTag = useCallback(
     (valueId: string) => {
@@ -166,86 +172,91 @@ export function Documents(props: DocumentsProps) {
         </SkeletonGroup>
       ) : (
         <Animated.View style={[{ flex: 1 }, dim]} aria-busy={busy}>
-          <SectionList
-            sections={list.sections}
-            keyExtractor={(d) => d.id}
-            stickySectionHeadersEnabled={false}
-            contentContainerStyle={list.items.length === 0 ? styles.emptyContent : styles.content}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            onLayout={() => setEntered(true)}
-            refreshControl={pull.refreshControl}
-            onScroll={pull.onScroll}
-            scrollEventThrottle={16}
-            renderSectionHeader={({ section }) => (
-              <Text style={styles.eyebrow} accessibilityRole="header">
-                {section.title}
-              </Text>
-            )}
-            renderItem={({ item }) => {
-              const group = groupById.get(item.id) ?? 0;
-              return (
-                <Animated.View
-                  entering={
-                    entered
-                      ? FadeIn.duration(motion.fast)
-                      : FadeIn.duration(motion.base).delay(Math.min(group, STAGGER_MAX) * STAGGER_MS)
-                  }
-                  exiting={FadeOut.duration(motion.instant)}
-                  layout={LinearTransition.duration(motion.base)}
-                  style={styles.rowWrap}
-                >
-                  <DocumentRow
-                    document={item}
-                    onPress={() => onOpen(item)}
-                    actions={{
-                      onView: () => onOpen(item),
-                      onEdit: () => onEdit(item),
-                      onShare: () => onShare(item),
-                      onDelete: () => onDelete(item),
-                    }}
-                  />
-                </Animated.View>
-              );
-            }}
-            ListEmptyComponent={
-              !list.settled ? undefined : (
-                <Animated.View entering={FadeIn.duration(motion.fast)}>
-                  {list.isError ? (
-                    <LoadError title="No se pudieron cargar tus documentos" onRetry={() => void list.refetch()} retrying={list.isRefetching} />
-                  ) : searching && list.hasActiveFilter && hiddenByFilter.length > 0 ? (
-                    <DocumentsSearchFilteredEmpty
-                      query={list.debouncedSearch}
-                      filters={list.filters}
-                      matches={hiddenByFilter}
-                      onSearchAll={() => list.setFilters({ categories: [], tagValueIds: [], startDate: null, endDate: null })}
-                      onOpen={onOpen}
+          <SwipeRowGroup ref={rows} onRowOpen={discovery.dismiss}>
+            <SectionList
+              sections={list.sections}
+              keyExtractor={(d) => d.id}
+              stickySectionHeadersEnabled={false}
+              ListHeaderComponent={discovery.hint}
+              contentContainerStyle={list.items.length === 0 ? styles.emptyContent : styles.content}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              onLayout={() => setEntered(true)}
+              refreshControl={pull.refreshControl}
+              onScroll={pull.onScroll}
+              onScrollBeginDrag={() => rows.current?.closeAll()}
+              scrollEventThrottle={16}
+              renderSectionHeader={({ section }) => (
+                <Text style={styles.eyebrow} accessibilityRole="header">
+                  {section.title}
+                </Text>
+              )}
+              renderItem={({ item }) => {
+                const group = groupById.get(item.id) ?? 0;
+                return (
+                  <Animated.View
+                    entering={
+                      entered
+                        ? FadeIn.duration(motion.fast)
+                        : FadeIn.duration(motion.base).delay(Math.min(group, STAGGER_MAX) * STAGGER_MS)
+                    }
+                    exiting={FadeOut.duration(motion.instant)}
+                    layout={LinearTransition.duration(motion.base)}
+                    style={styles.rowWrap}
+                  >
+                    <DocumentRow
+                      document={item}
+                      onPress={() => onOpen(item)}
+                      actions={{
+                        onView: () => onOpen(item),
+                        onEdit: () => onEdit(item),
+                        onShare: () => onShare(item),
+                        onDelete: () => onDelete(item),
+                      }}
+                      peek={discovery.peek && item.id === firstId}
                     />
-                  ) : searching ? (
-                    <DocumentsSearchEmpty
-                      query={list.debouncedSearch}
-                      allDocuments={list.allDocuments}
-                      tagCategories={list.tagCategories}
-                      onSearch={list.setSearch}
-                      onPickTag={pickTag}
-                      onPickCategory={pickCategory}
-                      onUpload={() => setAddOpen(true)}
-                    />
-                  ) : list.hasActiveFilter ? (
-                    <DocumentsFilterEmpty
-                      filters={list.filters}
-                      allDocuments={list.allDocuments}
-                      tagCategories={list.tagCategories}
-                      onChange={list.setFilters}
-                      onOpen={onOpen}
-                    />
-                  ) : (
-                    <DocumentsEmpty onUpload={onUpload} onScan={onScan} />
-                  )}
-                </Animated.View>
-              )
-            }
-          />
+                  </Animated.View>
+                );
+              }}
+              ListEmptyComponent={
+                !list.settled ? undefined : (
+                  <Animated.View entering={FadeIn.duration(motion.fast)}>
+                    {list.isError ? (
+                      <LoadError title="No se pudieron cargar tus documentos" onRetry={() => void list.refetch()} retrying={list.isRefetching} />
+                    ) : searching && list.hasActiveFilter && hiddenByFilter.length > 0 ? (
+                      <DocumentsSearchFilteredEmpty
+                        query={list.debouncedSearch}
+                        filters={list.filters}
+                        matches={hiddenByFilter}
+                        onSearchAll={() => list.setFilters({ categories: [], tagValueIds: [], startDate: null, endDate: null })}
+                        onOpen={onOpen}
+                      />
+                    ) : searching ? (
+                      <DocumentsSearchEmpty
+                        query={list.debouncedSearch}
+                        allDocuments={list.allDocuments}
+                        tagCategories={list.tagCategories}
+                        onSearch={list.setSearch}
+                        onPickTag={pickTag}
+                        onPickCategory={pickCategory}
+                        onUpload={() => setAddOpen(true)}
+                      />
+                    ) : list.hasActiveFilter ? (
+                      <DocumentsFilterEmpty
+                        filters={list.filters}
+                        allDocuments={list.allDocuments}
+                        tagCategories={list.tagCategories}
+                        onChange={list.setFilters}
+                        onOpen={onOpen}
+                      />
+                    ) : (
+                      <DocumentsEmpty onUpload={onUpload} onScan={onScan} />
+                    )}
+                  </Animated.View>
+                )
+              }
+            />
+          </SwipeRowGroup>
           <PullRefreshIndicator state={pull} />
         </Animated.View>
       )}
@@ -320,7 +331,7 @@ function makeStyles(t: ThemeContextValue) {
   });
 }
 
-/** A `DocumentRow` while it loads: same card, 40 px tile, two lines and the 44 px «⋯». */
+/** A `DocumentRow` while it loads: same card, 40 px tile and two lines. */
 function DocumentRowSkeleton() {
   const t = useAppTheme();
   return (
@@ -341,9 +352,6 @@ function DocumentRowSkeleton() {
       <View style={{ flex: 1, gap: 6 }}>
         <Skeleton width="65%" height={14} />
         <Skeleton width="40%" height={12} />
-      </View>
-      <View style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
-        <Skeleton width={4} height={16} radius={2} />
       </View>
     </View>
   );

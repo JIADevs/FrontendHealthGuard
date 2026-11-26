@@ -4,13 +4,13 @@ import { useAppTheme } from '../../tokens/ThemeProvider';
 import { IconTile } from '../../primitives/IconTile/IconTile.native';
 import type { ListRowProps } from './ListRow.types';
 
-export function ListRow({ title, meta, icon, tone = 'neutral', trailing, onPress, accessibilityLabel }: ListRowProps) {
+export function ListRow({ title, meta, icon, tone = 'neutral', trailing, onPress, accessibilityLabel, destructive = false }: ListRowProps) {
   const t = useAppTheme();
   const body = (
     <>
-      {icon ? <IconTile icon={icon} tone={tone} /> : null}
+      {icon ? <IconTile icon={icon} tone={destructive ? 'danger' : tone} /> : null}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={2} style={{ fontSize: 14, lineHeight: 18, fontFamily: nativeFont('body', 600), color: t.text.primary }}>
+        <Text numberOfLines={2} style={{ fontSize: 14, lineHeight: 18, fontFamily: nativeFont('body', 600), color: destructive ? t.status.errorFg : t.text.primary }}>
           {title}
         </Text>
         {meta ? (

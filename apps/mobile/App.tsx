@@ -1,5 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import NetInfo from "@react-native-community/netinfo";
 import { NavigationContainer } from "@react-navigation/native";
@@ -120,15 +121,18 @@ function AppContent({
   }, [token, notifData, setUnreadCount]);
 
   return (
-    <SafeAreaProvider>
-      <NavigationContainer ref={navigationRef}>
-        <RootNavigator />
-      </NavigationContainer>
-      {/* «¿Te acompañamos con esto?» after saving an order or an authorization (Misiones RF-68). */}
-      {token ? <DocumentSuggestionHost /> : null}
-      <HeluToast />
-      <StatusBar style="auto" />
-    </SafeAreaProvider>
+    // Swipe actions on list cards (SwipeRow, #127) need the gesture handler root.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <NavigationContainer ref={navigationRef}>
+          <RootNavigator />
+        </NavigationContainer>
+        {/* «¿Te acompañamos con esto?» after saving an order or an authorization (Misiones RF-68). */}
+        {token ? <DocumentSuggestionHost /> : null}
+        <HeluToast />
+        <StatusBar style="auto" />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

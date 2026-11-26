@@ -8,7 +8,22 @@ import { semanticDark, semanticLight } from "../../tokens/semantic";
 import { useAppTheme } from "../../tokens/ThemeProvider";
 import type { ThemeContextValue } from "../../tokens/ThemeProvider";
 import { NOT_TAKEN_REASON_LABELS_ES } from "./medicationIntakeUtils";
-import { eventDetailLine, eventLabel, eventTimeLabel, type AgendaEvent } from "./mapCalendarApiToEvents";
+import { eventDetailLine, eventKey, eventLabel, eventTimeLabel, type AgendaEvent } from "./mapCalendarApiToEvents";
+import { SwipeRow } from "../../containers/SwipeRow/SwipeRow.native";
+import type { SwipeAction, SwipeHaptic } from "../../containers/SwipeRow/SwipeRow.types";
+
+/**
+ * Swipe actions of a day row (MASTER §7, mockup module 14 v2.35): the app decides them per event.
+ * `null` (check-in, a registered dose…) leaves the row without swipe.
+ */
+export interface AgendaEventSwipe {
+    endActions?: SwipeAction[];
+    startAction?: SwipeAction;
+    /** Long press: the «Más» sheet */
+    onLongPress?: () => void;
+    /** First-time discovery (§4b «Descubrir») */
+    peek?: boolean;
+}
 
 interface DayEventListProps {
     events: AgendaEvent[];
@@ -16,6 +31,8 @@ interface DayEventListProps {
     onMedicationTake?: (event: Extract<AgendaEvent, { type: "medication" }>) => void;
     onTaskComplete?: (event: Extract<AgendaEvent, { type: "task" }>) => void;
     takingCycleId?: string;
+    eventSwipe?: (event: AgendaEvent) => AgendaEventSwipe | null;
+    onSwipeHaptic?: (kind: SwipeHaptic) => void;
 }
 
 /**
@@ -29,6 +46,8 @@ export function DayEventList({
     onMedicationTake,
     onTaskComplete,
     takingCycleId,
+    eventSwipe,
+    onSwipeHaptic,
 }: DayEventListProps) {
     const t = useAppTheme();
     if (events.length === 0) return null;
@@ -79,12 +98,16 @@ export function DayEventList({
     return (
         <View style={styles.list}>
             {events.map((event, index) => {
-                return (
+                const label = `${eventLabel(event)}, ${eventTimeLabel(event)}, ${eventDetailLine(event)}`;
+                const swipe = eventSwipe?.(event);
+                const swipes = !!swipe && ((swipe.endActions?.length ?? 0) > 0 || !!swipe.startAction);
+                const row = (
                     <PressableScale
                         key={`${event.type}-${index}`}
                         onPress={() => onEventPress?.(event)}
+                        accessible={!swipes}
                         accessibilityRole="button"
-                        accessibilityLabel={`${eventLabel(event)}, ${eventTimeLabel(event)}, ${eventDetailLine(event)}`}
+                        accessibilityLabel={label}
                         style={[
                             styles.card,
                             { backgroundColor: t.surface.bgCard, borderColor: t.border.default, borderLeftColor: accentFor(t, event) },
@@ -104,6 +127,22 @@ export function DayEventList({
                             {(kind) => renderTrailing(kind, event)}
                         </FadeThrough>
                     </PressableScale>
+                );
+                if (!swipes || !swipe) return row;
+                return (
+                    <SwipeRow
+                        key={`${event.type}-${index}`}
+                        id={eventKey(event, index)}
+                        accessibilityLabel={label}
+                        onPress={() => onEventPress?.(event)}
+                        endActions={swipe.endActions}
+                        startAction={swipe.startAction}
+                        onLongPress={swipe.onLongPress}
+                        onHaptic={onSwipeHaptic}
+                        peek={swipe.peek}
+                    >
+                        {row}
+                    </SwipeRow>
                 );
             })}
         </View>
@@ -148,6 +187,11 @@ function mostUrgentTakeIndex(events: AgendaEvent[]): number {
         }
     });
     return best;
+}
+
+/** A dose whose time came and has no answer yet: the row shows «Tomar» (and swipes to it). */
+export function isDosePending(event: AgendaEvent): boolean {
+    return event.type === "medication" && actionFor(event) === "take";
 }
 
 function actionFor(event: AgendaEvent): "take" | "complete" | null {

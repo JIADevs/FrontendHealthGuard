@@ -1,10 +1,24 @@
-import { useMemo, useRef, useState, useCallback, type ComponentRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Pill, Check, MoreVertical, Trash2 } from "lucide-react-native";
+import { useMemo, useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Pill, Check, CircleX, Ellipsis, History, Pencil, Plus, Trash2 } from "lucide-react-native";
 import type { Medication } from "@helu/api";
-import { Button, Card, Chip, FadeThrough, PressableScale, Skeleton, radii, spacing, fontSize, nativeFont, useAppTheme } from "@helu/ui";
+import {
+  ActionSheet,
+  Button,
+  Card,
+  Chip,
+  FadeThrough,
+  PressableScale,
+  Skeleton,
+  SwipeRow,
+  radii,
+  spacing,
+  fontSize,
+  nativeFont,
+  useAppTheme,
+} from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
-import { AgendaRowActionsMenu, measureAgendaRowActionsMenuLeft } from "./AgendaRowActionsMenu";
+import { swipeHaptic } from "../../lib/haptics";
 import { formatDose, formatFrequency } from "./medicationFormat";
 import { doseStateForCycle } from "./doseRowState";
 import { CycleProgressBar } from "./CycleProgressBar";
@@ -17,6 +31,15 @@ export interface MedicationCardProps {
   /** The cycle and the dose being taken (its scheduled slot), so the server records that dose. */
   onIntake: (cycleId: string, scheduledTime?: string | null) => void;
   intakePending?: boolean;
+  /** Edit the current cycle (swipe «Editar», sheet «Editar») */
+  onEditCycle: (cycleId: string) => void;
+  onNewCycle: () => void;
+  /** The cycle's detail, which holds «Historial de tomas» */
+  onOpenCycle: (cycleId: string) => void;
+  /** Asks to end the current cycle today (its own `ConfirmModal`) */
+  onFinishCycle: (cycleId: string) => void;
+  /** First-time discovery of the swipe (§4b «Descubrir») */
+  peek?: boolean;
 }
 
 /**
@@ -30,6 +53,11 @@ export function MedicationCard({
   onDelete,
   onIntake,
   intakePending = false,
+  onEditCycle,
+  onNewCycle,
+  onOpenCycle,
+  onFinishCycle,
+  peek,
 }: MedicationCardProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
@@ -40,20 +68,10 @@ export function MedicationCard({
   // Without an end date there is no «X de N días»: the bar shows the last 7 days' doses instead.
   const adherence = progress && progress.total == null && cycle ? recentAdherence(cycle) : null;
 
-  const menuTriggerRef = useRef<ComponentRef<typeof View>>(null);
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [menuTop, setMenuTop] = useState(0);
-  const [menuLeft, setMenuLeft] = useState(0);
-
-  const openMenu = useCallback(() => {
-    menuTriggerRef.current?.measureInWindow((x, y, width, height) => {
-      setMenuTop(y + height + spacing[1]);
-      setMenuLeft(measureAgendaRowActionsMenuLeft(x, width));
-      setMenuVisible(true);
-    });
-  }, []);
-
-  const closeMenu = useCallback(() => setMenuVisible(false), []);
+  const [sheet, setSheet] = useState(false);
+  const WHITE = { size: 22, strokeWidth: 2.2, color: t.text.onSolid };
+  const canTake = !!cycle && doseState?.kind === "pending" && !intakePending;
+  const take = () => cycle && onIntake(cycle.id, cycle.nextIntakeTime);
 
   const subtitle = active && cycle
     ? `${formatDose(cycle.doseAmount, cycle.doseUnit, cycle.dosage)} · ${formatFrequency(cycle.frequency, cycle.frequencyUnit)}`
@@ -79,84 +97,101 @@ export function MedicationCard({
 
   return (
     <>
-      {/* Tarjeta tocable (movimiento-interacciones.md §5): escala 0,98 + tinte, como la de Citas. */}
-      <PressableScale
-        onPress={onPress}
-        accessibilityRole="button"
+      {/* Tarjeta tocable (movimiento-interacciones.md §5): escala 0,98 + tinte, como la de Citas.
+          Acciones al deslizar (MASTER §7, #127): «Más» + «Editar» a la izquierda, «Tomar» a la derecha. */}
+      <SwipeRow
+        id={m.id}
         accessibilityLabel={`${m.name}, ${active ? "activo" : "finalizado"}`}
+        onPress={onPress}
+        endActions={[
+          { key: "more", tone: "more", label: "Más", icon: <Ellipsis {...WHITE} />, onPress: () => setSheet(true) },
+          ...(cycle ? [{ key: "edit", tone: "primary" as const, label: "Editar", icon: <Pencil {...WHITE} />, onPress: () => onEditCycle(cycle.id) }] : []),
+        ]}
+        startAction={canTake ? { key: "take", tone: "positive", label: "Tomar", icon: <Check {...WHITE} strokeWidth={3} />, onPress: take } : undefined}
+        onLongPress={() => setSheet(true)}
+        onHaptic={swipeHaptic}
+        peek={peek}
       >
-        <Card
-          title={m.name}
-          subtitle={subtitle}
-          icon={<Pill size={20} color={active ? t.accent.medFg : t.text.muted} />}
-          iconBackground={active ? t.accent.medBg : t.surface.muted}
-          actions={
-            <View style={styles.headerActions}>
-              {active ? (
-                <FadeThrough value={doseState?.kind ?? "none"}>
-                  {(kind) => (
-                    <>
-                      {cycle && kind === "pending" ? (
-                        <Button
-                          variant="success"
-                          size="sm"
-                          onPress={() => onIntake(cycle.id, cycle.nextIntakeTime)}
-                          disabled={intakePending}
-                          loading={intakePending}
-                          loadingLabel="Guardando…"
-                        >
-                          Tomar
-                        </Button>
-                      ) : null}
-                      {kind === "taken" ? (
-                        <Chip label="Tomado" tone="success" icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />} />
-                      ) : null}
-                      {kind === "not-taken" ? (
-                        <Chip label={doseState?.reasonLabel ?? "No tomado"} tone="danger" />
-                      ) : null}
-                      {kind === "later" && cycle?.nextIntakeTime ? <Chip label="Más tarde" tone="neutral" /> : null}
-                    </>
-                  )}
-                </FadeThrough>
-              ) : (
-                <Chip label="Finalizado" tone="neutral" />
-              )}
-              <View ref={menuTriggerRef} collapsable={false}>
-                <TouchableOpacity
-                  onPress={openMenu}
-                  style={styles.menuButton}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Opciones de ${m.name}`}
-                >
-                  <MoreVertical size={20} color={t.text.muted} />
-                </TouchableOpacity>
+        <PressableScale onPress={onPress} accessible={false}>
+          <Card
+            title={m.name}
+            subtitle={subtitle}
+            icon={<Pill size={20} color={active ? t.accent.medFg : t.text.muted} />}
+            iconBackground={active ? t.accent.medBg : t.surface.muted}
+            actions={
+              <View style={styles.headerActions}>
+                {active ? (
+                  <FadeThrough value={doseState?.kind ?? "none"}>
+                    {(kind) => (
+                      <>
+                        {cycle && kind === "pending" ? (
+                          <Button
+                            variant="success"
+                            size="sm"
+                            onPress={() => onIntake(cycle.id, cycle.nextIntakeTime)}
+                            disabled={intakePending}
+                            loading={intakePending}
+                            loadingLabel="Guardando…"
+                          >
+                            Tomar
+                          </Button>
+                        ) : null}
+                        {kind === "taken" ? (
+                          <Chip label="Tomado" tone="success" icon={<Check size={12} strokeWidth={3} color={t.status.successFg} />} />
+                        ) : null}
+                        {kind === "not-taken" ? (
+                          <Chip label={doseState?.reasonLabel ?? "No tomado"} tone="danger" />
+                        ) : null}
+                        {kind === "later" && cycle?.nextIntakeTime ? <Chip label="Más tarde" tone="neutral" /> : null}
+                      </>
+                    )}
+                  </FadeThrough>
+                ) : (
+                  <Chip label="Finalizado" tone="neutral" />
+                )}
               </View>
-            </View>
-          }
-          footerDivider={false}
-          footer={
-            progress ? (
-              // Mockup: the bar and the meta row span the whole card, below the header row.
-              <View style={styles.progress}>
-                {barRatio != null ? <CycleProgressBar ratio={barRatio} accessibilityLabel={barLabel} /> : null}
-                {/* MASTER principle 4: dose times are clinical data, never cut — the row wraps instead. */}
-                <View style={styles.metaRow}>
-                  <Text style={[styles.metaText, overdue && styles.metaOverdue]}>{doseLine}</Text>
-                  <Text style={styles.metaText}>{cycleLabel}</Text>
+            }
+            footerDivider={false}
+            footer={
+              progress ? (
+                // Mockup: the bar and the meta row span the whole card, below the header row.
+                <View style={styles.progress}>
+                  {barRatio != null ? <CycleProgressBar ratio={barRatio} accessibilityLabel={barLabel} /> : null}
+                  {/* MASTER principle 4: dose times are clinical data, never cut — the row wraps instead. */}
+                  <View style={styles.metaRow}>
+                    <Text style={[styles.metaText, overdue && styles.metaOverdue]}>{doseLine}</Text>
+                    <Text style={styles.metaText}>{cycleLabel}</Text>
+                  </View>
                 </View>
-              </View>
-            ) : undefined
-          }
-        />
-      </PressableScale>
+              ) : undefined
+            }
+          />
+        </PressableScale>
 
-      <AgendaRowActionsMenu
-        visible={menuVisible}
-        top={menuTop}
-        left={menuLeft}
-        onClose={closeMenu}
-        actions={[{ icon: Trash2, label: "Eliminar", onPress: onDelete, destructive: true }]}
-      />
+      </SwipeRow>
+
+      {sheet ? (
+        <ActionSheet
+          title={m.name}
+          eyebrow={(active && cycle ? `Medicamento · ${formatFrequency(cycle.frequency, cycle.frequencyUnit)}` : "Medicamento · finalizado").toUpperCase()}
+          tone="medication"
+          icon={<Pill />}
+          onClose={() => setSheet(false)}
+          actions={[
+            ...(canTake ? [{ key: "take", label: "Registrar toma", meta: nextDose ? `${overdue ? "Pendiente" : "Próxima"}: ${nextDose}` : undefined, icon: <Check />, onPress: take }] : []),
+            ...(cycle ? [{ key: "edit", label: "Editar", icon: <Pencil />, onPress: () => onEditCycle(cycle.id) }] : []),
+            { key: "new-cycle", label: "Nuevo ciclo", icon: <Plus />, onPress: onNewCycle },
+            ...(cycle ? [{ key: "history", label: "Historial de tomas", icon: <History />, onPress: () => onOpenCycle(cycle.id) }] : []),
+            // Finishing keeps the history, so it is not destructive (mockup module 14).
+            ...(active && cycle
+              ? [{ key: "finish", label: "Finalizar ciclo", meta: "Dejamos de recordarte las tomas", icon: <CircleX />, onPress: () => onFinishCycle(cycle.id) }]
+              : []),
+          ]}
+          destructive={[
+            { key: "delete", label: "Eliminar medicamento", meta: "Se borran sus ciclos, tomas y recordatorios", icon: <Trash2 />, onPress: onDelete },
+          ]}
+        />
+      ) : null}
     </>
   );
 }
@@ -172,14 +207,12 @@ function makeStyles(t: ThemeContextValue) {
       alignItems: "center",
       gap: spacing[2],
     },
-    // MASTER §6: 44 × 44 visibles
-    menuButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   });
 }
 
 /**
  * A `MedicationCard` while it loads (§6c): same card, 40 px tile, name and two lines of dose, the
- * status chip and «⋯», and — for an active one — the cycle bar with «Próxima toma · Ciclo».
+ * status chip, and — for an active one — the cycle bar with «Próxima toma · Ciclo».
  */
 export function MedicationCardSkeleton({ active = true }: { active?: boolean }) {
   const t = useAppTheme();
@@ -200,12 +233,7 @@ export function MedicationCardSkeleton({ active = true }: { active?: boolean }) 
           <Skeleton width="80%" height={13} />
           <Skeleton width="30%" height={13} />
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-          <Skeleton width={88} height={32} radius={16} />
-          <View style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}>
-            <Skeleton width={4} height={16} radius={2} />
-          </View>
-        </View>
+        <Skeleton width={88} height={32} radius={16} />
       </View>
       {active ? (
         <View style={{ gap: spacing[2], paddingHorizontal: spacing[4], paddingBottom: spacing[3] }}>

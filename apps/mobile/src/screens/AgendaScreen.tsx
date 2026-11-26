@@ -18,8 +18,14 @@ export function AgendaScreen() {
       editAppointment: (id) => navigation.navigate("AppointmentForm", { id }),
       openMedication: (id) => navigation.navigate("MedicationDetail", { id }),
       newMedication: () => navigation.navigate("MedicationForm"),
+      editMedicationCycle: (medicationId, medicationName, cycleId) =>
+        navigation.navigate("MedicationForm", { medicationId, medicationName, cycleId }),
+      newMedicationCycle: (medicationId, medicationName) => navigation.navigate("MedicationForm", { medicationId, medicationName }),
+      openMedicationCycle: (medicationId, medicationName, cycleId) =>
+        navigation.navigate("CycleDetail", { cycleId, medicationId, medicationName }),
       newTask: () => navigation.navigate("AgendaTaskForm"),
       openTask: (id, intent) => navigation.navigate("AgendaTaskDetail", { id, intent }),
+      editTask: (id) => navigation.navigate("AgendaTaskForm", { id }),
     }),
     [navigation],
   );

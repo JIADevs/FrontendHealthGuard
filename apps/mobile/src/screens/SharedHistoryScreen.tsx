@@ -8,5 +8,5 @@ import { SharedHistory } from "../components/share/SharedHistory";
 export function SharedHistoryScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const shareFlow = useShareFlow(navigation);
-  return <SharedHistory onOpen={(link) => shareFlow.openDetail(link, "Compartidos")} onNew={shareFlow.openChoose} />;
+  return <SharedHistory onOpen={(link) => shareFlow.openDetail(link, "Compartidos")} onNew={shareFlow.openChoose} onShowQr={shareFlow.openQr} />;
 }

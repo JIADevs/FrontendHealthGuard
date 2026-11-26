@@ -18,4 +18,9 @@ export interface ListRowProps {
   onPress?: () => void;
   /** Etiqueta accesible de la fila cuando es tocable; por defecto, título + metadato */
   accessibilityLabel?: string;
+  /**
+   * v2.34: acción destructiva de la hoja «Más» (MASTER §7): título en `danger.fg` y el IconTile en
+   * tono `danger`, sin importar `tone`.
+   */
+  destructive?: boolean;
 }

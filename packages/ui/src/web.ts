@@ -67,6 +67,11 @@ export * from './containers/Modal/Modal.types';
 export * from './containers/Modal/Modal.web';
 export * from './containers/Card/Card.types';
 export * from './containers/Card/Card.web';
+export * from './containers/SwipeRow/SwipeRow.types';
+export * from './containers/SwipeRow/SwipeRow.web';
+export { SWIPE } from './containers/SwipeRow/swipe';
+export * from './composed/ActionSheet/ActionSheet.types';
+export * from './composed/ActionSheet/ActionSheet.web';
 
 // ─── Composed ────────────────────────────────────────────────────────────────
 export * from './composed/ConfirmModal/ConfirmModal.types';

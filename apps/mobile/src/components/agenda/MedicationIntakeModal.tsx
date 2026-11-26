@@ -36,9 +36,11 @@ const REASON_OPTIONS = (Object.entries(NOT_TAKEN_REASON_LABELS_ES) as [NotTakenR
 interface MedicationIntakeModalProps {
     event: MedicationEvent;
     onClose: () => void;
+    /** Opens straight on «No la tomé» or «Cambiar hora» (the row's swipe and «Más» sheet, #127) */
+    initialStep?: "ask" | "missed" | "time";
 }
 
-export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalProps) {
+export function MedicationIntakeModal({ event, onClose, initialStep }: MedicationIntakeModalProps) {
     const t = useAppTheme();
     const styles = useMemo(() => makeStyles(t), [t]);
 
@@ -55,7 +57,7 @@ export function MedicationIntakeModal({ event, onClose }: MedicationIntakeModalP
     // Pasos de la hoja (inicio-agenda.md · Hoja de toma): primero la pregunta; «No la tomé» y
     // «Cambiar hora» abren un segundo paso con una sola acción principal.
     const [step, setStep] = useState<"ask" | "missed" | "time">(
-        existingIntake?.status === "NOT_TAKEN" ? "missed" : "ask",
+        initialStep ?? (existingIntake?.status === "NOT_TAKEN" ? "missed" : "ask"),
     );
     const missed = step === "missed";
     const changeTime = step === "time";

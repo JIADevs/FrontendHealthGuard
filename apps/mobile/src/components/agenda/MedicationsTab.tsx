@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, SectionList } from "react-native";
-import { useDeleteMedicationMutation } from "@helu/api/hooks";
+import { useDeleteMedicationMutation, useUpdateMedicationCycleMutation } from "@helu/api/hooks";
 import type { Medication } from "@helu/api";
 import {
   spacing,
@@ -15,8 +15,9 @@ import {
   Chip,
   PullRefreshIndicator,
   usePullRefresh,
+  SwipeRowGroup,
 } from "@helu/ui";
-import type { ThemeContextValue } from "@helu/ui";
+import type { SwipeRowGroupHandle, ThemeContextValue } from "@helu/ui";
 import { Pill, Trash2 } from "lucide-react-native";
 
 import { useMedicationsList } from "../../hooks/useMedicationsList";
@@ -26,7 +27,9 @@ import { useAgendaNavigation } from "./AgendaNavigation";
 import { MedicationCard, MedicationCardSkeleton } from "./MedicationCard";
 import { MedicationsFilterSheet } from "./MedicationsFilterSheet";
 import { useTakeDose } from "./useTakeDose";
-import { currentCycleOf, isMedicationActive } from "./medicationCycles";
+import { currentCycleOf, isMedicationActive, localTodayKey } from "./medicationCycles";
+import { haptics } from "../../lib/haptics";
+import { useSwipeDiscovery } from "../../lib/swipeDiscovery";
 import { LoadError } from "../states/LoadError";
 import { notify } from "../../lib/notify";
 import { AgendaListToolbar } from "./AgendaListToolbar";
@@ -49,6 +52,8 @@ export function MedicationsTab() {
   const nav = useAgendaNavigation();
 
   const [deleteTarget, setDeleteTarget] = useState<Medication | null>(null);
+  const [finishTarget, setFinishTarget] = useState<{ medication: Medication; cycleId: string } | null>(null);
+  const rows = useRef<SwipeRowGroupHandle>(null);
 
   const {
     page,
@@ -74,6 +79,8 @@ export function MedicationsTab() {
   const pull = usePullRefresh(refetch, updatedAt);
   const showSkeleton = useSkeletonVisible(isLoading);
   const sections = useMemo(() => splitMedications(items), [items]);
+  const discovery = useSwipeDiscovery("medications", !showSkeleton && items.length > 0);
+  const firstId = sections[0]?.data[0]?.id;
 
   const deleteMut = useDeleteMedicationMutation();
   const takeDose = useTakeDose();
@@ -92,6 +99,27 @@ export function MedicationsTab() {
       },
     });
   }, [deleteTarget, deleteMut]);
+
+  // «Finalizar ciclo» from the «Más» sheet: same dialog and copy as the cycle detail.
+  const finishMut = useUpdateMedicationCycleMutation();
+  const handleFinish = useCallback(() => {
+    if (!finishTarget) return;
+    const { medication, cycleId } = finishTarget;
+    finishMut.mutate(
+      { id: cycleId, cycle: { endDate: localTodayKey() } },
+      {
+        onSuccess: () => {
+          setFinishTarget(null);
+          haptics.success();
+          notify({ message: "Ciclo finalizado", description: medication.name });
+        },
+        onError: () => {
+          // The modal stays open, so «Finalizar ciclo» is the retry.
+          notify({ tone: "error", message: "No se pudo finalizar el ciclo", description: "Revisa tu conexión e intenta de nuevo." });
+        },
+      },
+    );
+  }, [finishTarget, finishMut]);
 
   return (
     <View style={styles.tabContent}>
@@ -115,67 +143,91 @@ export function MedicationsTab() {
           <MedicationCardSkeleton active={false} />
         </SkeletonGroup>
       ) : (
-        <View style={{ flex: 1 }}>
-          <SectionList
-            sections={sections}
-            keyExtractor={(m) => m.id}
-            contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
-            stickySectionHeadersEnabled={false}
-            refreshControl={pull.refreshControl}
-            onScroll={pull.onScroll}
-            scrollEventThrottle={16}
-            renderSectionHeader={({ section }) => (
-              <Text style={[styles.sectionTitle, { color: t.text.secondary }]} accessibilityRole="header">
-                {section.title}
-              </Text>
-            )}
-            renderItem={({ item: m }) => (
-              <MedicationCard
-                medication={m}
-                onPress={() => nav.openMedication(m.id)}
-                onDelete={() => setDeleteTarget(m)}
-                onIntake={takeDose.take}
-                intakePending={!!takeDose.takingCycleId && takeDose.takingCycleId === currentCycleOf(m)?.id}
-              />
-            )}
-            ListEmptyComponent={
-              isError ? (
-                <LoadError title="No se pudieron cargar tus medicamentos" onRetry={() => void refetch()} retrying={isRefetching} />
-              ) : hasActiveFilter || search ? (
-                <AgendaFilterEmpty
-                  noun="medicamentos"
-                  allYour="todos tus"
-                  search={search}
-                  hasActiveFilter={hasActiveFilter}
-                  onClearFilters={clearFilters}
-                  onClearSearch={() => setSearch("")}
+        <SwipeRowGroup ref={rows} onRowOpen={discovery.dismiss}>
+          <View style={{ flex: 1 }}>
+            <SectionList
+              sections={sections}
+              keyExtractor={(m) => m.id}
+              contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
+              stickySectionHeadersEnabled={false}
+              ListHeaderComponent={discovery.hint}
+              refreshControl={pull.refreshControl}
+              onScroll={pull.onScroll}
+              onScrollBeginDrag={() => rows.current?.closeAll()}
+              scrollEventThrottle={16}
+              renderSectionHeader={({ section }) => (
+                <Text style={[styles.sectionTitle, { color: t.text.secondary }]} accessibilityRole="header">
+                  {section.title}
+                </Text>
+              )}
+              renderItem={({ item: m }) => (
+                <MedicationCard
+                  medication={m}
+                  onPress={() => nav.openMedication(m.id)}
+                  onDelete={() => setDeleteTarget(m)}
+                  onIntake={takeDose.take}
+                  intakePending={!!takeDose.takingCycleId && takeDose.takingCycleId === currentCycleOf(m)?.id}
+                  onEditCycle={(cycleId) => nav.editMedicationCycle(m.id, m.name, cycleId)}
+                  onNewCycle={() => nav.newMedicationCycle(m.id, m.name)}
+                  onOpenCycle={(cycleId) => nav.openMedicationCycle(m.id, m.name, cycleId)}
+                  onFinishCycle={(cycleId) => setFinishTarget({ medication: m, cycleId })}
+                  peek={discovery.peek && m.id === firstId}
                 />
-              ) : (
-                <AgendaEmpty
-                  pose="point"
-                  title="Aún no tienes medicamentos"
-                  description="Registra uno y te avisamos en cada toma. Tú solo tocas «Tomar»."
-                  actionLabel="Agregar medicamento"
-                  onAction={nav.newMedication}
-                  example={{
-                    tone: "medication",
-                    icon: <Pill size={19} strokeWidth={2.2} color={t.accent.medFg} />,
-                    title: "Losartán 50 mg",
-                    meta: "Cada 12 horas · 7:00 a. m. y 7:00 p. m.",
-                    trailing: <Chip label="Tomar" tone="success" />,
-                  }}
-                />
-              )
-            }
-            ListFooterComponent={
-              items.length > 0 ? (
-                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-              ) : undefined
-            }
-          />
-          <PullRefreshIndicator state={pull} />
-        </View>
+              )}
+              ListEmptyComponent={
+                isError ? (
+                  <LoadError title="No se pudieron cargar tus medicamentos" onRetry={() => void refetch()} retrying={isRefetching} />
+                ) : hasActiveFilter || search ? (
+                  <AgendaFilterEmpty
+                    noun="medicamentos"
+                    allYour="todos tus"
+                    search={search}
+                    hasActiveFilter={hasActiveFilter}
+                    onClearFilters={clearFilters}
+                    onClearSearch={() => setSearch("")}
+                  />
+                ) : (
+                  <AgendaEmpty
+                    pose="point"
+                    title="Aún no tienes medicamentos"
+                    description="Registra uno y te avisamos en cada toma. Tú solo tocas «Tomar»."
+                    actionLabel="Agregar medicamento"
+                    onAction={nav.newMedication}
+                    example={{
+                      tone: "medication",
+                      icon: <Pill size={19} strokeWidth={2.2} color={t.accent.medFg} />,
+                      title: "Losartán 50 mg",
+                      meta: "Cada 12 horas · 7:00 a. m. y 7:00 p. m.",
+                      trailing: <Chip label="Tomar" tone="success" />,
+                    }}
+                  />
+                )
+              }
+              ListFooterComponent={
+                items.length > 0 ? (
+                  <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+                ) : undefined
+              }
+            />
+            <PullRefreshIndicator state={pull} />
+          </View>
+        </SwipeRowGroup>
       )}
+
+      {finishTarget ? (
+        <ConfirmModal
+          title="¿Finalizar ciclo?"
+          message="El ciclo termina hoy y dejamos de recordarte las tomas. Seguirás viéndolo en «Anteriores»."
+          keepLabel="Mantener ciclo"
+          confirmLabel="Finalizar ciclo"
+          confirmVariant="primary"
+          icon={<Pill />}
+          iconTone="warning"
+          loading={finishMut.isPending}
+          onCancel={() => setFinishTarget(null)}
+          onConfirm={handleFinish}
+        />
+      ) : null}
 
       {deleteTarget && (
         // MASTER §7 «Diálogo de confirmación»: question + consequence, the safe option first with its own name.

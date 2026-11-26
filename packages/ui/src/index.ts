@@ -78,6 +78,12 @@ export * from './containers/Modal/Modal.types';
 export * from './containers/Modal/Modal.native';
 export * from './containers/BottomSheet/BottomSheet.types';
 export * from './containers/BottomSheet/BottomSheet.native';
+export * from './containers/SwipeRow/SwipeRow.types';
+export * from './containers/SwipeRow/SwipeRow.native';
+export * from './containers/SwipeRow/SwipeRowGroup.native';
+export { SWIPE } from './containers/SwipeRow/swipe';
+export * from './composed/ActionSheet/ActionSheet.types';
+export * from './composed/ActionSheet/ActionSheet.native';
 export * from './containers/Card/Card.types';
 export * from './containers/Card/Card.native';
 

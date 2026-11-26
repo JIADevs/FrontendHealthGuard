@@ -1,26 +1,22 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useRef } from "react";
 import { View, Text, StyleSheet, SectionList } from "react-native";
-import {
-  useDeleteAppointmentMutation,
-} from "@helu/api/hooks";
 import type { Appointment } from "@helu/api";
 import {
   spacing,
   nativeFont,
   useAppTheme,
-  formatApptDate,
   Pagination,
   cardContentStyle,
   SkeletonGroup,
   Skeleton,
   SkeletonCard,
   useSkeletonVisible,
-  ConfirmModal,
   PullRefreshIndicator,
   usePullRefresh,
+  SwipeRowGroup,
 } from "@helu/ui";
-import type { ThemeContextValue } from "@helu/ui";
-import { CalendarDays, Trash2 } from "lucide-react-native";
+import type { SwipeRowGroupHandle, ThemeContextValue } from "@helu/ui";
+import { CalendarDays } from "lucide-react-native";
 
 import { useAppointmentsList } from "../../hooks/useAppointmentsList";
 import { AgendaFAB } from "./AgendaFAB";
@@ -29,16 +25,17 @@ import { useAgendaNavigation } from "./AgendaNavigation";
 import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentsFilterSheet } from "./AppointmentsFilterSheet";
 import { LoadError } from "../states/LoadError";
-import { notify } from "../../lib/notify";
 import { AgendaListToolbar } from "./AgendaListToolbar";
 import { AgendaFilterEmpty } from "./AgendaFilterEmpty";
+import { useAppointmentActions } from "./useAppointmentActions";
+import { useSwipeDiscovery } from "../../lib/swipeDiscovery";
 
 export function AppointmentsTab() {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const nav = useAgendaNavigation();
 
-  const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
+  const rows = useRef<SwipeRowGroupHandle>(null);
 
   const {
     page,
@@ -58,28 +55,16 @@ export function AppointmentsTab() {
     hasActiveFilter,
   } = useAppointmentsList();
 
-  const deleteMut = useDeleteAppointmentMutation();
+  const apptActions = useAppointmentActions();
 
   const totalPages = appts.data?.totalPages ?? 1;
   const pull = usePullRefresh(appts.refetch, appts.dataUpdatedAt || undefined);
 
-  const handleDelete = useCallback(() => {
-    if (!deleteTarget) return;
-    deleteMut.mutate(deleteTarget.id, {
-      onSuccess: () => {
-        setDeleteTarget(null);
-        notify({ message: "Cita eliminada" });
-      },
-      onError: () => {
-        // MASTER §8: what happened + what to do. The modal stays open, so «Eliminar» is the retry.
-        notify({ tone: "error", message: "No se pudo eliminar la cita", description: "Revisa tu conexión e intenta de nuevo." });
-      },
-    });
-  }, [deleteTarget, deleteMut]);
-
   const items = appts.data?.items ?? [];
   const showSkeleton = useSkeletonVisible(appts.isLoading);
   const sections = useMemo(() => splitAppointments(items), [items]);
+  const discovery = useSwipeDiscovery("appointments", !showSkeleton && items.length > 0);
+  const firstId = sections[0]?.data[0]?.id;
 
   return (
     <View style={styles.tabContent}>
@@ -101,77 +86,72 @@ export function AppointmentsTab() {
           <SkeletonCard lines={2} />
         </SkeletonGroup>
       ) : (
-        <View style={{ flex: 1 }}>
-          <SectionList
-            sections={sections}
-            keyExtractor={(a) => a.id}
-            contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
-            stickySectionHeadersEnabled={false}
-            refreshControl={pull.refreshControl}
-            onScroll={pull.onScroll}
-            scrollEventThrottle={16}
-            renderSectionHeader={({ section }) => (
-              <Text style={[styles.sectionTitle, { color: t.text.secondary }]}>{section.title}</Text>
-            )}
-            renderItem={({ item: a }) => (
-              <AppointmentCard
-                appointment={a}
-                onPress={() => nav.openAppointment(a.id)}
-                onEdit={() => nav.editAppointment(a.id)}
-                onDelete={() => setDeleteTarget(a)}
-              />
-            )}
-            ListEmptyComponent={
-              appts.isError && !appts.data ? (
-                <LoadError title="No se pudieron cargar tus citas" onRetry={() => void appts.refetch()} retrying={appts.isRefetching} />
-              ) : hasActiveFilter || search ? (
-                <AgendaFilterEmpty
-                  noun="citas"
-                  allYour="todas tus"
-                  search={search}
-                  hasActiveFilter={hasActiveFilter}
-                  onClearFilters={clearFilters}
-                  onClearSearch={() => setSearch("")}
+        <SwipeRowGroup ref={rows} onRowOpen={discovery.dismiss}>
+          <View style={{ flex: 1 }}>
+            <SectionList
+              sections={sections}
+              keyExtractor={(a) => a.id}
+              contentContainerStyle={items.length === 0 ? styles.emptyListContent : cardContentStyle}
+              stickySectionHeadersEnabled={false}
+              ListHeaderComponent={discovery.hint}
+              refreshControl={pull.refreshControl}
+              onScroll={pull.onScroll}
+              onScrollBeginDrag={() => rows.current?.closeAll()}
+              scrollEventThrottle={16}
+              renderSectionHeader={({ section }) => (
+                <Text style={[styles.sectionTitle, { color: t.text.secondary }]}>{section.title}</Text>
+              )}
+              renderItem={({ item: a }) => (
+                <AppointmentCard
+                  appointment={a}
+                  onPress={() => nav.openAppointment(a.id)}
+                  onEdit={() => nav.editAppointment(a.id)}
+                  onAttended={() => apptActions.markAttended(a)}
+                  onCancel={() => apptActions.requestCancel(a)}
+                  onDelete={() => apptActions.requestDelete(a)}
+                  peek={discovery.peek && a.id === firstId}
                 />
-              ) : (
-                <AgendaEmpty
-                  pose="happy"
-                  title="Aún no tienes citas"
-                  description="Agrega tu próxima cita y te la recordamos antes de que llegue."
-                  actionLabel="Agregar cita"
-                  onAction={nav.newAppointment}
-                  example={{
-                    tone: "appointment",
-                    icon: <CalendarDays size={19} strokeWidth={2.2} color={t.accent.calFg} />,
-                    title: "Control de odontología",
-                    meta: "Jue 5 nov · 10:00 a. m. · Consultorio 204",
-                  }}
-                />
-              )
-            }
-            ListFooterComponent={
-              items.length > 0 ? (
-                <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
-              ) : undefined
-            }
-          />
-          <PullRefreshIndicator state={pull} />
-        </View>
+              )}
+              ListEmptyComponent={
+                appts.isError && !appts.data ? (
+                  <LoadError title="No se pudieron cargar tus citas" onRetry={() => void appts.refetch()} retrying={appts.isRefetching} />
+                ) : hasActiveFilter || search ? (
+                  <AgendaFilterEmpty
+                    noun="citas"
+                    allYour="todas tus"
+                    search={search}
+                    hasActiveFilter={hasActiveFilter}
+                    onClearFilters={clearFilters}
+                    onClearSearch={() => setSearch("")}
+                  />
+                ) : (
+                  <AgendaEmpty
+                    pose="happy"
+                    title="Aún no tienes citas"
+                    description="Agrega tu próxima cita y te la recordamos antes de que llegue."
+                    actionLabel="Agregar cita"
+                    onAction={nav.newAppointment}
+                    example={{
+                      tone: "appointment",
+                      icon: <CalendarDays size={19} strokeWidth={2.2} color={t.accent.calFg} />,
+                      title: "Control de odontología",
+                      meta: "Jue 5 nov · 10:00 a. m. · Consultorio 204",
+                    }}
+                  />
+                )
+              }
+              ListFooterComponent={
+                items.length > 0 ? (
+                  <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+                ) : undefined
+              }
+            />
+            <PullRefreshIndicator state={pull} />
+          </View>
+        </SwipeRowGroup>
       )}
 
-      {deleteTarget && (
-        // MASTER §7: question + consequence; «Eliminar» borra la cita (≠ «Cancelar cita», que la conserva).
-        <ConfirmModal
-          title="¿Eliminar esta cita?"
-          message={`Se borra la cita del ${formatApptDate(deleteTarget.date)} con sus recordatorios. No queda en tu historial y no se puede deshacer.`}
-          keepLabel="Mantener cita"
-          confirmLabel="Eliminar"
-          icon={<Trash2 />}
-          loading={deleteMut.isPending}
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
+      {apptActions.dialogs}
 
       {filterSheetVisible ? (
         <AppointmentsFilterSheet

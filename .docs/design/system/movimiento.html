@@ -161,6 +161,27 @@ code{font-size:12px;background:var(--color-surface-muted);padding:1px 5px;border
 .ubar{height:8px;border-radius:99px;background:var(--color-motivation-track);overflow:hidden}.ubar i{display:block;height:100%;width:100%;border-radius:99px;background:var(--color-brand-solid);transform-origin:left;transform:scaleX(0);transition:transform var(--motion-base) linear}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+/* Acciones al deslizar (#127) */
+.swl{width:358px;max-width:100%;display:flex;flex-direction:column;gap:12px;touch-action:pan-y;user-select:none}
+.swr{position:relative}
+.swa{position:absolute;top:0;bottom:3px;display:flex;overflow:hidden;width:0}
+.swa.r{right:0;border-radius:0 18px 18px 0;flex-direction:row}
+.swa.l{left:0;border-radius:18px 0 0 18px;flex-direction:row-reverse}
+.swp{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--color-text-on-solid);font:800 12.5px var(--font-heading);white-space:nowrap;overflow:hidden;transition:flex-grow 150ms cubic-bezier(0.2,0,0,1)}
+.swp.gone{flex-grow:0}
+.swp .ico{transition:transform 150ms cubic-bezier(0.34,1.56,0.64,1)}
+.swp.go .ico{transform:scale(1.18)}
+.swc{position:relative;z-index:1;flex-direction:row!important;align-items:center;gap:12px!important;padding:14px!important;cursor:grab;will-change:transform}
+.swc:active{cursor:grabbing}
+.hap{display:inline-flex;align-items:center;gap:6px;font:800 13px var(--font-heading);color:var(--color-text-secondary);background:var(--color-surface-muted);border-radius:999px;padding:4px 12px;min-height:32px}
+.hap i{width:10px;height:10px;border-radius:50%;background:var(--color-border)}
+.hap.tick i{background:var(--color-brand-focus);box-shadow:0 0 0 4px var(--color-brand-tint)}
+.hap.bump i{background:var(--color-motivation-streak);box-shadow:0 0 0 6px var(--color-motivation-streak-bg)}
+.ruler{position:relative;height:30px;border-radius:10px;background:var(--color-surface-muted);overflow:hidden}
+.ruler b{position:absolute;top:0;bottom:0;left:0;background:var(--color-brand-tint);transition:none}
+.ruler span{position:absolute;top:0;bottom:0;width:2px;background:var(--color-text-muted)}
+.ruler em{position:absolute;top:6px;font:800 11px var(--font-heading);font-style:normal;color:var(--color-text-secondary);white-space:nowrap}
+.rm .swp,.rm .swp .ico{transition:none}
 </style>
 </head>
 <body>
@@ -258,6 +279,16 @@ code{font-size:12px;background:var(--color-surface-muted);padding:1px 5px;border
 </div>
 <div class="card"><span class="tag">Esqueletos por pantalla</span><div class="note">Los esqueletos de las pantallas principales (Inicio, Agenda, Detalle de cita, Documentos, Detalle de documento, Mochilas, Detalle de mochila y Detalle de misión) están en los mockups, módulo «11 · Estados de carga»: <code>.docs/design/mockups/index.html?m=carga</code>. En web (v2.8) hay además Inicio, Documentos, Detalle de documento y Mochilas. Se generan a partir de cada pantalla, así tienen exactamente su forma y su estilo.</div></div>
 
+</div></section>
+<section id="deslizar"><h2>Acciones al deslizar</h2><p class="sub" style="margin-bottom:12px">Issue #127 · v2.34. Las tarjetas de lista dejan el «⋮»: al deslizar aparecen paneles a toda la altura (como la lista de chats de iOS). Si se sigue deslizando, se aplica la acción del extremo. Arrastra las tarjetas con el dedo o el mouse, o usa los botones.</p>
+<div class="grid g2">
+<div class="card"><span class="tag">Pruébalo</span><span class="law">Manipulación directa · Doherty · Fitts</span>
+<div class="row wr" style="gap:8px"><span class="hap" id="swHap" aria-live="polite"><i></i><span id="swHapT">Háptica: —</span></span><span class="s" id="swState">Cerrada</span></div>
+<div class="ruler" id="swRuler" aria-hidden="true"><b id="swBar"></b></div>
+<div class="swl" id="swList"></div>
+<div class="row wr" style="gap:8px"><button class="btn sec sm" data-swplay="open">▶ Abrir acciones</button><button class="btn sec sm" data-swplay="full">▶ Deslizar hasta aplicar</button><button class="btn sec sm" data-swplay="right">▶ Deslizar a la derecha</button><button class="btn sec sm" data-swplay="none">▶ Lado sin acción</button></div>
+<p class="note">La vibración real solo se siente en un teléfono Android con Chrome; en iPhone y en computador se ve el aviso «Háptica». En la app se usa <code>expo-haptics</code>.</p></div>
+<div class="card"><span class="tag">Reglas</span><table class="legend" id="swRules"></table></div>
 </div></section>
 <section><h2>Momentos que importan</h2><p class="sub" style="margin-bottom:12px">v2.5 · pico-final y Zeigarnik: el mejor momento, el final de un error y volver a lo que quedó a medias.</p><div class="grid g3" id="moments"></div></section>
 </div>
@@ -548,6 +579,85 @@ $('srQ').oninput=e=>{q=e.target.value.trim();run()};
 chip.onclick=()=>{onlyRx=!onlyRx;chip.setAttribute('aria-pressed',String(onlyRx));chip.classList.toggle('on',onlyRx);chip.textContent=onlyRx?'✓ Fórmulas':'Fórmulas';run()};
 list.innerHTML=DOCS.map(row).join('');shown=DOCS.slice();setEnd(false);
 })();
+/* ── Acciones al deslizar (#127) ───────────────────────────── */
+P.more='<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>';
+P.edit='<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>';
+P.share='<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>';
+{
+const PW=96;                       // ancho de cada panel
+const SWBG={slate:'var(--primitive-color-slate-500)',brand:'var(--color-brand-solid)',ok:'var(--button-success-bg)',teal:'var(--color-feature-backpack-fg)'};
+const ROWS=[
+ {k:'cita',tone:'appointment',ic:'cal',t:'Control de odontología',s:'Mar 2 dic · 10:00 a. m.',R:[['more','Más','slate'],['cal','Reprogramar','brand']],L:[],done:'Abre «Reprogramar»'},
+ {k:'med',tone:'medication',ic:'pill',t:'Metformina 850 mg',s:'Hoy 1:00 p. m.',take:true,R:[['more','Más','slate'],['edit','Editar','brand']],L:[['check','Tomar','ok']],done:'Abre «Editar»'},
+ {k:'doc',tone:'document',ic:'file',t:'Orden resonancia de rodilla',s:'24 nov · Orden médica',R:[['more','Más','slate'],['share','Compartir','brand']],L:[['bp','A mochila','teal']],done:'Abre «Compartir»'},
+];
+const pnl=([ic,t,c])=>`<div class="swp" style="background:${SWBG[c]}"><span class="ico">${I(ic,22,'currentColor',2.4)}</span>${t}</div>`;
+$('swList').innerHTML=ROWS.map(r=>`<div class="swr" data-k="${r.k}"><div class="swa r">${r.R.map(pnl).join('')}</div><div class="swa l">${r.L.map(pnl).join('')}</div><div class="card swc" role="group" aria-label="${r.t}"><div class="tile" style="background:var(--color-feature-${r.tone}-bg);color:var(--color-feature-${r.tone}-fg)">${I(r.ic,19)}</div><div class="grow" style="min-width:0"><div class="t">${r.t}</div><div class="s">${r.s}</div></div>${r.take?`<span class="takeS"><button class="btn ok sm" tabindex="-1">Tomar</button></span>`:''}</div></div>`).join('');
+$('swRules').innerHTML=`<tr><th>Momento</th><th>Qué pasa</th></tr>`+[
+ ['Empieza','El arrastre arranca solo si el dedo se mueve más en horizontal que en vertical (más de 10 px y 1,5 veces más que el vertical); si no, la lista hace scroll. La tarjeta sigue al dedo 1:1, sin animación (Doherty: responde al instante).'],
+ ['Revela','Los paneles crecen debajo de la tarjeta, cada uno con la misma parte del espacio. La principal queda en el extremo.'],
+ ['Háptica 1 · selección','Al pasar el ancho de los paneles (96 px por panel): un «tic» suave (<code>Haptics.selectionAsync</code>). Avisa que las acciones ya se ven. Una vez por gesto.'],
+ ['Háptica 2 · impacto','Al pasar el 60 % del ancho de la tarjeta (igual en las dos direcciones y en cualquier teléfono; nunca a menos de 24 px del borde de los paneles): un golpe medio (<code>impactAsync(Medium)</code>). La principal se estira y tapa a «Más» en 150 ms y su ícono hace un rebote corto. Si el dedo vuelve, «Más» reaparece con un tic suave.'],
+ ['Suelta','Pasado el umbral: se aplica. Entre la mitad de los paneles y el umbral, o con un movimiento rápido (más de 0,5 px/ms) hacia afuera: queda abierta. Si no, se cierra. En la app, con el resorte nativo (damping 18 · stiffness 220); aquí, 250 ms al abrir y 180 ms al cerrar.'],
+ ['Aplicar','La tarjeta vuelve a su lugar y se ejecuta la acción. «Tomar» y «Asistí» cambian al instante con toast y «Deshacer» (5 s). Las demás abren su pantalla u hoja. Nada destructivo se aplica deslizando: «Eliminar» vive solo en «Más».'],
+ ['Lado sin acción','La tarjeta se resiste: avanza a un cuarto de la velocidad, hasta 24 px, y vuelve. Sin háptica.'],
+ ['Una a la vez','Abrir otra tarjeta, tocar fuera o hacer scroll cierra la abierta (150 ms). Tocar la tarjeta abierta la cierra; no abre el detalle.'],
+ ['Movimiento reducido','La tarjeta sigue al dedo igual (es manipulación directa), pero abrir, cerrar y aplicar son inmediatos, sin estirar ni rebotar. La háptica se mantiene y respeta la vibración del sistema.'],
+ ['Sin gesto','Las mismas acciones están en la hoja «Más» (mantener presionado), en el detalle y como acciones de VoiceOver: ninguna acción depende solo del gesto.'],
+].map(([a,b])=>`<tr><td><b>${a}</b></td><td>${b}</td></tr>`).join('');
+
+let hapT;const hap=(k,txt)=>{const h=$('swHap');h.className='hap '+k;$('swHapT').textContent='Háptica: '+txt;clearTimeout(hapT);hapT=setTimeout(()=>h.className='hap',600);if(navigator.vibrate)try{navigator.vibrate(k==='bump'?18:8)}catch(e){}};
+let open=null;            // fila abierta
+const S=new Map();        // estado por fila
+const st=row=>{if(!S.has(row)){const r=ROWS.find(x=>x.k===row.dataset.k);S.set(row,{r,x:0,rev:false,go:false})}return S.get(row)};
+const parts=row=>({card:row.querySelector('.swc'),ar:row.querySelector('.swa.r'),al:row.querySelector('.swa.l')});
+const W=(s,dir)=>(dir<0?s.r.R:s.r.L).length*PW;
+const commitAt=(row,dir)=>Math.max(row.offsetWidth*.6,W(st(row),dir)+24); // 60 % de la tarjeta; nunca a menos de 24 px de los paneles
+function setX(row,x,{silent=false}={}){
+ const s=st(row),{card,ar,al}=parts(row),dir=x<0?-1:1,w=W(s,dir),ax=Math.abs(x);
+ s.x=x;card.style.transform=`translateX(${x}px)`;
+ ar.style.width=(x<0?ax+20:0)+'px';al.style.width=(x>0?ax+20:0)+'px';
+ if(!w){ui(row);return}
+ const rev=ax>=w,go=ax>=commitAt(row,dir);
+ if(!silent){if(rev&&!s.rev&&!go)hap('tick','selección · se ven las acciones');if(go&&!s.go)hap('bump','impacto · se aplicará');if(!go&&s.go)hap('tick','selección · vuelve «Más»')}
+ s.rev=rev;s.go=go;
+ const ps=[...(dir<0?ar:al).querySelectorAll('.swp')],main=ps[ps.length-1];
+ ps.forEach(p=>{p.classList.toggle('gone',go&&p!==main);p.classList.toggle('go',go&&p===main)});
+ if(row===open||ax>0)ui(row);
+}
+function ui(row){const s=st(row),dir=s.x<0?-1:1,w=W(s,dir),c=commitAt(row,dir),ax=Math.abs(s.x),full=row.offsetWidth;
+ $('swState').textContent=!ax?'Cerrada':!w?'Lado sin acción: se resiste':s.go?`Se aplicará «${(dir<0?s.r.R:s.r.L).slice(-1)[0][1]}» al soltar`:s.rev?'Acciones visibles':'Revelando';
+ $('swRuler').innerHTML=`<b style="width:${Math.min(ax/full,1)*100}%"></b>${w?`<span style="left:${w/full*100}%"></span><em style="left:calc(${w/full*100}% - 6px);transform:translateX(-100%)">acciones ${w} px</em><span style="left:${c/full*100}%"></span><em style="left:calc(${c/full*100}% + 6px)">aplicar ${Math.round(c)} px</em>`:''}`}
+function animTo(row,x,ms,ease){const s=st(row),from=s.x,t0=performance.now(),d=RM?0:ms;return new Promise(res=>{const f=now=>{const p=d?Math.min((now-t0)/d,1):1,e=ease(p);setX(row,from+(x-from)*e,{silent:true});p<1?requestAnimationFrame(f):res()};requestAnimationFrame(f)})}
+const eo=p=>1-Math.pow(1-p,3),ei=p=>p*p;
+const close=row=>{if(!row)return;open===row&&(open=null);return animTo(row,0,180,eo).then(()=>{const s=st(row);s.rev=s.go=false;parts(row).card.style.transform='';ui(row)})};
+async function apply(row,dir){const s=st(row),a=(dir<0?s.r.R:s.r.L).slice(-1)[0];await animTo(row,0,250,eo);s.rev=s.go=false;parts(row).ar.querySelectorAll('.swp').forEach(p=>p.classList.remove('gone','go'));parts(row).al.querySelectorAll('.swp').forEach(p=>p.classList.remove('gone','go'));open=null;ui(row);$('swState').textContent=`Se aplicó «${a[1]}»`;
+ if(a[1]==='Tomar'){const slot=row.querySelector('.takeS');crossfade(slot,`<span class="btn sm" style="background:var(--color-success-bg);color:var(--color-success-fg);box-shadow:none">${I('check',14,'currentColor',3)}Tomado</span>`);toast('Toma registrada a las 1:05 p. m.','success',{label:'Deshacer',fn:()=>crossfade(slot,'<button class="btn ok sm" tabindex="-1">Tomar</button>')})}
+ else if(a[1]==='A mochila')toast('Abre «Agregar a una mochila»','info');else toast(s.r.done,'info')}
+/* arrastre */
+let drag=null;
+$('swList').addEventListener('pointerdown',e=>{const row=e.target.closest('.swr');if(!row)return;const p=e.target.closest('.swp');if(p){const s=st(row),dir=s.x<0?-1:1,ps=[...(dir<0?parts(row).ar:parts(row).al).querySelectorAll('.swp')];if(ps.indexOf(p)===ps.length-1)apply(row,dir);else{close(row);toast('Abre la hoja «Más»','info')}return}
+ if(open&&open!==row)close(open);drag={row,x0:e.clientX,y0:e.clientY,base:st(row).x,on:false,hist:[[performance.now(),st(row).x]]};row.setPointerCapture&&row.setPointerCapture(e.pointerId)});
+$('swList').addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x0,dy=e.clientY-drag.y0;if(!drag.on){if(Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)*1.5)drag.on=true;else return}
+ const row=drag.row,s=st(row);let x=drag.base+dx;const dir=x<0?-1:1,w=W(s,dir),full=row.offsetWidth;
+ if(!w)x=dir*Math.min(Math.abs(x)*.25,24);else if(Math.abs(x)>full*.9)x=dir*(full*.9+(Math.abs(x)-full*.9)*.4);
+ setX(row,x);drag.hist.push([performance.now(),x]);if(drag.hist.length>6)drag.hist.shift()});
+const end=()=>{if(!drag)return;const {row,on,hist}=drag;drag=null;const s=st(row);if(!on){if(s.x)close(row);return}
+ const dir=s.x<0?-1:1,w=W(s,dir),ax=Math.abs(s.x),[t0,x0]=hist[0],[t1,x1]=hist[hist.length-1],v=(x1-x0)/Math.max(t1-t0,1)*dir;
+ if(!w){animTo(row,0,180,eo).then(()=>ui(row));return}
+ if(s.go){apply(row,dir);return}
+ if(ax>=w/2||(v>.5&&ax>16)){open=row;animTo(row,dir*w,250,eo).then(()=>{s.rev=true;ui(row)})}else close(row)};
+$('swList').addEventListener('pointerup',end);$('swList').addEventListener('pointercancel',end);
+document.addEventListener('pointerdown',e=>{if(open&&!e.target.closest('#swList'))close(open)});
+/* reproducir con botones */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function sweep(row,to,ms){const s=st(row),from=s.x,t0=performance.now();while(true){const p=Math.min((performance.now()-t0)/ms,1);setX(row,from+(to-from)*eo(p));if(p>=1)break;await new Promise(requestAnimationFrame)}}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-swplay]');if(!b)return;const m=b.dataset.swplay,rows=[...document.querySelectorAll('#swList .swr')];if(open)await close(open);
+ if(m==='open'){const r=rows[0];await sweep(r,-150,500);open=r;await animTo(r,-W(st(r),-1),250,eo);ui(r)}
+ if(m==='full'){const r=rows[2];await sweep(r,-W(st(r),-1)-10,500);await sleep(250);await sweep(r,-commitAt(r,-1)-12,450);await sleep(450);apply(r,-1)}
+ if(m==='right'){const r=rows[1];await sweep(r,W(st(r),1)+6,450);await sleep(250);await sweep(r,commitAt(r,1)+12,450);await sleep(450);apply(r,1)}
+ if(m==='none'){const r=rows[0];await sweep(r,22,350);await animTo(r,0,180,eo);ui(r)}});
+}
 </script>
 </body>
 </html>

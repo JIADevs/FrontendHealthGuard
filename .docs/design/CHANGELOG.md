@@ -566,3 +566,26 @@ Decisión de producto del 2026-11-25. MASTER §7 solo decía qué texto lleva el
 | Estilo móvil completo: fondo, tarjeta de 350 px, ícono circular de 52 px siempre presente, título 19, mensaje 14, botones siempre apilados (segura arriba), sin «×»; y el diálogo web de 440 px | `system/MASTER.md` §7 «Diálogo de confirmación» |
 | `ConfirmModal`: `icon` obligatorio, sin variante basada en `Modal`; diferencias del código actual | `system/componentes.md` §4 |
 | Ejemplo de «Feedback» con el estilo nuevo («¿Cancelar la cita?» / «Mantener cita»); antes mostraba «¿Eliminar documento?» con «Cancelar», que ya no usa modal | `system/preview.html` |
+
+## 39. v2.34 · Acciones al deslizar en las tarjetas de lista
+
+Decisión de producto del 2026-11-26 (issue #127). Las tarjetas de lista en móvil abrían sus acciones con un «⋮» y un menú flotante. Ahora se desliza, como en la lista de chats de iOS: paneles a toda la altura con la acción principal y «Más», que abre una hoja con todas las acciones. Se compararon tres estilos de botones y cinco variantes de paneles; queda «1A» (paneles sólidos). Si se sigue deslizando hasta el 60 % de la tarjeta, se aplica la acción del extremo, con háptica al mostrar las acciones y al pasar ese umbral.
+
+| Cambio | Dónde |
+|---|---|
+| Regla visual: paneles, colores, qué va en cada lado y que lo destructivo vive solo en «Más» | `system/MASTER.md` §7 «Acciones al deslizar» |
+| Umbrales (96 px por panel, 60 % de la tarjeta), háptica, resorte, resistencia, movimiento reducido y accesibilidad | `system/pages/movimiento-interacciones.md` §4b, checklist y nota de háptica |
+| Demo interactiva con arrastre, umbrales, háptica y «deslizar hasta aplicar» | `system/movimiento.html` «Acciones al deslizar» |
+| `SwipeRow` y la hoja «Más» (`ActionSheet`), con las acciones de cada tarjeta | `system/componentes.md` |
+| Módulo 14 con el mapa de acciones, la propuesta de paneles, las hojas «Más» y cómo se descubre el gesto | `mockups/m11-deslizar.js` |
+| Hoja «Más»: lo destructivo va aparte, en su propia tarjeta de filas rojas con subtítulo (se compararon enlaces rojos, filas al final de la lista, solo la que aplica y botones de peligro; queda «A · grupo aparte»). La de la cita trae «Cancelar cita» y «Eliminar cita» (resuelve #120 cuando se implemente) | `mockups/m11-deslizar.js`, `system/MASTER.md` §7, `system/componentes.md` |
+
+## 40. v2.35 · Acciones al deslizar en el Calendario y en Compartidos
+
+Decisión de producto del 2026-11-26 (issue #127). v2.34 dejó el gesto solo en las cuatro tarjetas que tenían «⋮»; las filas del día del Calendario y los enlaces de Compartidos quedaban con solo «tocar para abrir», y la app se sentía distinta según la lista. Ahora siguen las mismas reglas.
+
+| Cambio | Dónde |
+|---|---|
+| Fila del día: cita = «Reprogramar» · «Asistí» (la misma hoja «Más» de Citas); toma = «No la tomé» · «Tomar», con «Más» = las opciones de «¿Tomaste esta dosis?» y sin grupo rojo («No la tomé» es un registro, no un borrado); tarea = «Reprogramar» · «Completar», con las acciones de «Detalle de tarea» y sin grupo rojo (una tarea no se elimina) | `mockups/m11-deslizar.js` (mapa «Calendario y Compartidos», pantallas sobre el Calendario del módulo 3 y hojas), `system/componentes.md` |
+| Enlace activo de Compartidos: «Copiar enlace» como principal; «Más» con las acciones de «Detalle compartido» (ver detalle, mostrar QR, copiar enlace, extender plazo) y «Revocar acceso» en rojo | ídem, sobre la lista del módulo 13 |
+| No se desliza una fila con una sola acción: check-in, paso de misión, enlace vencido o revocado | `system/MASTER.md` §7, `system/pages/movimiento-interacciones.md` §4b |

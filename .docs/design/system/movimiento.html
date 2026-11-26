@@ -597,7 +597,7 @@ $('swRules').innerHTML=`<tr><th>Momento</th><th>Qué pasa</th></tr>`+[
  ['Empieza','El arrastre arranca solo si el dedo se mueve más en horizontal que en vertical (más de 10 px y 1,5 veces más que el vertical); si no, la lista hace scroll. La tarjeta sigue al dedo 1:1, sin animación (Doherty: responde al instante).'],
  ['Revela','Los paneles crecen debajo de la tarjeta, cada uno con la misma parte del espacio. La principal queda en el extremo.'],
  ['Háptica 1 · selección','Al pasar el ancho de los paneles (96 px por panel): un «tic» suave (<code>Haptics.selectionAsync</code>). Avisa que las acciones ya se ven. Una vez por gesto.'],
- ['Háptica 2 · impacto','Al pasar el umbral de aplicar (el mayor entre los paneles + 72 px y el 60 % de la tarjeta): un golpe medio (<code>impactAsync(Medium)</code>). La principal se estira y tapa a «Más» en 150 ms y su ícono hace un rebote corto. Si el dedo vuelve, «Más» reaparece con un tic suave.'],
+ ['Háptica 2 · impacto','Al pasar el 60 % del ancho de la tarjeta (igual en las dos direcciones y en cualquier teléfono; nunca a menos de 24 px del borde de los paneles): un golpe medio (<code>impactAsync(Medium)</code>). La principal se estira y tapa a «Más» en 150 ms y su ícono hace un rebote corto. Si el dedo vuelve, «Más» reaparece con un tic suave.'],
  ['Suelta','Pasado el umbral: se aplica. Entre la mitad de los paneles y el umbral, o con un movimiento rápido (más de 0,5 px/ms) hacia afuera: queda abierta. Si no, se cierra. En la app, con el resorte nativo (damping 18 · stiffness 220); aquí, 250 ms al abrir y 180 ms al cerrar.'],
  ['Aplicar','La tarjeta vuelve a su lugar y se ejecuta la acción. «Tomar» y «Asistí» cambian al instante con toast y «Deshacer» (5 s). Las demás abren su pantalla u hoja. Nada destructivo se aplica deslizando: «Eliminar» vive solo en «Más».'],
  ['Lado sin acción','La tarjeta se resiste: avanza a un cuarto de la velocidad, hasta 24 px, y vuelve. Sin háptica.'],
@@ -612,7 +612,7 @@ const S=new Map();        // estado por fila
 const st=row=>{if(!S.has(row)){const r=ROWS.find(x=>x.k===row.dataset.k);S.set(row,{r,x:0,rev:false,go:false})}return S.get(row)};
 const parts=row=>({card:row.querySelector('.swc'),ar:row.querySelector('.swa.r'),al:row.querySelector('.swa.l')});
 const W=(s,dir)=>(dir<0?s.r.R:s.r.L).length*PW;
-const commitAt=(row,dir)=>Math.max(W(st(row),dir)+72,row.offsetWidth*.6);
+const commitAt=(row,dir)=>Math.max(row.offsetWidth*.6,W(st(row),dir)+24); // 60 % de la tarjeta; nunca a menos de 24 px de los paneles
 function setX(row,x,{silent=false}={}){
  const s=st(row),{card,ar,al}=parts(row),dir=x<0?-1:1,w=W(s,dir),ax=Math.abs(x);
  s.x=x;card.style.transform=`translateX(${x}px)`;

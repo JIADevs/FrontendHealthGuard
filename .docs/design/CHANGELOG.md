@@ -579,3 +579,13 @@ Decisión de producto del 2026-11-26 (issue #127). Las tarjetas de lista en móv
 | `SwipeRow` y la hoja «Más» (`ActionSheet`), con las acciones de cada tarjeta | `system/componentes.md` |
 | Módulo 14 con el mapa de acciones, la propuesta de paneles, las hojas «Más» y cómo se descubre el gesto | `mockups/m11-deslizar.js` |
 | Hoja «Más»: lo destructivo va aparte, en su propia tarjeta de filas rojas con subtítulo (se compararon enlaces rojos, filas al final de la lista, solo la que aplica y botones de peligro; queda «A · grupo aparte»). La de la cita trae «Cancelar cita» y «Eliminar cita» (resuelve #120 cuando se implemente) | `mockups/m11-deslizar.js`, `system/MASTER.md` §7, `system/componentes.md` |
+
+## 40. v2.35 · Acciones al deslizar en el Calendario y en Compartidos
+
+Decisión de producto del 2026-11-26 (issue #127). v2.34 dejó el gesto solo en las cuatro tarjetas que tenían «⋮»; las filas del día del Calendario y los enlaces de Compartidos quedaban con solo «tocar para abrir», y la app se sentía distinta según la lista. Ahora siguen las mismas reglas.
+
+| Cambio | Dónde |
+|---|---|
+| Fila del día: cita = «Reprogramar» · «Asistí» (la misma hoja «Más» de Citas); toma = «Más tarde» · «Tomar», hoja sin grupo rojo («No la tomé» es un registro que se corrige, no un borrado); tarea = «Reprogramar» · «Completar», con «Eliminar tarea» en rojo | `mockups/m11-deslizar.js` (mapa «Calendario y Compartidos», pantallas y hojas), `system/componentes.md` |
+| Enlace activo de Compartidos: «Copiar enlace» como principal; «Más» con ver detalle, QR, copiar, compartir y «Revocar acceso» en rojo | ídem |
+| No se desliza una fila con una sola acción: check-in, paso de misión, enlace vencido o revocado | `system/MASTER.md` §7, `system/pages/movimiento-interacciones.md` §4b |

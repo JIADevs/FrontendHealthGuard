@@ -5,7 +5,7 @@
    Propuesta: paneles sólidos a toda la altura como la lista de chats de iOS. Animación y háptica en
    ../system/movimiento.html, sección «Acciones al deslizar». */
 {
-const SW = mod('deslizar', '14 · Acciones al deslizar (propuesta)', 'Issue #127. Las tarjetas de lista en móvil (cita, medicamento, documento, mochila) dejan el «⋮» y muestran sus acciones al deslizar, con paneles de color a toda la altura como en la lista de chats de iOS: a la izquierda, la acción principal y «Más»; «Más» abre una hoja con todas las acciones y lo destructivo aparte, en su propia tarjeta de filas rojas. A la derecha, solo una acción positiva clara. Si se sigue deslizando, se aplica la acción del extremo (con háptica al mostrar las acciones y al pasar el umbral; ver movimiento.html). Se muestran las hojas «Más» de cada tarjeta y dos formas de descubrir el gesto. Accesibilidad: las mismas acciones como acciones de VoiceOver de la tarjeta. Web conserva el «⋮».');
+const SW = mod('deslizar', '14 · Acciones al deslizar (propuesta)', 'Issue #127. Las tarjetas de lista en móvil (cita, medicamento, documento, mochila), las filas del día del Calendario y los enlaces de Compartidos (v2.35) dejan el «⋮» y muestran sus acciones al deslizar, con paneles de color a toda la altura como en la lista de chats de iOS: a la izquierda, la acción principal y «Más»; «Más» abre una hoja con todas las acciones y lo destructivo aparte, en su propia tarjeta de filas rojas. A la derecha, solo una acción positiva clara. Si se sigue deslizando, se aplica la acción del extremo (con háptica al mostrar las acciones y al pasar el umbral; ver movimiento.html). Se muestran las hojas «Más» de cada tarjeta y dos formas de descubrir el gesto. Accesibilidad: las mismas acciones como acciones de VoiceOver de la tarjeta. Web conserva el «⋮».');
 
 
 /* ── Contenido de las tarjetas (sin «⋮») ── */
@@ -90,4 +90,44 @@ SW.m('«Más» · Mochila', phone(`${mtitle('Mochilas')}${B1c}`, { tab: 'mochila
 const peek = cardHtml => `<div style="position:relative"><div style="position:absolute;top:0;bottom:3px;right:0;width:64px;border-radius:0 18px 18px 0;overflow:hidden;display:flex;justify-content:flex-end"><div style="width:44px;background:${C.brand.bg}"></div></div><div style="position:relative;z-index:1;transform:translateX(-44px)">${cardHtml}</div></div>`;
 SW.m('D1 · Asomo la primera vez', citas(peek(A1), hint('Desliza una tarjeta a la izquierda para ver sus acciones.', 'point')), 'La primera vez que se abre una lista, la primera tarjeta se corre 44 px y vuelve (350 ms, movimiento-interacciones.md), con el aviso de la mascota. No se repite.');
 SW.m('D2 · Mantener presionado', phone(`${agHead(1)}${search('Buscar por nombre, especialidad o doctor')}<div style="transform:scale(.98);border-radius:18px;box-shadow:0 0 0 3px var(--color-brand-focus)">${A1}</div>${A2}`, { tab: 'agenda', over: sheet(`${sheetHead('pk', 'calendar', 'CITA · MAR 2 DIC · 10:00 A. M.', 'Control de odontología')}${card(optRow('eye', 'Ver detalle') + optRow('calendar', 'Reprogramar') + optRow('edit', 'Editar'), 'tight')}<div class="s" style="text-align:center">… y el resto de la hoja «Más»</div>`) }), 'Mantener presionada la tarjeta (500 ms, con háptica) abre la misma hoja «Más». Es la vía para quien no desliza; VoiceOver la ofrece como acción de la tarjeta.');
+
+/* ── v2.35 · Calendario y Compartidos: mismas reglas en las filas del día y en los enlaces ── */
+/* Fila del día del Calendario (mockup «Calendario», helper `ev` de m2): barra de color a la izquierda y la acción a la derecha. */
+const calEv = (k, t, n, s, right = '') => `<div class="card tight" style="flex-direction:row;align-items:center;border-left:6px solid ${k}"><div class="grow"><div class="t clamp2">${n}</div><div class="s clamp2">${t} · ${s}</div></div>${right}</div>`;
+const K = { med: 'var(--color-motivation-level)', appt: 'var(--color-feature-appointment-fg)', well: 'var(--color-feature-wellbeing-solid)', mis: 'var(--color-brand-focus)', task: 'var(--color-brand-solid)' };
+const E_TOMA = calEv(K.med, '1:00 p. m.', 'Metformina 850 mg', 'Toma · 1 tableta', btn('Tomar', 'ok sm', ic('check', 14, '#fff', 3)));
+const E_TOMADO = calEv(K.med, '7:00 a. m.', 'Losartán 50 mg', 'Toma · 1 tableta', chip('Tomado', 'gr', ic('check', 12, 'currentColor', 3)));
+const E_CITA = calEv(K.appt, '10:00 a. m.', 'Control de odontología', 'Cita · Dra. Ruiz');
+const E_CHECK = calEv(K.well, 'Todo el día', 'Check-in diario', 'Bienestar · 1 min', btn('Hacer', 'sec sm'));
+const E_MIS = calEv(K.mis, 'Hoy', 'Preparar la resonancia', 'Misión · paso 2 de 4', btn('Ver', 'sec sm'));
+const E_TAREA = calEv(K.task, '5:00 p. m.', 'Recoger fórmula', 'Tarea · en la EPS', btn('Completar', 'sec sm'));
+const calDay = (rows, over) => phone(`${agHead(0)}<div class="h3">Hoy, martes 3</div>${rows}`, { tab: 'agenda', fab: 'plus', ...(over ? { over } : {}) });
+
+/* Enlace del historial de Compartidos (mockup «Compartidos», helper `sh` de m5) */
+const shC = (n, d, st, stc, n2 = 'link') => card(`<div class="row">${tile(stc === 'gr' ? 'b' : 'gray', n2)}<div class="grow"><div class="t ell">${n}</div><div class="s">${d}</div></div>${chip(st, stc)}</div>`, 'tight');
+const S1 = shC('Orden médica · Resonancia', '2 documentos · vence en 24 h', 'Activo', 'gr');
+const S2 = shC('Mochila «Chequeo anual»', '6 documentos · vence en 3 días', 'Activo', 'gr', 'backpack');
+const S3 = shC('Hemograma completo', 'Venció el 28 oct', 'Expirado', 'gray');
+const shared = (first, over) => phone(`${mback('Compartidos', btn('Nuevo', 'sm', ic('plus', 15, '#fff', 2.6)))}${seg(['Todos', 'Activos', 'Inactivos'], 0)}${first}${S2}${S3}`, { tab: 'mas', ...(over ? { over } : {}) });
+
+const none = t => `<span class="s">— ${t}</span>`;
+const MAP2 = `<div class="card" style="width:900px;gap:6px"><div class="h2">Calendario y Compartidos</div><div class="sub">Las filas del día del Calendario y los enlaces compartidos siguen las mismas reglas. Lo que solo tiene «abrir» no se desliza.</div><table style="width:100%;border-collapse:collapse;margin-top:6px"><thead><tr style="text-align:left;font:800 12px Nunito;letter-spacing:.06em;color:var(--color-text-secondary)"><th style="padding:8px 12px 8px 0">FILA</th><th style="padding:8px 12px">← IZQUIERDA (PRINCIPAL)</th><th style="padding:8px 12px">DERECHA →</th><th style="padding:8px 0 8px 12px">EN «MÁS»</th></tr></thead><tbody>
+${mapRow('pk', 'calendar', 'Cita del día', pill('calendar', 'Reprogramar'), `${pill('check', 'Asistí', 'gr')}<div class="s" style="margin-top:6px">Igual que la tarjeta de Citas.</div>`, `La misma hoja «Más» de la cita · ${red('Cancelar cita, Eliminar cita')}`)}
+${mapRow('am', 'pill', 'Toma', pill('alarm', 'Más tarde'), `${pill('check', 'Tomar', 'gr')}<div class="s" style="margin-top:6px">Solo si está pendiente; con toast y «Deshacer».</div>`, 'Registrar toma, más tarde, no la tomé (con motivo), ver medicamento · sin nada rojo: no se borra nada')}
+${mapRow('b', 'route', 'Tarea', pill('calendar', 'Reprogramar'), `${pill('check', 'Completar', 'gr')}<div class="s" style="margin-top:6px">Abre la misma hoja de «Completar» (nota opcional).</div>`, `Ver detalle, completar, reprogramar, editar · ${red('Eliminar tarea')}`)}
+${mapRow('vi', 'heart', 'Check-in y paso de misión', none('sin deslizar'), none('sin deslizar'), 'Una sola acción («Hacer», «Ver»): tocar la fila basta. Sin «Más».')}
+${mapRow('b', 'link', 'Enlace compartido activo', pill('copy', 'Copiar enlace'), '<span class="s">—</span>', `Ver detalle, ver QR, copiar enlace, compartir · ${red('Revocar acceso')}`)}
+${mapRow('gray', 'link', 'Enlace vencido o revocado', none('sin deslizar'), none('sin deslizar'), 'No hay nada que hacer salvo verlo: tocar abre el detalle.', true)}
+</tbody></table><div class="hint" style="margin-top:8px">${mas(32, 'point')}<span class="grow">Una tarea completada o una toma ya registrada pierden la acción de la derecha y conservan «Más». El Calendario usa el mismo aviso de la primera vez que el resto de las listas.</span></div></div>`;
+SW.m('Mapa · Calendario y Compartidos', MAP2, 'v2.35 · Filas del día y enlaces.');
+
+SW.m('Calendario · toma y tarea', calDay(`${E_TOMADO}${swipe(E_TOMA, [act('ok', 'check', 'Tomar', 96)], 'left')}${E_CITA}${E_CHECK}${swipe(E_TAREA, [MORE(), act('brand', 'calendar', 'Reprogramar')], 'right')}`), 'La toma pendiente a la derecha: «Tomar», en verde, igual que el botón de la fila. La tarea a la izquierda: «Más» y «Reprogramar». El check-in y el paso de misión no se deslizan: su fila ya es su única acción.');
+SW.m('Calendario · toma a la izquierda', calDay(`${E_TOMADO}${swipe(E_TOMA, [MORE(), act('brand', 'alarm', 'Más tarde')], 'right')}${E_CITA}${E_CHECK}${E_TAREA}`), '«Más tarde» pospone la toma como en la hoja de la toma (elige la hora). Es la principal porque es lo que más se hace con una toma que no se puede tomar ahora.');
+
+SW.m('«Más» · Toma', calDay(`${E_TOMADO}${E_TOMA}${E_CITA}`, sheet(`${sheetHead('am', 'pill', 'TOMA · HOY 1:00 P. M.', 'Metformina 850 mg')}${card(optRow('check', 'Registrar toma', '1 tableta') + optRow('alarm', 'Más tarde', 'Te la recordamos de nuevo') + optRow('x', 'No la tomé', 'Anota el motivo') + optRow('pill', 'Ver medicamento'), 'tight')}`)), '«No la tomé» no va en rojo: es un registro que se puede corregir, no un borrado. La hoja no tiene grupo destructivo.');
+SW.m('«Más» · Tarea', calDay(`${E_TOMA}${E_TAREA}`, sheet(`${sheetHead('b', 'route', 'TAREA · HOY 5:00 P. M.', 'Recoger fórmula')}${card(optRow('eye', 'Ver detalle') + optRow('check', 'Completar', 'Con una nota opcional') + optRow('calendar', 'Reprogramar') + optRow('edit', 'Editar'), 'tight')}${card(dRow('trash', 'Eliminar tarea', 'Se borra de tu agenda'), 'tight')}`)), '');
+
+SW.m('Compartidos · enlace activo', shared(swipe(S1, [MORE(), act('brand', 'copy', 'Copiar enlace')], 'right')), '«Copiar enlace» es la principal: es lo que se hace para volver a mandarlo. Los enlaces vencidos o revocados no se deslizan.');
+SW.m('«Más» · Enlace compartido', shared(S1, sheet(`${sheetHead('b', 'link', 'ENLACE · VENCE EN 24 H', 'Orden médica · Resonancia')}${card(optRow('eye', 'Ver detalle', 'Visto 3 veces') + optRow('qr', 'Ver QR') + optRow('copy', 'Copiar enlace') + optRow('share', 'Compartir'), 'tight')}${card(dRow('x', 'Revocar acceso', 'El enlace deja de funcionar'), 'tight')}`)), 'Revocar abre su confirmación (MASTER §7), como hoy en el detalle del enlace.');
+
 }

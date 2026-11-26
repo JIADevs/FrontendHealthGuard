@@ -589,3 +589,12 @@ Decisión de producto del 2026-11-26 (issue #127). v2.34 dejó el gesto solo en 
 | Fila del día: cita = «Reprogramar» · «Asistí» (la misma hoja «Más» de Citas); toma = «No la tomé» · «Tomar», con «Más» = las opciones de «¿Tomaste esta dosis?» y sin grupo rojo («No la tomé» es un registro, no un borrado); tarea = «Reprogramar» · «Completar», con las acciones de «Detalle de tarea» y sin grupo rojo (una tarea no se elimina) | `mockups/m11-deslizar.js` (mapa «Calendario y Compartidos», pantallas sobre el Calendario del módulo 3 y hojas), `system/componentes.md` |
 | Enlace activo de Compartidos: «Copiar enlace» como principal; «Más» con las acciones de «Detalle compartido» (ver detalle, mostrar QR, copiar enlace, extender plazo) y «Revocar acceso» en rojo | ídem, sobre la lista del módulo 13 |
 | No se desliza una fila con una sola acción: check-in, paso de misión, enlace vencido o revocado | `system/MASTER.md` §7, `system/pages/movimiento-interacciones.md` §4b |
+
+## 41. v2.36 · «Deslizar hasta aplicar» con gesto rápido
+
+Ajuste del 2026-11-26 (issue #127). En la app, al soltar un deslizamiento completo el estirado y el ícono se reiniciaban al instante, y con un gesto rápido el rebote no se veía.
+
+| Cambio | Dónde |
+|---|---|
+| Al aplicar, la tarjeta vuelve en 250 ms con la principal todavía estirada y su ícono grande; se reinician recién al llegar | `system/pages/movimiento-interacciones.md` §4b «Al aplicar», `system/movimiento.html` |
+| Gesto rápido: si se suelta antes de que termine el estirado, primero termina (máximo 150 ms) y luego vuelve la tarjeta | ídem |

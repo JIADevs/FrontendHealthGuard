@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ScrollView, Text, View, StyleSheet, Pressable } from "react-native";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react-native";
 import { useCalendarEventsQuery } from "@helu/api/reactQueryHooks";
@@ -13,11 +13,13 @@ import { SkeletonCard, SkeletonGroup, contentEntering, useSkeletonVisible } from
 import { PullRefreshIndicator, usePullRefresh } from "../../motion/PullRefresh.native";
 import { fontSize, nativeFont, spacing } from "../../tokens/tokens";
 import { useAppTheme } from "../../tokens/ThemeProvider";
-import { DayEventList } from "./DayEventList";
+import { DayEventList, type AgendaEventSwipe } from "./DayEventList";
+import { SwipeRowGroup } from "../../containers/SwipeRow/SwipeRowGroup.native";
+import type { SwipeHaptic, SwipeRowGroupHandle } from "../../containers/SwipeRow/SwipeRow.types";
 import { WeekStrip, CALENDAR_TYPE_ICONS, calendarTypeColor, type CalendarTypeKind } from "./WeekStrip";
 import { useHeluAgendaCalendar } from "./useHeluAgendaCalendar";
 import { addMonths, buildMonthGrid, buildWeekDates, endOfMonth, startOfMonth, startOfWeek, todayLocalDateKey } from "./calendarDateUtils";
-import { filterEventsForDates, type AgendaEvent } from "./mapCalendarApiToEvents";
+import { eventKey, filterEventsForDates, type AgendaEvent } from "./mapCalendarApiToEvents";
 
 export interface HeluAgendaCalendarProps {
     initialDate?: string;
@@ -30,6 +32,15 @@ export interface HeluAgendaCalendarProps {
     takingCycleId?: string;
     /** Content for a day with no events (mockup «Calendario · día sin eventos»). Defaults to a short line. */
     renderEmptyDay?: (dateKey: string) => ReactNode;
+    /** Swipe actions of each day row (module 14, v2.35); `null` = the row does not swipe */
+    eventSwipe?: (event: AgendaEvent) => AgendaEventSwipe | null;
+    onSwipeHaptic?: (kind: SwipeHaptic) => void;
+    /** A row opened by swiping (e.g. hides the first-time hint) */
+    onSwipeRowOpen?: () => void;
+    /** Above the day's rows, e.g. the first-time swipe hint */
+    dayListHeader?: ReactNode;
+    /** The selected day's events once loaded (e.g. to know whether any row swipes) */
+    onDayEventsChange?: (events: AgendaEvent[]) => void;
 }
 
 export function HeluAgendaCalendar({
@@ -42,7 +53,13 @@ export function HeluAgendaCalendar({
     onTaskComplete,
     renderEmptyDay,
     takingCycleId,
+    eventSwipe,
+    onSwipeHaptic,
+    onSwipeRowOpen,
+    dayListHeader,
+    onDayEventsChange,
 }: HeluAgendaCalendarProps) {
+    const rows = useRef<SwipeRowGroupHandle>(null);
     const calendar = useHeluAgendaCalendar(initialDate);
     const t = useAppTheme();
     const weekDates = buildWeekDates(calendar.selectedDate);
@@ -51,6 +68,15 @@ export function HeluAgendaCalendar({
     const showSkeleton = useSkeletonVisible(calendar.isLoading || calendar.isDayLoading);
     const [monthSheetOpen, setMonthSheetOpen] = useState(false);
     const pull = usePullRefresh(calendar.refetch, calendar.updatedAt);
+
+    const dayEventsRef = useRef(onDayEventsChange);
+    dayEventsRef.current = onDayEventsChange;
+    const dayEventsKey = showSkeleton ? "" : dayEvents.map((e, i) => eventKey(e, i)).join("|");
+    useEffect(() => {
+        if (!showSkeleton) dayEventsRef.current?.(dayEvents);
+        // `dayEvents` is rebuilt every render; its keys say when it really changed.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dayEventsKey, showSkeleton]);
 
     function openEvent(event: AgendaEvent) {
         if (event.type === "medication") onMedicationPress?.(event);
@@ -109,6 +135,7 @@ export function HeluAgendaCalendar({
                         style={styles.list}
                         contentContainerStyle={styles.listContent}
                         onScroll={pull.onScroll}
+                        onScrollBeginDrag={() => rows.current?.closeAll()}
                         scrollEventThrottle={16}
                         refreshControl={pull.refreshControl}
                     >
@@ -119,13 +146,18 @@ export function HeluAgendaCalendar({
                                 <Text style={[styles.empty, { color: t.text.secondary }]}>Nada para este día</Text>
                             )
                         ) : (
-                            <DayEventList
-                                events={dayEvents}
-                                onEventPress={openEvent}
-                                onMedicationTake={onMedicationTake}
-                                onTaskComplete={onTaskComplete}
-                                takingCycleId={takingCycleId}
-                            />
+                            <SwipeRowGroup ref={rows} onRowOpen={onSwipeRowOpen}>
+                                {dayListHeader}
+                                <DayEventList
+                                    events={dayEvents}
+                                    onEventPress={openEvent}
+                                    onMedicationTake={onMedicationTake}
+                                    onTaskComplete={onTaskComplete}
+                                    takingCycleId={takingCycleId}
+                                    eventSwipe={eventSwipe}
+                                    onSwipeHaptic={onSwipeHaptic}
+                                />
+                            </SwipeRowGroup>
                         )}
                     </ScrollView>
                     <PullRefreshIndicator state={pull} />

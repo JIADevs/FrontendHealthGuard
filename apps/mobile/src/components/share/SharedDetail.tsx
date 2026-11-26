@@ -3,21 +3,16 @@ import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from "react-n
 import Animated, { FadeIn } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import * as Clipboard from "expo-clipboard";
-import { useQueryClient } from "@tanstack/react-query";
 import { Backpack, Check, Clock, Copy, Link2, QrCode, X } from "lucide-react-native";
 import type { Document, ShareLink, ShareResourceType } from "@helu/api";
 import {
   useDocumentQuery,
-  useExtendShareMutation,
   useInfiniteBackpackDocuments,
-  useRevokeShareMutation,
   useShareHistoryQuery,
 } from "@helu/api/hooks";
 import {
   Button,
   Chip,
-  ConfirmModal,
   DangerLink,
   IconTile,
   Skeleton,
@@ -34,9 +29,8 @@ import {
 import { ScreenHeader } from "../ScreenHeader";
 import { CATEGORY_META, categoryOf } from "../documents/documentCategories";
 import { documentDateLabel } from "../documents/utils/groupDocumentsByDate";
-import { notify } from "../../lib/notify";
-import { resolveExpoReachableUrl } from "../../utils/shareLinks";
 import { expiredOnPhrase, formatShareWhen, viewsPhrase } from "./shareUtils";
+import { useShareLinkActions } from "./useShareLinkActions";
 
 export interface SharedDetailProps {
   linkId: string;
@@ -61,11 +55,8 @@ export function SharedDetail({ linkId, resourceType, onClose, onShowQr, onOpenDo
   const shares = useShareHistoryQuery();
   const link = shares.data?.find((l) => l.linkId === linkId && l.resourceType === resourceType);
   const showSkeleton = useSkeletonVisible(shares.isLoading && !link);
-  const revoke = useRevokeShareMutation();
-  const extend = useExtendShareMutation();
-  const qc = useQueryClient();
+  const actions = useShareLinkActions({ onRevoked: onClose });
   const [copied, setCopied] = useState(false);
-  const [confirmRevoke, setConfirmRevoke] = useState(false);
 
   // Fresh view counts when the screen or the app comes back (a doctor may have just opened it).
   const { refetch } = shares;
@@ -132,42 +123,8 @@ export function SharedDetail({ linkId, resourceType, onClose, onShowQr, onOpenDo
   const Icon = link.resourceType === "backpack" ? Backpack : Link2;
 
   const copy = async () => {
-    try {
-      await Clipboard.setStringAsync(resolveExpoReachableUrl(link.shareUrl));
-      setCopied(true);
-      notify({ message: "Enlace copiado" });
-    } catch {
-      notify({ tone: "error", message: "No se pudo copiar el enlace" });
-    }
+    if (await actions.copy(link)) setCopied(true);
   };
-
-  const doExtend = () =>
-    extend.mutate(
-      { linkId: link.linkId, resourceType: link.resourceType },
-      {
-        onSuccess: (updated) => {
-          // The response is the updated link: show the new date with the toast, not after a refetch.
-          qc.setQueriesData<ShareLink[]>({ queryKey: ["shares"] }, (list) =>
-            list?.map((l) => (l.linkId === updated.linkId && l.resourceType === updated.resourceType ? updated : l)),
-          );
-          notify({ message: "Plazo extendido", description: "El enlace dura 24 horas más." });
-        },
-        onError: () => notify({ tone: "error", message: "No se pudo extender", description: "Revisa tu conexión e intenta de nuevo." }),
-      },
-    );
-
-  const doRevoke = () =>
-    revoke.mutate(
-      { linkId: link.linkId, resourceType: link.resourceType },
-      {
-        onSuccess: () => {
-          setConfirmRevoke(false);
-          notify({ message: "Acceso revocado", description: "El enlace ya no funciona." });
-          onClose();
-        },
-        onError: () => notify({ tone: "error", message: "No se pudo revocar", description: "Revisa tu conexión e intenta de nuevo." }),
-      },
-    );
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -229,8 +186,8 @@ export function SharedDetail({ linkId, resourceType, onClose, onShowQr, onOpenDo
                     variant="secondary"
                     fullWidth
                     icon={<Clock size={16} color={t.brand.text} />}
-                    onPress={doExtend}
-                    loading={extend.isPending}
+                    onPress={() => actions.extend(link)}
+                    loading={actions.extending}
                     loadingLabel="Extendiendo…"
                   >
                     Extender plazo
@@ -239,7 +196,7 @@ export function SharedDetail({ linkId, resourceType, onClose, onShowQr, onOpenDo
               ) : null}
             </View>
             <View style={styles.danger}>
-              <DangerLink label="Revocar acceso" icon={<X size={16} strokeWidth={2.4} color={t.status.errorFg} />} onPress={() => setConfirmRevoke(true)} />
+              <DangerLink label="Revocar acceso" icon={<X size={16} strokeWidth={2.4} color={t.status.errorFg} />} onPress={() => actions.requestRevoke(link)} />
             </View>
           </>
         ) : (
@@ -249,20 +206,7 @@ export function SharedDetail({ linkId, resourceType, onClose, onShowQr, onOpenDo
         )}
       </ScrollView>
 
-      {confirmRevoke ? (
-        <ConfirmModal
-          title="¿Revocar el acceso?"
-          message="Quien tenga el enlace ya no podrá abrir los documentos. Puedes crear uno nuevo cuando quieras."
-          keepLabel="Mantener enlace"
-          confirmLabel="Revocar"
-          icon={<Link2 />}
-          iconTone="warning"
-          confirmVariant="danger"
-          loading={revoke.isPending}
-          onConfirm={doRevoke}
-          onCancel={() => setConfirmRevoke(false)}
-        />
-      ) : null}
+      {actions.revokeDialog}
     </SafeAreaView>
   );
 }

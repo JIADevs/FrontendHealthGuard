@@ -1,29 +1,22 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { View, Text, StyleSheet, SectionList } from "react-native";
-import {
-  useDeleteAppointmentMutation,
-  useUpdateAppointmentStatusMutation,
-} from "@helu/api/hooks";
-import { useMissionQuery, type Appointment } from "@helu/api";
-import { useQueryClient } from "@tanstack/react-query";
+import type { Appointment } from "@helu/api";
 import {
   spacing,
   nativeFont,
   useAppTheme,
-  formatApptDate,
   Pagination,
   cardContentStyle,
   SkeletonGroup,
   Skeleton,
   SkeletonCard,
   useSkeletonVisible,
-  ConfirmModal,
   PullRefreshIndicator,
   usePullRefresh,
   SwipeRowGroup,
 } from "@helu/ui";
 import type { SwipeRowGroupHandle, ThemeContextValue } from "@helu/ui";
-import { CalendarDays, Trash2 } from "lucide-react-native";
+import { CalendarDays } from "lucide-react-native";
 
 import { useAppointmentsList } from "../../hooks/useAppointmentsList";
 import { AgendaFAB } from "./AgendaFAB";
@@ -32,10 +25,9 @@ import { useAgendaNavigation } from "./AgendaNavigation";
 import { AppointmentCard } from "./AppointmentCard";
 import { AppointmentsFilterSheet } from "./AppointmentsFilterSheet";
 import { LoadError } from "../states/LoadError";
-import { notify } from "../../lib/notify";
 import { AgendaListToolbar } from "./AgendaListToolbar";
 import { AgendaFilterEmpty } from "./AgendaFilterEmpty";
-import { CancelAppointmentModal } from "./CancelAppointmentModal";
+import { useAppointmentActions } from "./useAppointmentActions";
 import { useSwipeDiscovery } from "../../lib/swipeDiscovery";
 
 export function AppointmentsTab() {
@@ -43,8 +35,6 @@ export function AppointmentsTab() {
   const styles = useMemo(() => makeStyles(t), [t]);
   const nav = useAgendaNavigation();
 
-  const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null);
-  const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
   const rows = useRef<SwipeRowGroupHandle>(null);
 
   const {
@@ -65,75 +55,10 @@ export function AppointmentsTab() {
     hasActiveFilter,
   } = useAppointmentsList();
 
-  const deleteMut = useDeleteAppointmentMutation();
+  const apptActions = useAppointmentActions();
 
   const totalPages = appts.data?.totalPages ?? 1;
   const pull = usePullRefresh(appts.refetch, appts.dataUpdatedAt || undefined);
-
-  const handleDelete = useCallback(() => {
-    if (!deleteTarget) return;
-    deleteMut.mutate(deleteTarget.id, {
-      onSuccess: () => {
-        setDeleteTarget(null);
-        notify({ message: "Cita eliminada" });
-      },
-      onError: () => {
-        // MASTER §8: what happened + what to do. The modal stays open, so «Eliminar» is the retry.
-        notify({ tone: "error", message: "No se pudo eliminar la cita", description: "Revisa tu conexión e intenta de nuevo." });
-      },
-    });
-  }, [deleteTarget, deleteMut]);
-
-  const qc = useQueryClient();
-  const statusMut = useUpdateAppointmentStatusMutation();
-  const showStatusError = () =>
-    notify({ tone: "error", message: "No se pudo actualizar la cita", description: "Revisa tu conexión e intenta de nuevo." });
-
-  // Canceling also cancels a live mission (RF-29), and the dialog has to say so.
-  const cancelMission = useMissionQuery(cancelTarget?.missionId ?? undefined).data;
-  const cancelsMission = !!cancelMission && (cancelMission.status === "active" || cancelMission.status === "paused");
-
-  /** Shows `status` on the card at once; the server confirms in the background (movimiento §8). */
-  const putStatus = useCallback(
-    (a: Appointment, status: Appointment["status"]) => {
-      const withStatus = (prev: { items: Appointment[] } | undefined) =>
-        prev && Array.isArray(prev.items) ? { ...prev, items: prev.items.map((x) => (x.id === a.id ? { ...x, status } : x)) } : prev;
-      void qc.cancelQueries({ queryKey: ["appointments"] });
-      qc.setQueriesData<{ items: Appointment[] }>({ queryKey: ["appointments"] }, withStatus);
-      return statusMut.mutateAsync({ id: a.id, status });
-    },
-    [qc, statusMut],
-  );
-
-  // «Asistí» from the swipe: low risk, so it applies on release with «Deshacer» (#127), like «Tomar».
-  const handleAttended = useCallback(
-    (a: Appointment) => {
-      const previous: Appointment["status"] = a.status || "PROGRAMADA";
-      putStatus(a, "ASISTI").catch(() => {
-        putStatus(a, previous).catch(() => undefined);
-        showStatusError();
-      });
-      notify({
-        message: "Asistencia registrada",
-        action: { label: "Deshacer", onPress: () => void putStatus(a, previous).catch(showStatusError) },
-      });
-    },
-    [putStatus],
-  );
-
-  const handleCancel = useCallback(() => {
-    if (!cancelTarget) return;
-    statusMut.mutate(
-      { id: cancelTarget.id, status: "CANCELADA" },
-      {
-        onSuccess: () => {
-          setCancelTarget(null);
-          notify({ message: cancelsMission ? "Cita y misión canceladas" : "Cita cancelada" });
-        },
-        onError: () => showStatusError(),
-      },
-    );
-  }, [cancelTarget, cancelsMission, statusMut]);
 
   const items = appts.data?.items ?? [];
   const showSkeleton = useSkeletonVisible(appts.isLoading);
@@ -181,9 +106,9 @@ export function AppointmentsTab() {
                   appointment={a}
                   onPress={() => nav.openAppointment(a.id)}
                   onEdit={() => nav.editAppointment(a.id)}
-                  onAttended={() => handleAttended(a)}
-                  onCancel={() => setCancelTarget(a)}
-                  onDelete={() => setDeleteTarget(a)}
+                  onAttended={() => apptActions.markAttended(a)}
+                  onCancel={() => apptActions.requestCancel(a)}
+                  onDelete={() => apptActions.requestDelete(a)}
                   peek={discovery.peek && a.id === firstId}
                 />
               )}
@@ -226,28 +151,7 @@ export function AppointmentsTab() {
         </SwipeRowGroup>
       )}
 
-      {cancelTarget ? (
-        <CancelAppointmentModal
-          missionTitle={cancelsMission ? cancelMission!.title : undefined}
-          loading={statusMut.isPending}
-          onCancel={() => setCancelTarget(null)}
-          onConfirm={handleCancel}
-        />
-      ) : null}
-
-      {deleteTarget && (
-        // MASTER §7: question + consequence; «Eliminar» borra la cita (≠ «Cancelar cita», que la conserva).
-        <ConfirmModal
-          title="¿Eliminar esta cita?"
-          message={`Se borra la cita del ${formatApptDate(deleteTarget.date)} con sus recordatorios. No queda en tu historial y no se puede deshacer.`}
-          keepLabel="Mantener cita"
-          confirmLabel="Eliminar"
-          icon={<Trash2 />}
-          loading={deleteMut.isPending}
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
+      {apptActions.dialogs}
 
       {filterSheetVisible ? (
         <AppointmentsFilterSheet

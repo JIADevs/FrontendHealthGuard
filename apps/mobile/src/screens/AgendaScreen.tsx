@@ -25,6 +25,7 @@ export function AgendaScreen() {
         navigation.navigate("CycleDetail", { cycleId, medicationId, medicationName }),
       newTask: () => navigation.navigate("AgendaTaskForm"),
       openTask: (id, intent) => navigation.navigate("AgendaTaskDetail", { id, intent }),
+      editTask: (id) => navigation.navigate("AgendaTaskForm", { id }),
     }),
     [navigation],
   );

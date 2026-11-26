@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link2, Plus, RefreshCw, Share2 } from "lucide-react-native";
+import { Clock, Copy, Eye, Link2, Plus, QrCode, RefreshCw, Share2, X } from "lucide-react-native";
 import type { ShareLink } from "@helu/api";
 import { useShareHistoryQuery } from "@helu/api/hooks";
 import {
+  ActionSheet,
   Button,
   Chip,
   IconTile,
@@ -13,6 +14,7 @@ import {
   SegmentedControl,
   Skeleton,
   SkeletonGroup,
+  SwipeRowGroup,
   fontSize,
   motion,
   nativeFont,
@@ -20,11 +22,15 @@ import {
   useAppTheme,
   usePullRefresh,
   useSkeletonVisible,
+  type SwipeRowGroupHandle,
   type ThemeContextValue,
 } from "@helu/ui";
 import { ScreenHeader } from "../ScreenHeader";
 import { EmptyHero } from "../states/EmptyHero";
 import { SharedLinkRow } from "./SharedLinkRow";
+import { useShareLinkActions } from "./useShareLinkActions";
+import { formatShareWhen, viewsPhrase } from "./shareUtils";
+import { useSwipeDiscovery } from "../../lib/swipeDiscovery";
 
 type Filter = "all" | "active" | "inactive";
 
@@ -40,6 +46,8 @@ const STAGGER_MAX = 6;
 export interface SharedHistoryProps {
   onOpen: (link: ShareLink) => void;
   onNew: () => void;
+  /** «Mostrar QR» from a row's «Más» sheet */
+  onShowQr: (link: ShareLink) => void;
 }
 
 /**
@@ -47,7 +55,7 @@ export interface SharedHistoryProps {
  * segmented «Todos · Activos · Inactivos» (inactive = expired; revoked links are deleted, #61
  * decision 4) and one row per link.
  */
-export function SharedHistory({ onOpen, onNew }: SharedHistoryProps) {
+export function SharedHistory({ onOpen, onNew, onShowQr }: SharedHistoryProps) {
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const shares = useShareHistoryQuery();
@@ -61,6 +69,13 @@ export function SharedHistory({ onOpen, onNew }: SharedHistoryProps) {
     () => all.filter((l) => (filter === "all" ? true : filter === "active" ? l.status === "active" : l.status !== "active")),
     [all, filter],
   );
+
+  // Swipe actions on active links (module 14, v2.35): «Copiar enlace» and the «Más» sheet.
+  const rows = useRef<SwipeRowGroupHandle>(null);
+  const actions = useShareLinkActions();
+  const [sheetLink, setSheetLink] = useState<ShareLink | null>(null);
+  const firstActive = items.find((l) => l.status === "active");
+  const discovery = useSwipeDiscovery("shared", !showSkeleton && !!firstActive);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -103,50 +118,82 @@ export function SharedHistory({ onOpen, onNew }: SharedHistoryProps) {
           <SharedEmpty onNew={onNew} />
         </View>
       ) : (
-        <View style={{ flex: 1 }}>
-          <FlatList
-            data={items}
-            keyExtractor={(l) => `${l.resourceType}-${l.linkId}`}
-            contentContainerStyle={styles.content}
-            onLayout={() => setEntered(true)}
-            refreshControl={pull.refreshControl}
-            onScroll={pull.onScroll}
-            scrollEventThrottle={16}
-            ListHeaderComponent={
-              <View style={styles.filters}>
-                <SegmentedControl
-                  options={FILTERS}
-                  value={filter}
-                  onChange={(v) => setFilter(v as Filter)}
-                  accessibilityLabel="Filtrar enlaces"
-                />
-              </View>
-            }
-            ItemSeparatorComponent={() => <View style={{ height: spacing[3] }} />}
-            renderItem={({ item, index }) => (
-              <Animated.View
-                entering={
-                  entered
-                    ? FadeIn.duration(motion.fast)
-                    : FadeIn.duration(motion.base).delay(Math.min(index, STAGGER_MAX) * STAGGER_MS)
-                }
-                exiting={FadeOut.duration(motion.base)}
-                layout={LinearTransition.duration(motion.base)}
-              >
-                <SharedLinkRow link={item} onPress={() => onOpen(item)} />
-              </Animated.View>
-            )}
-            ListEmptyComponent={
-              <Animated.View entering={FadeIn.duration(motion.fast)} style={styles.noMatch}>
-                <Text style={styles.meta}>
-                  {filter === "active" ? "No tienes enlaces activos ahora." : "No hay enlaces vencidos."}
-                </Text>
-              </Animated.View>
-            }
-          />
-          <PullRefreshIndicator state={pull} />
-        </View>
+        <SwipeRowGroup ref={rows} onRowOpen={discovery.dismiss}>
+          <View style={{ flex: 1 }}>
+            <FlatList
+              data={items}
+              keyExtractor={(l) => `${l.resourceType}-${l.linkId}`}
+              contentContainerStyle={styles.content}
+              onLayout={() => setEntered(true)}
+              refreshControl={pull.refreshControl}
+              onScroll={pull.onScroll}
+              onScrollBeginDrag={() => rows.current?.closeAll()}
+              scrollEventThrottle={16}
+              ListHeaderComponent={
+                <View style={styles.filters}>
+                  {discovery.hint}
+                  <SegmentedControl
+                    options={FILTERS}
+                    value={filter}
+                    onChange={(v) => setFilter(v as Filter)}
+                    accessibilityLabel="Filtrar enlaces"
+                  />
+                </View>
+              }
+              ItemSeparatorComponent={() => <View style={{ height: spacing[3] }} />}
+              renderItem={({ item, index }) => (
+                <Animated.View
+                  entering={
+                    entered
+                      ? FadeIn.duration(motion.fast)
+                      : FadeIn.duration(motion.base).delay(Math.min(index, STAGGER_MAX) * STAGGER_MS)
+                  }
+                  exiting={FadeOut.duration(motion.base)}
+                  layout={LinearTransition.duration(motion.base)}
+                >
+                  <SharedLinkRow
+                    link={item}
+                    onPress={() => onOpen(item)}
+                    onCopy={() => void actions.copy(item)}
+                    onMore={() => setSheetLink(item)}
+                    peek={discovery.peek && item === firstActive}
+                  />
+                </Animated.View>
+              )}
+              ListEmptyComponent={
+                <Animated.View entering={FadeIn.duration(motion.fast)} style={styles.noMatch}>
+                  <Text style={styles.meta}>
+                    {filter === "active" ? "No tienes enlaces activos ahora." : "No hay enlaces vencidos."}
+                  </Text>
+                </Animated.View>
+              }
+            />
+            <PullRefreshIndicator state={pull} />
+          </View>
+        </SwipeRowGroup>
       )}
+
+      {sheetLink ? (
+        <ActionSheet
+          title={sheetLink.resourceType === "backpack" ? `Mochila «${sheetLink.title}»` : sheetLink.title}
+          eyebrow={`Compartido · ${sheetLink.expiresAt ? `vence ${formatShareWhen(sheetLink.expiresAt).toLowerCase()}` : "sin vencimiento"}`.toUpperCase()}
+          tone="mission"
+          icon={<Link2 />}
+          onClose={() => setSheetLink(null)}
+          actions={[
+            { key: "open", label: "Ver detalle", meta: viewsPhrase(sheetLink.viewCount, sheetLink.lastViewedAt), icon: <Eye />, onPress: () => onOpen(sheetLink) },
+            { key: "qr", label: "Mostrar QR", icon: <QrCode />, onPress: () => onShowQr(sheetLink) },
+            { key: "copy", label: "Copiar enlace", icon: <Copy />, onPress: () => void actions.copy(sheetLink) },
+            ...(sheetLink.expiresAt
+              ? [{ key: "extend", label: "Extender plazo", meta: "24 horas más", icon: <Clock />, onPress: () => actions.extend(sheetLink) }]
+              : []),
+          ]}
+          destructive={[
+            { key: "revoke", label: "Revocar acceso", meta: "El enlace deja de funcionar", icon: <X />, onPress: () => actions.requestRevoke(sheetLink) },
+          ]}
+        />
+      ) : null}
+      {actions.revokeDialog}
     </SafeAreaView>
   );
 }

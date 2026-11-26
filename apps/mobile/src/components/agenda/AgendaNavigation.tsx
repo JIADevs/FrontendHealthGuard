@@ -19,6 +19,7 @@ export interface AgendaNavigation {
   openMedicationCycle: (medicationId: string, medicationName: string, cycleId: string) => void;
   newTask: () => void;
   openTask: (id: string, intent?: "complete" | "reschedule") => void;
+  editTask: (id: string) => void;
 }
 
 const AgendaNavigationContext = createContext<AgendaNavigation | null>(null);

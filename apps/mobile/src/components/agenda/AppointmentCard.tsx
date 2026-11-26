@@ -2,10 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import Animated from "react-native-reanimated";
 import { useRecentlySaved } from "../../lib/recentlySaved";
 import { View, Text, StyleSheet } from "react-native";
-import { CalendarDays, Check, CircleX, Clock, Ellipsis, Eye, Pencil, Trash2 } from "lucide-react-native";
+import { CalendarDays, Check, Clock } from "lucide-react-native";
 import type { Appointment } from "@helu/api";
 import {
-  ActionSheet,
   Chip,
   SwipeRow,
   IconTile,
@@ -15,12 +14,11 @@ import {
   fontSize,
   nativeFont,
   useAppTheme,
-  formatClock,
-  formatShortDay,
 } from "@helu/ui";
 import type { ThemeContextValue } from "@helu/ui";
 import { MODALITIES } from "../../constants/appointments";
 import { swipeHaptic } from "../../lib/haptics";
+import { AppointmentActionSheet, appointmentDateLabel, appointmentTitle, useAppointmentSwipe } from "./appointmentSwipe";
 
 export interface AppointmentCardProps {
   appointment: Appointment;
@@ -46,7 +44,7 @@ export function AppointmentCard({
   const t = useAppTheme();
   const styles = useMemo(() => makeStyles(t), [t]);
   const [sheet, setSheet] = useState(false);
-  const WHITE = { size: 22, strokeWidth: 2.2, color: t.text.onSolid };
+  const swipe = useAppointmentSwipe(a, { onEdit, onAttended }, () => setSheet(true));
 
   // Recién guardada: borde azul que se desvanece en 1,2 s (movimiento-interacciones.md §6).
   const justSaved = useRecentlySaved((state) => state.appointmentId === a.id);
@@ -57,18 +55,9 @@ export function AppointmentCard({
     return () => clearTimeout(timer);
   }, [justSaved]);
 
-  const time = a.time ? formatClock(a.time.slice(0, 5)) : "";
-  const dateLabel = [formatShortDay(a.date), time].filter(Boolean).join(" · ");
+  const dateLabel = appointmentDateLabel(a);
   const who = [a.doctor, a.specialty].filter(Boolean).join(" · ");
-  const title = a.name || a.specialty || "Cita médica";
-
-  // Same rules as the detail: «Asistí» from the appointment's time on, «Reprogramar» before it.
-  const startMs = new Date(`${a.date?.slice(0, 10)}T${a.time?.slice(0, 5) || "00:00"}`).getTime();
-  const hasStarted = Number.isFinite(startMs) && startMs <= Date.now();
-  const cancelled = a.status === "CANCELADA";
-  const answered = a.status === "ASISTI" || a.status === "NO_ASISTI";
-  const canReschedule = !hasStarted && !cancelled;
-  const canAttend = hasStarted && !cancelled && !answered;
+  const title = appointmentTitle(a);
 
   return (
     <>
@@ -79,13 +68,8 @@ export function AppointmentCard({
         id={a.id}
         accessibilityLabel={`${title}, ${dateLabel}`}
         onPress={onPress}
-        endActions={[
-          { key: "more", tone: "more", label: "Más", icon: <Ellipsis {...WHITE} />, onPress: () => setSheet(true) },
-          canReschedule
-            ? { key: "reschedule", tone: "primary", label: "Reprogramar", icon: <CalendarDays {...WHITE} />, onPress: onEdit }
-            : { key: "edit", tone: "primary", label: "Editar", icon: <Pencil {...WHITE} />, onPress: onEdit },
-        ]}
-        startAction={canAttend ? { key: "attended", tone: "positive", label: "Asistí", icon: <Check {...WHITE} strokeWidth={3} />, onPress: onAttended } : undefined}
+        endActions={swipe.endActions}
+        startAction={swipe.startAction}
         onLongPress={() => setSheet(true)}
         onHaptic={swipeHaptic}
         peek={peek}
@@ -118,25 +102,14 @@ export function AppointmentCard({
       </SwipeRow>
 
       {sheet ? (
-        <ActionSheet
-          title={title}
-          eyebrow={`Cita · ${dateLabel}`.toUpperCase()}
-          tone="appointment"
-          icon={<CalendarDays />}
+        <AppointmentActionSheet
+          appointment={a}
           onClose={() => setSheet(false)}
-          actions={[
-            { key: "open", label: "Ver detalle", icon: <Eye />, onPress: onPress },
-            ...(canReschedule ? [{ key: "reschedule", label: "Reprogramar", icon: <CalendarDays />, onPress: onEdit }] : []),
-            ...(canAttend ? [{ key: "attended", label: "Asistí", meta: "Marca la cita como completada", icon: <Check />, onPress: onAttended }] : []),
-            { key: "edit", label: "Editar", icon: <Pencil />, onPress: onEdit },
-          ]}
-          destructive={[
-            // A cancelled or answered appointment stays in the history: only deleting is left.
-            ...(!cancelled && !answered
-              ? [{ key: "cancel", label: "Cancelar cita", meta: "Queda en tu historial como cancelada", icon: <CircleX />, onPress: onCancel }]
-              : []),
-            { key: "delete", label: "Eliminar cita", meta: "Se borra de tu agenda", icon: <Trash2 />, onPress: onDelete },
-          ]}
+          onOpen={onPress}
+          onEdit={onEdit}
+          onAttended={onAttended}
+          onCancel={onCancel}
+          onDelete={onDelete}
         />
       ) : null}
     </>

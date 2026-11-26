@@ -28,6 +28,8 @@ export const SWIPE = {
   close: 180,
   apply: 250,
   stretch: 150,
+  /** Icon of the outer action while armed (the short bounce, movimiento.html «Acciones al deslizar») */
+  bump: 1.18,
   longPress: 500,
   /** First-time discovery: the first card moves this far and back, after the list settles */
   peek: 44,

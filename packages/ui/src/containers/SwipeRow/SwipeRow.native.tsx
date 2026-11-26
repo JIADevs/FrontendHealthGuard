@@ -47,6 +47,7 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
   const revealed = useSharedValue(false);
   const armed = useSharedValue(false);
   const stretch = useSharedValue(0); // 0 → «Más» visible, 1 → the outer action covers it
+  const bump = useSharedValue(1); // icon scale of the outer action: SWIPE.bump while armed
   const [open, setOpen] = useState(false);
 
   const dur = useCallback((ms: number) => (reduced ? 0 : ms), [reduced]);
@@ -54,11 +55,12 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
   const close = useCallback(() => {
     x.value = withTiming(0, { duration: dur(SWIPE.close), easing: motionEasing.out });
     stretch.value = withTiming(0, { duration: dur(SWIPE.stretch) });
+    bump.value = withTiming(1, { duration: dur(SWIPE.stretch) });
     revealed.value = false;
     armed.value = false;
     setOpen(false);
     group?.closed(id);
-  }, [armed, dur, group, id, revealed, stretch, x]);
+  }, [armed, bump, dur, group, id, revealed, stretch, x]);
 
   // Register with the group so opening another row (or scrolling) closes this one.
   const closeRef = useRef(close);
@@ -90,14 +92,39 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
     group?.opened(id);
   }, [group, id]);
 
-  /** Runs the outer action of a side (−1 = end, 1 = start) after the card is back. */
+  /**
+   * Runs the outer action of a side (−1 = end, 1 = start) once the card is back (§4b «Al aplicar»).
+   * The card returns in 250 ms with the outer action still stretched over «Más» and its icon
+   * bumped; both reset only when it is back. A fast swipe that is released while the stretch is
+   * still growing first lets it finish (at most 150 ms), so the bounce is always seen.
+   */
   const apply = useCallback(
     (dir: number) => {
       const action = dir < 0 ? endActions[endActions.length - 1] : startAction;
-      close();
-      if (action) setTimeout(action.onPress, dur(SWIPE.apply));
+      const wait = reduced || !armed.value ? 0 : Math.round((1 - stretch.value) * SWIPE.stretch);
+      revealed.value = false;
+      armed.value = false;
+      setOpen(false);
+      group?.closed(id);
+      const reset = () => {
+        'worklet';
+        stretch.value = 0;
+        bump.value = 1;
+      };
+      if (reduced) {
+        x.value = 0;
+        reset();
+      } else {
+        x.value = withDelay(
+          wait,
+          withTiming(0, { duration: SWIPE.apply, easing: motionEasing.out }, (done) => {
+            if (done) reset();
+          }),
+        );
+      }
+      if (action) setTimeout(action.onPress, wait + dur(SWIPE.apply));
     },
-    [close, dur, endActions, startAction],
+    [armed, bump, dur, endActions, group, id, reduced, revealed, startAction, stretch, x],
   );
 
   const pan = usePanGesture({
@@ -123,7 +150,11 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
       if (arm && !armed.value) runOnJS(haptic)('arm');
       if (!arm && armed.value) runOnJS(haptic)('disarm');
       revealed.value = rev;
-      if (arm !== armed.value) stretch.value = withTiming(arm ? 1 : 0, { duration: reduced ? 0 : SWIPE.stretch });
+      if (arm !== armed.value) {
+        stretch.value = withTiming(arm ? 1 : 0, { duration: reduced ? 0 : SWIPE.stretch });
+        // The short bounce of the outer icon; reduced motion has no bounce (§4b).
+        bump.value = reduced ? 1 : withTiming(arm ? SWIPE.bump : 1, { duration: SWIPE.stretch, easing: motionEasing.spring });
+      }
       armed.value = arm;
     },
     onDeactivate: (e) => {
@@ -164,6 +195,7 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
   const endBox = useAnimatedStyle(() => ({ width: x.value < 0 ? -x.value + SWIPE.under : 0 }));
   const startBox = useAnimatedStyle(() => ({ width: x.value > 0 ? x.value + SWIPE.under : 0 }));
   const moreGrow = useAnimatedStyle(() => ({ flexGrow: 1 - stretch.value }));
+  const iconBump = useAnimatedStyle(() => ({ transform: [{ scale: bump.value }] }));
 
   const onLayout = (e: LayoutChangeEvent) => {
     width.value = e.nativeEvent.layout.width;
@@ -188,7 +220,7 @@ export function SwipeRow({ id, children, endActions = [], startAction, onLongPre
         accessibilityLabel={a.label}
         style={[styles.panel, { backgroundColor: bg[a.tone] }, first && (side === 'end' ? styles.padStart : styles.padEnd)]}
       >
-        {a.icon}
+        {outer ? <Animated.View style={iconBump}>{a.icon}</Animated.View> : a.icon}
         <Text numberOfLines={1} style={[styles.label, { color: t.text.onSolid }]}>{a.label}</Text>
       </Pressable>
     );

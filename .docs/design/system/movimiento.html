@@ -618,8 +618,10 @@ function setX(row,x,{silent=false}={}){
  s.x=x;card.style.transform=`translateX(${x}px)`;
  ar.style.width=(x<0?ax+20:0)+'px';al.style.width=(x>0?ax+20:0)+'px';
  if(!w){ui(row);return}
+ if(s.applying)return; // al aplicar, la principal sigue estirada mientras la tarjeta vuelve
  const rev=ax>=w,go=ax>=commitAt(row,dir);
  if(!silent){if(rev&&!s.rev&&!go)hap('tick','selección · se ven las acciones');if(go&&!s.go)hap('bump','impacto · se aplicará');if(!go&&s.go)hap('tick','selección · vuelve «Más»')}
+ if(go&&!s.go)s.goAt=performance.now();
  s.rev=rev;s.go=go;
  const ps=[...(dir<0?ar:al).querySelectorAll('.swp')],main=ps[ps.length-1];
  ps.forEach(p=>{p.classList.toggle('gone',go&&p!==main);p.classList.toggle('go',go&&p===main)});
@@ -631,7 +633,10 @@ function ui(row){const s=st(row),dir=s.x<0?-1:1,w=W(s,dir),c=commitAt(row,dir),a
 function animTo(row,x,ms,ease){const s=st(row),from=s.x,t0=performance.now(),d=RM?0:ms;return new Promise(res=>{const f=now=>{const p=d?Math.min((now-t0)/d,1):1,e=ease(p);setX(row,from+(x-from)*e,{silent:true});p<1?requestAnimationFrame(f):res()};requestAnimationFrame(f)})}
 const eo=p=>1-Math.pow(1-p,3),ei=p=>p*p;
 const close=row=>{if(!row)return;open===row&&(open=null);return animTo(row,0,180,eo).then(()=>{const s=st(row);s.rev=s.go=false;parts(row).card.style.transform='';ui(row)})};
-async function apply(row,dir){const s=st(row),a=(dir<0?s.r.R:s.r.L).slice(-1)[0];await animTo(row,0,250,eo);s.rev=s.go=false;parts(row).ar.querySelectorAll('.swp').forEach(p=>p.classList.remove('gone','go'));parts(row).al.querySelectorAll('.swp').forEach(p=>p.classList.remove('gone','go'));open=null;ui(row);$('swState').textContent=`Se aplicó «${a[1]}»`;
+async function apply(row,dir){const s=st(row),a=(dir<0?s.r.R:s.r.L).slice(-1)[0];
+ // Gesto rápido: si se suelta antes de que la principal termine de estirarse (150 ms), primero termina; así el rebote siempre se ve.
+ const wait=s.go&&!RM?Math.max(0,150-(performance.now()-(s.goAt||0))):0;if(wait)await sleep(wait);
+ s.applying=true;await animTo(row,0,250,eo);s.applying=false;s.rev=s.go=false;parts(row).ar.querySelectorAll('.swp').forEach(p=>p.classList.remove('gone','go'));parts(row).al.querySelectorAll('.swp').forEach(p=>p.classList.remove('gone','go'));open=null;ui(row);$('swState').textContent=`Se aplicó «${a[1]}»`;
  if(a[1]==='Tomar'){const slot=row.querySelector('.takeS');crossfade(slot,`<span class="btn sm" style="background:var(--color-success-bg);color:var(--color-success-fg);box-shadow:none">${I('check',14,'currentColor',3)}Tomado</span>`);toast('Toma registrada a las 1:05 p. m.','success',{label:'Deshacer',fn:()=>crossfade(slot,'<button class="btn ok sm" tabindex="-1">Tomar</button>')})}
  else if(a[1]==='A mochila')toast('Abre «Agregar a una mochila»','info');else toast(s.r.done,'info')}
 /* arrastre */

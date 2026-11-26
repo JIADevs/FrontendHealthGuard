@@ -566,3 +566,16 @@ Decisión de producto del 2026-11-25. MASTER §7 solo decía qué texto lleva el
 | Estilo móvil completo: fondo, tarjeta de 350 px, ícono circular de 52 px siempre presente, título 19, mensaje 14, botones siempre apilados (segura arriba), sin «×»; y el diálogo web de 440 px | `system/MASTER.md` §7 «Diálogo de confirmación» |
 | `ConfirmModal`: `icon` obligatorio, sin variante basada en `Modal`; diferencias del código actual | `system/componentes.md` §4 |
 | Ejemplo de «Feedback» con el estilo nuevo («¿Cancelar la cita?» / «Mantener cita»); antes mostraba «¿Eliminar documento?» con «Cancelar», que ya no usa modal | `system/preview.html` |
+
+## 39. v2.34 · Acciones al deslizar en las tarjetas de lista
+
+Decisión de producto del 2026-11-26 (issue #127). Las tarjetas de lista en móvil abrían sus acciones con un «⋮» y un menú flotante. Ahora se desliza, como en la lista de chats de iOS: paneles a toda la altura con la acción principal y «Más», que abre una hoja con todas las acciones. Se compararon tres estilos de botones y cinco variantes de paneles; queda «1A» (paneles sólidos). Si se sigue deslizando hasta el 60 % de la tarjeta, se aplica la acción del extremo, con háptica al mostrar las acciones y al pasar ese umbral.
+
+| Cambio | Dónde |
+|---|---|
+| Regla visual: paneles, colores, qué va en cada lado y que lo destructivo vive solo en «Más» | `system/MASTER.md` §7 «Acciones al deslizar» |
+| Umbrales (96 px por panel, 60 % de la tarjeta), háptica, resorte, resistencia, movimiento reducido y accesibilidad | `system/pages/movimiento-interacciones.md` §4b, checklist y nota de háptica |
+| Demo interactiva con arrastre, umbrales, háptica y «deslizar hasta aplicar» | `system/movimiento.html` «Acciones al deslizar» |
+| `SwipeRow` y la hoja «Más» (`ActionSheet`), con las acciones de cada tarjeta | `system/componentes.md` |
+| Módulo 14 con el mapa de acciones, la variante 1A, las hojas «Más» y cómo se descubre el gesto | `mockups/m11-deslizar.js` |
+| La hoja «Más» de la cita trae «Cancelar cita» y «Eliminar cita» (resuelve #120 cuando se implemente) | `mockups/m11-deslizar.js` |

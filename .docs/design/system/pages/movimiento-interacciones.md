@@ -95,6 +95,27 @@ Salen de leyes de UX conocidas; la ley va entre paréntesis para que se pueda bu
 | Teclado | La hoja sube con el teclado; el campo con foco queda visible |
 | Modal web | Escala 0,96 → 1 + fundido (250 ms), cierre en 150 ms; `Esc` cierra; el foco queda atrapado dentro y vuelve al disparador al cerrar |
 
+## 4b. Acciones al deslizar (v2.34)
+
+Las tarjetas de lista en móvil (cita, medicamento, documento, mochila) no llevan «⋮»: sus acciones aparecen al deslizar, con paneles de color a toda la altura (estilo 1A, como la lista de chats de iOS). Demo interactiva: [`../movimiento.html#deslizar`](../movimiento.html#deslizar). Qué acción va en cada tarjeta: [`componentes.md`](../componentes.md) («SwipeRow») y el módulo 14 de los mockups.
+
+| Momento | Regla |
+|---|---|
+| Empezar | Solo si el dedo se mueve más en horizontal que en vertical: más de 10 px y 1,5 veces el desplazamiento vertical. Si no, la lista hace scroll |
+| Arrastrar | La tarjeta sigue al dedo 1:1, sin animación. Los paneles crecen debajo, cada uno con la misma parte del espacio; la principal queda en el extremo. A la izquierda: «Más» y la principal; a la derecha, como mucho una acción positiva |
+| Acciones a la vista | Al llegar a **96 px por panel** (192 px con dos, 96 px con una): háptica de **selección** (`Haptics.selectionAsync`). Una vez por gesto |
+| Aplicar | Al pasar el **60 % del ancho de la tarjeta**, nunca a menos de 24 px del borde de los paneles (en una tarjeta de 358 px: 216 px a la izquierda y 215 px a la derecha): háptica de **impacto medio** (`impactAsync(Medium)`), la principal se estira y tapa a «Más» en 150 ms (`--motion-ease-out`) y su ícono hace el rebote corto. Si el dedo vuelve antes de soltar, «Más» reaparece con una háptica de selección |
+| Más allá del 90 % | Resistencia: la tarjeta avanza al 40 % de la velocidad del dedo |
+| Soltar | Pasado el umbral de aplicar: se aplica. Entre la mitad de los paneles y ese umbral, o con un movimiento rápido hacia afuera (más de 0,5 px/ms): queda abierta. Si no, se cierra. Resorte nativo (`damping 18 · stiffness 220`); en web, 250 ms al abrir y 180 ms al cerrar. **La velocidad nunca aplica una acción**: solo abre |
+| Al aplicar | La tarjeta vuelve a su lugar y se ejecuta la acción del extremo. «Tomar» y «Asistí» responden al tocar (§8) con toast y «Deshacer» (5 s); las demás abren su pantalla u hoja |
+| Lado sin acción | La tarjeta se resiste: avanza a un cuarto de la velocidad del dedo, hasta 24 px, y vuelve. Sin háptica |
+| Una a la vez | Abrir otra tarjeta, tocar fuera o hacer scroll cierra la abierta (150 ms). Tocar la tarjeta abierta la cierra; no abre el detalle |
+| Nunca | Una acción destructiva en los paneles: «Eliminar» y «Cancelar cita» viven solo en la hoja «Más», al final y en rojo (MASTER §7) |
+| Sin gesto | Las mismas acciones están en la hoja «Más» (también al mantener presionada la tarjeta 500 ms), en el detalle y como acciones de VoiceOver (`accessibilityActions`). Ninguna acción depende solo del gesto |
+| Descubrir | La primera vez que se abre una lista, la primera tarjeta se corre 44 px y vuelve (350 ms) con el aviso de la mascota «Desliza una tarjeta a la izquierda para ver sus acciones». No se repite |
+| Movimiento reducido | La tarjeta sigue al dedo igual (es manipulación directa); abrir, cerrar, estirar y aplicar son inmediatos, sin rebote. La háptica se mantiene |
+| Web | Conserva el «⋮» con su menú: no hay gesto de deslizar con mouse |
+
 ## 5. Botones y controles
 
 | Componente | Reposo → presionado → suelto | Duración |
@@ -139,7 +160,7 @@ Salen de leyes de UX conocidas; la ley va entre paréntesis para que se pueda bu
 | Carga larga (> 1 s) | Esqueleto; a los 10 s, texto «Esto está tardando más de lo normal» + «Reintentar» | — | — |
 | Cambio de contexto (cuidador) | El banner de color entra desde arriba; el lector de pantalla anuncia | «Ahora gestionas a Juan Pérez» | Ligera |
 
-\* **Háptica:** requiere `expo-haptics` (no está instalado). Usarla solo en confirmaciones y errores, nunca en cada toque, y respetar la vibración del sistema.
+\* **Háptica:** requiere `expo-haptics` (no está instalado). Usarla solo en confirmaciones y errores, nunca en cada toque, y respetar la vibración del sistema. La única excepción son los dos umbrales del deslizamiento de tarjetas (§4b), que avisan qué va a pasar al soltar.
 
 ## 6b. Mascota: celebración al completar una misión
 
@@ -298,3 +319,4 @@ Toda lista o pantalla que se puede actualizar tirando hacia abajo usa `usePullRe
 - [ ] Probado con movimiento reducido y con «Celebraciones» apagado
 - [ ] Toasts sin robar el foco y anunciados (`aria-live="polite"`)
 - [ ] Foco atrapado en modales y devuelto al disparador al cerrar
+- [ ] Tarjetas de lista en móvil: deslizar según §4b, sin acciones destructivas en los paneles y con las mismas acciones en «Más» y en VoiceOver
